@@ -1,0 +1,5 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": { "skipLibCheck": true },
+	"exclude": ["**/__tests__", "**/*.test.ts", "**/*.spec.ts"]
+}
