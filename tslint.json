@@ -1,0 +1,19 @@
+{
+	"defaultSeverity": "warning",
+	"extends": ["tslint:latest", "tslint-config-prettier"],
+	"rulesDirectory": [],
+	// https://palantir.github.io/tslint/rules/
+	"rules": {
+		"interface-name": [true, "never-prefix"],
+		"no-implicit-dependencies": [true, "optional", ["supertest", "reflect-metadata"]],
+		"interface-over-type-literal": false,
+		"no-angle-bracket-type-assertion": false,
+		"no-console": false,
+		"object-literal-sort-keys": false,
+		"ordered-imports": false,
+		"member-access": false,
+		"curly": false,
+		"array-type": false,
+		"ban-types": false
+	}
+}
