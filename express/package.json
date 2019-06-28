@@ -3,11 +3,16 @@
 	"version": "1.0.0",
 	"author": "Jeremy Bensimon",
 	"license": "MIT",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/jeremyben/reflet",
-		"directory": "express"
-	},
+	"repository": "https://github.com/jeremyben/reflet/tree/master/express",
+	"keywords": [
+		"express",
+		"decorators",
+		"typescript",
+		"framework",
+		"router",
+		"app",
+		"nest"
+	],
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"files": [
@@ -16,19 +21,19 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"peerDependencies": {
-		"reflect-metadata": "^0.1.13",
-		"express": "^4.16.0",
-		"express-session": "^1.15.0",
-		"@types/express": "^4.16.0"
+	"engines": {
+		"node": ">=8.10"
 	},
-	"devDependencies": {
-		"@reflet/monorepo": "0.0.0"
+	"engineStrict": true,
+	"peerDependencies": {
+		"@types/express": "^4.16.0",
+		"express": "^4.16.0",
+		"reflect-metadata": "^0.1.13"
 	},
 	"scripts": {
-		"build": "rimraf dist && tsc -p tsconfig.build.json",
+		"build": "ts-node -T ../build.ts",
 		"prepublishOnly": "yarn run build",
-		"test": "jest",
-		"test:watch": "jest --watch --verbose false"
+		"test": "jest --config ../jest.config.js",
+		"test:watch": "jest --config ../jest.config.js --watch --verbose false"
 	}
 }

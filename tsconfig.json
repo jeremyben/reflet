@@ -7,12 +7,12 @@
 		// "allowJs": true,
 		// "checkJs": true,
 		// "jsx": "preserve",
-		"declaration": true,
+		// "declaration": true,
 		// "declarationMap": true,
 		// "sourceMap": true,
 		// "outFile": "./",
-		// "outDir": "./dist",
-		// "rootDir": "./src",
+		"outDir": "dist",
+		// "rootDir": "src",
 		// "composite": true,
 		// "removeComments": true,
 		// "noEmit": true,
@@ -22,7 +22,7 @@
 
 		/* Strict Type-Checking Options */
 		"strict": true,
-		"noImplicitAny": false,
+		// "noImplicitAny": false,
 		// "strictNullChecks": true,
 		// "strictFunctionTypes": true,
 		// "strictPropertyInitialization": true,
@@ -32,7 +32,7 @@
 		/* Additional Checks */
 		// "noUnusedLocals": true,
 		// "noUnusedParameters": true,
-		// "noImplicitReturns": true,
+		"noImplicitReturns": true,
 		"noFallthroughCasesInSwitch": true,
 
 		/* Module Resolution Options */

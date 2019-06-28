@@ -1,22 +1,21 @@
 const { join } = require('path')
+const rootDir = process.cwd()
 
-// https://kulshekhar.github.io/ts-jest/user/config/
-module.exports = {
+/** @type {jest.InitialOptions} */
+const config = {
+	rootDir,
 	preset: 'ts-jest',
 	testEnvironment: 'node',
-
-	// https://jestjs.io/docs/en/configuration.html#testpathignorepatterns-array-string
-	testPathIgnorePatterns: ['/node_modules/', '/__tests__/shared/'],
-
+	testPathIgnorePatterns: ['/node_modules/', '/__tests__/shared/', '/dist/'],
 	// https://jestjs.io/docs/en/configuration#setupfiles-array
 	setupFiles: [join(__dirname, 'testing', 'eachfile-setup.ts')],
-
 	globals: {
 		'ts-jest': {
 			diagnostics: {
-				// https://kulshekhar.github.io/ts-jest/user/config/diagnostics
 				warnOnly: true,
 			},
 		},
 	},
 }
+
+module.exports = config

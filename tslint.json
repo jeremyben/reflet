@@ -4,16 +4,33 @@
 	"rulesDirectory": [],
 	// https://palantir.github.io/tslint/rules/
 	"rules": {
+		"variable-name": [
+			true,
+			"require-const-for-all-caps",
+			"ban-keywords",
+			"check-format",
+			"allow-pascal-case",
+			"allow-trailing-underscore"
+		],
 		"interface-name": [true, "never-prefix"],
-		"no-implicit-dependencies": [true, "optional", ["supertest", "reflect-metadata"]],
+		"no-implicit-dependencies": [true, "dev", ["supertest", "reflect-metadata"]],
 		"interface-over-type-literal": false,
 		"no-angle-bracket-type-assertion": false,
 		"no-console": false,
 		"object-literal-sort-keys": false,
 		"ordered-imports": false,
 		"member-access": false,
-		"curly": false,
-		"array-type": false,
-		"ban-types": false
+		"max-classes-per-file": false,
+		"curly": [true, "ignore-same-line"],
+		"array-type": [true, "array-simple"],
+		"prefer-object-spread": false,
+		"ban-types": [
+			true,
+			["Object", "Did you mean `object`?"],
+			["Boolean", "Did you mean `boolean`?"],
+			["Number", "Did you mean `number`?"],
+			["String", "Did you mean `string`?"],
+			["Symbol", "Did you mean `symbol`?"]
+		]
 	}
 }
