@@ -1,11 +1,11 @@
-const META = '_RENDER_'
+import META from './metadata-keys'
 
 /**
  * Defines a template to be rendered by the controller.
  */
 export function Render(template: string): MethodDecorator {
 	return (target, methodKey, descriptor) => {
-		Reflect.defineMetadata(META, template, descriptor.value!)
+		Reflect.defineMetadata(META.RENDER, template, descriptor.value!)
 		return descriptor
 	}
 }

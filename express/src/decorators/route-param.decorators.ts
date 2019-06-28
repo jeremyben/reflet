@@ -1,4 +1,4 @@
-const META = '_PARAMS_'
+import META from './metadata-keys'
 
 enum PARAM {
 	REQUEST,
@@ -19,9 +19,9 @@ type ParamMeta = {
 
 function defineMeta(type: PARAM, subKey?: string): ParameterDecorator {
 	return (target, methodKey, index) => {
-		const params: ParamMeta[] = Reflect.getOwnMetadata(META, target, methodKey) || []
+		const params: ParamMeta[] = Reflect.getOwnMetadata(META.PARAMS, target, methodKey) || []
 		params.push({ index, type, subKey })
-		Reflect.defineMetadata(META, params, target, methodKey)
+		Reflect.defineMetadata(META.PARAMS, params, target, methodKey)
 	}
 }
 
@@ -71,7 +71,7 @@ export function extractParams(
 	methodKey: string | symbol,
 	{ req, res, next }: { req: Request; res: Response; next: NextFunction }
 ) {
-	const params: ParamMeta[] | undefined = Reflect.getOwnMetadata(META, target.prototype, methodKey)
+	const params: ParamMeta[] | undefined = Reflect.getOwnMetadata(META.PARAMS, target.prototype, methodKey)
 
 	if (!params || !params.length) return [req, res, next]
 

@@ -1,4 +1,4 @@
-const META = '_ROUTES_'
+import META from './metadata-keys'
 
 enum VERB {
 	GET = 'get',
@@ -16,10 +16,9 @@ type RouteMeta = {
 
 function defineMeta(path: string | RegExp, verb: VERB): MethodDecorator {
 	return (target, methodKey, descriptor: TypedPropertyDescriptor<any>) => {
-		const routes: RouteMeta[] = Reflect.getOwnMetadata(META, target) || []
+		const routes: RouteMeta[] = Reflect.getOwnMetadata(META.ROUTES, target) || []
 		routes.push({ path, verb, methodKey })
-
-		Reflect.defineMetadata(META, routes, target)
+		Reflect.defineMetadata(META.ROUTES, routes, target)
 	}
 }
 
@@ -57,5 +56,5 @@ export const Delete = (path: string | RegExp = '') => defineMeta(path, VERB.DELE
  * Get all routes defined from the prototype (no need to create an instance)
  */
 export function getRoutesMeta(target: ClassType): RouteMeta[] {
-	return Reflect.getOwnMetadata(META, target.prototype) || []
+	return Reflect.getOwnMetadata(META.ROUTES, target.prototype) || []
 }

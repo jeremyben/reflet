@@ -1,10 +1,6 @@
-enum META {
-	USEBEFORE = '_USEBEFORE_',
-	USEAFTER = '_USEAFTER_',
-	USECATCH = '_USECATCH_',
-}
+import META from './metadata-keys'
 
-function defineMeta(when: META, middlewares: (RequestHandler | ErrorRequestHandler)[]) {
+function defineMeta(when: Symbol, middlewares: (RequestHandler | ErrorRequestHandler)[]) {
 	return (target: Object, methodKey?: string | symbol, descriptor?: TypedPropertyDescriptor<any>) => {
 		if (methodKey) {
 			Reflect.defineMetadata(when, middlewares, target, methodKey)
