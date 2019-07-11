@@ -1,4 +1,5 @@
 import META from './metadata-keys'
+import { ClassType, Request, Response, NextFunction } from '../interfaces'
 
 enum PARAM {
 	REQUEST,

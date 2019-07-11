@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { ClassType, Application } from './interfaces'
 import { promisifyHandler, promisifyErrorHandler } from './async-wrapper'
 import { getRouterMeta } from './decorators/router.decorators'
 import { getRoutesMeta } from './decorators/route.decorators'

@@ -1,4 +1,5 @@
 import META from './metadata-keys'
+import { ClassType } from '../interfaces'
 
 enum VERB {
 	GET = 'get',

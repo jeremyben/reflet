@@ -1,12 +1,13 @@
 import META from './metadata-keys'
+import { ClassType, RouterOptions } from '../interfaces'
 
-type RouterMeta = { prefix: string | RegExp; options?: import('express').RouterOptions }
+type RouterMeta = { prefix: string | RegExp; options?: RouterOptions }
 
 /**
  * @see https://expressjs.com/en/4x/api.html#express.router
  * @public
  */
-export function Router(prefix: RouterMeta['prefix'], options?: RouterMeta['options']): ClassDecorator {
+export function Router(prefix: string | RegExp, options?: RouterOptions): ClassDecorator {
 	return (target) => {
 		Reflect.defineMetadata(META.ROUTER, { prefix, options }, target)
 	}

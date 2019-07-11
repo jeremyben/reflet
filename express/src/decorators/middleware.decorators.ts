@@ -1,7 +1,8 @@
 import META from './metadata-keys'
+import { ClassType, RequestHandler, ErrorRequestHandler, GenericDecorator } from '../interfaces'
 
-function defineMeta(when: Symbol, middlewares: (RequestHandler | ErrorRequestHandler)[]) {
-	return (target: Object, methodKey?: string | symbol, descriptor?: TypedPropertyDescriptor<any>) => {
+function defineMeta(when: symbol, middlewares: (RequestHandler | ErrorRequestHandler)[]): GenericDecorator {
+	return (target, methodKey, descriptor) => {
 		if (methodKey) {
 			Reflect.defineMetadata(when, middlewares, target, methodKey)
 		} else {
