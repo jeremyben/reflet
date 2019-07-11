@@ -1,6 +1,6 @@
 import supertest from 'supertest'
 import express, { Response, Request, NextFunction, json, urlencoded } from 'express'
-import { Get, Use, Post, Router, Put, UseCatch, Req, Res, Body, Patch, register } from './'
+import { register, Router, Get, Post, Put, Patch, Use, UseCatch, Req, Res, Body, Params, Headers } from './'
 
 @Use(json(), urlencoded({ extended: true }))
 @Router('/user')
@@ -17,10 +17,12 @@ class TestRouter {
 	@UseCatch((err, req, res, next) => {
 		res.send({ err })
 	})
-	@Put()
-	async putOne(req: Request, res: Response, next: NextFunction) {
-		await new Promise((resolve) => setTimeout(resolve, 50))
-		throw 13
+	@Put('/:id')
+	async putOne(@Params params: any) {
+		await new Promise((resolve) => setTimeout(resolve, 20))
+
+		const id = Number.parseInt(params.id, 10)
+		throw id * 2
 	}
 
 	@Post()
@@ -28,9 +30,9 @@ class TestRouter {
 		res.status(200).send(req.body)
 	}
 
-	@Patch()
-	patchOne(@Res() res: Response, @Body<{ foo: number }>('foo') foo: number) {
-		res.status(200).send({ bar: foo * 3 })
+	@Patch('/:id')
+	patchOne(@Res res: Response, @Body<{ foo: number }>('foo') foo: number) {
+		res.status(200).send({ bar: foo * 2 })
 	}
 }
 
@@ -49,13 +51,13 @@ test('shared middleware (json parser)', async () => {
 	expect(res.body).toEqual({ foo: 1 })
 })
 
-test('async error handler', async () => {
-	const res = await rq.put('/user').send({ foo: 1 })
-	expect(res.body).toEqual({ err: 13 })
+test('async error handler and use of @Param', async () => {
+	const res = await rq.put('/user/25').send({ foo: 1 })
+	expect(res.body).toEqual({ err: 50 })
 })
 
-test('route params', async () => {
-	const res = await rq.patch('/user').send({ foo: 3 })
+test('Use of @Body', async () => {
+	const res = await rq.patch('/user/25').send({ foo: 5 })
 	expect(res.status).toBe(200)
-	expect(res.body).toEqual({ bar: 9 })
+	expect(res.body).toEqual({ bar: 10 })
 })

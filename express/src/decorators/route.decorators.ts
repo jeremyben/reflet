@@ -15,7 +15,50 @@ type RouteMeta = {
 	methodKey: string | symbol
 }
 
-function defineMeta(path: string | RegExp, verb: VERB): MethodDecorator {
+/**
+ * @see http://expressjs.com/en/4x/api.html#app.get.method
+ * @public
+ */
+export function Get(path: string | RegExp = '') {
+	return defineRouteMeta(path, VERB.GET)
+}
+
+/**
+ * @see http://expressjs.com/en/4x/api.html#app.post.method
+ * @public
+ */
+export function Post(path: string | RegExp = '') {
+	return defineRouteMeta(path, VERB.POST)
+}
+
+/**
+ * @see http://expressjs.com/en/4x/api.html#app.put.method
+ * @public
+ */
+export function Put(path: string | RegExp = '') {
+	return defineRouteMeta(path, VERB.PUT)
+}
+
+/**
+ * @see http://expressjs.com/en/4x/api.html#app.METHOD
+ * @public
+ */
+export function Patch(path: string | RegExp = '') {
+	return defineRouteMeta(path, VERB.PATCH)
+}
+
+/**
+ * @see http://expressjs.com/en/4x/api.html#app.delete.method
+ * @public
+ */
+export function Delete(path: string | RegExp = '') {
+	return defineRouteMeta(path, VERB.DELETE)
+}
+
+/**
+ * @internal
+ */
+function defineRouteMeta(path: string | RegExp, verb: VERB): MethodDecorator {
 	return (target, methodKey, descriptor: TypedPropertyDescriptor<any>) => {
 		const routes: RouteMeta[] = Reflect.getOwnMetadata(META.ROUTES, target) || []
 		routes.push({ path, verb, methodKey })
@@ -24,37 +67,8 @@ function defineMeta(path: string | RegExp, verb: VERB): MethodDecorator {
 }
 
 /**
- * @see http://expressjs.com/en/4x/api.html#app.get.method
- * @public
- */
-export const Get = (path: string | RegExp = '') => defineMeta(path, VERB.GET)
-
-/**
- * @see http://expressjs.com/en/4x/api.html#app.post.method
- * @public
- */
-export const Post = (path: string | RegExp = '') => defineMeta(path, VERB.POST)
-
-/**
- * @see http://expressjs.com/en/4x/api.html#app.put.method
- * @public
- */
-export const Put = (path: string | RegExp = '') => defineMeta(path, VERB.PUT)
-
-/**
- * @see http://expressjs.com/en/4x/api.html#app.METHOD
- * @public
- */
-export const Patch = (path: string | RegExp = '') => defineMeta(path, VERB.PATCH)
-
-/**
- * @see http://expressjs.com/en/4x/api.html#app.delete.method
- * @public
- */
-export const Delete = (path: string | RegExp = '') => defineMeta(path, VERB.DELETE)
-
-/**
  * Get all routes defined from the prototype (no need to create an instance)
+ * @internal
  */
 export function getRoutesMeta(target: ClassType): RouteMeta[] {
 	return Reflect.getOwnMetadata(META.ROUTES, target.prototype) || []

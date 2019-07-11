@@ -13,6 +13,9 @@ export function Router(prefix: string | RegExp, options?: RouterOptions): ClassD
 	}
 }
 
+/**
+ * @internal
+ */
 export function getRouterMeta(target: ClassType): RouterMeta | undefined {
 	return Reflect.getOwnMetadata(META.ROUTER, target)
 }

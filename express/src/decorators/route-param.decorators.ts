@@ -1,7 +1,7 @@
 import META from './metadata-keys'
 import { ClassType, Request, Response, NextFunction } from '../interfaces'
 
-enum PARAM {
+enum ROUTEPARAM {
 	REQUEST,
 	RESPONSE,
 	NEXT,
@@ -12,93 +12,259 @@ enum PARAM {
 	SESSION,
 }
 
-type ParamMeta = {
+type RouteParamMeta = {
 	index: number
-	type: PARAM
+	type: ROUTEPARAM
 	subKey?: string
 }
 
-function defineMeta(type: PARAM, subKey?: string): ParameterDecorator {
-	return (target, methodKey, index) => {
-		const params: ParamMeta[] = Reflect.getOwnMetadata(META.PARAMS, target, methodKey) || []
-		params.push({ index, type, subKey })
-		Reflect.defineMetadata(META.PARAMS, params, target, methodKey)
+/**
+ * @remarks
+ * Can be used with or without invokation:
+ * ```ts
+ * class Foo {
+ * 		get(@Req req: Request) {}
+ *
+ * 		get(@Req() req: Request) {}
+ * }
+ * ```
+ *
+ * @see https://expressjs.com/en/4x/api.html#req
+ *
+ * @decorator
+ * @public
+ */
+export function Req(...args: Parameters<ParameterDecorator>): void
+export function Req(): ParameterDecorator
+export function Req() {
+	if (arguments.length === 3 && typeof arguments[2] === 'number') {
+		return (defineRouteParamMeta(ROUTEPARAM.REQUEST) as Function)(...arguments)
+	} else {
+		return defineRouteParamMeta(ROUTEPARAM.REQUEST)
 	}
 }
 
 /**
- * @see https://expressjs.com/en/4x/api.html#req
- * @public
- */
-export const Req = () => defineMeta(PARAM.REQUEST)
-
-/**
+ * @remarks
+ * Can be used with or without invokation:
+ * ```ts
+ * class Foo {
+ * 		get(@Res res: Response) {}
+ *
+ * 		get(@Res() res: Response) {}
+ * }
+ * ```
+ *
  * @see https://expressjs.com/en/4x/api.html#res
+ *
+ * @decorator
  * @public
  */
-export const Res = () => defineMeta(PARAM.RESPONSE)
+export function Res(...args: Parameters<ParameterDecorator>): void
+export function Res(): ParameterDecorator
+export function Res() {
+	if (arguments.length === 3 && typeof arguments[2] === 'number') {
+		return (defineRouteParamMeta(ROUTEPARAM.RESPONSE) as Function)(...arguments)
+	} else {
+		return defineRouteParamMeta(ROUTEPARAM.RESPONSE)
+	}
+}
 
 /**
+ * @remarks
+ * Can be used with or without invokation:
+ * ```ts
+ * class Foo {
+ * 		get(@Next next: NextFunction) {}
+ *
+ * 		get(@Next() next: NextFunction) {}
+ * }
+ * ```
+ *
  * @see https://expressjs.com/en/guide/writing-middleware.html
+ *
+ * @decorator
  * @public
  */
-export const Next = () => defineMeta(PARAM.NEXT)
+export function Next(...args: Parameters<ParameterDecorator>): void
+export function Next(): ParameterDecorator
+export function Next() {
+	if (arguments.length === 3 && typeof arguments[2] === 'number') {
+		return (defineRouteParamMeta(ROUTEPARAM.NEXT) as Function)(...arguments)
+	} else {
+		return defineRouteParamMeta(ROUTEPARAM.NEXT)
+	}
+}
 
 /**
+ * @remarks
+ * Can be used with or without invokation, and with the possibility to directly retrieve a sub property:
+ * ```ts
+ * class Foo {
+ * 		post(@Body body: object) {}
+ *
+ * 		post(@Body() body: object) {}
+ *
+ * 		post(@Body('email') email: string) {}
+ * }
+ * ```
+ *
  * @see https://expressjs.com/en/4x/api.html#req.body
+ *
+ * @decorator
  * @public
  */
-export const Body = <T = object>(key?: keyof T) => defineMeta(PARAM.BODY, key as string | undefined)
+export function Body(...args: Parameters<ParameterDecorator>): void
+export function Body<T = object>(subKey?: keyof T): ParameterDecorator
+export function Body<T = object>(
+	subKeyOrTarget?: keyof T | object,
+	propertyKey?: string | symbol,
+	parameterIndex?: number
+) {
+	if (arguments.length === 3 && typeof subKeyOrTarget === 'object') {
+		return defineRouteParamMeta(ROUTEPARAM.BODY, undefined)(subKeyOrTarget, propertyKey!, parameterIndex!)
+	} else {
+		return defineRouteParamMeta(ROUTEPARAM.BODY, subKeyOrTarget as string | undefined)
+	}
+}
 
 /**
+ * @remarks
+ * Can be used with or without invokation, and with the possibility to directly retrieve a single param:
+ * ```ts
+ * class Foo {
+ * 		@Post('/:col/:id')
+ * 		post(@Params params: { col: string; id: string }) {}
+ *
+ * 		@Post('/:col/:id')
+ * 		post(@Params() params: { col: string; id: string }) {}
+ *
+ * 		@Post('/:col/:id')
+ * 		post(@Params('col') col: string, @Params('id') id: string) {}
+ * }
+ * ```
+ *
  * @see https://expressjs.com/en/4x/api.html#req.params
+ *
+ * @decorator
  * @public
  */
-export const Param = (key?: string) => defineMeta(PARAM.PARAM, key)
+export function Params(...args: Parameters<ParameterDecorator>): void
+export function Params(subKey?: string): ParameterDecorator
+export function Params(
+	subKeyOrTarget?: string | object,
+	propertyKey?: string | symbol,
+	parameterIndex?: number
+) {
+	if (arguments.length === 3 && typeof subKeyOrTarget === 'object') {
+		return defineRouteParamMeta(ROUTEPARAM.PARAM, undefined)(
+			subKeyOrTarget,
+			propertyKey!,
+			parameterIndex!
+		)
+	} else {
+		return defineRouteParamMeta(ROUTEPARAM.PARAM, subKeyOrTarget as string | undefined)
+	}
+}
 
 /**
  * @see https://expressjs.com/en/4x/api.html#req.query
+ *
+ * @decorator
  * @public
  */
-export const Query = (key?: string) => defineMeta(PARAM.QUERY, key)
+export function Query(...args: Parameters<ParameterDecorator>): void
+export function Query(subKey?: string): ParameterDecorator
+export function Query(
+	subKeyOrTarget?: string | object,
+	propertyKey?: string | symbol,
+	parameterIndex?: number
+) {
+	if (arguments.length === 3 && typeof subKeyOrTarget === 'object') {
+		return defineRouteParamMeta(ROUTEPARAM.QUERY, undefined)(
+			subKeyOrTarget,
+			propertyKey!,
+			parameterIndex!
+		)
+	} else {
+		return defineRouteParamMeta(ROUTEPARAM.QUERY, subKeyOrTarget as string | undefined)
+	}
+}
 
 /**
+ * @decorator
  * @public
  */
-export const Headers = (key?: string) => defineMeta(PARAM.HEADERS, key)
+export function Headers(...args: Parameters<ParameterDecorator>): void
+export function Headers(subKey?: string): ParameterDecorator
+export function Headers(
+	subKeyOrTarget?: string | object,
+	propertyKey?: string | symbol,
+	parameterIndex?: number
+) {
+	if (arguments.length === 3 && typeof subKeyOrTarget === 'object') {
+		return defineRouteParamMeta(ROUTEPARAM.HEADERS, undefined)(
+			subKeyOrTarget,
+			propertyKey!,
+			parameterIndex!
+		)
+	} else {
+		return defineRouteParamMeta(ROUTEPARAM.HEADERS, subKeyOrTarget as string | undefined)
+	}
+}
 
+/**
+ * @internal
+ */
+function defineRouteParamMeta(type: ROUTEPARAM, subKey?: string): ParameterDecorator {
+	return (target, methodKey, index) => {
+		const params: RouteParamMeta[] = Reflect.getOwnMetadata(META.ROUTEPARAMS, target, methodKey) || []
+		params.push({ index, type, subKey })
+		Reflect.defineMetadata(META.ROUTEPARAMS, params, target, methodKey)
+	}
+}
+
+/**
+ *
+ * @internal
+ */
 export function extractParams(
 	target: ClassType,
 	methodKey: string | symbol,
 	{ req, res, next }: { req: Request; res: Response; next: NextFunction }
 ) {
-	const params: ParamMeta[] | undefined = Reflect.getOwnMetadata(META.PARAMS, target.prototype, methodKey)
+	const params: RouteParamMeta[] | undefined = Reflect.getOwnMetadata(
+		META.ROUTEPARAMS,
+		target.prototype,
+		methodKey
+	)
 
+	// No decorator found in the method: simply return the original arguments in the original order
 	if (!params || !params.length) return [req, res, next]
 
 	const args: any[] = []
 
 	for (const { type, index, subKey } of params) {
 		switch (type) {
-			case PARAM.REQUEST:
+			case ROUTEPARAM.REQUEST:
 				args[index] = req
 				break
-			case PARAM.RESPONSE:
+			case ROUTEPARAM.RESPONSE:
 				args[index] = res
 				break
-			case PARAM.NEXT:
+			case ROUTEPARAM.NEXT:
 				args[index] = next
 				break
-			case PARAM.BODY:
+			case ROUTEPARAM.BODY:
 				args[index] = subKey ? req.body[subKey] : req.body
 				break
-			case PARAM.PARAM:
+			case ROUTEPARAM.PARAM:
 				args[index] = subKey ? req.params[subKey] : req.params
 				break
-			case PARAM.QUERY:
+			case ROUTEPARAM.QUERY:
 				args[index] = subKey ? req.query[subKey] : req.query
 				break
-			case PARAM.HEADERS:
+			case ROUTEPARAM.HEADERS:
 				args[index] = subKey ? req.headers[subKey] : req.headers
 				break
 			default:
