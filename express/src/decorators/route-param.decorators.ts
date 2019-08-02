@@ -260,13 +260,14 @@ function defineRouteParamMeta(type: RouteParam, subKey?: string): ParameterDecor
 }
 
 /**
+ * Intercepts a decorated handler execution and extract the Request, Response, Next arguments, and the Request properties.
  * @internal
  */
 export function extractRouteParams(
 	target: ClassType,
 	methodKey: string | symbol,
 	{ req, res, next }: { req: Request; res: Response; next: NextFunction }
-) {
+): any[] {
 	const params: RouteParamMeta[] | undefined = Reflect.getOwnMetadata(
 		Meta.RouteParams,
 		target.prototype,
@@ -307,4 +308,20 @@ export function extractRouteParams(
 	}
 
 	return args
+}
+
+/**
+ * Checks that the given route use the `@Body` decorator, so we know we must apply the body-parser middleware.
+ * @internal
+ */
+export function hasBodyParam(target: ClassType, methodKey: string | symbol): boolean {
+	const params: RouteParamMeta[] | undefined = Reflect.getOwnMetadata(
+		Meta.RouteParams,
+		target.prototype,
+		methodKey
+	)
+
+	if (!params) return false
+
+	return params.some((param) => param.type === RouteParam.Body)
 }

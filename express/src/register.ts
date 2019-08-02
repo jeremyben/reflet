@@ -1,9 +1,9 @@
-import { Router } from 'express'
+import { Router, json, urlencoded } from 'express'
 import { ClassType, Application } from './interfaces'
 import { promisifyHandler, promisifyErrorHandler } from './async-wrapper'
 import { getRouterMeta } from './decorators/router.decorators'
 import { getRoutesMeta } from './decorators/route.decorators'
-import { extractRouteParams } from './decorators/route-param.decorators'
+import { extractRouteParams, hasBodyParam } from './decorators/route-param.decorators'
 import {
 	getBeforeMiddlewares,
 	getAfterMiddlewares,
@@ -59,9 +59,14 @@ function attach(expressInstance: Application | Router, routingClass: ClassType) 
 			return routingClass.prototype[methodKey].apply(routingClass.prototype, args)
 		})
 
+		const bodyParserMwares = hasBodyParam(routingClass, methodKey)
+			? [json(), urlencoded({ extended: true })]
+			: []
+
 		if (isRouter) {
 			expressInstance[verb](
 				path,
+				...bodyParserMwares,
 				...routeMwares.map(promisifyHandler),
 				routeHandler,
 				...afterRouteMwares.map(promisifyHandler),
@@ -70,6 +75,7 @@ function attach(expressInstance: Application | Router, routingClass: ClassType) 
 		} else {
 			expressInstance[verb](
 				path,
+				...bodyParserMwares,
 				...sharedMwares.map(promisifyHandler),
 				...routeMwares.map(promisifyHandler),
 				routeHandler,

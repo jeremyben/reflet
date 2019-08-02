@@ -1,22 +1,25 @@
 import supertest from 'supertest'
-import express, { Response, Request, NextFunction, json, urlencoded } from 'express'
+import express, { Response, Request, NextFunction } from 'express'
 import { register, Router, Get, Post, Put, Patch, Use, UseCatch, Req, Res, Body, Params, Headers } from './'
+import { IncomingHttpHeaders } from 'http'
 
-@Use(json(), urlencoded({ extended: true }))
+@Use((req, res, next) => {
+	req.headers.shared = 'shared'
+	next()
+})
 @Router('/user')
 class TestRouter {
 	@Use((req, res, next) => {
-		req.headers.via = 'foo'
+		req.headers.route = 'route'
 		next()
 	})
 	@Get()
-	async getOne(req: Request, res: Response, next: NextFunction) {
-		res.status(200).send(req.headers.via)
+	async getOne(@Res res: Response, @Headers headers: IncomingHttpHeaders) {
+		const { shared, route } = headers
+		res.send({ shared, route })
 	}
 
-	@UseCatch((err, req, res, next) => {
-		res.send({ err })
-	})
+	@UseCatch((err, req, res, next) => res.send({ err }))
 	@Put('/:id')
 	async putOne(@Params params: any) {
 		await new Promise((resolve) => setTimeout(resolve, 20))
@@ -27,12 +30,12 @@ class TestRouter {
 
 	@Post()
 	postOne(req: Request, res: Response, next: NextFunction) {
-		res.status(200).send(req.body)
+		res.send('ok')
 	}
 
 	@Patch('/:id')
-	patchOne(@Res res: Response, @Body<{ foo: number }>('foo') foo: number) {
-		res.status(200).send({ bar: foo * 2 })
+	patchOne(@Res() res: Response, @Body<{ foo: number }>('foo') foo: number) {
+		res.send({ bar: foo * 2 })
 	}
 }
 
@@ -40,23 +43,18 @@ const app = express()
 const rq = supertest(app)
 register(app, [TestRouter])
 
-test('route middleware', async () => {
+test('shared and route middlewares, use of @Headers', async () => {
 	const res = await rq.get('/user')
 	expect(res.status).toBe(200)
-	expect(res.text).toBe('foo')
+	expect(res.body).toEqual({ route: 'route', shared: 'shared' })
 })
 
-test('shared middleware (json parser)', async () => {
-	const res = await rq.post('/user').send({ foo: 1 })
-	expect(res.body).toEqual({ foo: 1 })
-})
-
-test('async error handler and use of @Param', async () => {
+test('async error handler, use of @Param', async () => {
 	const res = await rq.put('/user/25').send({ foo: 1 })
 	expect(res.body).toEqual({ err: 50 })
 })
 
-test('Use of @Body', async () => {
+test('use of @Body with auto body-parser', async () => {
 	const res = await rq.patch('/user/25').send({ foo: 5 })
 	expect(res.status).toBe(200)
 	expect(res.body).toEqual({ bar: 10 })
