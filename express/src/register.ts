@@ -74,8 +74,8 @@ function attach(expressInstance: Application | Router, routingClass: ClassType) 
 				...routeMwares.map(promisifyHandler),
 				routeHandler,
 				...afterRouteMwares.map(promisifyHandler),
-				...afterSharedMwares.map(promisifyHandler),
 				...catchRouteMwares.map(promisifyErrorHandler),
+				...afterSharedMwares.map(promisifyHandler),
 				...catchSharedMwares.map(promisifyErrorHandler)
 			)
 		}
