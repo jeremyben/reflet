@@ -1,7 +1,8 @@
+import { IncomingHttpHeaders } from 'http'
+import { performance } from 'perf_hooks'
 import supertest from 'supertest'
 import express, { Response, Request, NextFunction } from 'express'
 import { register, Router, Get, Post, Put, Patch, Use, UseCatch, Req, Res, Body, Params, Headers } from './'
-import { IncomingHttpHeaders } from 'http'
 
 @Use((req, res, next) => {
 	req.headers.shared = 'shared'
@@ -41,7 +42,10 @@ class TestRouter {
 
 const app = express()
 const rq = supertest(app)
+
+const t1 = performance.now()
 register(app, [TestRouter])
+console.info(`register in ${(performance.now() - t1).toFixed(4)} ms`)
 
 test('shared and route middlewares, use of @Headers', async () => {
 	const res = await rq.get('/user')
