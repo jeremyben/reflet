@@ -1,20 +1,20 @@
-import META from './metadata-keys'
+import Meta from './metadata-keys'
 import { ClassType, Request, Response, NextFunction } from '../interfaces'
 
-enum ROUTEPARAM {
-	REQUEST,
-	RESPONSE,
-	NEXT,
-	BODY,
-	QUERY,
-	PARAM,
-	HEADERS,
-	SESSION,
+enum RouteParam {
+	Request,
+	Response,
+	Next,
+	Body,
+	Query,
+	Param,
+	Headers,
+	Session,
 }
 
 type RouteParamMeta = {
 	index: number
-	type: ROUTEPARAM
+	type: RouteParam
 	subKey?: string
 }
 
@@ -35,12 +35,17 @@ type RouteParamMeta = {
  * @public
  */
 export function Req(...args: Parameters<ParameterDecorator>): void
+
+/**
+ * {@inheritDoc (Req:1)}
+ */
 export function Req(): ParameterDecorator
+
 export function Req() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
-		return (defineRouteParamMeta(ROUTEPARAM.REQUEST) as Function)(...arguments)
+		return (defineRouteParamMeta(RouteParam.Request) as Function)(...arguments)
 	} else {
-		return defineRouteParamMeta(ROUTEPARAM.REQUEST)
+		return defineRouteParamMeta(RouteParam.Request)
 	}
 }
 
@@ -61,12 +66,17 @@ export function Req() {
  * @public
  */
 export function Res(...args: Parameters<ParameterDecorator>): void
+
+/**
+ * {@inheritDoc (Res:1)}
+ */
 export function Res(): ParameterDecorator
+
 export function Res() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
-		return (defineRouteParamMeta(ROUTEPARAM.RESPONSE) as Function)(...arguments)
+		return (defineRouteParamMeta(RouteParam.Response) as Function)(...arguments)
 	} else {
-		return defineRouteParamMeta(ROUTEPARAM.RESPONSE)
+		return defineRouteParamMeta(RouteParam.Response)
 	}
 }
 
@@ -87,12 +97,17 @@ export function Res() {
  * @public
  */
 export function Next(...args: Parameters<ParameterDecorator>): void
+
+/**
+ * {@inheritDoc (Next:1)}
+ */
 export function Next(): ParameterDecorator
+
 export function Next() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
-		return (defineRouteParamMeta(ROUTEPARAM.NEXT) as Function)(...arguments)
+		return (defineRouteParamMeta(RouteParam.Next) as Function)(...arguments)
 	} else {
-		return defineRouteParamMeta(ROUTEPARAM.NEXT)
+		return defineRouteParamMeta(RouteParam.Next)
 	}
 }
 
@@ -115,16 +130,21 @@ export function Next() {
  * @public
  */
 export function Body(...args: Parameters<ParameterDecorator>): void
+
+/**
+ * {@inheritDoc (Body:1)}
+ */
 export function Body<T = object>(subKey?: keyof T): ParameterDecorator
+
 export function Body<T = object>(
 	subKeyOrTarget?: keyof T | object,
 	propertyKey?: string | symbol,
 	parameterIndex?: number
 ) {
 	if (arguments.length === 3 && typeof subKeyOrTarget === 'object') {
-		return defineRouteParamMeta(ROUTEPARAM.BODY, undefined)(subKeyOrTarget, propertyKey!, parameterIndex!)
+		return defineRouteParamMeta(RouteParam.Body, undefined)(subKeyOrTarget, propertyKey!, parameterIndex!)
 	} else {
-		return defineRouteParamMeta(ROUTEPARAM.BODY, subKeyOrTarget as string | undefined)
+		return defineRouteParamMeta(RouteParam.Body, subKeyOrTarget as string | undefined)
 	}
 }
 
@@ -150,20 +170,25 @@ export function Body<T = object>(
  * @public
  */
 export function Params(...args: Parameters<ParameterDecorator>): void
+
+/**
+ * {@inheritDoc (Params:1)}
+ */
 export function Params(subKey?: string): ParameterDecorator
+
 export function Params(
 	subKeyOrTarget?: string | object,
 	propertyKey?: string | symbol,
 	parameterIndex?: number
 ) {
 	if (arguments.length === 3 && typeof subKeyOrTarget === 'object') {
-		return defineRouteParamMeta(ROUTEPARAM.PARAM, undefined)(
+		return defineRouteParamMeta(RouteParam.Param, undefined)(
 			subKeyOrTarget,
 			propertyKey!,
 			parameterIndex!
 		)
 	} else {
-		return defineRouteParamMeta(ROUTEPARAM.PARAM, subKeyOrTarget as string | undefined)
+		return defineRouteParamMeta(RouteParam.Param, subKeyOrTarget as string | undefined)
 	}
 }
 
@@ -174,20 +199,25 @@ export function Params(
  * @public
  */
 export function Query(...args: Parameters<ParameterDecorator>): void
+
+/**
+ * {@inheritDoc (Query:1)}
+ */
 export function Query(subKey?: string): ParameterDecorator
+
 export function Query(
 	subKeyOrTarget?: string | object,
 	propertyKey?: string | symbol,
 	parameterIndex?: number
 ) {
 	if (arguments.length === 3 && typeof subKeyOrTarget === 'object') {
-		return defineRouteParamMeta(ROUTEPARAM.QUERY, undefined)(
+		return defineRouteParamMeta(RouteParam.Query, undefined)(
 			subKeyOrTarget,
 			propertyKey!,
 			parameterIndex!
 		)
 	} else {
-		return defineRouteParamMeta(ROUTEPARAM.QUERY, subKeyOrTarget as string | undefined)
+		return defineRouteParamMeta(RouteParam.Query, subKeyOrTarget as string | undefined)
 	}
 }
 
@@ -196,45 +226,49 @@ export function Query(
  * @public
  */
 export function Headers(...args: Parameters<ParameterDecorator>): void
+
+/**
+ * {@inheritDoc (Headers:1)}
+ */
 export function Headers(subKey?: string): ParameterDecorator
+
 export function Headers(
 	subKeyOrTarget?: string | object,
 	propertyKey?: string | symbol,
 	parameterIndex?: number
 ) {
 	if (arguments.length === 3 && typeof subKeyOrTarget === 'object') {
-		return defineRouteParamMeta(ROUTEPARAM.HEADERS, undefined)(
+		return defineRouteParamMeta(RouteParam.Headers, undefined)(
 			subKeyOrTarget,
 			propertyKey!,
 			parameterIndex!
 		)
 	} else {
-		return defineRouteParamMeta(ROUTEPARAM.HEADERS, subKeyOrTarget as string | undefined)
+		return defineRouteParamMeta(RouteParam.Headers, subKeyOrTarget as string | undefined)
 	}
 }
 
 /**
  * @internal
  */
-function defineRouteParamMeta(type: ROUTEPARAM, subKey?: string): ParameterDecorator {
+function defineRouteParamMeta(type: RouteParam, subKey?: string): ParameterDecorator {
 	return (target, methodKey, index) => {
-		const params: RouteParamMeta[] = Reflect.getOwnMetadata(META.ROUTEPARAMS, target, methodKey) || []
+		const params: RouteParamMeta[] = Reflect.getOwnMetadata(Meta.RouteParams, target, methodKey) || []
 		params.push({ index, type, subKey })
-		Reflect.defineMetadata(META.ROUTEPARAMS, params, target, methodKey)
+		Reflect.defineMetadata(Meta.RouteParams, params, target, methodKey)
 	}
 }
 
 /**
- *
  * @internal
  */
-export function extractParams(
+export function extractRouteParams(
 	target: ClassType,
 	methodKey: string | symbol,
 	{ req, res, next }: { req: Request; res: Response; next: NextFunction }
 ) {
 	const params: RouteParamMeta[] | undefined = Reflect.getOwnMetadata(
-		META.ROUTEPARAMS,
+		Meta.RouteParams,
 		target.prototype,
 		methodKey
 	)
@@ -246,25 +280,25 @@ export function extractParams(
 
 	for (const { type, index, subKey } of params) {
 		switch (type) {
-			case ROUTEPARAM.REQUEST:
+			case RouteParam.Request:
 				args[index] = req
 				break
-			case ROUTEPARAM.RESPONSE:
+			case RouteParam.Response:
 				args[index] = res
 				break
-			case ROUTEPARAM.NEXT:
+			case RouteParam.Next:
 				args[index] = next
 				break
-			case ROUTEPARAM.BODY:
+			case RouteParam.Body:
 				args[index] = subKey ? req.body[subKey] : req.body
 				break
-			case ROUTEPARAM.PARAM:
+			case RouteParam.Param:
 				args[index] = subKey ? req.params[subKey] : req.params
 				break
-			case ROUTEPARAM.QUERY:
+			case RouteParam.Query:
 				args[index] = subKey ? req.query[subKey] : req.query
 				break
-			case ROUTEPARAM.HEADERS:
+			case RouteParam.Headers:
 				args[index] = subKey ? req.headers[subKey] : req.headers
 				break
 			default:

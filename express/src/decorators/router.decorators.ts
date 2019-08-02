@@ -1,4 +1,4 @@
-import META from './metadata-keys'
+import Meta from './metadata-keys'
 import { ClassType, RouterOptions } from '../interfaces'
 
 type RouterMeta = { prefix: string | RegExp; options?: RouterOptions }
@@ -9,7 +9,7 @@ type RouterMeta = { prefix: string | RegExp; options?: RouterOptions }
  */
 export function Router(prefix: string | RegExp, options?: RouterOptions): ClassDecorator {
 	return (target) => {
-		Reflect.defineMetadata(META.ROUTER, { prefix, options }, target)
+		Reflect.defineMetadata(Meta.Router, { prefix, options }, target)
 	}
 }
 
@@ -17,5 +17,5 @@ export function Router(prefix: string | RegExp, options?: RouterOptions): ClassD
  * @internal
  */
 export function getRouterMeta(target: ClassType): RouterMeta | undefined {
-	return Reflect.getOwnMetadata(META.ROUTER, target)
+	return Reflect.getOwnMetadata(Meta.Router, target)
 }

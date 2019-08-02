@@ -1,5 +1,5 @@
 /**
- * Defines a JS class type.
+ * Defines a class type. Does the opposite of built-in `InstanceType`.
  * @public
  */
 export type ClassType<T = any> = new (...args: any[]) => T
@@ -14,6 +14,7 @@ export type GenericDecorator = (
 	descriptorOrIndex?: TypedPropertyDescriptor<any> | number
 ) => any
 
+// Centralize Express types
 export type Application = import('express').Application
 export type RouterOptions = import('express').RouterOptions
 export type Request = import('express').Request

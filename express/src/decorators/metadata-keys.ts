@@ -1,14 +1,14 @@
 /**
  * @internal
  */
-const META = {
-	ROUTES: Symbol('routes'),
-	ROUTER: Symbol('router'),
-	ROUTEPARAMS: Symbol('route-params'),
-	USEBEFORE: Symbol('use-before'),
-	USEAFTER: Symbol('use-after'),
-	USECATCH: Symbol('use-catch'),
-	RENDER: Symbol('render'),
+const Meta = <const>{
+	Routes: Symbol('routes'),
+	Router: Symbol('router'),
+	RouteParams: Symbol('route-params'),
+	UseBefore: Symbol('use-before'),
+	UseAfter: Symbol('use-after'),
+	UseCatch: Symbol('use-catch'),
+	Render: Symbol('render'),
 }
 
-export default META
+export default Meta

@@ -1,4 +1,4 @@
-import META from './metadata-keys'
+import Meta from './metadata-keys'
 import { ClassType, RequestHandler, ErrorRequestHandler, GenericDecorator } from '../interfaces'
 
 /**
@@ -6,7 +6,7 @@ import { ClassType, RequestHandler, ErrorRequestHandler, GenericDecorator } from
  * @public
  */
 export function UseBefore(...middlewares: RequestHandler[]) {
-	return defineMiddlewareMeta(META.USEBEFORE, middlewares)
+	return defineMiddlewareMeta(Meta.UseBefore, middlewares)
 }
 
 export { UseBefore as Use }
@@ -16,7 +16,7 @@ export { UseBefore as Use }
  * @public
  */
 export function UseAfter(...middlewares: RequestHandler[]) {
-	return defineMiddlewareMeta(META.USEAFTER, middlewares)
+	return defineMiddlewareMeta(Meta.UseAfter, middlewares)
 }
 
 /**
@@ -24,7 +24,7 @@ export function UseAfter(...middlewares: RequestHandler[]) {
  * @public
  */
 export function UseCatch(...errorMiddlewares: ErrorRequestHandler[]) {
-	return defineMiddlewareMeta(META.USECATCH, errorMiddlewares)
+	return defineMiddlewareMeta(Meta.UseCatch, errorMiddlewares)
 }
 
 /**
@@ -32,7 +32,7 @@ export function UseCatch(...errorMiddlewares: ErrorRequestHandler[]) {
  */
 function defineMiddlewareMeta(
 	type: symbol,
-	middlewares: (RequestHandler | ErrorRequestHandler)[]
+	middlewares: Array<RequestHandler | ErrorRequestHandler>
 ): GenericDecorator {
 	return (target, methodKey, descriptor) => {
 		// Method middleware
@@ -45,32 +45,29 @@ function defineMiddlewareMeta(
 /**
  * @internal
  */
-export function getBeforeMiddlewaresMeta(target: ClassType, methodKey?: string | symbol): RequestHandler[] {
+export function getBeforeMiddlewares(target: ClassType, methodKey?: string | symbol): RequestHandler[] {
 	// Method middlewares
-	if (methodKey) return Reflect.getOwnMetadata(META.USEBEFORE, target.prototype, methodKey) || []
+	if (methodKey) return Reflect.getOwnMetadata(Meta.UseBefore, target.prototype, methodKey) || []
 	// Class middlewares
-	return Reflect.getOwnMetadata(META.USEBEFORE, target) || []
+	return Reflect.getOwnMetadata(Meta.UseBefore, target) || []
 }
 
 /**
  * @internal
  */
-export function getAfterMiddlewaresMeta(target: ClassType, methodKey?: string | symbol): RequestHandler[] {
+export function getAfterMiddlewares(target: ClassType, methodKey?: string | symbol): RequestHandler[] {
 	// Method middlewares
-	if (methodKey) return Reflect.getOwnMetadata(META.USEAFTER, target.prototype, methodKey) || []
+	if (methodKey) return Reflect.getOwnMetadata(Meta.UseAfter, target.prototype, methodKey) || []
 	// Class middlewares
-	return Reflect.getOwnMetadata(META.USEAFTER, target) || []
+	return Reflect.getOwnMetadata(Meta.UseAfter, target) || []
 }
 
 /**
  * @internal
  */
-export function getCatchMiddlewaresMeta(
-	target: ClassType,
-	methodKey?: string | symbol
-): ErrorRequestHandler[] {
+export function getCatchMiddlewares(target: ClassType, methodKey?: string | symbol): ErrorRequestHandler[] {
 	// Method middlewares
-	if (methodKey) return Reflect.getOwnMetadata(META.USECATCH, target.prototype, methodKey) || []
+	if (methodKey) return Reflect.getOwnMetadata(Meta.UseCatch, target.prototype, methodKey) || []
 	// Class middlewares
-	return Reflect.getOwnMetadata(META.USECATCH, target) || []
+	return Reflect.getOwnMetadata(Meta.UseCatch, target) || []
 }

@@ -1,17 +1,20 @@
-import META from './metadata-keys'
+import Meta from './metadata-keys'
 import { ClassType } from '../interfaces'
 
-enum VERB {
-	GET = 'get',
-	POST = 'post',
-	PUT = 'put',
-	PATCH = 'patch',
-	DELETE = 'delete',
+/**
+ * Must match the express methods.
+ */
+enum Verb {
+	Get = 'get',
+	Post = 'post',
+	Put = 'put',
+	Patch = 'patch',
+	Delete = 'delete',
 }
 
 type RouteMeta = {
 	path: string | RegExp
-	verb: VERB
+	verb: Verb
 	methodKey: string | symbol
 }
 
@@ -20,7 +23,7 @@ type RouteMeta = {
  * @public
  */
 export function Get(path: string | RegExp = '') {
-	return defineRouteMeta(path, VERB.GET)
+	return defineRouteMeta(path, Verb.Get)
 }
 
 /**
@@ -28,7 +31,7 @@ export function Get(path: string | RegExp = '') {
  * @public
  */
 export function Post(path: string | RegExp = '') {
-	return defineRouteMeta(path, VERB.POST)
+	return defineRouteMeta(path, Verb.Post)
 }
 
 /**
@@ -36,7 +39,7 @@ export function Post(path: string | RegExp = '') {
  * @public
  */
 export function Put(path: string | RegExp = '') {
-	return defineRouteMeta(path, VERB.PUT)
+	return defineRouteMeta(path, Verb.Put)
 }
 
 /**
@@ -44,7 +47,7 @@ export function Put(path: string | RegExp = '') {
  * @public
  */
 export function Patch(path: string | RegExp = '') {
-	return defineRouteMeta(path, VERB.PATCH)
+	return defineRouteMeta(path, Verb.Patch)
 }
 
 /**
@@ -52,17 +55,17 @@ export function Patch(path: string | RegExp = '') {
  * @public
  */
 export function Delete(path: string | RegExp = '') {
-	return defineRouteMeta(path, VERB.DELETE)
+	return defineRouteMeta(path, Verb.Delete)
 }
 
 /**
  * @internal
  */
-function defineRouteMeta(path: string | RegExp, verb: VERB): MethodDecorator {
+function defineRouteMeta(path: string | RegExp, verb: Verb): MethodDecorator {
 	return (target, methodKey, descriptor: TypedPropertyDescriptor<any>) => {
-		const routes: RouteMeta[] = Reflect.getOwnMetadata(META.ROUTES, target) || []
+		const routes: RouteMeta[] = Reflect.getOwnMetadata(Meta.Routes, target) || []
 		routes.push({ path, verb, methodKey })
-		Reflect.defineMetadata(META.ROUTES, routes, target)
+		Reflect.defineMetadata(Meta.Routes, routes, target)
 	}
 }
 
@@ -71,5 +74,5 @@ function defineRouteMeta(path: string | RegExp, verb: VERB): MethodDecorator {
  * @internal
  */
 export function getRoutesMeta(target: ClassType): RouteMeta[] {
-	return Reflect.getOwnMetadata(META.ROUTES, target.prototype) || []
+	return Reflect.getOwnMetadata(Meta.Routes, target.prototype) || []
 }

@@ -3,12 +3,12 @@ import { ClassType, Application } from './interfaces'
 import { promisifyHandler, promisifyErrorHandler } from './async-wrapper'
 import { getRouterMeta } from './decorators/router.decorators'
 import { getRoutesMeta } from './decorators/route.decorators'
+import { extractRouteParams } from './decorators/route-param.decorators'
 import {
-	getBeforeMiddlewaresMeta,
-	getAfterMiddlewaresMeta,
-	getCatchMiddlewaresMeta,
+	getBeforeMiddlewares,
+	getAfterMiddlewares,
+	getCatchMiddlewares,
 } from './decorators/middleware.decorators'
-import { extractParams } from './decorators/route-param.decorators'
 
 /**
  * Register routing classes into an express application.
@@ -30,29 +30,33 @@ export function register(expressApp: Application, routingClasses: ClassType[]) {
 	}
 }
 
+/**
+ * Attach a single routing class and all its middlewares/handlers to an express app or router.
+ * @internal
+ */
 function attach(expressInstance: Application | Router, routingClass: ClassType) {
 	const isRouter = expressInstance.name === 'router'
 
 	const routes = getRoutesMeta(routingClass)
-	const sharedMwares = getBeforeMiddlewaresMeta(routingClass)
-	const afterSharedMwares = getAfterMiddlewaresMeta(routingClass)
-	const catchSharedMwares = getCatchMiddlewaresMeta(routingClass)
+	const sharedMwares = getBeforeMiddlewares(routingClass)
+	const afterSharedMwares = getAfterMiddlewares(routingClass)
+	const catchSharedMwares = getCatchMiddlewares(routingClass)
 
-	// apply shared middlewares to the router instance or to each of the routes if we attach the controller to an app instance
+	// apply shared middlewares to the router instance
+	// or to each of the routes if we attach the controller to an app instance
 
 	if (isRouter) {
 		for (const mware of sharedMwares) expressInstance.use(promisifyHandler(mware))
 	}
 
 	for (const { path, verb, methodKey } of routes) {
-		const routeMwares = getBeforeMiddlewaresMeta(routingClass, methodKey)
-		const afterRouteMwares = getAfterMiddlewaresMeta(routingClass, methodKey)
-		const catchRouteMwares = getCatchMiddlewaresMeta(routingClass, methodKey)
+		const routeMwares = getBeforeMiddlewares(routingClass, methodKey)
+		const afterRouteMwares = getAfterMiddlewares(routingClass, methodKey)
+		const catchRouteMwares = getCatchMiddlewares(routingClass, methodKey)
 
 		const routeHandler = promisifyHandler((req, res, next) => {
-			const args = extractParams(routingClass, methodKey, { req, res, next })
-			const result = routingClass.prototype[methodKey].apply(routingClass.prototype, args)
-			return result
+			const args = extractRouteParams(routingClass, methodKey, { req, res, next })
+			return routingClass.prototype[methodKey].apply(routingClass.prototype, args)
 		})
 
 		if (isRouter) {
