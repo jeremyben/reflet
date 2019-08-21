@@ -10,6 +10,9 @@ enum Verb {
 	Put = 'put',
 	Patch = 'patch',
 	Delete = 'delete',
+	Head = 'head',
+	Options = 'options',
+	All = 'all',
 }
 
 type RouteMeta = {
@@ -56,6 +59,30 @@ export function Patch(path: string | RegExp = '') {
  */
 export function Delete(path: string | RegExp = '') {
 	return defineRouteMeta(path, Verb.Delete)
+}
+
+/**
+ * @see http://expressjs.com/en/4x/api.html#app.METHOD
+ * @public
+ */
+export function Head(path: string | RegExp = '') {
+	return defineRouteMeta(path, Verb.Head)
+}
+
+/**
+ * @see http://expressjs.com/en/4x/api.html#app.METHOD
+ * @public
+ */
+export function Options(path: string | RegExp = '') {
+	return defineRouteMeta(path, Verb.Options)
+}
+
+/**
+ * @see http://expressjs.com/en/4x/api.html#app.all
+ * @public
+ */
+export function All(path: string | RegExp = '') {
+	return defineRouteMeta(path, Verb.All)
 }
 
 /**
