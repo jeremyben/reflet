@@ -1,4 +1,3 @@
-import { IncomingHttpHeaders } from 'http'
 import { performance } from 'perf_hooks'
 import supertest from 'supertest'
 import express, { Response, Request, NextFunction } from 'express'
@@ -11,13 +10,12 @@ import { register, Router, Get, Post, Put, Patch, Use, UseCatch, Req, Res, Body,
 @Router('/user')
 class TestRouter {
 	@Use((req, res, next) => {
-		req.headers.route = 'route'
+		req.headers.via = 'via'
 		next()
 	})
 	@Get()
-	async getOne(@Res res: Response, @Headers headers: IncomingHttpHeaders) {
-		const { shared, route } = headers
-		res.send({ shared, route })
+	async getOne(@Res res: Response, @Headers('via') via: string, @Headers<any>('shared') shared: string) {
+		res.send({ via, shared })
 	}
 
 	@UseCatch((err, req, res, next) => res.send({ err }))
@@ -50,7 +48,7 @@ console.info(`register in ${(performance.now() - t1).toFixed(4)} ms`)
 test('shared and route middlewares, use of @Headers', async () => {
 	const res = await rq.get('/user')
 	expect(res.status).toBe(200)
-	expect(res.body).toEqual({ route: 'route', shared: 'shared' })
+	expect(res.body).toEqual({ via: 'via', shared: 'shared' })
 })
 
 test('async error handler, use of @Param', async () => {

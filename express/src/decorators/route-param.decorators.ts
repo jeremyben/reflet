@@ -1,5 +1,5 @@
 import Meta from './metadata-keys'
-import { ClassType, Request, Response, NextFunction } from '../interfaces'
+import { ClassType, Request, Response, NextFunction, RequestHeaderName } from '../interfaces'
 
 enum RouteParam {
 	Request,
@@ -230,7 +230,9 @@ export function Headers(...args: Parameters<ParameterDecorator>): void
 /**
  * {@inheritDoc (Headers:1)}
  */
-export function Headers(subKey?: string): ParameterDecorator
+export function Headers<T extends RequestHeaderName | string = RequestHeaderName>(
+	subKey?: T extends RequestHeaderName ? RequestHeaderName : string
+): ParameterDecorator
 
 export function Headers(
 	subKeyOrTarget?: string | object,
