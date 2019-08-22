@@ -1,21 +1,12 @@
 import Meta from './metadata-keys'
-import { ClassType, Request, Response, NextFunction, RequestHeaderName } from '../interfaces'
-
-enum RouteParam {
-	Request,
-	Response,
-	Next,
-	Body,
-	Query,
-	Param,
-	Headers,
-	Session,
-}
+import { ClassType, Request, Response, NextFunction, RequestHeaderName, RequestHandler } from '../interfaces'
+import { json, urlencoded } from 'express'
+import { uniqFunctionsFast } from '../utils'
 
 type RouteParamMeta = {
 	index: number
-	type: RouteParam
-	subKey?: string
+	mapper: (req: Request, res?: Response, next?: NextFunction) => any
+	use?: RequestHandler[]
 }
 
 /**
@@ -43,9 +34,9 @@ export function Req(): ParameterDecorator
 
 export function Req() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
-		return (defineRouteParamMeta(RouteParam.Request) as Function)(...arguments)
+		return (createParamDecorator((req) => req) as Function)(...arguments)
 	} else {
-		return defineRouteParamMeta(RouteParam.Request)
+		return createParamDecorator((req) => req)
 	}
 }
 
@@ -74,9 +65,11 @@ export function Res(): ParameterDecorator
 
 export function Res() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
-		return (defineRouteParamMeta(RouteParam.Response) as Function)(...arguments)
+		// res is not defined in the public method signature, but is still used later
+		// by the route params extractor so we must pass it as optional for the compiler
+		return (createParamDecorator((req, res?: Response) => res!) as Function)(...arguments)
 	} else {
-		return defineRouteParamMeta(RouteParam.Response)
+		return createParamDecorator((req, res?: Response) => res!)
 	}
 }
 
@@ -105,11 +98,16 @@ export function Next(): ParameterDecorator
 
 export function Next() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
-		return (defineRouteParamMeta(RouteParam.Next) as Function)(...arguments)
+		// next is not defined in the public method signature, but is still used later
+		// by the route params extractor so we must pass it as optional for the compiler
+		return (createParamDecorator((req, res?, next?: NextFunction) => next!) as Function)(...arguments)
 	} else {
-		return defineRouteParamMeta(RouteParam.Next)
+		return createParamDecorator((req, res?, next?: NextFunction) => next!)
 	}
 }
+
+/** default parser middlewares to apply with @Body decorator */
+const bodyParsers = [json(), urlencoded({ extended: true })]
 
 /**
  * @remarks
@@ -134,17 +132,19 @@ export function Body(...args: Parameters<ParameterDecorator>): void
 /**
  * {@inheritDoc (Body:1)}
  */
-export function Body<T = object>(subKey?: keyof T): ParameterDecorator
+export function Body<T extends object>(subKey?: keyof T): ParameterDecorator
 
-export function Body<T = object>(
+export function Body<T extends object>(
 	subKeyOrTarget?: keyof T | object,
 	propertyKey?: string | symbol,
 	parameterIndex?: number
 ) {
 	if (arguments.length === 3 && typeof subKeyOrTarget === 'object') {
-		return defineRouteParamMeta(RouteParam.Body, undefined)(subKeyOrTarget, propertyKey!, parameterIndex!)
+		const target = subKeyOrTarget
+		return createParamDecorator((req) => req.body, bodyParsers)(target, propertyKey!, parameterIndex!)
 	} else {
-		return defineRouteParamMeta(RouteParam.Body, subKeyOrTarget as string | undefined)
+		const subKey = subKeyOrTarget as keyof T | undefined
+		return createParamDecorator((req) => (subKey ? req.body[subKey] : req.body), bodyParsers)
 	}
 }
 
@@ -182,13 +182,11 @@ export function Params(
 	parameterIndex?: number
 ) {
 	if (arguments.length === 3 && typeof subKeyOrTarget === 'object') {
-		return defineRouteParamMeta(RouteParam.Param, undefined)(
-			subKeyOrTarget,
-			propertyKey!,
-			parameterIndex!
-		)
+		const target = subKeyOrTarget
+		return createParamDecorator((req) => req.params)(target, propertyKey!, parameterIndex!)
 	} else {
-		return defineRouteParamMeta(RouteParam.Param, subKeyOrTarget as string | undefined)
+		const subKey = subKeyOrTarget as string | undefined
+		return createParamDecorator((req) => (subKey ? req.params[subKey] : req.params))
 	}
 }
 
@@ -211,13 +209,11 @@ export function Query(
 	parameterIndex?: number
 ) {
 	if (arguments.length === 3 && typeof subKeyOrTarget === 'object') {
-		return defineRouteParamMeta(RouteParam.Query, undefined)(
-			subKeyOrTarget,
-			propertyKey!,
-			parameterIndex!
-		)
+		const target = subKeyOrTarget
+		return createParamDecorator((req) => req.query)(target, propertyKey!, parameterIndex!)
 	} else {
-		return defineRouteParamMeta(RouteParam.Query, subKeyOrTarget as string | undefined)
+		const subKey = subKeyOrTarget as string | undefined
+		return createParamDecorator((req) => (subKey ? req.query[subKey] : req.query))
 	}
 }
 
@@ -240,29 +236,65 @@ export function Headers(
 	parameterIndex?: number
 ) {
 	if (arguments.length === 3 && typeof subKeyOrTarget === 'object') {
-		return defineRouteParamMeta(RouteParam.Headers, undefined)(
-			subKeyOrTarget,
-			propertyKey!,
-			parameterIndex!
-		)
+		const target = subKeyOrTarget
+		return createParamDecorator((req) => req.headers)(target, propertyKey!, parameterIndex!)
 	} else {
-		return defineRouteParamMeta(RouteParam.Headers, subKeyOrTarget as string | undefined)
+		const subKey = subKeyOrTarget as string | undefined
+		return createParamDecorator((req) => (subKey ? req.headers[subKey] : req.headers))
 	}
 }
 
 /**
- * @internal
+ * Create a method parameter decorator, by applying a mapper function to the `Request` object.
+ *
+ * @param mapper - retrieve and manipulate anything we want from `req`, to use it directly in the decorated method.
+ * @param use - add before middlewares to the route if the mapper needs them (e.g. we need body-parser middlewares to retrieve `req.body` properties)
+ *
+ * @remarks
+ * We can create decorators with or without options.
+ * Simple decorators without options are applied without being invoked.
+ *
+ * #### Simple decorator:
+ * ```ts
+ * const CurrentUser = createParamDecorator((req) => req.user)
+ *
+ * class Foo {
+ * 		@Get('/me')
+ * 		getUser(@CurrentUser user: User) {}
+ * }
+ * ```
+ *
+ * #### Advanced decorator (with option and middleware):
+ * ```ts
+ * const BodyTrimmed = (key) => createParamDecorator((req) => req.body[key].trim(), [express.json()])
+ *
+ * class Foo {
+ * 		@Post('/message')
+ * 		createMessage(@BodyTrimmed('text') text: string) {}
+ * }
+ * ```
+ *
+ * @public
  */
-function defineRouteParamMeta(type: RouteParam, subKey?: string): ParameterDecorator {
+export function createParamDecorator<T = any>(
+	mapper: (req: Request) => T,
+	use?: RequestHandler[]
+): ParameterDecorator {
 	return (target, methodKey, index) => {
-		const params: RouteParamMeta[] = Reflect.getOwnMetadata(Meta.RouteParams, target, methodKey) || []
-		params.push({ index, type, subKey })
-		Reflect.defineMetadata(Meta.RouteParams, params, target, methodKey)
+		const routeParams: RouteParamMeta[] =
+			Reflect.getOwnMetadata(Meta.RouteParams, target, methodKey) || []
+
+		routeParams.push({ index, mapper, use })
+		Reflect.defineMetadata(Meta.RouteParams, routeParams, target, methodKey)
 	}
 }
 
 /**
- * Intercepts a decorated handler execution and extract the Request, Response, Next arguments, and the Request properties.
+ * Used to intercept a decorated handler execution and extract the Request, Response, Next,
+ * or Request properties, by applying the mapper defined in the metadata.
+ *
+ * Get methods metadata from the prototype (no need to create an instance).
+ *
  * @internal
  */
 export function extractRouteParams(
@@ -270,60 +302,43 @@ export function extractRouteParams(
 	methodKey: string | symbol,
 	{ req, res, next }: { req: Request; res: Response; next: NextFunction }
 ): any[] {
-	const params: RouteParamMeta[] | undefined = Reflect.getOwnMetadata(
-		Meta.RouteParams,
-		target.prototype,
-		methodKey
-	)
+	const routeParams: RouteParamMeta[] =
+		Reflect.getOwnMetadata(Meta.RouteParams, target.prototype, methodKey) || []
 
 	// No decorator found in the method: simply return the original arguments in the original order
-	if (!params || !params.length) return [req, res, next]
+	if (!routeParams.length) return [req, res, next]
 
 	const args: any[] = []
 
-	for (const { type, index, subKey } of params) {
-		switch (type) {
-			case RouteParam.Request:
-				args[index] = req
-				break
-			case RouteParam.Response:
-				args[index] = res
-				break
-			case RouteParam.Next:
-				args[index] = next
-				break
-			case RouteParam.Body:
-				args[index] = subKey ? req.body[subKey] : req.body
-				break
-			case RouteParam.Param:
-				args[index] = subKey ? req.params[subKey] : req.params
-				break
-			case RouteParam.Query:
-				args[index] = subKey ? req.query[subKey] : req.query
-				break
-			case RouteParam.Headers:
-				args[index] = subKey ? req.headers[subKey] : req.headers
-				break
-			default:
-				throw Error('Route parameter type not recognized')
-		}
+	for (const { index, mapper } of routeParams) {
+		args[index] = mapper(req, res, next)
 	}
 
 	return args
 }
 
 /**
- * Checks that the given route use the `@Body` decorator, so we know we must apply the body-parser middleware.
+ * Retrieve added middlewares to use custom param decorator.
+ * Get methods metadata from the prototype (no need to create an instance).
  * @internal
  */
-export function hasBodyParam(target: ClassType, methodKey: string | symbol): boolean {
-	const params: RouteParamMeta[] | undefined = Reflect.getOwnMetadata(
-		Meta.RouteParams,
-		target.prototype,
-		methodKey
-	)
+export function extractRouteParamsMiddlewares(
+	target: ClassType,
+	methodKey: string | symbol
+): RequestHandler[] {
+	const routeParams: RouteParamMeta[] =
+		Reflect.getOwnMetadata(Meta.RouteParams, target.prototype, methodKey) || []
 
-	if (!params) return false
+	let middlewares: RequestHandler[] = []
 
-	return params.some((param) => param.type === RouteParam.Body)
+	for (const { use } of routeParams) {
+		if (use) middlewares = middlewares.concat(use)
+	}
+
+	// Dedupe middlewares especially if the same param decorator is used multiple times in the same method.
+	if (middlewares.length > 1) {
+		middlewares = uniqFunctionsFast(middlewares)
+	}
+
+	return middlewares
 }

@@ -1,7 +1,27 @@
 import { performance } from 'perf_hooks'
 import supertest from 'supertest'
-import express, { Response, Request, NextFunction } from 'express'
-import { register, Router, Get, Post, Put, Patch, Use, UseCatch, Req, Res, Body, Params, Headers } from './'
+import { log } from '../../testing/tools'
+import express, { Response, Request, NextFunction, json } from 'express'
+import {
+	register,
+	Router,
+	Get,
+	Post,
+	Put,
+	Patch,
+	Use,
+	UseBefore,
+	UseCatch,
+	Res,
+	Body,
+	Head,
+	Params,
+	Headers,
+	createParamDecorator,
+} from '.'
+
+const CurrentUser = createParamDecorator((req) => (req as any).user)
+const BodyTrimmed = (subKey: string) => createParamDecorator((req) => req.body[subKey].trim(), [json()])
 
 @Use((req, res, next) => {
 	req.headers.shared = 'shared'
@@ -27,14 +47,30 @@ class TestRouter {
 		throw id * 2
 	}
 
+	@UseBefore((req, res, next) => {
+		;(req as any).user = { id: 1, name: 'jeremy' }
+		next()
+	})
 	@Post()
-	postOne(req: Request, res: Response, next: NextFunction) {
-		res.send('ok')
+	postOne(
+		@CurrentUser user: object,
+		@BodyTrimmed('foot') foot: string,
+		@BodyTrimmed('pub') pub: string,
+		@Res() res: Response
+	) {
+		foot = foot + '!'
+		pub = pub + '!'
+		res.send({ user, foot, pub })
 	}
 
 	@Patch('/:id')
-	patchOne(@Res() res: Response, @Body<{ foo: number }>('foo') foo: number) {
+	patchOne(@Res() res: Response, @Body body: { foo: number }, @Body<{ foo: number }>('foo') foo: number) {
 		res.send({ bar: foo * 2 })
+	}
+
+	@Head()
+	headOne(req: Request, res: Response, next: NextFunction) {
+		res.send('ok')
 	}
 }
 
@@ -60,4 +96,14 @@ test('use of @Body with auto body-parser', async () => {
 	const res = await rq.patch('/user/25').send({ foo: 5 })
 	expect(res.status).toBe(200)
 	expect(res.body).toEqual({ bar: 10 })
+})
+
+test('custom decorators', async () => {
+	const res = await rq.post('/user').send({ foot: ' Champions du monde  ', pub: '  O Ballec  ' })
+	expect(res.status).toBe(200)
+	expect(res.body).toEqual({
+		user: { id: 1, name: 'jeremy' },
+		foot: 'Champions du monde!',
+		pub: 'O Ballec!',
+	})
 })

@@ -28,6 +28,31 @@ export function getCaller() {
 }
 
 /**
+ * Dedupe functions array, used for middlewares.
+ * @see https://stackoverflow.com/a/9229821/4776628
+ * @internal
+ */
+export function uniqFunctionsFast<T extends Function>(fns: T[]): T[] {
+	const seen: { [fnBody: string]: true } = {}
+	const uniq: T[] = []
+
+	const length = fns.length
+	let j = 0
+
+	for (let i = 0; i < length; i++) {
+		const fn = fns[i]
+		const fnBody = fn.toString()
+
+		if (seen[fnBody] !== true) {
+			seen[fnBody] = true
+			uniq[j++] = fn
+		}
+	}
+
+	return uniq
+}
+
+/**
  * Creates a function that is restricted to invoking func once.
  * Repeat calls to the function return the value of the first invocation.
  * @see https://lodash.com/docs/#once

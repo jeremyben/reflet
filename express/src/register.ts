@@ -1,9 +1,9 @@
-import { Router, json, urlencoded } from 'express'
+import { Router } from 'express'
 import { ClassType, Application } from './interfaces'
 import { promisifyHandler, promisifyErrorHandler } from './async-wrapper'
 import { getRouterMeta } from './decorators/router.decorators'
 import { getRoutesMeta } from './decorators/route.decorators'
-import { extractRouteParams, hasBodyParam } from './decorators/route-param.decorators'
+import { extractRouteParams, extractRouteParamsMiddlewares } from './decorators/route-param.decorators'
 import {
 	getBeforeMiddlewares,
 	getAfterMiddlewares,
@@ -54,29 +54,28 @@ function attach(expressInstance: Application | Router, routingClass: ClassType) 
 		const routeAfterMwares = getAfterMiddlewares(routingClass, methodKey).map(promisifyHandler)
 		const routeCatchMwares = getCatchMiddlewares(routingClass, methodKey).map(promisifyErrorHandler)
 
+		const routeParamsMwares = extractRouteParamsMiddlewares(routingClass, methodKey)
+
 		const routeHandler = promisifyHandler((req, res, next) => {
 			const args = extractRouteParams(routingClass, methodKey, { req, res, next })
 			return routingClass.prototype[methodKey].apply(routingClass.prototype, args)
 		})
 
-		const bodyParserMwares = hasBodyParam(routingClass, methodKey)
-			? [json(), urlencoded({ extended: true })]
-			: []
-
 		if (isRouter) {
 			expressInstance[verb](
 				path,
-				bodyParserMwares,
+				routeParamsMwares,
 				routeBeforeMwares,
 				routeHandler,
 				routeAfterMwares,
 				routeCatchMwares
 			)
 		} else {
+			// Have same order of middlewares by surrounding route specific ones by shared ones
 			expressInstance[verb](
 				path,
-				bodyParserMwares,
 				sharedBeforeMwares,
+				routeParamsMwares,
 				routeBeforeMwares,
 				routeHandler,
 				routeAfterMwares,
