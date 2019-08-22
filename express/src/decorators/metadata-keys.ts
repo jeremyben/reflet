@@ -8,7 +8,6 @@ const Meta = <const>{
 	UseBefore: Symbol('use-before'),
 	UseAfter: Symbol('use-after'),
 	UseCatch: Symbol('use-catch'),
-	Render: Symbol('render'),
 }
 
 export default Meta
