@@ -1,23 +1,9 @@
 import Meta from './metadata-keys'
-import { ClassType } from '../interfaces'
-
-/**
- * Must match the express methods.
- */
-enum Verb {
-	Get = 'get',
-	Post = 'post',
-	Put = 'put',
-	Patch = 'patch',
-	Delete = 'delete',
-	Head = 'head',
-	Options = 'options',
-	All = 'all',
-}
+import { ClassType, RoutingMethod } from '../interfaces'
 
 type RouteMeta = {
 	path: string | RegExp
-	verb: Verb
+	verb: RoutingMethod
 	methodKey: string | symbol
 }
 
@@ -26,7 +12,7 @@ type RouteMeta = {
  * @public
  */
 export function Get(path: string | RegExp = '') {
-	return defineRouteMeta(path, Verb.Get)
+	return createRoutingDecorator(path, 'get')
 }
 
 /**
@@ -34,7 +20,7 @@ export function Get(path: string | RegExp = '') {
  * @public
  */
 export function Post(path: string | RegExp = '') {
-	return defineRouteMeta(path, Verb.Post)
+	return createRoutingDecorator(path, 'post')
 }
 
 /**
@@ -42,7 +28,7 @@ export function Post(path: string | RegExp = '') {
  * @public
  */
 export function Put(path: string | RegExp = '') {
-	return defineRouteMeta(path, Verb.Put)
+	return createRoutingDecorator(path, 'put')
 }
 
 /**
@@ -50,7 +36,7 @@ export function Put(path: string | RegExp = '') {
  * @public
  */
 export function Patch(path: string | RegExp = '') {
-	return defineRouteMeta(path, Verb.Patch)
+	return createRoutingDecorator(path, 'patch')
 }
 
 /**
@@ -58,7 +44,7 @@ export function Patch(path: string | RegExp = '') {
  * @public
  */
 export function Delete(path: string | RegExp = '') {
-	return defineRouteMeta(path, Verb.Delete)
+	return createRoutingDecorator(path, 'delete')
 }
 
 /**
@@ -66,7 +52,7 @@ export function Delete(path: string | RegExp = '') {
  * @public
  */
 export function Head(path: string | RegExp = '') {
-	return defineRouteMeta(path, Verb.Head)
+	return createRoutingDecorator(path, 'head')
 }
 
 /**
@@ -74,7 +60,7 @@ export function Head(path: string | RegExp = '') {
  * @public
  */
 export function Options(path: string | RegExp = '') {
-	return defineRouteMeta(path, Verb.Options)
+	return createRoutingDecorator(path, 'options')
 }
 
 /**
@@ -82,13 +68,13 @@ export function Options(path: string | RegExp = '') {
  * @public
  */
 export function All(path: string | RegExp = '') {
-	return defineRouteMeta(path, Verb.All)
+	return createRoutingDecorator(path, 'all')
 }
 
 /**
  * @internal
  */
-function defineRouteMeta(path: string | RegExp, verb: Verb): MethodDecorator {
+function createRoutingDecorator(path: string | RegExp, verb: RoutingMethod): MethodDecorator {
 	return (target, methodKey, descriptor: TypedPropertyDescriptor<any>) => {
 		const routes: RouteMeta[] = Reflect.getOwnMetadata(Meta.Routes, target) || []
 		routes.push({ path, verb, methodKey })
@@ -97,9 +83,10 @@ function defineRouteMeta(path: string | RegExp, verb: Verb): MethodDecorator {
 }
 
 /**
- * Get all routes defined from the prototype (no need to create an instance)
+ * Retrieve routes of a class.
+ * Get methods metadata from the prototype (no need to create an instance).
  * @internal
  */
-export function getRoutesMeta(target: ClassType): RouteMeta[] {
+export function extractRoutingMethods(target: ClassType): RouteMeta[] {
 	return Reflect.getOwnMetadata(Meta.Routes, target.prototype) || []
 }

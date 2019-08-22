@@ -318,8 +318,11 @@ export function extractRouteParams(
 }
 
 /**
- * Retrieve added middlewares to use custom param decorator.
+ * Retrieve added middlewares to use custom param decorator. In a different extract method,
+ * because middlewares are applied on route registering, and mapper is applied later inside a closure on route handling.
+ *
  * Get methods metadata from the prototype (no need to create an instance).
+ *
  * @internal
  */
 export function extractRouteParamsMiddlewares(

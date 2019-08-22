@@ -74,3 +74,4 @@ export type Response = import('express').Response
 export type NextFunction = import('express').NextFunction
 export type RequestHandler = import('express').RequestHandler
 export type ErrorRequestHandler = import('express').ErrorRequestHandler
+export type RoutingMethod = Exclude<keyof import('express').IRoute, 'path' | 'stack'>

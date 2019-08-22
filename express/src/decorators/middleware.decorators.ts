@@ -6,7 +6,7 @@ import { ClassType, RequestHandler, ErrorRequestHandler, GenericDecorator } from
  * @public
  */
 export function UseBefore(...middlewares: RequestHandler[]) {
-	return defineMiddlewareMeta(Meta.UseBefore, middlewares)
+	return createMiddlewareDecorator(Meta.UseBefore, middlewares)
 }
 
 export { UseBefore as Use }
@@ -16,7 +16,7 @@ export { UseBefore as Use }
  * @public
  */
 export function UseAfter(...middlewares: RequestHandler[]) {
-	return defineMiddlewareMeta(Meta.UseAfter, middlewares)
+	return createMiddlewareDecorator(Meta.UseAfter, middlewares)
 }
 
 /**
@@ -24,13 +24,13 @@ export function UseAfter(...middlewares: RequestHandler[]) {
  * @public
  */
 export function UseCatch(...errorMiddlewares: ErrorRequestHandler[]) {
-	return defineMiddlewareMeta(Meta.UseCatch, errorMiddlewares)
+	return createMiddlewareDecorator(Meta.UseCatch, errorMiddlewares)
 }
 
 /**
  * @internal
  */
-function defineMiddlewareMeta(
+function createMiddlewareDecorator(
 	type: symbol,
 	middlewares: Array<RequestHandler | ErrorRequestHandler>
 ): GenericDecorator {
@@ -43,9 +43,10 @@ function defineMiddlewareMeta(
 }
 
 /**
+ * Get methods metadata from the prototype (no need to create an instance).
  * @internal
  */
-export function getBeforeMiddlewares(target: ClassType, methodKey?: string | symbol): RequestHandler[] {
+export function extractBeforeMiddlewares(target: ClassType, methodKey?: string | symbol): RequestHandler[] {
 	// Method middlewares
 	if (methodKey) return Reflect.getOwnMetadata(Meta.UseBefore, target.prototype, methodKey) || []
 	// Class middlewares
@@ -53,9 +54,10 @@ export function getBeforeMiddlewares(target: ClassType, methodKey?: string | sym
 }
 
 /**
+ * Get methods metadata from the prototype (no need to create an instance).
  * @internal
  */
-export function getAfterMiddlewares(target: ClassType, methodKey?: string | symbol): RequestHandler[] {
+export function extractAfterMiddlewares(target: ClassType, methodKey?: string | symbol): RequestHandler[] {
 	// Method middlewares
 	if (methodKey) return Reflect.getOwnMetadata(Meta.UseAfter, target.prototype, methodKey) || []
 	// Class middlewares
@@ -63,9 +65,13 @@ export function getAfterMiddlewares(target: ClassType, methodKey?: string | symb
 }
 
 /**
+ * Get methods metadata from the prototype (no need to create an instance).
  * @internal
  */
-export function getCatchMiddlewares(target: ClassType, methodKey?: string | symbol): ErrorRequestHandler[] {
+export function extractCatchMiddlewares(
+	target: ClassType,
+	methodKey?: string | symbol
+): ErrorRequestHandler[] {
 	// Method middlewares
 	if (methodKey) return Reflect.getOwnMetadata(Meta.UseCatch, target.prototype, methodKey) || []
 	// Class middlewares
