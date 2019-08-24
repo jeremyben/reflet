@@ -1,0 +1,83 @@
+import supertest from 'supertest'
+import express, { Response, Request, NextFunction } from 'express'
+import { register, Router, Get, Post, Put, Patch } from '../src'
+import { log } from '../../testing/tools'
+
+// With Router
+@Router('/user', { caseSensitive: true })
+class UserTestController {
+	@Get()
+	get(req: Request, res: Response, next: NextFunction) {
+		res.send([{ id: 1 }])
+	}
+
+	@Patch('/:id')
+	patch(req: Request, res: Response, next: NextFunction) {
+		const id = Number.parseInt(req.params.id, 10)
+		res.send({ id })
+	}
+
+	@Post()
+	@Put('/me')
+	async post(req: Request, res: Response, next: NextFunction) {
+		await new Promise((resolve) => setTimeout(resolve, 20))
+		res.send({ id: 3 })
+	}
+}
+
+// Without Router
+class MessageTestController {
+	@Get('/message')
+	getAll(req: Request, res: Response, next: NextFunction) {
+		res.send([{ id: 1 }])
+	}
+
+	@Get('/message/:id')
+	getOne(req: Request, res: Response, next: NextFunction) {
+		const id = Number.parseInt(req.params.id, 10)
+		res.send({ id })
+	}
+}
+
+const app = express()
+const rq = supertest(app)
+register(app, [UserTestController, MessageTestController])
+
+describe('With Router', () => {
+	test('@Get', async () => {
+		const res = await rq.get('/user')
+		expect(res.status).toBe(200)
+		expect(res.body).toEqual([{ id: 1 }])
+	})
+
+	test('@Patch, params', async () => {
+		const res = await rq.patch('/user/2')
+		expect(res.status).toBe(200)
+		expect(res.body).toEqual({ id: 2 })
+	})
+
+	test('@Post, async', async () => {
+		const res = await rq.post('/user')
+		expect(res.status).toBe(200)
+		expect(res.body).toEqual({ id: 3 })
+	})
+
+	test('@Put, router option', async () => {
+		await rq.put('/user/me').expect(200)
+		await rq.put('/user/ME').expect(404)
+	})
+})
+
+describe('Without Router', () => {
+	test('@Get', async () => {
+		const res = await rq.get('/message')
+		expect(res.status).toBe(200)
+		expect(res.body).toEqual([{ id: 1 }])
+	})
+
+	test('@Get params', async () => {
+		const res = await rq.get('/message/2')
+		expect(res.status).toBe(200)
+		expect(res.body).toEqual({ id: 2 })
+	})
+})
