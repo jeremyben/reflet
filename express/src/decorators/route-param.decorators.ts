@@ -1,7 +1,7 @@
 import Meta from './metadata-keys'
 import { ClassType, Request, Response, NextFunction, RequestHeaderName, RequestHandler } from '../interfaces'
 import { json, urlencoded } from 'express'
-import { uniqFunctionsFast } from '../utils'
+import { flatMapFast } from '../utils'
 
 type RouteParamMeta = {
 	index: number
@@ -318,8 +318,11 @@ export function extractRouteParams(
 }
 
 /**
- * Retrieve added middlewares to use custom param decorator. In a different extract method,
- * because middlewares are applied on route registering, and mapper is applied later inside a closure on route handling.
+ * Retrieve added middlewares to use custom param decorator.
+ * Dedupe/remove them if they're already applied in other _before_ middlewares.
+ *
+ * Extracted separately from the mapper, because middlewares are applied on route registering,
+ * and the mapper is applied later inside a closure on route handling.
  *
  * Get methods metadata from the prototype (no need to create an instance).
  *
@@ -327,21 +330,30 @@ export function extractRouteParams(
  */
 export function extractRouteParamsMiddlewares(
 	target: ClassType,
-	methodKey: string | symbol
+	methodKey: string | symbol,
+	middlewaresAlreadyUsed: RequestHandler[][]
 ): RequestHandler[] {
 	const routeParams: RouteParamMeta[] =
 		Reflect.getOwnMetadata(Meta.RouteParams, target.prototype, methodKey) || []
 
-	let middlewares: RequestHandler[] = []
+	if (!routeParams.length) return []
+
+	const paramMwares: RequestHandler[] = []
+
+	// Dedupe middlewares by comparing function bodies
+	const mwareBodies = flatMapFast(middlewaresAlreadyUsed, (m) => m.toString())
 
 	for (const { use } of routeParams) {
-		if (use) middlewares = middlewares.concat(use)
+		if (!use) continue
+
+		for (const mware of use) {
+			const mwareBody = mware.toString()
+			if (mwareBodies.includes(mwareBody)) continue
+
+			paramMwares.push(mware)
+			mwareBodies.push(mwareBody) // avoid adding twice the same param middleware
+		}
 	}
 
-	// Dedupe middlewares especially if the same param decorator is used multiple times in the same method.
-	if (middlewares.length > 1) {
-		middlewares = uniqFunctionsFast(middlewares)
-	}
-
-	return middlewares
+	return paramMwares
 }

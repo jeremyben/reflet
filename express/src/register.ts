@@ -38,23 +38,26 @@ function attach(expressInstance: Application | Router, routingClass: ClassType) 
 	const isRouter = expressInstance.name === 'router'
 
 	const routes = extractRoutingMethods(routingClass)
-	const sharedBeforeMwares = extractBeforeMiddlewares(routingClass).map(promisifyHandler)
-	const sharedAfterMwares = extractAfterMiddlewares(routingClass).map(promisifyHandler)
-	const sharedCatchMwares = extractCatchMiddlewares(routingClass).map(promisifyErrorHandler)
+	const sharedBeforeMwares = extractBeforeMiddlewares(routingClass)
+	const sharedAfterMwares = extractAfterMiddlewares(routingClass)
+	const sharedCatchMwares = extractCatchMiddlewares(routingClass)
 
 	// apply shared middlewares to the router instance
 	// or to each of the routes if we attach the controller to an app instance
 
 	if (isRouter) {
-		for (const beforeMware of sharedBeforeMwares) expressInstance.use(beforeMware)
+		for (const beforeMware of sharedBeforeMwares) expressInstance.use(promisifyHandler(beforeMware))
 	}
 
 	for (const { path, verb, methodKey } of routes) {
-		const routeBeforeMwares = extractBeforeMiddlewares(routingClass, methodKey).map(promisifyHandler)
-		const routeAfterMwares = extractAfterMiddlewares(routingClass, methodKey).map(promisifyHandler)
-		const routeCatchMwares = extractCatchMiddlewares(routingClass, methodKey).map(promisifyErrorHandler)
+		const routeBeforeMwares = extractBeforeMiddlewares(routingClass, methodKey)
+		const routeAfterMwares = extractAfterMiddlewares(routingClass, methodKey)
+		const routeCatchMwares = extractCatchMiddlewares(routingClass, methodKey)
 
-		const routeParamsMwares = extractRouteParamsMiddlewares(routingClass, methodKey)
+		const routeParamsMwares = extractRouteParamsMiddlewares(routingClass, methodKey, [
+			sharedBeforeMwares,
+			routeBeforeMwares,
+		])
 
 		const routeHandler = promisifyHandler((req, res, next) => {
 			const args = extractRouteParams(routingClass, methodKey, { req, res, next })
@@ -64,30 +67,30 @@ function attach(expressInstance: Application | Router, routingClass: ClassType) 
 		if (isRouter) {
 			expressInstance[verb](
 				path,
-				routeParamsMwares,
-				routeBeforeMwares,
+				routeParamsMwares.map(promisifyHandler),
+				routeBeforeMwares.map(promisifyHandler),
 				routeHandler,
-				routeAfterMwares,
-				routeCatchMwares
+				routeAfterMwares.map(promisifyHandler),
+				routeCatchMwares.map(promisifyErrorHandler)
 			)
 		} else {
 			// Have same order of middlewares by surrounding route specific ones by shared ones
 			expressInstance[verb](
 				path,
-				sharedBeforeMwares,
-				routeParamsMwares,
-				routeBeforeMwares,
+				sharedBeforeMwares.map(promisifyHandler),
+				routeParamsMwares.map(promisifyHandler),
+				routeBeforeMwares.map(promisifyHandler),
 				routeHandler,
-				routeAfterMwares,
-				routeCatchMwares,
-				sharedAfterMwares,
-				sharedCatchMwares
+				routeAfterMwares.map(promisifyHandler),
+				routeCatchMwares.map(promisifyErrorHandler),
+				sharedAfterMwares.map(promisifyHandler),
+				sharedCatchMwares.map(promisifyErrorHandler)
 			)
 		}
 	}
 
 	if (isRouter) {
-		for (const afterMware of sharedAfterMwares) expressInstance.use(afterMware)
-		for (const catchMware of sharedCatchMwares) expressInstance.use(catchMware)
+		for (const afterMware of sharedAfterMwares) expressInstance.use(promisifyHandler(afterMware))
+		for (const catchMware of sharedCatchMwares) expressInstance.use(promisifyErrorHandler(catchMware))
 	}
 }

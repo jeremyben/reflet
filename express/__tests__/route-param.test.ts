@@ -1,5 +1,5 @@
 import supertest from 'supertest'
-import express, { Response, Request, json } from 'express'
+import express, { Response, Request, json, urlencoded } from 'express'
 import {
 	register,
 	Router,
@@ -16,6 +16,8 @@ import {
 	Query,
 	Delete,
 } from '../src'
+import { extractBeforeMiddlewares } from '../src/decorators/middleware.decorators'
+import { extractRouteParamsMiddlewares } from '../src/decorators/route-param.decorators'
 import { log } from '../../testing/tools'
 
 const CurrentUser = createParamDecorator((req: Request & { user?: any }) => req.user)
@@ -54,7 +56,6 @@ class BarTestRouter {
 	patch(@BodyTrimmed('foot') foot: string, @BodyTrimmed('pub') pub: string, @Res() res: Response) {
 		foot = foot + '!'
 		pub = pub + '!'
-
 		res.send({ foot, pub })
 	}
 }
@@ -92,5 +93,36 @@ describe('custom decorators', () => {
 			foot: 'Champions du monde!',
 			pub: 'O Ballec!',
 		})
+	})
+})
+
+describe('param middleware deduplication', () => {
+	// tslint:disable: no-shadowed-variable
+
+	const BodyTrimmed = (subKey: string) => createParamDecorator((req) => req.body[subKey].trim(), [json()])
+
+	@Use(json(), urlencoded({ extended: false }))
+	class DedupeTestRouter {
+		@Use(json())
+		@Post()
+		post(
+			@BodyTrimmed('foo') fooTrimmed: string,
+			@Body('foo') foo: string,
+			@Body body: any,
+			@Res res: Response
+		) {
+			res.send(fooTrimmed)
+		}
+	}
+
+	test('body-parsers dedupe', async () => {
+		const sharedMwares = extractBeforeMiddlewares(DedupeTestRouter)
+		const routeMwares = extractBeforeMiddlewares(DedupeTestRouter, 'post')
+		const paramMwares = extractRouteParamsMiddlewares(DedupeTestRouter, 'post', [
+			sharedMwares,
+			routeMwares,
+		])
+
+		expect(paramMwares).toHaveLength(0)
 	})
 })
