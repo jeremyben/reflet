@@ -1,5 +1,5 @@
-import { Router } from 'express'
-import { ClassType, Application } from './interfaces'
+import { Router, Application } from 'express'
+import { ClassType } from './interfaces'
 import { promisifyHandler, promisifyErrorHandler } from './async-wrapper'
 import { extractRouter } from './decorators/router.decorators'
 import { extractRoutingMethods } from './decorators/route.decorators'

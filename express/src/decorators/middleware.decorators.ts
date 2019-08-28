@@ -1,5 +1,6 @@
 import Meta from './metadata-keys'
-import { ClassType, RequestHandler, ErrorRequestHandler, GenericDecorator } from '../interfaces'
+import { RequestHandler, ErrorRequestHandler } from 'express'
+import { ClassType, GenericDecorator } from '../interfaces'
 
 /**
  * @see http://expressjs.com/en/4x/api.html#app.use

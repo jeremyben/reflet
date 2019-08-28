@@ -1,5 +1,6 @@
 import Meta from './metadata-keys'
-import { ClassType, RouterOptions } from '../interfaces'
+import { ClassType } from '../interfaces'
+import { RouterOptions } from 'express'
 
 type RouterMeta = { prefix: string | RegExp; options?: RouterOptions }
 

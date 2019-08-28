@@ -1,6 +1,6 @@
 import Meta from './metadata-keys'
-import { ClassType, Request, Response, NextFunction, RequestHeaderName, RequestHandler } from '../interfaces'
-import { json, urlencoded } from 'express'
+import { ClassType, RequestHeaderName } from '../interfaces'
+import { json, urlencoded, Request, Response, NextFunction, RequestHandler } from 'express'
 import { flatMapFast } from '../utils'
 
 type RouteParamMeta = {

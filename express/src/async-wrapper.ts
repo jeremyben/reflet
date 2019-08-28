@@ -1,4 +1,4 @@
-import { RequestHandler, ErrorRequestHandler, Request, Response, NextFunction } from './interfaces'
+import { RequestHandler, ErrorRequestHandler, Request, Response, NextFunction } from 'express'
 
 /**
  * @internal

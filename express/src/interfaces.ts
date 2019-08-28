@@ -66,12 +66,8 @@ export type RequestHeaderName =
 	| 'content-type'
 	| 'content-md5'
 
-// Centralize Express types
-export type Application = import('express').Application
-export type RouterOptions = import('express').RouterOptions
-export type Request = import('express').Request
-export type Response = import('express').Response
-export type NextFunction = import('express').NextFunction
-export type RequestHandler = import('express').RequestHandler
-export type ErrorRequestHandler = import('express').ErrorRequestHandler
+/**
+ * @see http://expressjs.com/en/4x/api.html#routing-methods
+ * @public
+ */
 export type RoutingMethod = Exclude<keyof import('express').IRoute, 'path' | 'stack'>
