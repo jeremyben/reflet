@@ -47,6 +47,24 @@ export function concatFast<T>(source: T[], added: T[]): T[] {
 }
 
 /**
+ * Mutates the `added` array.
+ * @internal
+ */
+export function concatPrependFast<T>(source: T[], added: T[]): T[] {
+	const sourceLength = source.length
+	const addedLength = added.length
+
+	// Preallocate size
+	added.length = sourceLength + addedLength
+
+	for (let i = 0; i < sourceLength; i++) {
+		added[addedLength + i] = source[i]
+	}
+
+	return added
+}
+
+/**
  * Apparently the fastest implementation of `Array.flat` out there,
  * to which we add an optional `map` feature.
  * @see https://github.com/elidoran/flatten-array

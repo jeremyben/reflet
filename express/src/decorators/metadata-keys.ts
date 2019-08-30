@@ -5,9 +5,8 @@ const Meta = <const>{
 	Routes: Symbol('routes'),
 	Router: Symbol('router'),
 	RouteParams: Symbol('route-params'),
-	UseBefore: Symbol('use-before'),
-	UseAfter: Symbol('use-after'),
-	UseCatch: Symbol('use-catch'),
+	Use: Symbol('use'),
+	Catch: Symbol('catch'),
 }
 
 export default Meta

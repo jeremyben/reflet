@@ -15,4 +15,6 @@ export {
 	createParamDecorator,
 } from './decorators/route-param.decorators'
 
-export { Use, UseBefore, UseAfter, UseCatch } from './decorators/middleware.decorators'
+export { Use } from './decorators/middleware.decorators'
+
+export { Catch } from './decorators/catch.decorators'
