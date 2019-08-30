@@ -2,8 +2,8 @@
  * @internal
  */
 const Meta = <const>{
-	Routes: Symbol('routes'),
 	Router: Symbol('router'),
+	Route: Symbol('route'),
 	Param: Symbol('param'),
 	Use: Symbol('use'),
 	Catch: Symbol('catch'),

@@ -70,4 +70,27 @@ export type RequestHeaderName =
  * @see http://expressjs.com/en/4x/api.html#routing-methods
  * @public
  */
-export type RoutingMethod = Exclude<keyof import('express').IRoute, 'path' | 'stack'>
+export type RoutingMethod =
+	| 'checkout'
+	| 'copy'
+	| 'delete'
+	| 'get'
+	| 'head'
+	| 'lock'
+	| 'merge'
+	| 'mkactivity'
+	| 'mkcol'
+	| 'move'
+	| 'm-search'
+	| 'notify'
+	| 'options'
+	| 'patch'
+	| 'post'
+	| 'purge'
+	| 'put'
+	| 'report'
+	| 'search'
+	| 'subscribe'
+	| 'trace'
+	| 'unlock'
+	| 'unsubscribe'

@@ -1,6 +1,6 @@
 import supertest from 'supertest'
 import express, { Response, Request, NextFunction } from 'express'
-import { register, Router, Get, Post, Put, Patch } from '../src'
+import { register, Router, Get, Post, Put, Patch, Method } from '../src'
 import { log } from '../../testing/tools'
 
 // With Router
@@ -27,13 +27,13 @@ class UserTestController {
 
 // Without Router
 class MessageTestController {
-	@Get('/message')
-	getAll(req: Request, res: Response, next: NextFunction) {
+	@Method('options', '/message')
+	options(req: Request, res: Response, next: NextFunction) {
 		res.send([{ id: 1 }])
 	}
 
 	@Get('/message/:id')
-	getOne(req: Request, res: Response, next: NextFunction) {
+	get(req: Request, res: Response, next: NextFunction) {
 		const id = Number.parseInt(req.params.id, 10)
 		res.send({ id })
 	}
@@ -70,7 +70,7 @@ describe('With Router', () => {
 
 describe('Without Router', () => {
 	test('@Get', async () => {
-		const res = await rq.get('/message')
+		const res = await rq.options('/message')
 		expect(res.status).toBe(200)
 		expect(res.body).toEqual([{ id: 1 }])
 	})

@@ -1,84 +1,58 @@
 import Meta from './metadata-keys'
 import { ClassType, RoutingMethod } from '../interfaces'
 
-type RouteMeta = {
+type Route = {
 	path: string | RegExp
-	verb: RoutingMethod
-	methodKey: string | symbol
+	method: RoutingMethod
+	key: string | symbol
 }
 
 /**
+ * Routes HTTP `GET` requests.
  * @see http://expressjs.com/en/4x/api.html#app.get.method
  * @public
  */
-export function Get(path: string | RegExp = '') {
-	return createRoutingDecorator(path, 'get')
-}
+export const Get = (path: string | RegExp = '') => Method('get', path)
 
 /**
+ * Routes HTTP `POST` requests.
  * @see http://expressjs.com/en/4x/api.html#app.post.method
  * @public
  */
-export function Post(path: string | RegExp = '') {
-	return createRoutingDecorator(path, 'post')
-}
+export const Post = (path: string | RegExp = '') => Method('post', path)
 
 /**
+ * Routes HTTP `PUT` requests.
  * @see http://expressjs.com/en/4x/api.html#app.put.method
  * @public
  */
-export function Put(path: string | RegExp = '') {
-	return createRoutingDecorator(path, 'put')
-}
+export const Put = (path: string | RegExp = '') => Method('put', path)
 
 /**
+ * Routes HTTP `PATCH` requests.
  * @see http://expressjs.com/en/4x/api.html#app.METHOD
  * @public
  */
-export function Patch(path: string | RegExp = '') {
-	return createRoutingDecorator(path, 'patch')
-}
+export const Patch = (path: string | RegExp = '') => Method('patch', path)
 
 /**
+ * Routes HTTP `DELETE` requests.
  * @see http://expressjs.com/en/4x/api.html#app.delete.method
  * @public
  */
-export function Delete(path: string | RegExp = '') {
-	return createRoutingDecorator(path, 'delete')
-}
+export const Delete = (path: string | RegExp = '') => Method('delete', path)
 
 /**
+ * Routes an HTTP request.
  * @see http://expressjs.com/en/4x/api.html#app.METHOD
  * @public
  */
-export function Head(path: string | RegExp = '') {
-	return createRoutingDecorator(path, 'head')
-}
-
-/**
- * @see http://expressjs.com/en/4x/api.html#app.METHOD
- * @public
- */
-export function Options(path: string | RegExp = '') {
-	return createRoutingDecorator(path, 'options')
-}
-
-/**
- * @see http://expressjs.com/en/4x/api.html#app.all
- * @public
- */
-export function All(path: string | RegExp = '') {
-	return createRoutingDecorator(path, 'all')
-}
-
-/**
- * @internal
- */
-function createRoutingDecorator(path: string | RegExp, verb: RoutingMethod): MethodDecorator {
-	return (target, methodKey, descriptor: TypedPropertyDescriptor<any>) => {
-		const routes: RouteMeta[] = Reflect.getOwnMetadata(Meta.Routes, target) || []
-		routes.push({ path, verb, methodKey })
-		Reflect.defineMetadata(Meta.Routes, routes, target)
+export function Method(method: RoutingMethod, path: string | RegExp): MethodDecorator {
+	return (target, key, descriptor: TypedPropertyDescriptor<any>) => {
+		// Attach routes to class instead of methods to extract and traverse all of them at once
+		const routes: Route[] = Reflect.getOwnMetadata(Meta.Route, target) || []
+		routes.push({ path, method, key })
+		Reflect.defineMetadata(Meta.Route, routes, target)
 	}
 }
 
@@ -87,6 +61,6 @@ function createRoutingDecorator(path: string | RegExp, verb: RoutingMethod): Met
  * Get methods metadata from the prototype (no need to create an instance).
  * @internal
  */
-export function extractRoutingMethods(target: ClassType): RouteMeta[] {
-	return Reflect.getOwnMetadata(Meta.Routes, target.prototype) || []
+export function extractRoutes(target: ClassType): Route[] {
+	return Reflect.getOwnMetadata(Meta.Route, target.prototype) || []
 }
