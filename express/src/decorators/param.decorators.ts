@@ -3,7 +3,7 @@ import { ClassType, RequestHeaderName } from '../interfaces'
 import { json, urlencoded, Request, Response, NextFunction, RequestHandler } from 'express'
 import { flatMapFast } from '../utils'
 
-type RouteParamMeta = {
+type ParamMeta = {
 	index: number
 	mapper: (req: Request, res?: Response, next?: NextFunction) => any
 	use?: RequestHandler[]
@@ -280,12 +280,11 @@ export function createParamDecorator<T = any>(
 	mapper: (req: Request) => T,
 	use?: RequestHandler[]
 ): ParameterDecorator {
-	return (target, methodKey, index) => {
-		const routeParams: RouteParamMeta[] =
-			Reflect.getOwnMetadata(Meta.RouteParams, target, methodKey) || []
+	return (target, key, index) => {
+		const params: ParamMeta[] = Reflect.getOwnMetadata(Meta.Param, target, key) || []
 
-		routeParams.push({ index, mapper, use })
-		Reflect.defineMetadata(Meta.RouteParams, routeParams, target, methodKey)
+		params.push({ index, mapper, use })
+		Reflect.defineMetadata(Meta.Param, params, target, key)
 	}
 }
 
@@ -297,20 +296,19 @@ export function createParamDecorator<T = any>(
  *
  * @internal
  */
-export function extractRouteParams(
+export function extractParams(
 	target: ClassType,
-	methodKey: string | symbol,
+	key: string | symbol,
 	{ req, res, next }: { req: Request; res: Response; next: NextFunction }
 ): any[] {
-	const routeParams: RouteParamMeta[] =
-		Reflect.getOwnMetadata(Meta.RouteParams, target.prototype, methodKey) || []
+	const params: ParamMeta[] = Reflect.getOwnMetadata(Meta.Param, target.prototype, key) || []
 
 	// No decorator found in the method: simply return the original arguments in the original order
-	if (!routeParams.length) return [req, res, next]
+	if (!params.length) return [req, res, next]
 
 	const args: any[] = []
 
-	for (const { index, mapper } of routeParams) {
+	for (const { index, mapper } of params) {
 		args[index] = mapper(req, res, next)
 	}
 
@@ -328,22 +326,21 @@ export function extractRouteParams(
  *
  * @internal
  */
-export function extractRouteParamsMiddlewares(
+export function extractParamsMiddlewares(
 	target: ClassType,
 	methodKey: string | symbol,
 	middlewaresAlreadyUsed: RequestHandler[][]
 ): RequestHandler[] {
-	const routeParams: RouteParamMeta[] =
-		Reflect.getOwnMetadata(Meta.RouteParams, target.prototype, methodKey) || []
+	const params: ParamMeta[] = Reflect.getOwnMetadata(Meta.Param, target.prototype, methodKey) || []
 
-	if (!routeParams.length) return []
+	if (!params.length) return []
 
 	const paramMwares: RequestHandler[] = []
 
 	// Dedupe middlewares by comparing function bodies
 	const mwareBodies = flatMapFast(middlewaresAlreadyUsed, (m) => m.toString())
 
-	for (const { use } of routeParams) {
+	for (const { use } of params) {
 		if (!use) continue
 
 		for (const mware of use) {

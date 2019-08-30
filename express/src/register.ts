@@ -3,7 +3,7 @@ import { ClassType } from './interfaces'
 import { promisifyHandler, promisifyErrorHandler } from './async-wrapper'
 import { extractRouter } from './decorators/router.decorators'
 import { extractRoutingMethods } from './decorators/route.decorators'
-import { extractRouteParams, extractRouteParamsMiddlewares } from './decorators/route-param.decorators'
+import { extractParams, extractParamsMiddlewares } from './decorators/param.decorators'
 import { extractMiddlewares } from './decorators/middleware.decorators'
 import { extractCatch } from './decorators/catch.decorators'
 
@@ -49,13 +49,10 @@ function attach(expressInstance: Application | Router, routingClass: ClassType) 
 		const routeMwares = extractMiddlewares(routingClass, methodKey)
 		const routeCatch = extractCatch(routingClass, methodKey)
 
-		const paramsMwares = extractRouteParamsMiddlewares(routingClass, methodKey, [
-			sharedMwares,
-			routeMwares,
-		])
+		const paramsMwares = extractParamsMiddlewares(routingClass, methodKey, [sharedMwares, routeMwares])
 
 		const routeHandler = promisifyHandler((req, res, next) => {
-			const args = extractRouteParams(routingClass, methodKey, { req, res, next })
+			const args = extractParams(routingClass, methodKey, { req, res, next })
 			return routingClass.prototype[methodKey].apply(routingClass.prototype, args)
 		})
 

@@ -13,7 +13,7 @@ export {
 	Query,
 	Headers,
 	createParamDecorator,
-} from './decorators/route-param.decorators'
+} from './decorators/param.decorators'
 
 export { Use } from './decorators/middleware.decorators'
 

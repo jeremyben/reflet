@@ -4,7 +4,7 @@
 const Meta = <const>{
 	Routes: Symbol('routes'),
 	Router: Symbol('router'),
-	RouteParams: Symbol('route-params'),
+	Param: Symbol('param'),
 	Use: Symbol('use'),
 	Catch: Symbol('catch'),
 }

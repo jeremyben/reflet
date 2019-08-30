@@ -16,8 +16,8 @@ import {
 	Query,
 	Delete,
 } from '../src'
-import { extractRouteParamsMiddlewares } from '../src/decorators/route-param.decorators'
 import { extractMiddlewares } from '../src/decorators/middleware.decorators'
+import { extractParamsMiddlewares } from '../src/decorators/param.decorators'
 import { log } from '../../testing/tools'
 
 const CurrentUser = createParamDecorator((req: Request & { user?: any }) => req.user)
@@ -118,10 +118,7 @@ describe('param middleware deduplication', () => {
 	test('body-parsers dedupe', async () => {
 		const sharedMwares = extractMiddlewares(DedupeTestRouter)
 		const routeMwares = extractMiddlewares(DedupeTestRouter, 'post')
-		const paramMwares = extractRouteParamsMiddlewares(DedupeTestRouter, 'post', [
-			sharedMwares,
-			routeMwares,
-		])
+		const paramMwares = extractParamsMiddlewares(DedupeTestRouter, 'post', [sharedMwares, routeMwares])
 
 		expect(paramMwares).toHaveLength(0)
 	})
