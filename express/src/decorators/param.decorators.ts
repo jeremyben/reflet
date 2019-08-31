@@ -317,7 +317,8 @@ export function extractParams(
 
 /**
  * Retrieve added middlewares to use custom param decorator.
- * Dedupe/remove them if they're already applied in other _before_ middlewares.
+ * Dedupe/remove **named** middlewares if they're already applied on method or class
+ * (by comparing function names).
  *
  * Extracted separately from the mapper, because middlewares are applied on route registering,
  * and the mapper is applied later inside a closure on route handling.
@@ -335,22 +336,25 @@ export function extractParamsMiddlewares(
 
 	if (!params.length) return []
 
-	const paramMwares: RequestHandler[] = []
+	const mwares: RequestHandler[] = []
 
-	// Dedupe middlewares by comparing function bodies
-	const mwareBodies = flatMapFast(middlewaresAlreadyUsed, (m) => m.toString())
+	// Dedupe middlewares by comparing function names (used to compare function bodies,
+	// but could not distinguish functions wrapped in a higher order one).
+	const mwareNames = flatMapFast(middlewaresAlreadyUsed, (m) => m.name)
 
 	for (const { use } of params) {
 		if (!use) continue
 
 		for (const mware of use) {
-			const mwareBody = mware.toString()
-			if (mwareBodies.includes(mwareBody)) continue
+			// Only dedupe named functions
+			if (mware.name && mwareNames.includes(mware.name)) continue
 
-			paramMwares.push(mware)
-			mwareBodies.push(mwareBody) // avoid adding twice the same param middleware
+			mwares.push(mware)
+
+			// Avoid adding twice the same named param middleware
+			if (mware.name) mwareNames.push(mware.name)
 		}
 	}
 
-	return paramMwares
+	return mwares
 }
