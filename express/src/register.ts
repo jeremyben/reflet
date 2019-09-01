@@ -1,11 +1,10 @@
 import { Router, Application } from 'express'
 import { ClassType } from './interfaces'
 import { promisifyHandler, promisifyErrorHandler } from './async-wrapper'
-import { extractRouter } from './decorators/router.decorators'
-import { extractRoutes } from './decorators/route.decorators'
-import { extractParams, extractParamsMiddlewares } from './decorators/param.decorators'
-import { extractMiddlewares } from './decorators/middleware.decorators'
-import { extractCatch } from './decorators/catch.decorators'
+import { extractRouter } from './router-decorator'
+import { extractRoutes } from './route-decorators'
+import { extractParams, extractParamsMiddlewares } from './param-decorators'
+import { extractMiddlewares, extractCatch } from './middleware-decorators'
 
 /**
  * Register routing classes to an express application.

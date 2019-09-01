@@ -1,5 +1,5 @@
 import Meta from './metadata-keys'
-import { ClassType, RoutingMethod } from '../interfaces'
+import { ClassType, RoutingMethod } from './interfaces'
 
 type Route = {
 	path: string | RegExp

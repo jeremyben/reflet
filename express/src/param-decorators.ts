@@ -1,7 +1,7 @@
 import Meta from './metadata-keys'
-import { ClassType, RequestHeaderName } from '../interfaces'
+import { ClassType, RequestHeaderName } from './interfaces'
 import { json, urlencoded, Request, Response, NextFunction, RequestHandler } from 'express'
-import { flatMapFast } from '../utils'
+import { flatMapFast } from './utils'
 
 type ParamMeta = {
 	index: number

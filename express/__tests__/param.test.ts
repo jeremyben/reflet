@@ -16,8 +16,8 @@ import {
 	Query,
 	Delete,
 } from '../src'
-import { extractMiddlewares } from '../src/decorators/middleware.decorators'
-import { extractParamsMiddlewares } from '../src/decorators/param.decorators'
+import { extractMiddlewares } from '../src/middleware-decorators'
+import { extractParamsMiddlewares } from '../src/param-decorators'
 import { log } from '../../testing/tools'
 
 const CurrentUser = createParamDecorator((req: Request & { user?: any }) => req.user)
