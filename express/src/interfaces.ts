@@ -94,3 +94,50 @@ export type RoutingMethod =
 	| 'trace'
 	| 'unlock'
 	| 'unsubscribe'
+
+declare module 'express' {
+	export interface Application {
+		_router: _Router
+	}
+
+	export type _Router = {
+		params: {}
+		_params: any[]
+		caseSensitive: boolean
+		mergeParams: boolean | undefined
+		strict: boolean | undefined
+		stack: Layer[]
+	}
+
+	type Layer = {
+		handle: RequestHandler | RequestHandler & _Router
+		name:
+			| '<anonymous>'
+			| 'query'
+			| 'expressInit'
+			| 'bound dispatch'
+			| 'router'
+			| 'serveStatic'
+			| 'jsonParser'
+			| 'urlencodedParser'
+		params: {} | undefined
+		path: string | undefined
+		keys: { name: string; optional: boolean; offset: number }[]
+		regexp: RegExp & { fast_star: boolean; fast_slash: boolean }
+		route: LayerRoute | undefined
+	}
+
+	type LayerRoute = {
+		path: string
+		methods: { [key in RoutingMethod]?: true }
+		stack: {
+			handle: RequestHandler
+			name: string
+			params: {} | undefined
+			path: string | undefined
+			keys: { name: string; optional: boolean; offset: number }[]
+			regexp: RegExp
+			method: RoutingMethod
+		}[]
+	}
+}

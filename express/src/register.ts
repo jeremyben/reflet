@@ -1,5 +1,5 @@
-import { Router, Application } from 'express'
 import { ClassType } from './interfaces'
+import { Router, Application, RequestHandler } from 'express'
 import { promisifyHandler, promisifyErrorHandler } from './async-wrapper'
 import { extractRouter } from './router-decorator'
 import { extractRoutes } from './route-decorators'
@@ -15,6 +15,8 @@ import { extractMiddlewares, extractCatch } from './middleware-decorators'
  * @public
  */
 export function register(app: Application, routingClasses: ClassType[]): Application {
+	const globalMwares = getGlobalMiddlewares(app)
+
 	for (const routingClass of routingClasses) {
 		// Either attach middlewares/handlers to an intermediary router or directly to the app.
 		const routerMeta = extractRouter(routingClass)
@@ -34,7 +36,11 @@ export function register(app: Application, routingClasses: ClassType[]): Applica
 		for (const { path, method, key } of routes) {
 			const routeMwares = extractMiddlewares(routingClass, key)
 			const routeCatch = extractCatch(routingClass, key)
-			const paramsMwares = extractParamsMiddlewares(routingClass, key, [sharedMwares, routeMwares])
+			const paramsMwares = extractParamsMiddlewares(routingClass, key, [
+				globalMwares,
+				sharedMwares,
+				routeMwares,
+			])
 
 			const handler = promisifyHandler((req, res, next) => {
 				const args = extractParams(routingClass, key, { req, res, next })
@@ -72,4 +78,24 @@ export function register(app: Application, routingClasses: ClassType[]): Applica
 	}
 
 	return app
+}
+
+/**
+ * @internal
+ */
+export function getGlobalMiddlewares(app: Application): RequestHandler[] {
+	const globalMwares: RequestHandler[] = []
+
+	for (const layer of (app._router || []).stack || []) {
+		if (
+			layer.name !== 'query' &&
+			layer.name !== 'expressInit' &&
+			layer.name !== 'router' &&
+			layer.name !== 'bound dispatch'
+		) {
+			globalMwares.push(layer.handle)
+		}
+	}
+
+	return globalMwares
 }
