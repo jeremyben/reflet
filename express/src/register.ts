@@ -1,6 +1,9 @@
-import { ClassType } from './interfaces'
 import { Router, Application, RequestHandler } from 'express'
+import { ClassType } from './interfaces'
 import { promisifyHandler, promisifyErrorHandler } from './async-wrapper'
+import { defaultErrorHandler, makeErrorHandlerRemovable } from './error-handler'
+
+// Extractors
 import { extractRouter } from './router-decorator'
 import { extractRoutes } from './route-decorators'
 import { extractParams, extractParamsMiddlewares } from './param-decorators'
@@ -76,6 +79,9 @@ export function register(app: Application, routingClasses: ClassType[]): Applica
 			app.use(routerMeta.prefix, instance)
 		}
 	}
+
+	app.use(defaultErrorHandler)
+	makeErrorHandlerRemovable(app)
 
 	return app
 }

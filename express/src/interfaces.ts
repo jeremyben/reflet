@@ -15,6 +15,11 @@ export type GenericDecorator = (
 ) => any
 
 /**
+ * @public
+ */
+export type Fn<T = any> = (...args: any[]) => T
+
+/**
  * Request headers union.
  * @public
  */
@@ -100,6 +105,12 @@ declare module 'express' {
 		_router: _Router
 	}
 
+	// tslint:disable: no-implicit-dependencies
+	export type PathParams = import('express-serve-static-core').PathParams
+	export type RequestHandlerParams = import('express-serve-static-core').RequestHandlerParams
+	// to avoid ts4033 or ts2717 errors on build
+	type RequestHandler_ = import('express-serve-static-core').RequestHandler
+
 	export type _Router = {
 		params: {}
 		_params: any[]
@@ -110,7 +121,7 @@ declare module 'express' {
 	}
 
 	type Layer = {
-		handle: RequestHandler | RequestHandler & _Router
+		handle: RequestHandler_ | RequestHandler_ & _Router
 		name:
 			| '<anonymous>'
 			| 'query'
@@ -131,7 +142,7 @@ declare module 'express' {
 		path: string
 		methods: { [key in RoutingMethod]?: true }
 		stack: {
-			handle: RequestHandler
+			handle: RequestHandler_
 			name: string
 			params: {} | undefined
 			path: string | undefined

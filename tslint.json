@@ -22,7 +22,7 @@
 		"member-access": false,
 		"max-classes-per-file": false,
 		"curly": [true, "ignore-same-line"],
-		"array-type": [true, "array-simple"],
+		"array-type": [true, "array"],
 		"prefer-object-spread": false,
 		"ban-types": [
 			true,

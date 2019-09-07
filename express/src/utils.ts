@@ -1,30 +1,34 @@
+import { RequestHandler, ErrorRequestHandler, PathParams } from 'express'
+import { Fn } from './interfaces'
+
 /**
- * Checks if given object is Observable-like.
- * @see https://github.com/ReactiveX/rxjs/blob/master/src/internal/util/isObservable.ts
  * @internal
  */
-export function isObservable(obj: any): boolean {
-	return !!obj && (typeof obj.lift === 'function' && typeof obj.subscribe === 'function')
+export function isErrorHandler(obj: any): obj is ErrorRequestHandler {
+	return typeof obj === 'function' && (obj as Fn).length === 4
 }
 
 /**
- * Checks if given object is Promise-like.
  * @internal
  */
-export function isPromise(obj: any): obj is Promise<any> {
-	return obj != null && typeof obj === 'object' && typeof obj.then === 'function'
+export function isErrorHandlerParams(
+	obj: any
+): obj is ErrorRequestHandler | (RequestHandler | ErrorRequestHandler)[] {
+	return isErrorHandler(obj) || (Array.isArray(obj) && obj.some(isErrorHandler))
 }
 
 /**
- * Return the name of the caller.
  * @internal
  */
-export function getCaller() {
-	const stack = new Error().stack!.split('\n')
-	const result = /([^(]+)@|at ([^(]+) \(/.exec(stack[2])!
-	const caller = result[1] || result[2]
+export function isPath(val: any): val is string | RegExp {
+	return typeof val === 'string' || val instanceof RegExp
+}
 
-	return caller
+/**
+ * @internal
+ */
+export function isPathParams(obj: any): obj is PathParams {
+	return isPath(obj) || (Array.isArray(obj) && obj.every(isPath))
 }
 
 /**
@@ -141,15 +145,31 @@ export function uniqFast<T extends string | number>(array: T[]): T[] {
 }
 
 /**
+ * Checks if given object is Observable-like.
+ * @see https://github.com/ReactiveX/rxjs/blob/master/src/internal/util/isObservable.ts
+ * @internal
+ */
+export function isObservable(obj: any): boolean {
+	return !!obj && (typeof obj.lift === 'function' && typeof obj.subscribe === 'function')
+}
+
+/**
+ * Checks if given object is Promise-like.
+ * @internal
+ */
+export function isPromise<T = any>(obj: any): obj is Promise<T> {
+	return obj instanceof Promise || (typeof obj === 'object' && typeof obj.then === 'function')
+}
+
+/**
  * Creates a function that is restricted to invoking func once.
  * Repeat calls to the function return the value of the first invocation.
  * @see https://lodash.com/docs/#once
  * @internal
  */
-export function once(fn: Function) {
-	if (typeof fn !== 'function') throw TypeError('Expected a function')
+export function once<T>(fn: Function) {
 	let invoked = false
-	let result: any
+	let result: T
 
 	return () => {
 		if (invoked) return result
@@ -159,4 +179,16 @@ export function once(fn: Function) {
 
 		return result
 	}
+}
+
+/**
+ * Return the name of the caller.
+ * @internal
+ */
+export function getCaller() {
+	const stack = new Error().stack!.split('\n')
+	const result = /([^(]+)@|at ([^(]+) \(/.exec(stack[2])!
+	const caller = result[1] || result[2]
+
+	return caller
 }
