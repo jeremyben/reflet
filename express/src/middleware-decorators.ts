@@ -1,5 +1,5 @@
 import Meta from './metadata-keys'
-import { RequestHandler, ErrorRequestHandler } from 'express'
+import { RequestHandler, ErrorRequestHandler, Request, Response, NextFunction } from 'express'
 import { ClassType, GenericDecorator } from './interfaces'
 import { concatPrependFast } from './utils'
 
@@ -75,7 +75,9 @@ export function Use(...middlewares: RequestHandler[]): GenericDecorator {
  * @see http://expressjs.com/en/guide/error-handling.html
  * @public
  */
-export function Catch(errorMiddleware: ErrorRequestHandler): GenericDecorator {
+export function Catch<T = any>(
+	errorMiddleware: (err: T, req: Request, res: Response, next: NextFunction) => any
+): GenericDecorator {
 	return (target, methodKey, descriptor) => {
 		// Method middleware
 		if (methodKey) {
