@@ -15,7 +15,13 @@ export function defaultErrorHandler(err: any, req: Request, res: Response, next:
 		!res.get('Content-Type') && (req.xhr || (!!req.get('Accept') && !!req.accepts('json')))
 
 	if (!res.headersSent && (definitelyJson || probablyJson)) {
-		if (process.env.NODE_ENV === 'production') delete err.stack
+		if (err instanceof Error) {
+			// Make `message` property visible in the response https://stackoverflow.com/questions/18391212
+			Object.defineProperty(err, 'message', { enumerable: true })
+
+			if (process.env.NODE_ENV === 'production') delete err.stack
+		}
+
 		res.status(err.status || err.statusCode || 500).json(err)
 	} else {
 		next(err)

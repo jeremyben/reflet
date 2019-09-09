@@ -37,18 +37,21 @@ describe('default global error handler', () => {
 		const result = await rq.get('')
 		expect(result.type).toBe('application/json')
 		expect(result.status).toBe(500)
+		expect(result.body).toBe(1)
 	})
 
 	test('infer json from request Accept header', async () => {
 		const result = await rq.put('').accept('json')
 		expect(result.type).toBe('application/json')
 		expect(result.status).toBe(500)
+		expect(result.body).toEqual({ message: 'wtf' })
 	})
 
 	test('infer json from request X-Requested-With header', async () => {
 		const result = await rq.post('').set('X-Requested-With', 'XMLHttpRequest')
 		expect(result.type).toBe('application/json')
 		expect(result.status).toBe(418)
+		expect(result.body).toEqual({ status: 418, message: 'wtf' })
 	})
 
 	test('cannot infer json and pass to express final handler', async () => {
