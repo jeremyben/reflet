@@ -6,6 +6,8 @@ type RouterMeta = { prefix: string | RegExp; options?: RouterOptions }
 
 /**
  * @see https://expressjs.com/en/4x/api.html#express.router
+ *
+ * @decorator class
  * @public
  */
 export function Router(prefix: string | RegExp, options?: RouterOptions): ClassDecorator {

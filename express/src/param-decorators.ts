@@ -1,5 +1,5 @@
 import Meta from './metadata-keys'
-import { ClassType, RequestHeaderName } from './interfaces'
+import { ClassType, RequestHeaderName, Fn } from './interfaces'
 import { json, urlencoded, Request, Response, NextFunction, RequestHandler } from 'express'
 import { flatMapFast } from './utils'
 
@@ -23,7 +23,7 @@ type ParamMeta = {
  *
  * @see https://expressjs.com/en/4x/api.html#req
  *
- * @decorator
+ * @decorator parameter, optional invokation
  * @public
  */
 export function Req(...args: Parameters<ParameterDecorator>): void
@@ -35,7 +35,7 @@ export function Req(): ParameterDecorator
 
 export function Req() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
-		return (createParamDecorator((req) => req) as Function)(...arguments)
+		return (createParamDecorator((req) => req) as Fn)(...arguments)
 	} else {
 		return createParamDecorator((req) => req)
 	}
@@ -54,7 +54,7 @@ export function Req() {
  *
  * @see https://expressjs.com/en/4x/api.html#res
  *
- * @decorator
+ * @decorator parameter, optional invokation
  * @public
  */
 export function Res(...args: Parameters<ParameterDecorator>): void
@@ -68,7 +68,7 @@ export function Res() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
 		// res is not defined in the public method signature, but is still used later
 		// by the route params extractor so we must pass it as optional for the compiler
-		return (createParamDecorator((req, res?: Response) => res!) as Function)(...arguments)
+		return (createParamDecorator((req, res?: Response) => res!) as Fn)(...arguments)
 	} else {
 		return createParamDecorator((req, res?: Response) => res!)
 	}
@@ -87,7 +87,7 @@ export function Res() {
  *
  * @see https://expressjs.com/en/guide/writing-middleware.html
  *
- * @decorator
+ * @decorator parameter, optional invokation
  * @public
  */
 export function Next(...args: Parameters<ParameterDecorator>): void
@@ -101,7 +101,7 @@ export function Next() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
 		// next is not defined in the public method signature, but is still used later
 		// by the route params extractor so we must pass it as optional for the compiler
-		return (createParamDecorator((req, res?, next?: NextFunction) => next!) as Function)(...arguments)
+		return (createParamDecorator((req, res?, next?: NextFunction) => next!) as Fn)(...arguments)
 	} else {
 		return createParamDecorator((req, res?, next?: NextFunction) => next!)
 	}
@@ -125,7 +125,7 @@ const bodyParsers = [json(), urlencoded({ extended: true })]
  *
  * @see https://expressjs.com/en/4x/api.html#req.body
  *
- * @decorator
+ * @decorator parameter, optional invokation
  * @public
  */
 export function Body(...args: Parameters<ParameterDecorator>): void
@@ -171,7 +171,7 @@ export function Body<T extends object>(
  *
  * @see https://expressjs.com/en/4x/api.html#req.params
  *
- * @decorator
+ * @decorator parameter, optional invokation
  * @public
  */
 export function Params(...args: Parameters<ParameterDecorator>): void
@@ -198,7 +198,7 @@ export function Params(
 /**
  * @see https://expressjs.com/en/4x/api.html#req.query
  *
- * @decorator
+ * @decorator parameter, optional invokation
  * @public
  */
 export function Query(...args: Parameters<ParameterDecorator>): void
@@ -223,7 +223,10 @@ export function Query(
 }
 
 /**
- * @decorator
+ *
+ * @see https://nodejs.org/api/http.html#http_message_headers
+ *
+ * @decorator parameter, optional invokation
  * @public
  */
 export function Headers(...args: Parameters<ParameterDecorator>): void
@@ -231,7 +234,7 @@ export function Headers(...args: Parameters<ParameterDecorator>): void
 /**
  * {@inheritDoc (Headers:1)}
  */
-export function Headers<T extends RequestHeaderName | string = RequestHeaderName>(
+export function Headers<T extends string = RequestHeaderName>(
 	subKey?: T extends RequestHeaderName ? RequestHeaderName : string
 ): ParameterDecorator
 
@@ -280,7 +283,7 @@ export function Headers(
  * }
  * ```
  *
- * @decorator
+ * @decorator parameter
  * @public
  */
 export function createParamDecorator<T = any>(

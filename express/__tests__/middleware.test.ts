@@ -1,6 +1,6 @@
 import supertest from 'supertest'
 import express, { json, Response, NextFunction, Request } from 'express'
-import { register, Get, Post, Put, Patch, Use, Catch } from '../src'
+import { register, Get, Post, Put, Use, Catch } from '../src'
 import { log } from '../../testing/tools'
 
 @Use(json())

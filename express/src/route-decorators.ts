@@ -10,6 +10,7 @@ type Route = {
 /**
  * Routes HTTP `GET` requests.
  * @see http://expressjs.com/en/4x/api.html#app.get.method
+ * @decorator method
  * @public
  */
 export const Get = (path: string | RegExp = '') => Method('get', path)
@@ -17,6 +18,7 @@ export const Get = (path: string | RegExp = '') => Method('get', path)
 /**
  * Routes HTTP `POST` requests.
  * @see http://expressjs.com/en/4x/api.html#app.post.method
+ * @decorator method
  * @public
  */
 export const Post = (path: string | RegExp = '') => Method('post', path)
@@ -24,6 +26,7 @@ export const Post = (path: string | RegExp = '') => Method('post', path)
 /**
  * Routes HTTP `PUT` requests.
  * @see http://expressjs.com/en/4x/api.html#app.put.method
+ * @decorator method
  * @public
  */
 export const Put = (path: string | RegExp = '') => Method('put', path)
@@ -31,6 +34,7 @@ export const Put = (path: string | RegExp = '') => Method('put', path)
 /**
  * Routes HTTP `PATCH` requests.
  * @see http://expressjs.com/en/4x/api.html#app.METHOD
+ * @decorator method
  * @public
  */
 export const Patch = (path: string | RegExp = '') => Method('patch', path)
@@ -38,6 +42,7 @@ export const Patch = (path: string | RegExp = '') => Method('patch', path)
 /**
  * Routes HTTP `DELETE` requests.
  * @see http://expressjs.com/en/4x/api.html#app.delete.method
+ * @decorator method
  * @public
  */
 export const Delete = (path: string | RegExp = '') => Method('delete', path)
@@ -45,10 +50,11 @@ export const Delete = (path: string | RegExp = '') => Method('delete', path)
 /**
  * Routes an HTTP request.
  * @see http://expressjs.com/en/4x/api.html#app.METHOD
+ * @decorator method
  * @public
  */
 export function Method(method: RoutingMethod, path: string | RegExp): MethodDecorator {
-	return (target, key, descriptor: TypedPropertyDescriptor<any>) => {
+	return (target, key, descriptor) => {
 		// Attach routes to class instead of methods to extract and traverse all of them at once
 		const routes: Route[] = Reflect.getOwnMetadata(Meta.Route, target) || []
 		routes.push({ path, method, key })

@@ -5,19 +5,19 @@
 export type ClassType<T = any> = new (...args: any[]) => T
 
 /**
- * Defines any type of decorator.
- * @public
- */
-export type GenericDecorator = (
-	target: object,
-	propertyKey?: string | symbol,
-	descriptorOrIndex?: TypedPropertyDescriptor<any> | number
-) => any
-
-/**
  * @public
  */
 export type Fn<T = any> = (...args: any[]) => T
+
+/**
+ * Defines any type of decorator.
+ * @public
+ */
+export type ClassOrMethodDecorator = (
+	target: object,
+	propertyKey?: string | symbol,
+	descriptor?: TypedPropertyDescriptor<any>
+) => any
 
 /**
  * Request headers union.

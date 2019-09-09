@@ -1,6 +1,6 @@
 import Meta from './metadata-keys'
 import { RequestHandler, ErrorRequestHandler, Request, Response, NextFunction } from 'express'
-import { ClassType, GenericDecorator } from './interfaces'
+import { ClassType, ClassOrMethodDecorator } from './interfaces'
 import { concatPrependFast } from './utils'
 
 /**
@@ -32,9 +32,10 @@ import { concatPrependFast } from './utils'
  * @see http://expressjs.com/en/4x/api.html#app.use
  * @see https://expressjs.com/en/guide/writing-middleware.html
  *
+ * @decorator class, method
  * @public
  */
-export function Use(...middlewares: RequestHandler[]): GenericDecorator {
+export function Use(...middlewares: RequestHandler[]): ClassOrMethodDecorator {
 	return (target, key, descriptor) => {
 		// Method middleware
 		if (key) {
@@ -73,11 +74,13 @@ export function Use(...middlewares: RequestHandler[]): GenericDecorator {
  * decorator functions in JS are executed in a bottom-up way (due to their _wrapping_ nature).
  *
  * @see http://expressjs.com/en/guide/error-handling.html
+ *
+ * @decorator class, method
  * @public
  */
 export function Catch<T = any>(
 	errorMiddleware: (err: T, req: Request, res: Response, next: NextFunction) => any
-): GenericDecorator {
+): ClassOrMethodDecorator {
 	return (target, methodKey, descriptor) => {
 		// Method middleware
 		if (methodKey) {
@@ -111,9 +114,9 @@ export function extractMiddlewares(target: ClassType, key?: string | symbol): Re
  * Get methods metadata from the prototype (no need to create an instance).
  * @internal
  */
-export function extractCatch(target: ClassType, methodKey?: string | symbol): ErrorRequestHandler[] {
+export function extractCatch(target: ClassType, key?: string | symbol): ErrorRequestHandler[] {
 	// Method middlewares
-	if (methodKey) return Reflect.getOwnMetadata(Meta.Catch, target.prototype, methodKey) || []
+	if (key) return Reflect.getOwnMetadata(Meta.Catch, target.prototype, key) || []
 	// Class middlewares
 	return Reflect.getOwnMetadata(Meta.Catch, target) || []
 }
