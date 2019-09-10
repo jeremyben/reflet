@@ -1,6 +1,6 @@
 import supertest from 'supertest'
 import express, { json, Response, NextFunction, Request, ErrorRequestHandler, RequestHandler } from 'express'
-import { register, Get, Post, Put, Use } from '../src'
+import { register, Get, Post, Put, Use, Patch } from '../src'
 import { hasDefaultErrorHandler } from '../src/error-handler'
 import { log } from '../../testing/tools'
 
@@ -23,6 +23,19 @@ class FooTestController {
 		err.status = 418
 		throw err
 	}
+
+	@Patch('/:type')
+	patch(req: Request, res: Response, next: NextFunction) {
+		const { type } = req.params
+
+		// tslint:disable: no-string-throw
+		if (type === 'string') throw '400: impossible'
+		if (type === 'wrong-string') throw 'wtf'
+		if (type === 'number') throw 400
+		if (type === 'wrong-number') throw 200
+		if (type === 'object') throw { status: 401.25 }
+		if (type === 'Error') throw Error('503.what')
+	}
 }
 
 const app = express()
@@ -34,30 +47,30 @@ const errorHandler: ErrorRequestHandler = (err, req, res, next) => next(err)
 
 describe('default global error handler', () => {
 	test('infer json from response Content-Type header', async () => {
-		const result = await rq.get('')
-		expect(result.type).toBe('application/json')
-		expect(result.status).toBe(500)
-		expect(result.body).toBe(1)
+		const res = await rq.get('')
+		expect(res.type).toBe('application/json')
+		expect(res.status).toBe(500)
+		expect(res.body).toBe(1)
 	})
 
 	test('infer json from request Accept header', async () => {
-		const result = await rq.put('').accept('json')
-		expect(result.type).toBe('application/json')
-		expect(result.status).toBe(500)
-		expect(result.body).toEqual({ message: 'wtf' })
+		const res = await rq.put('').accept('json')
+		expect(res.type).toBe('application/json')
+		expect(res.status).toBe(500)
+		expect(res.body).toEqual({ message: 'wtf' })
 	})
 
 	test('infer json from request X-Requested-With header', async () => {
-		const result = await rq.post('').set('X-Requested-With', 'XMLHttpRequest')
-		expect(result.type).toBe('application/json')
-		expect(result.status).toBe(418)
-		expect(result.body).toEqual({ status: 418, message: 'wtf' })
+		const res = await rq.post('').set('X-Requested-With', 'XMLHttpRequest')
+		expect(res.type).toBe('application/json')
+		expect(res.status).toBe(418)
+		expect(res.body).toEqual({ status: 418, message: 'wtf' })
 	})
 
 	test('cannot infer json and pass to express final handler', async () => {
-		const result = await rq.post('')
-		expect(result.type).toBe('text/html')
-		expect(result.status).toBe(418)
+		const res = await rq.post('')
+		expect(res.type).toBe('text/html')
+		expect(res.status).toBe(418)
 	})
 
 	test('not removed by after middleware', () => {
@@ -70,6 +83,26 @@ describe('default global error handler', () => {
 		app.use((req, res, next) => next())
 		app.use([afterHandler, afterHandler])
 		expect(hasDefaultErrorHandler(app)).toBe(true)
+	})
+})
+
+describe('error status parsing', () => {
+	test('string', async () => {
+		await rq.patch('/string').expect(400)
+		await rq.patch('/wrong-string').expect(500)
+	})
+
+	test('number', async () => {
+		await rq.patch('/number').expect(400)
+		await rq.patch('/wrong-number').expect(500)
+	})
+
+	test('object', async () => {
+		await rq.patch('/object').expect(401)
+	})
+
+	test('Error instance', async () => {
+		await rq.patch('/Error').expect(503)
 	})
 })
 
@@ -86,16 +119,16 @@ describe('custom global error handler', () => {
 	})
 
 	test('custom handling', async () => {
-		const customErrorHandler: ErrorRequestHandler = (err, req, res, next) =>
-			err.status === 418 ? res.status(err.status).send({ err }) : next(err)
+		const customErrorHandler: ErrorRequestHandler = (err, req, resp, next) =>
+			err.status === 418 ? resp.status(err.status).send({ err }) : next(err)
 
 		app.use(customErrorHandler)
 
-		let result = await rq.get('')
-		expect(result.type).toBe('text/html')
+		let res = await rq.get('')
+		expect(res.type).toBe('text/html')
 
-		result = await rq.post('')
-		expect(result.type).toBe('application/json')
-		expect(result.status).toBe(418)
+		res = await rq.post('')
+		expect(res.type).toBe('application/json')
+		expect(res.status).toBe(418)
 	})
 })
