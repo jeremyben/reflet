@@ -1,4 +1,4 @@
-type Response = import('supertest').Response & { req?: import('http').ClientRequest }
+type Response = import('supertest').Response & { req?: import('http').ClientRequest; headers?: any }
 
 export function log(res: Response): void
 export function log(name: string, res: Response): void
@@ -14,9 +14,9 @@ export function log(arg1: Response | string, arg2?: Response) {
 		res.body,
 		'\n[text]',
 		res.text,
-		'\n[res-type]',
-		res.header['content-type'],
-		'\n[req-type]',
-		res.req!.getHeader('content-type')
+		'\n[res-headers]',
+		JSON.stringify(res.headers, null, '\t'),
+		'\n[req-headers]',
+		JSON.stringify(res.req!.getHeaders(), null, '\t')
 	)
 }
