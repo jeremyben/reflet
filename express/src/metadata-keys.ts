@@ -7,6 +7,7 @@ const Meta = <const>{
 	Param: Symbol('param'),
 	Use: Symbol('use'),
 	Catch: Symbol('catch'),
+	Send: Symbol('send'),
 }
 
 export default Meta

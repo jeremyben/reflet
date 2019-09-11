@@ -1,13 +1,15 @@
-import { Router, Application, RequestHandler } from 'express'
+import { Router, Application, RequestHandler, Response } from 'express'
 import { ClassType } from './interfaces'
 import { promisifyHandler, promisifyErrorHandler } from './async-wrapper'
 import { defaultErrorHandler, makeErrorHandlerRemovable } from './error-handler'
+import { isPromise, isReadableStream } from './utils'
 
 // Extractors
 import { extractRouter } from './router-decorator'
 import { extractRoutes } from './route-decorators'
 import { extractParams, extractParamsMiddlewares } from './param-decorators'
 import { extractMiddlewares, extractCatch } from './middleware-decorators'
+import { extractSend } from './send-decorator'
 
 /**
  * Register routing classes to an express application.
@@ -44,10 +46,48 @@ export function register(app: Application, routingClasses: ClassType[]): Applica
 				sharedMwares,
 				routeMwares,
 			])
+			const toSend = extractSend(routingClass, key)
 
 			const handler = promisifyHandler((req, res, next) => {
 				const args = extractParams(routingClass, key, { req, res, next })
-				return routingClass.prototype[key].apply(routingClass.prototype, args)
+				const result = routingClass.prototype[key].apply(routingClass.prototype, args)
+
+				// Handle or bypass sending the method's result according to @Send decorator,
+				// if the response has already been sent to the client, we also bypass.
+				if (!toSend || res.headersSent) return result
+
+				const { json, status, nullStatus, undefinedStatus } = toSend
+
+				if (isPromise(result)) return result.then((value) => send(value))
+				else return send(result)
+
+				function send(value: any): Response {
+					// Default status
+					if (status) res.status(status)
+
+					// Undefined and null status
+					if (value === undefined && undefinedStatus) {
+						res.status(undefinedStatus)
+					} else if (value === null && nullStatus) {
+						res.status(nullStatus)
+					}
+
+					// Readable stream
+					if (isReadableStream(value)) return value.pipe(res)
+
+					// Response object itself
+					if (value === res) {
+						// A stream is piping to the response so we let it go
+						if (res.listenerCount('unpipe') > 0) return res
+
+						// The response will try to send itself, which will cause a cryptic error
+						// ('TypeError: Converting circular structure to JSON')
+						throw Error('You tried to send the whole Response object')
+					}
+
+					if (json) return res.json(value)
+					else return res.send(value)
+				}
 			})
 
 			if (routerMeta) {

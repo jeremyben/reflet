@@ -1,4 +1,5 @@
 import { RequestHandler, ErrorRequestHandler, PathParams } from 'express'
+import { Stream, Readable, Writable } from 'stream'
 import { Fn } from './interfaces'
 
 /**
@@ -158,7 +159,42 @@ export function isObservable(obj: any): boolean {
  * @internal
  */
 export function isPromise<T = any>(obj: any): obj is Promise<T> {
-	return obj instanceof Promise || (typeof obj === 'object' && typeof obj.then === 'function')
+	return obj instanceof Promise || (!!obj && typeof obj === 'object' && typeof obj.then === 'function')
+}
+
+/**
+ * @internal
+ */
+export function isStream(obj: any): obj is Stream {
+	return !!obj && typeof obj === 'object' && typeof obj.pipe === 'function'
+}
+
+/**
+ * @internal
+ */
+export function isReadableStream(obj: any): obj is Readable {
+	return (
+		!!obj &&
+		typeof obj === 'object' &&
+		typeof obj.pipe === 'function' &&
+		typeof obj._read === 'function' &&
+		typeof obj._readableState === 'object' &&
+		obj.readable === true
+	)
+}
+
+/**
+ * @internal
+ */
+export function isWritableStream(obj: any): obj is Writable {
+	return (
+		!!obj &&
+		typeof obj === 'object' &&
+		typeof obj.pipe === 'function' &&
+		typeof obj._write === 'function' &&
+		typeof obj._writableState === 'object' &&
+		obj.writable === true
+	)
 }
 
 /**
