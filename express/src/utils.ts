@@ -1,37 +1,3 @@
-import { RequestHandler, ErrorRequestHandler, PathParams } from 'express'
-import { Stream, Readable, Writable } from 'stream'
-import { Fn } from './interfaces'
-
-/**
- * @internal
- */
-export function isErrorHandler(obj: any): obj is ErrorRequestHandler {
-	return typeof obj === 'function' && (obj as Fn).length === 4
-}
-
-/**
- * @internal
- */
-export function isErrorHandlerParams(
-	obj: any
-): obj is ErrorRequestHandler | (RequestHandler | ErrorRequestHandler)[] {
-	return isErrorHandler(obj) || (Array.isArray(obj) && obj.some(isErrorHandler))
-}
-
-/**
- * @internal
- */
-export function isPath(val: any): val is string | RegExp {
-	return typeof val === 'string' || val instanceof RegExp
-}
-
-/**
- * @internal
- */
-export function isPathParams(obj: any): obj is PathParams {
-	return isPath(obj) || (Array.isArray(obj) && obj.every(isPath))
-}
-
 /**
  * Mutates the `source` array.
  * @see https://dev.to/uilicious/javascript-array-push-is-945x-faster-than-array-concat-1oki
@@ -143,58 +109,6 @@ export function uniqFast<T extends string | number>(array: T[]): T[] {
 	}
 
 	return uniq
-}
-
-/**
- * Checks if given object is Observable-like.
- * @see https://github.com/ReactiveX/rxjs/blob/master/src/internal/util/isObservable.ts
- * @internal
- */
-export function isObservable(obj: any): boolean {
-	return !!obj && (typeof obj.lift === 'function' && typeof obj.subscribe === 'function')
-}
-
-/**
- * Checks if given object is Promise-like.
- * @internal
- */
-export function isPromise<T = any>(obj: any): obj is Promise<T> {
-	return obj instanceof Promise || (!!obj && typeof obj === 'object' && typeof obj.then === 'function')
-}
-
-/**
- * @internal
- */
-export function isStream(obj: any): obj is Stream {
-	return !!obj && typeof obj === 'object' && typeof obj.pipe === 'function'
-}
-
-/**
- * @internal
- */
-export function isReadableStream(obj: any): obj is Readable {
-	return (
-		!!obj &&
-		typeof obj === 'object' &&
-		typeof obj.pipe === 'function' &&
-		typeof obj._read === 'function' &&
-		typeof obj._readableState === 'object' &&
-		obj.readable === true
-	)
-}
-
-/**
- * @internal
- */
-export function isWritableStream(obj: any): obj is Writable {
-	return (
-		!!obj &&
-		typeof obj === 'object' &&
-		typeof obj.pipe === 'function' &&
-		typeof obj._write === 'function' &&
-		typeof obj._writableState === 'object' &&
-		obj.writable === true
-	)
 }
 
 /**

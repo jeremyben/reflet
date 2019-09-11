@@ -169,11 +169,8 @@ declare module 'express' {
 		_router: _Router
 	}
 
-	// tslint:disable: no-implicit-dependencies
-	export type PathParams = import('express-serve-static-core').PathParams
-	export type RequestHandlerParams = import('express-serve-static-core').RequestHandlerParams
-	// to avoid ts4033 or ts2717 errors on build
-	type RequestHandler_ = import('express-serve-static-core').RequestHandler
+	// prevent ts4033 or ts2717 errors on build
+	type RequestHandler_ = import('express').RequestHandler
 
 	export type _Router = {
 		params: {}

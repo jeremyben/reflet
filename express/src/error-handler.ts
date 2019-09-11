@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction, Application, RequestHandlerParams, PathParams } from 'express'
-import { isErrorHandlerParams, isPathParams } from './utils'
+import { Request, Response, NextFunction, Application, RequestHandler, ErrorRequestHandler } from 'express'
+import { isErrorHandlerParams, isPathParams } from './type-guards'
 import { Fn } from './interfaces'
 
 /**
@@ -68,6 +68,14 @@ Object.defineProperty(defaultErrorHandler, 'name', { value: defaultErrorHandlerN
  */
 export function makeErrorHandlerRemovable(app: Application): void {
 	// https://expressjs.com/en/4x/api.html#middleware-callback-function-examples
+
+	type PathParams = string | RegExp | (string | RegExp)[]
+
+	type RequestHandlerParams =
+		| RequestHandler
+		| ErrorRequestHandler
+		| (RequestHandler | ErrorRequestHandler)[]
+
 	const use0 = app.use as Fn
 
 	app.use = (first: RequestHandlerParams | PathParams, ...others: RequestHandlerParams[]) => {

@@ -2,7 +2,7 @@ import { Router, Application, RequestHandler, Response } from 'express'
 import { ClassType } from './interfaces'
 import { promisifyHandler, promisifyErrorHandler } from './async-wrapper'
 import { defaultErrorHandler, makeErrorHandlerRemovable } from './error-handler'
-import { isPromise, isReadableStream } from './utils'
+import { isPromise, isReadableStream } from './type-guards'
 
 // Extractors
 import { extractRouter } from './router-decorator'
