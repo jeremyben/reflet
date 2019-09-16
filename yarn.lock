@@ -1261,6 +1261,11 @@
   resolved "https://registry.yarnpkg.com/@microsoft/tsdoc/-/tsdoc-0.12.12.tgz#6692f1cbca664f68abbc62f9a26459fba8b9ff28"
   integrity sha512-5EzH1gHIonvvgA/xWRmVAJmRkTQj/yayUXyr66hFwNZiFE4j7lP8is9YQeXhwxGZEjO1PVMblAmFF0CyjNtPGw==
 
+"@microsoft/tsdoc@^0.12.14":
+  version "0.12.14"
+  resolved "https://registry.yarnpkg.com/@microsoft/tsdoc/-/tsdoc-0.12.14.tgz#0e0810a0a174e50e22dfe8edb30599840712f22d"
+  integrity sha512-518yewjSga1jLdiLrcmpMFlaba5P+50b0TWNFUpC+SL9Yzf0kMi57qw+bMl+rQ08cGqH1vLx4eg9YFUbZXgZ0Q==
+
 "@mrmlnc/readdir-enhanced@^2.2.1":
   version "2.2.1"
   resolved "https://registry.yarnpkg.com/@mrmlnc/readdir-enhanced/-/readdir-enhanced-2.2.1.tgz#524af240d1a360527b730475ecfa1344aa540dde"
