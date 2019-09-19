@@ -34,6 +34,7 @@
 		"build": "ts-node -T ../build.ts",
 		"prepublishOnly": "yarn run build",
 		"test": "jest --config ../jest.config.js",
-		"test:watch": "jest --config ../jest.config.js --watch --verbose false"
+		"test:watch": "jest --config ../jest.config.js --watch --verbose false",
+		"test:file": "jest --config ../jest.config.js --testPathPattern"
 	}
 }

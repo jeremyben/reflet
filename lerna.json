@@ -9,5 +9,13 @@
 			"push": false,
 			"message": "chore: release"
 		}
-	}
+	},
+	"ignoreChanges": [
+		"**/__fixtures__/**",
+		"**/__tests__/**",
+		"**/*.test.ts",
+		"**/test.ts",
+		"**/*.md",
+		"**/*.MD"
+	]
 }

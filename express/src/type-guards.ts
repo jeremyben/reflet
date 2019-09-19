@@ -88,7 +88,6 @@ export function isObservable<T = any>(obj: any): obj is Rx.Observable<T> {
 	return !!obj && typeof obj.lift === 'function' && typeof obj.subscribe === 'function'
 }
 
-// tslint:disable-next-line: no-namespace
 namespace Rx {
 	/**
 	 * @see https://github.com/ReactiveX/rxjs/blob/master/src/internal/Observable.ts

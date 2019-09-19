@@ -17,6 +17,7 @@
 		"interface-over-type-literal": false,
 		"no-angle-bracket-type-assertion": false,
 		"no-console": false,
+		"no-namespace": false,
 		"object-literal-sort-keys": false,
 		"ordered-imports": false,
 		"member-access": false,
