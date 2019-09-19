@@ -1,7 +1,7 @@
 import supertest from 'supertest'
 import express, { json, Response, NextFunction, Request, ErrorRequestHandler, RequestHandler } from 'express'
 import { register, Get, Post, Put, Use, Patch } from '../src'
-import { hasDefaultErrorHandler } from '../src/error-handler'
+import { hasGlobalErrorHandler } from '../src/global-error-handler'
 import { log } from '../../testing/tools'
 
 @Use(json())
@@ -76,13 +76,13 @@ describe('default global error handler', () => {
 	test('not removed by after middleware', () => {
 		app.use((req, res, next) => next())
 		app.use([afterHandler, afterHandler])
-		expect(hasDefaultErrorHandler(app)).toBe(true)
+		expect(hasGlobalErrorHandler(app)).toBe(true)
 	})
 
 	test('not removed by after middleware', () => {
 		app.use((req, res, next) => next())
 		app.use([afterHandler, afterHandler])
-		expect(hasDefaultErrorHandler(app)).toBe(true)
+		expect(hasGlobalErrorHandler(app)).toBe(true)
 	})
 })
 
@@ -108,14 +108,14 @@ describe('error status parsing', () => {
 
 describe('custom global error handler', () => {
 	test('default is removed', async () => {
-		expect(hasDefaultErrorHandler(app)).toBe(true)
-		expect(app.use.toString()).toContain('defaultErrorHandlerName')
+		expect(hasGlobalErrorHandler(app)).toBe(true)
+		expect(app.use.toString()).toContain('globalErrorHandler')
 
 		app.use(afterHandler, [afterHandler, errorHandler])
 
-		expect(hasDefaultErrorHandler(app)).toBe(false)
+		expect(hasGlobalErrorHandler(app)).toBe(false)
 		// check that app.use is patched back to the original function
-		expect(app.use.toString()).not.toContain('defaultErrorHandlerName')
+		expect(app.use.toString()).not.toContain('globalErrorHandler')
 	})
 
 	test('custom handling', async () => {

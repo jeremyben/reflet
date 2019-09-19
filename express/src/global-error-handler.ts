@@ -9,7 +9,7 @@ import { Fn } from './interfaces'
  * @see http://expressjs.com/en/guide/error-handling.html#writing-error-handlers
  * @internal
  */
-export function defaultErrorHandler(err: any, req: Request, res: Response, next: NextFunction) {
+export function globalErrorHandler(err: any, req: Request, res: Response, next: NextFunction) {
 	// https://regex101.com/r/oBuEQY/4
 	const definitelyJson = /(.*[^\w\s]|^)json(; ?charset.*)?$/m.test(res.get('Content-Type'))
 	const probablyJson =
@@ -58,15 +58,15 @@ function getErrorStatus(err: any, res: Response): number {
 	}
 }
 
-// Unique name of default error handler to retrieve it later from `app._router.stack`.
-const defaultErrorHandlerName = '@reflet/express.defaultErrorHandler' as string
-Object.defineProperty(defaultErrorHandler, 'name', { value: defaultErrorHandlerName })
+// Unique name of global error handler to retrieve it later from `app._router.stack`.
+const globalErrorHandlerName = '@reflet/express.globalErrorHandler' as string
+Object.defineProperty(globalErrorHandler, 'name', { value: globalErrorHandlerName })
 
 /**
  * Patch `app.use` to allow developpers redefining their own global error handler.
  * @internal
  */
-export function makeErrorHandlerRemovable(app: Application): void {
+export function makeGlobalErrorHandlerRemovable(app: Application): void {
 	// https://expressjs.com/en/4x/api.html#middleware-callback-function-examples
 
 	type PathParams = string | RegExp | (string | RegExp)[]
@@ -83,7 +83,7 @@ export function makeErrorHandlerRemovable(app: Application): void {
 			// patch back to original implementation
 			app.use = use0
 			// remove our default error handler from the stack
-			const index = app._router.stack.findIndex((layer) => layer.name === defaultErrorHandlerName)
+			const index = app._router.stack.findIndex((layer) => layer.name === globalErrorHandlerName)
 			if (index !== -1) app._router.stack.splice(index, 1)
 		}
 
@@ -94,6 +94,6 @@ export function makeErrorHandlerRemovable(app: Application): void {
 /**
  * @internal
  */
-export function hasDefaultErrorHandler(app: Application): boolean {
-	return app._router.stack.some((layer) => layer.name === defaultErrorHandlerName)
+export function hasGlobalErrorHandler(app: Application): boolean {
+	return app._router.stack.some((layer) => layer.name === globalErrorHandlerName)
 }

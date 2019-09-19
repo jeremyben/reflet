@@ -4,7 +4,7 @@ import { register, Get, Post, Put, Use, Catch } from '../src'
 import { log } from '../../testing/tools'
 
 @Use(json())
-class FooTestController {
+class FooController {
 	@Use(
 		(req: Request & { user?: any }, res, next) => {
 			req.user = { id: 1, name: 'jeremy' }
@@ -37,9 +37,7 @@ class FooTestController {
 	}
 }
 
-const app = express()
-const rq = supertest(app)
-register(app, [FooTestController])
+const rq = supertest(register(express(), [FooController]))
 
 test('middleware order', async () => {
 	const res = await rq.get('')

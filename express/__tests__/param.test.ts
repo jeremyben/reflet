@@ -28,7 +28,7 @@ const BodyTrimmed = (subKey: string) => createParamDecorator((req) => req.body[s
 	next()
 })
 @Router('/bar')
-class BarTestRouter {
+class BarRouter {
 	@Get()
 	async get(@Headers('via') via: string, @Headers<any>('shared') shared: string, @Res res: Response) {
 		res.send({ via, shared })
@@ -58,9 +58,7 @@ class BarTestRouter {
 	}
 }
 
-const app = express()
-const rq = supertest(app)
-register(app, [BarTestRouter])
+const rq = supertest(register(express(), [BarRouter]))
 
 test('@Headers', async () => {
 	const res = await rq.get('/bar')

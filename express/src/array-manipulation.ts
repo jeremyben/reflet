@@ -80,65 +80,13 @@ export function flatMapFast<T, U>(array: T[][], mapper?: (value: T) => U): U[] {
 			// at `i` in case it is an array, or we deleted an empty array at `i`.
 		} else {
 			// it's not an array so map the value and move on to the next element.
-			if (mapper) flattened[i] = mapper(value)
+			if (mapper) {
+				flattened[i] = mapper(value)
+			}
+
 			i++
 		}
 	}
 
 	return flattened
-}
-
-/**
- * @see https://stackoverflow.com/a/9229821/4776628
- * @internal
- */
-export function uniqFast<T extends string | number>(array: T[]): T[] {
-	const seen: { [value: string]: true } = {}
-	const uniq: T[] = []
-
-	const length = array.length
-	let j = 0
-
-	for (let i = 0; i < length; i++) {
-		const value = array[i]
-
-		if (seen[value] !== true) {
-			seen[value] = true
-			uniq[j++] = value
-		}
-	}
-
-	return uniq
-}
-
-/**
- * Creates a function that is restricted to invoking func once.
- * Repeat calls to the function return the value of the first invocation.
- * @see https://lodash.com/docs/#once
- * @internal
- */
-export function once<T>(fn: Function) {
-	let invoked = false
-	let result: T
-
-	return () => {
-		if (invoked) return result
-
-		invoked = true
-		result = fn.apply(null, arguments)
-
-		return result
-	}
-}
-
-/**
- * Return the name of the caller.
- * @internal
- */
-export function getCaller() {
-	const stack = new Error().stack!.split('\n')
-	const result = /([^(]+)@|at ([^(]+) \(/.exec(stack[2])!
-	const caller = result[1] || result[2]
-
-	return caller
 }

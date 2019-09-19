@@ -1,7 +1,7 @@
 import Meta from './metadata-keys'
 import { ClassType, RequestHeaderName, Fn } from './interfaces'
 import { json, urlencoded, Request, Response, NextFunction, RequestHandler } from 'express'
-import { flatMapFast } from './utils'
+import { flatMapFast } from './array-manipulation'
 
 type ParamMeta = {
 	index: number
@@ -342,10 +342,10 @@ export function extractParams(
  */
 export function extractParamsMiddlewares(
 	target: ClassType,
-	methodKey: string | symbol,
+	key: string | symbol,
 	alreadyMwares: [RequestHandler[], RequestHandler[], RequestHandler[]]
 ): RequestHandler[] {
-	const params: ParamMeta[] = Reflect.getOwnMetadata(Meta.Param, target.prototype, methodKey) || []
+	const params: ParamMeta[] = Reflect.getOwnMetadata(Meta.Param, target.prototype, key) || []
 	if (!params.length) return []
 
 	const paramMwares: RequestHandler[] = []

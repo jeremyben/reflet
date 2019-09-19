@@ -5,7 +5,7 @@ import { log } from '../../testing/tools'
 
 // With Router
 @Router('/user', { caseSensitive: true })
-class UserTestController {
+class UserController {
 	@Get()
 	get(req: Request, res: Response, next: NextFunction) {
 		res.send([{ id: 1 }])
@@ -26,7 +26,7 @@ class UserTestController {
 }
 
 // Without Router
-class MessageTestController {
+class MessageController {
 	@Method('options', '/message')
 	options(req: Request, res: Response, next: NextFunction) {
 		res.send([{ id: 1 }])
@@ -39,9 +39,7 @@ class MessageTestController {
 	}
 }
 
-const app = express()
-const rq = supertest(app)
-register(app, [UserTestController, MessageTestController])
+const rq = supertest(register(express(), [UserController, MessageController]))
 
 describe('With Router', () => {
 	test('@Get', async () => {

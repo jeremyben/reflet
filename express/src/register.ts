@@ -1,35 +1,36 @@
 import { Router, Application, RequestHandler, Response } from 'express'
 import { ClassType } from './interfaces'
 import { promisifyHandler, promisifyErrorHandler } from './async-wrapper'
-import { defaultErrorHandler, makeErrorHandlerRemovable } from './error-handler'
+import { globalErrorHandler, makeGlobalErrorHandlerRemovable } from './global-error-handler'
 import { isPromise, isReadableStream } from './type-guards'
 
 // Extractors
 import { extractRouter } from './router-decorator'
 import { extractRoutes } from './route-decorators'
+import { extractMiddlewares } from './middleware-decorator'
+import { extractErrorHandlers } from './error-handler-decorator'
 import { extractParams, extractParamsMiddlewares } from './param-decorators'
-import { extractMiddlewares, extractCatch } from './middleware-decorators'
 import { extractSend } from './send-decorator'
 
 /**
- * Register routing classes to an express application.
+ * Register decorated routing classes to an express application.
  *
  * @param app - express app instance.
- * @param routingClasses - classes with decorated routes.
+ * @param controllers - classes with decorated routes.
  *
  * @public
  */
-export function register(app: Application, routingClasses: ClassType[]): Application {
+export function register(app: Application, controllers: ClassType[]): Application {
 	const globalMwares = getGlobalMiddlewares(app)
 
-	for (const routingClass of routingClasses) {
+	for (const controller of controllers) {
 		// Either attach middlewares/handlers to an intermediary router or directly to the app.
-		const routerMeta = extractRouter(routingClass)
+		const routerMeta = extractRouter(controller)
 		const instance = routerMeta ? Router(routerMeta.options) : app
 
-		const routes = extractRoutes(routingClass)
-		const sharedMwares = extractMiddlewares(routingClass)
-		const sharedCatch = extractCatch(routingClass)
+		const routes = extractRoutes(controller)
+		const sharedMwares = extractMiddlewares(controller)
+		const sharedErrHandlers = extractErrorHandlers(controller)
 
 		// Apply shared middlewares to the router instance
 		// or to each of the routes if the class is attached on the base app.
@@ -39,18 +40,18 @@ export function register(app: Application, routingClasses: ClassType[]): Applica
 		}
 
 		for (const { path, method, key } of routes) {
-			const routeMwares = extractMiddlewares(routingClass, key)
-			const routeCatch = extractCatch(routingClass, key)
-			const paramsMwares = extractParamsMiddlewares(routingClass, key, [
+			const routeMwares = extractMiddlewares(controller, key)
+			const routeErrHandlers = extractErrorHandlers(controller, key)
+			const paramsMwares = extractParamsMiddlewares(controller, key, [
 				globalMwares,
 				sharedMwares,
 				routeMwares,
 			])
-			const toSend = extractSend(routingClass, key)
+			const toSend = extractSend(controller, key)
 
 			const handler = promisifyHandler((req, res, next) => {
-				const args = extractParams(routingClass, key, { req, res, next })
-				const result = routingClass.prototype[key].apply(routingClass.prototype, args)
+				const args = extractParams(controller, key, { req, res, next })
+				const result = controller.prototype[key].apply(controller.prototype, args)
 
 				// Handle or bypass sending the method's result according to @Send decorator,
 				// if the response has already been sent to the client, we also bypass.
@@ -96,7 +97,7 @@ export function register(app: Application, routingClasses: ClassType[]): Applica
 					routeMwares.map(promisifyHandler),
 					paramsMwares.map(promisifyHandler),
 					handler,
-					routeCatch.map(promisifyErrorHandler)
+					routeErrHandlers.map(promisifyErrorHandler)
 				)
 			} else {
 				// Have same order of middlewares by surrounding route specific ones by shared ones.
@@ -106,22 +107,22 @@ export function register(app: Application, routingClasses: ClassType[]): Applica
 					routeMwares.map(promisifyHandler),
 					paramsMwares.map(promisifyHandler),
 					handler,
-					routeCatch.map(promisifyErrorHandler),
-					sharedCatch.map(promisifyErrorHandler)
+					routeErrHandlers.map(promisifyErrorHandler),
+					sharedErrHandlers.map(promisifyErrorHandler)
 				)
 			}
 		}
 
 		if (routerMeta) {
-			for (const catch_ of sharedCatch) instance.use(promisifyErrorHandler(catch_))
+			for (const errHandler of sharedErrHandlers) instance.use(promisifyErrorHandler(errHandler))
 
 			// Finally attach the router to the app
 			app.use(routerMeta.prefix, instance)
 		}
 	}
 
-	app.use(defaultErrorHandler)
-	makeErrorHandlerRemovable(app)
+	app.use(globalErrorHandler)
+	makeGlobalErrorHandlerRemovable(app)
 
 	return app
 }
