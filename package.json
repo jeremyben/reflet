@@ -6,7 +6,8 @@
 	"private": true,
 	"repository": "github:jeremyben/reflet",
 	"workspaces": [
-		"express"
+		"express",
+		"express-middlewares"
 	],
 	"engines": {
 		"node": ">=8.10"
