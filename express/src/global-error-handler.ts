@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction, Application, RequestHandler, ErrorRequestHandler } from 'express'
 import { isErrorHandlerParams, isPathParams } from './type-guards'
-import { Fn } from './interfaces'
 
 /**
  * Adds json response detection and status code detection to express default error handler.
@@ -76,9 +75,9 @@ export function makeGlobalErrorHandlerRemovable(app: Application): void {
 		| ErrorRequestHandler
 		| (RequestHandler | ErrorRequestHandler)[]
 
-	const use0 = app.use as Fn
+	const use0 = app.use
 
-	app.use = (first: RequestHandlerParams | PathParams, ...others: RequestHandlerParams[]) => {
+	app.use = function use(first: RequestHandlerParams | PathParams, ...others: RequestHandlerParams[]) {
 		if (isErrorHandlerParams(first) || (!isPathParams(first) && others.some(isErrorHandlerParams))) {
 			// patch back to original implementation
 			app.use = use0
@@ -87,7 +86,7 @@ export function makeGlobalErrorHandlerRemovable(app: Application): void {
 			if (index !== -1) app._router.stack.splice(index, 1)
 		}
 
-		return use0.call(app, first, ...others)
+		return use0.apply(app, (arguments as unknown) as Parameters<Application['use']>)
 	}
 }
 
