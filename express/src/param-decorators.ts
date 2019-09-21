@@ -11,27 +11,33 @@ type ParamMeta = {
 }
 
 /**
+ * Injects Request object in the method's parameters.
+ *
  * @remarks
- * Can be used with or without invokation:
+ * Example :
  * ```ts
  * class Foo {
- * 		get(@Req req: Request) {}
+ *   // Without invokation:
+ *   ＠Get('/some')
+ *   get(＠Req req: Request) {}
  *
- * 		get(@Req() req: Request) {}
+ *   // With invokation:
+ *   ＠Post('/some')
+ *   create(＠Req() req: Request) {}
  * }
  * ```
- *
+ * ------
  * @see https://expressjs.com/en/4x/api.html#req
  *
  * @decorator parameter, optional invokation
  * @public
  */
-export function Req(...args: Parameters<ParameterDecorator>): void
+export function Req(): ParameterDecorator
 
 /**
  * {@inheritDoc (Req:1)}
  */
-export function Req(): ParameterDecorator
+export function Req(...args: Parameters<ParameterDecorator>): void
 
 export function Req() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
@@ -42,27 +48,33 @@ export function Req() {
 }
 
 /**
+ * Inject Response object in the method's parameters.
+ *
  * @remarks
- * Can be used with or without invokation:
+ * Example :
  * ```ts
  * class Foo {
- * 		get(@Res res: Response) {}
+ *   // Without invokation:
+ *   ＠Get('/some')
+ *   get(＠Res res: Response) {}
  *
- * 		get(@Res() res: Response) {}
+ *   // With invokation:
+ *   ＠Post('/some')
+ *   create(＠Res() res: Response) {}
  * }
  * ```
- *
+ * ------
  * @see https://expressjs.com/en/4x/api.html#res
  *
  * @decorator parameter, optional invokation
  * @public
  */
-export function Res(...args: Parameters<ParameterDecorator>): void
+export function Res(): ParameterDecorator
 
 /**
  * {@inheritDoc (Res:1)}
  */
-export function Res(): ParameterDecorator
+export function Res(...args: Parameters<ParameterDecorator>): void
 
 export function Res() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
@@ -75,27 +87,33 @@ export function Res() {
 }
 
 /**
+ * Injects `next` callback function in the method's parameters.
+ *
  * @remarks
- * Can be used with or without invokation:
+ * Example :
  * ```ts
  * class Foo {
- * 		get(@Next next: NextFunction) {}
+ *   // Without invokation:
+ *   ＠Get('/some')
+ *   get(＠Next next: NextFunction) {}
  *
- * 		get(@Next() next: NextFunction) {}
+ *   // With invokation:
+ *   ＠Post('/some')
+ *   create(＠Next() next: NextFunction) {}
  * }
  * ```
- *
+ * ------
  * @see https://expressjs.com/en/guide/writing-middleware.html
  *
  * @decorator parameter, optional invokation
  * @public
  */
-export function Next(...args: Parameters<ParameterDecorator>): void
+export function Next(): ParameterDecorator
 
 /**
  * {@inheritDoc (Next:1)}
  */
-export function Next(): ParameterDecorator
+export function Next(...args: Parameters<ParameterDecorator>): void
 
 export function Next() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
@@ -111,178 +129,245 @@ export function Next() {
 const bodyParsers = [json(), urlencoded({ extended: true })]
 
 /**
+ * Injects request body in the method's parameters.
+ *
+ * @param key - directly injects a body property.
+ *
  * @remarks
- * Can be used with or without invokation, and with the possibility to directly retrieve a sub property:
+ * Example :
  * ```ts
  * class Foo {
- * 		post(@Body body: object) {}
+ *   // Whole body without invokation:
+ *   ＠Post('/some')
+ *   create(＠Body body: object) {}
  *
- * 		post(@Body() body: object) {}
+ *   // Whole body with invokation:
+ *   ＠Put('/some')
+ *   replace(＠Body() body: object) {}
  *
- * 		post(@Body('email') email: string) {}
+ *   // Sub property:
+ *   ＠Patch('/some')
+ *   update(＠Body('email') email: string) {}
  * }
  * ```
- *
+ * ------
  * @see https://expressjs.com/en/4x/api.html#req.body
  *
  * @decorator parameter, optional invokation
  * @public
  */
-export function Body(...args: Parameters<ParameterDecorator>): void
+export function Body<T extends object>(key?: keyof T): ParameterDecorator
 
 /**
  * {@inheritDoc (Body:1)}
  */
-export function Body<T extends object>(subKey?: keyof T): ParameterDecorator
+export function Body(...args: Parameters<ParameterDecorator>): void
 
 export function Body<T extends object>(
-	subKeyOrTarget?: keyof T | object,
+	keyOrTarget?: keyof T | object,
 	propertyKey?: string | symbol,
 	parameterIndex?: number
 ) {
-	if (arguments.length === 3 && typeof subKeyOrTarget === 'object') {
-		const target = subKeyOrTarget
+	if (arguments.length === 3 && typeof keyOrTarget === 'object') {
+		const target = keyOrTarget
 		return createParamDecorator((req) => req.body, bodyParsers, true)(
 			target,
 			propertyKey!,
 			parameterIndex!
 		)
 	} else {
-		const subKey = subKeyOrTarget as keyof T | undefined
+		const subKey = keyOrTarget as keyof T | undefined
 		return createParamDecorator((req) => (subKey ? req.body[subKey] : req.body), bodyParsers, true)
 	}
 }
 
 /**
+ * Injects named route parameters in the method's parameters.
+ *
+ * @param name - directly injects a single route parameter.
+ *
  * @remarks
- * Can be used with or without invokation, and with the possibility to directly retrieve a single param:
+ * Example :
  * ```ts
  * class Foo {
- * 		@Post('/:col/:id')
- * 		post(@Params params: { col: string; id: string }) {}
+ *   // Route parameters object without invokation:
+ *   ＠Get('/:col/:id')
+ *   get(＠Params params: { col: string; id: string }) {}
  *
- * 		@Post('/:col/:id')
- * 		post(@Params() params: { col: string; id: string }) {}
+ *   // Route parameters object with invokation:
+ *   ＠Get('/:col/:id')
+ *   get(＠Params() params: { col: string; id: string }) {}
  *
- * 		@Post('/:col/:id')
- * 		post(@Params('col') col: string, @Params('id') id: string) {}
+ *   // Single route parameter:
+ *   ＠Get('/:col/:id')
+ *   get(＠Params('col') col: string, ＠Params('id') id: string) {}
  * }
  * ```
- *
+ * ------
  * @see https://expressjs.com/en/4x/api.html#req.params
  *
  * @decorator parameter, optional invokation
  * @public
  */
-export function Params(...args: Parameters<ParameterDecorator>): void
+export function Params(name?: string): ParameterDecorator
 
 /**
  * {@inheritDoc (Params:1)}
  */
-export function Params(subKey?: string): ParameterDecorator
+export function Params(...args: Parameters<ParameterDecorator>): void
 
 export function Params(
-	subKeyOrTarget?: string | object,
+	nameOrTarget?: string | object,
 	propertyKey?: string | symbol,
 	parameterIndex?: number
 ) {
-	if (arguments.length === 3 && typeof subKeyOrTarget === 'object') {
-		const target = subKeyOrTarget
+	if (arguments.length === 3 && typeof nameOrTarget === 'object') {
+		const target = nameOrTarget
 		return createParamDecorator((req) => req.params)(target, propertyKey!, parameterIndex!)
 	} else {
-		const subKey = subKeyOrTarget as string | undefined
+		const subKey = nameOrTarget as string | undefined
 		return createParamDecorator((req) => (subKey ? req.params[subKey] : req.params))
 	}
 }
 
 /**
+ * Injects query string parameters in the method's parameters.
+ *
+ * @param field - directly injects a value.
+ *
+ * @remarks
+ * Example :
+ * ```ts
+ * class Foo {
+ *   // Query string parameters object without invokation:
+ *   ＠Get('/search')
+ *   search(＠Query queries: any) {}
+ *
+ *   // Query string parameters object with invokation:
+ *   ＠Get('/search')
+ *   search(＠Query() queries: any) {}
+ *
+ *   // Single query string parameter:
+ *   ＠Get('/search')
+ *   search(＠Query('name') name: string, ＠Query('sort') sort: string) {}
+ * }
+ * ```
+ * ------
  * @see https://expressjs.com/en/4x/api.html#req.query
  *
  * @decorator parameter, optional invokation
  * @public
  */
-export function Query(...args: Parameters<ParameterDecorator>): void
+export function Query(field?: string): ParameterDecorator
 
 /**
  * {@inheritDoc (Query:1)}
  */
-export function Query(subKey?: string): ParameterDecorator
+export function Query(...args: Parameters<ParameterDecorator>): void
 
 export function Query(
-	subKeyOrTarget?: string | object,
+	fieldOrTarget?: string | object,
 	propertyKey?: string | symbol,
 	parameterIndex?: number
 ) {
-	if (arguments.length === 3 && typeof subKeyOrTarget === 'object') {
-		const target = subKeyOrTarget
+	if (arguments.length === 3 && typeof fieldOrTarget === 'object') {
+		const target = fieldOrTarget
 		return createParamDecorator((req) => req.query)(target, propertyKey!, parameterIndex!)
 	} else {
-		const subKey = subKeyOrTarget as string | undefined
+		const subKey = fieldOrTarget as string | undefined
 		return createParamDecorator((req) => (subKey ? req.query[subKey] : req.query))
 	}
 }
 
 /**
+ * Injects request headers object in the method's parameters.
  *
+ * @param name - directly injects a specific header.
+ *
+ * @remarks
+ * Example :
+ * ```ts
+ * class Foo {
+ *   // Request headers object without invokation:
+ *   ＠Get('/some')
+ *   get(＠Headers headers: IncomingHttpHeaders) {}
+ *
+ *   // Request headers object with invokation:
+ *   ＠Get('/some')
+ *   get(＠Headers() headers: IncomingHttpHeaders) {}
+ *
+ *   // Single request header:
+ *   ＠Get('/some')
+ *   get(＠Headers('user-agent') userAgent: string) {}
+ * }
+ * ```
+ * ------
  * @see https://nodejs.org/api/http.html#http_message_headers
  *
  * @decorator parameter, optional invokation
  * @public
  */
-export function Headers(...args: Parameters<ParameterDecorator>): void
+export function Headers<T extends string = RequestHeaderName>(
+	name?: T extends RequestHeaderName ? RequestHeaderName : string
+): ParameterDecorator
 
 /**
  * {@inheritDoc (Headers:1)}
  */
-export function Headers<T extends string = RequestHeaderName>(
-	subKey?: T extends RequestHeaderName ? RequestHeaderName : string
-): ParameterDecorator
+export function Headers(...args: Parameters<ParameterDecorator>): void
 
 export function Headers(
-	subKeyOrTarget?: string | object,
+	nameOrTarget?: string | object,
 	propertyKey?: string | symbol,
 	parameterIndex?: number
 ) {
-	if (arguments.length === 3 && typeof subKeyOrTarget === 'object') {
-		const target = subKeyOrTarget
+	if (arguments.length === 3 && typeof nameOrTarget === 'object') {
+		const target = nameOrTarget
 		return createParamDecorator((req) => req.headers)(target, propertyKey!, parameterIndex!)
 	} else {
-		const subKey = subKeyOrTarget as string | undefined
+		const subKey = nameOrTarget as string | undefined
 		return createParamDecorator((req) => (subKey ? req.headers[subKey] : req.headers))
 	}
 }
 
 /**
- * Create a method parameter decorator, by applying a mapper function to the `Request` object.
+ * Creates a parameter decorator, to inject anything we want in decorated routes.
  *
- * @param mapper - retrieve and manipulate anything we want from `req`, to use it directly in the decorated method.
- * @param use - add middlewares to the route if the mapper needs them (e.g. we need body-parser middlewares to retrieve `req.body` properties).
- * @param dedupeUse - mark the middlewares for deduplication based on the function reference and name (e.g. if 'jsonParser' is already in use locally or globally, it won't be added again).
+ * @param mapper - function that should return the thing we want to inject. Has access to the Request object.
+ *
+ * @param use - adds middlewares to the route if the mapper needs them (_e.g. we need body-parser middlewares to retrieve `req.body`_).
+ *
+ * @param dedupeUse - marks the middlewares for deduplication based on the function reference and name (_e.g. if 'jsonParser' is already in use locally or globally, it won't be added again_).
  *
  * @remarks
  * We can create decorators with or without options.
  * Simple decorators without options are applied without being invoked.
  *
- * #### Simple decorator:
+ * ------
+ * Simple decorator example :
  * ```ts
  * const CurrentUser = createParamDecorator((req) => req.user)
  *
  * class Foo {
- * 		@Get('/me')
- * 		getUser(@CurrentUser user: User) {}
+ *   ＠Get('/me')
+ *   get(＠CurrentUser user: User) {}
  * }
  * ```
- *
- * #### Advanced decorator (with option and middleware):
+ * ------
+ * Advanced decorator example (with option and middleware) :
  * ```ts
- * const BodyTrimmed = (key) => createParamDecorator((req) => req.body[key].trim(), [express.json()], true)
+ * const BodyTrimmed = (key: string) => createParamDecorator(
+ *   (req) => req.body[key].trim(),
+ *   [express.json()],
+ *   true
+ * )
  *
  * class Foo {
- * 		@Post('/message')
- * 		createMessage(@BodyTrimmed('text') text: string) {}
+ *   ＠Post('/message')
+ *   create(＠BodyTrimmed('text') text: string) {}
  * }
  * ```
- *
+ * ------
  * @decorator parameter
  * @public
  */

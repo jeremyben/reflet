@@ -3,26 +3,27 @@ import { ErrorRequestHandler, Request, Response, NextFunction } from 'express'
 import { ClassType, ClassOrMethodDecorator } from './interfaces'
 
 /**
- * Attaches an error handler on a single route when applied to a method, or on multipe routes when applied to a class.
+ * Attaches an error handler on a single route when applied to a method, or on multipe routes when applied to a controller class.
  *
  * @remarks
  * You can apply as many `Catch` decorators as you want.
+ *
+ * ------
+ * Example :
  * ```ts
- * @Catch(someDefaultErrorHandler)
+ * ＠Catch(someDefaultErrorHandler)
  * class Foo {
- * 		@Catch((err, req, res, next) => {
- * 			res.status(err.status).send(err.message)
- * 		})
- * 		@Get('/me')
- * 		getMe() {
- *         const err = Error('Nope')
- *         err.status = 400
- *         throw err
- *     }
+ *   ＠Catch((err, req, res, next) => {
+ *     res.status(400).send(err.message)
+ *   })
+ *   ＠Get('/some')
+ *   get(req: Request, res: Response, next: NextFunction) {
+ *     throw Error('Nope')
+ *   }
  * }
  * ```
- * Error handlers are attached on the routes in the order they are written, even though
- * decorator functions in JS are executed in a bottom-up way (due to their _wrapping_ nature).
+ * ------
+ * Error handlers are applied on the routes in the order they are written.
  *
  * @see http://expressjs.com/en/guide/error-handling.html
  *

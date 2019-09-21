@@ -13,11 +13,23 @@ import { extractParams, extractParamsMiddlewares } from './param-decorators'
 import { extractSend } from './send-decorator'
 
 /**
- * Register decorated routing classes to an express application.
+ * Main method to register controllers into an express application.
  *
- * @param app - express app instance.
+ * @param app - express application.
  * @param controllers - classes with decorated routes.
  *
+ * @remarks
+ * Example :
+ * ```ts
+ * class Foo {
+ *   ＠Get('/some')
+ *   get() {}
+ * }
+ * const app = express()
+ * register(app, [Foo]) // where the magic happens
+ * app.listen(3000)
+ * ```
+ * ------
  * @public
  */
 export function register(app: Application, controllers: ClassType[]): Application {
@@ -25,8 +37,8 @@ export function register(app: Application, controllers: ClassType[]): Applicatio
 
 	for (const controller of controllers) {
 		// Either attach middlewares/handlers to an intermediary router or directly to the app.
-		const routerMeta = extractRouter(controller)
-		const instance = routerMeta ? Router(routerMeta.options) : app
+		const router = extractRouter(controller)
+		const instance = router ? Router(router.options) : app
 
 		const routes = extractRoutes(controller)
 		const sharedMwares = extractMiddlewares(controller)
@@ -35,7 +47,7 @@ export function register(app: Application, controllers: ClassType[]): Applicatio
 		// Apply shared middlewares to the router instance
 		// or to each of the routes if the class is attached on the base app.
 
-		if (routerMeta) {
+		if (router) {
 			for (const mware of sharedMwares) instance.use(promisifyHandler(mware))
 		}
 
@@ -91,7 +103,7 @@ export function register(app: Application, controllers: ClassType[]): Applicatio
 				}
 			})
 
-			if (routerMeta) {
+			if (router) {
 				instance[method](
 					path,
 					routeMwares.map(promisifyHandler),
@@ -113,11 +125,11 @@ export function register(app: Application, controllers: ClassType[]): Applicatio
 			}
 		}
 
-		if (routerMeta) {
+		if (router) {
 			for (const errHandler of sharedErrHandlers) instance.use(promisifyErrorHandler(errHandler))
 
 			// Finally attach the router to the app
-			app.use(routerMeta.prefix, instance)
+			app.use(router.root, instance)
 		}
 	}
 

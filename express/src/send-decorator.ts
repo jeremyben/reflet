@@ -21,7 +21,42 @@ type SendOptions = {
 /**
  * Tells express to handle the method's return value and send it.
  *
- * Can be applied to a class or to specific methods.
+ * @param options - to change the response status or force json response type.
+ *
+ * @remarks
+ * Can be applied to a whole class and/or to specific methods.
+ * Method options will extend class options.
+ *
+ * The return value will be sent with [`res.send`](https://expressjs.com/en/4x/api.html#res.send) by default.
+ * Switch `json` option to `true`, to send it with [`res.json`](https://expressjs.com/en/4x/api.html#res.json).
+ *
+ * ------
+ * Example:
+ * ```ts
+ * ＠Send({ nullStatus: 205, undefinedStatus: 404 })
+ * class Foo {
+ *   ＠Get('/some')
+ *   get() {
+ *     if (condition) return // 404 status
+ *     return null // 205 status
+ *   }
+ *
+ *   ＠Send({ status: 201 })
+ *   ＠Post('/some')
+ *   create() {
+ *     return { foo: 1 } // 201 status
+ *   }
+ *
+ *   ＠Send({ json: true })
+ *   ＠Patch('/some')
+ *   update() {
+ *     return 'bar' // content-type: application-json
+ *   }
+ * }
+ * ```
+ * ------
+ * @see https://expressjs.com/en/4x/api.html#res.send
+ * @see https://expressjs.com/en/4x/api.html#res.json
  *
  * @decorator class, method
  * @public
@@ -34,8 +69,27 @@ export function Send(options: SendOptions = {}): ClassOrMethodDecorator {
 }
 
 /**
- * Prevents a method from having its return value being sent, if a `@Send` decorator is applied to the whole class.
+ * Prevents a method from having its return value being sent,
+ * if a `@Send` decorator is applied to its controller class.
  *
+ * @remarks
+ * Example:
+ * ```ts
+ * ＠Send()
+ * class Foo {
+ *   ＠Get('/some')
+ *   get() {
+ *     return 'hi'
+ *   }
+ *
+ *   ＠DontSend()
+ *   ＠Put('/some')
+ *   replace(req: Request, res: Response, next: NextFunction) {
+ *     res.send('hi')
+ *   }
+ * }
+ * ```
+ * ------
  * @decorator method
  * @public
  */
