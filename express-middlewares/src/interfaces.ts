@@ -41,3 +41,28 @@ export type ResponseSafe = Omit<
 	| '_write'
 	| '_writev'
 >
+
+/**
+ * Remove methods sending the response or modifying its headers.
+ * @public
+ */
+export type ResponseReadonly = Omit<
+	ResponseSafe,
+	| 'status'
+	| 'set'
+	| 'header'
+	| 'append'
+	| 'type'
+	| 'contentType'
+	| 'location'
+	| 'links'
+	| 'vary'
+	| 'cookie'
+	| 'clearCookie'
+	| 'attachment'
+	| 'addTrailers'
+	| 'removeHeader'
+	| 'setHeader'
+	| 'setTimeout'
+	| 'setDefaultEncoding'
+>
