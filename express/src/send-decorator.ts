@@ -46,15 +46,32 @@ export function DontSend(): MethodDecorator {
 }
 
 /**
+ * Retrieve send options from both the method and the class,
+ * so method options can extend class options.
+ *
  * Get methods metadata from the prototype (no need to create an instance).
  * @internal
  */
 export function extractSend(target: ClassType, key: string | symbol): SendOptions | null {
-	let toSend: SendOptions | null | undefined = Reflect.getOwnMetadata(Meta.Send, target.prototype, key)
+	const sendOnClass: SendOptions | null = Reflect.getOwnMetadata(Meta.Send, target) || null
+	const sendOnMethod: SendOptions | null | undefined = Reflect.getOwnMetadata(
+		Meta.Send,
+		target.prototype,
+		key
+	)
 
-	if (toSend === undefined) {
-		toSend = Reflect.getOwnMetadata(Meta.Send, target) || null
+	switch (sendOnMethod) {
+		// none
+		case undefined:
+			return sendOnClass
+
+		// @DontSend
+		case null:
+			return sendOnMethod
+
+		// @Send
+		default:
+			if (sendOnClass) return Object.assign({}, sendOnClass, sendOnMethod)
+			else return sendOnMethod
 	}
-
-	return toSend!
 }

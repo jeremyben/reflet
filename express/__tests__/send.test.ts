@@ -230,12 +230,17 @@ describe('class decorator', () => {
 		}
 	}
 
-	@Send()
-	@JsonRouter('/bar')
+	@JsonRouter('/')
 	class Controller {
 		@Get()
 		get(req: Request, res: Response, next: NextFunction) {
-			return { bar: 1 }
+			return 'bar'
+		}
+
+		@Send({ status: 201 })
+		@Post()
+		post(req: Request, res: Response, next: NextFunction) {
+			return 'bar'
 		}
 
 		@DontSend()
@@ -248,13 +253,20 @@ describe('class decorator', () => {
 	const rq = supertest(register(express(), [Controller]))
 
 	test('class decorator combo', async () => {
-		const res = await rq.get('/bar')
+		const res = await rq.get('/')
 		expect(res.status).toBe(200)
 		expect(res.type).toBe('application/json')
-		expect(res.body).toEqual({ bar: 1 })
+		expect(res.body).toEqual('bar')
+	})
+
+	test('extend class options with method options', async () => {
+		const res = await rq.post('/')
+		expect(res.status).toBe(201)
+		expect(res.type).toBe('application/json')
+		expect(res.body).toEqual('bar')
 	})
 
 	test('send exception', async () => {
-		expect(rq.put('/bar').timeout(200)).rejects.toThrow(/Timeout/)
+		expect(rq.put('/').timeout(200)).rejects.toThrow(/Timeout/)
 	})
 })
