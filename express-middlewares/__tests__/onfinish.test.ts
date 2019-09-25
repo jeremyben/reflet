@@ -21,6 +21,12 @@ describe('response properties on finish event', () => {
 		put(req: Request, res: Response, next: NextFunction) {
 			res.send('done')
 		}
+
+		@UseOnFinish((req, res) => Promise.reject('nope'))
+		@Post()
+		post(req: Request, res: Response, next: NextFunction) {
+			res.send('done')
+		}
 	}
 
 	const rq = supertest(register(express(), [Controller]))
@@ -37,6 +43,13 @@ describe('response properties on finish event', () => {
 		const res = await rq.put('')
 		expect(res.text).toBe('done')
 		expect(consoleSpy).toBeCalledWith(3, undefined)
+	})
+
+	test('catch errors', async () => {
+		const consoleSpy = jest.spyOn(console, 'error')
+		const res = await rq.post('')
+		expect(res.status).toBe(200)
+		expect(consoleSpy).toBeCalledWith('nope')
 	})
 })
 

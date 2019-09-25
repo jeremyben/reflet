@@ -36,17 +36,19 @@ import { ClassOrMethodDecorator, ResponseReadonly } from './interfaces'
  * @public
  */
 export function UseOnFinish<ResBody = any>(
-	effect: (req: Request, res: ResponseSentAndBody<ResBody>) => void,
+	effect: (req: Request, res: ResponseSentAndBody<ResBody>) => void | Promise<void>,
 	exposeBody: true
 ): ClassOrMethodDecorator
 
 /**
  * {@inheritDoc (UseOnFinish:1)}
  */
-export function UseOnFinish(effect: (req: Request, res: ResponseSent) => void): ClassOrMethodDecorator
+export function UseOnFinish(
+	effect: (req: Request, res: ResponseSent) => void | Promise<void>
+): ClassOrMethodDecorator
 
 export function UseOnFinish<ResBody = any>(
-	effect: (req: Request, res: ResponseSentAndBody<ResBody>) => void,
+	effect: (req: Request, res: ResponseSentAndBody<ResBody>) => void | Promise<void>,
 	exposeBody?: true
 ) {
 	return Use((req: Request, res: Response & { body?: ResBody }, next: NextFunction) => {
@@ -140,9 +142,13 @@ export function UseOnFinish<ResBody = any>(
 			}
 		}
 
-		// Differences between finish, end, close: https://stackoverflow.com/a/54596897/4776628
-		res.on('finish', () => {
-			effect(req, res as ResponseReadonly & { body: ResBody })
+		// Log errors instead of letting them crash the server.
+		res.on('finish', async () => {
+			try {
+				await effect(req, res as ResponseReadonly & { body: ResBody })
+			} catch (error) {
+				console.error(error)
+			}
 		})
 
 		next()
