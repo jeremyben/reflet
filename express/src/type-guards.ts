@@ -4,6 +4,7 @@ import { Readable, Writable } from 'stream'
 //
 // ═════════ https://www.typescriptlang.org/docs/handbook/advanced-types.html#user-defined-type-guards ═════════
 //
+/* istanbul ignore file */
 
 /**
  * Checks if given object is a Promise or Promise-like.

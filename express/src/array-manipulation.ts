@@ -3,6 +3,7 @@
  * @see https://dev.to/uilicious/javascript-array-push-is-945x-faster-than-array-concat-1oki
  * @internal
  */
+/* istanbul ignore next unused */
 export function concatFast<T>(source: T[], added: T[]): T[] {
 	const sourceLength = source.length
 	const addedLength = added.length
