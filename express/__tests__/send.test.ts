@@ -1,7 +1,7 @@
 import supertest from 'supertest'
-import express, { Response, NextFunction, Request } from 'express'
+import express, { Response, Request } from 'express'
 import { createReadStream, readFileSync } from 'fs'
-import { register, Router, Get, Put, Post, Patch, Req, Res, Send, DontSend, Delete, Params } from '../src'
+import { register, Router, Get, Put, Post, Patch, Delete, Res, Params, Send, DontSend } from '../src'
 import { log } from '../../testing/tools'
 
 describe('handle return value', () => {
@@ -25,7 +25,7 @@ describe('handle return value', () => {
 
 		@Send()
 		@Delete()
-		del(@Req req: Request, @Res res: Response) {
+		del() {
 			const err = Error('wtf') as any
 			err.status = 400
 			throw err
@@ -33,7 +33,7 @@ describe('handle return value', () => {
 
 		@Send()
 		@Patch()
-		patch(@Req req: Request, @Res res: Response) {
+		patch(@Res res: Response) {
 			res.send({ foo: 4 })
 			return { foo: 13 }
 		}
@@ -98,7 +98,7 @@ describe('specific status', () => {
 	class Controller {
 		@Send({ status: 201, undefinedStatus: 404, nullStatus: 204 })
 		@Put('/:type')
-		async put(@Params('type') type: 'null' | 'undefined', @Req req: Request, @Res res: Response) {
+		async put(@Params('type') type: 'null' | 'undefined') {
 			if (type === 'null') return null
 			if (type === 'undefined') return
 
@@ -180,13 +180,13 @@ describe('buffers', () => {
 	class Controller {
 		@Send({ status: 201 })
 		@Get()
-		get(@Res res: Response) {
+		get() {
 			return readFileSync(__filename)
 		}
 
 		@Send()
 		@Post()
-		post(@Res res: Response) {
+		post() {
 			return Buffer.from('')
 		}
 
@@ -233,19 +233,19 @@ describe('class decorator', () => {
 	@JsonRouter('/')
 	class Controller {
 		@Get()
-		get(req: Request, res: Response, next: NextFunction) {
+		get() {
 			return 'bar'
 		}
 
 		@Send({ status: 201 })
 		@Post()
-		post(req: Request, res: Response, next: NextFunction) {
+		post() {
 			return 'bar'
 		}
 
 		@DontSend()
 		@Put()
-		async put(@Req req: Request, @Res res: Response) {
+		async put() {
 			return 'bar'
 		}
 	}

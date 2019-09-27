@@ -5,6 +5,7 @@ import {
 	Get,
 	Post,
 	Put,
+	Patch,
 	Use,
 	Res,
 	Body,
@@ -26,8 +27,8 @@ describe('basic decorators', () => {
 	})
 	class Controller {
 		@Get()
-		async get(@Headers('via') via: string, @Headers<any>('shared') shared: string, @Res res: Response) {
-			res.send({ via, shared })
+		async get(@Headers headers: any, @Headers('via') via: string, @Res res: Response) {
+			res.send({ via, shared: headers.shared })
 		}
 
 		@Post()
@@ -35,9 +36,15 @@ describe('basic decorators', () => {
 			res.send({ bar: foo * body.foo })
 		}
 
-		@Put('/:id')
-		put(@Params params: any, @Query('q') q: string, @Res() res: Response) {
+		@Patch('/:id')
+		patch(@Params params: any, @Query queries: any, @Res res: Response) {
 			const bar = Number.parseInt(params.id, 10) * 2
+			res.send({ bar, baz: queries.q })
+		}
+
+		@Put('/:id')
+		put(@Params('id') id: string, @Query('q') q: string, @Res res: Response) {
+			const bar = Number.parseInt(id, 10) * 2
 			res.send({ bar, baz: q })
 		}
 	}
@@ -54,7 +61,12 @@ describe('basic decorators', () => {
 		expect(res.body).toEqual({ bar: 25 })
 	})
 
-	test('@Params and @Query', async () => {
+	test('@Params and @Query objects', async () => {
+		const res = await rq.patch('/25?q=yes')
+		expect(res.body).toEqual({ bar: 50, baz: 'yes' })
+	})
+
+	test('@Params and @Query subkeys', async () => {
 		const res = await rq.put('/25?q=yes')
 		expect(res.body).toEqual({ bar: 50, baz: 'yes' })
 	})
@@ -70,12 +82,12 @@ describe('custom decorators', () => {
 	})
 	class Controller {
 		@Get()
-		get(@CurrentUser user: object, @Res() res: Response) {
+		get(@CurrentUser user: object, @Res res: Response) {
 			res.send({ user })
 		}
 
 		@Put()
-		put(@BodyTrimmed('foot') foot: string, @BodyTrimmed('pub') pub: string, @Res() res: Response) {
+		put(@BodyTrimmed('foot') foot: string, @BodyTrimmed('pub') pub: string, @Res res: Response) {
 			foot = foot + '!'
 			pub = pub + '!'
 			res.send({ foot, pub })

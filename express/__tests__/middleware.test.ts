@@ -1,9 +1,11 @@
 import supertest from 'supertest'
 import express, { json, Response, NextFunction, Request } from 'express'
-import { register, Get, Post, Put, Use, Catch } from '../src'
+import { register, Get, Post, Put, Use, Catch, Router } from '../src'
 import { log } from '../../testing/tools'
 
+@Catch((err, req, res, next) => res.status(418).send({ err }))
 @Use(json())
+@Router('')
 class FooController {
 	@Use(
 		(req: Request & { user?: any }, res, next) => {
@@ -20,20 +22,20 @@ class FooController {
 		next()
 	})
 	@Get()
-	get(req: Request & { user: any }, res: Response, next: NextFunction) {
+	get(req: Request & { user: any }, res: Response) {
 		res.send({ user: req.user })
 	}
 
 	@Post()
-	post(req: Request, res: Response, next: NextFunction) {
+	post(req: Request, res: Response) {
 		res.send({ bar: req.body.foo * 2 })
 	}
 
-	@Catch((err, req, res, next) => res.status(418).send({ err }))
+	@Catch((err, req, res, next) => next(err + 1))
 	@Put()
-	async put(req: Request, res: Response, next: NextFunction) {
+	async put() {
 		await new Promise((resolve) => setTimeout(resolve, 20))
-		throw req.httpVersionMajor
+		throw 1
 	}
 }
 
@@ -51,8 +53,8 @@ test('shared middleware (body-parser)', async () => {
 	expect(res.body).toEqual({ bar: 10 })
 })
 
-test('async error handler', async () => {
+test('error handlers', async () => {
 	const res = await rq.put('')
 	expect(res.status).toBe(418)
-	expect(res.body).toEqual({ err: 1 })
+	expect(res.body).toEqual({ err: 2 })
 })

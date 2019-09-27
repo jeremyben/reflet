@@ -1,18 +1,18 @@
 import supertest from 'supertest'
 import express, { Response, Request, NextFunction } from 'express'
-import { register, Router, Get, Post, Put, Patch, Method } from '../src'
+import { register, Router, Get, Post, Put, Patch, Method, Res, Req } from '../src'
 import { log } from '../../testing/tools'
 
 // With Router
 @Router('/user', { caseSensitive: true })
 class UserController {
 	@Get()
-	get(req: Request, res: Response, next: NextFunction) {
+	get(@Res res: Response) {
 		res.send([{ id: 1 }])
 	}
 
 	@Patch('/:id')
-	patch(req: Request, res: Response, next: NextFunction) {
+	patch(@Req() req: Request, @Res() res: Response) {
 		const id = Number.parseInt(req.params.id, 10)
 		res.send({ id })
 	}
@@ -33,13 +33,20 @@ class MessageController {
 	}
 
 	@Get('/message/:id')
-	get(req: Request, res: Response, next: NextFunction) {
+	get(@Res res: Response, @Req req: Request) {
 		const id = Number.parseInt(req.params.id, 10)
 		res.send({ id })
 	}
 }
 
-const rq = supertest(register(express(), [UserController, MessageController]))
+// No routes
+class UserService {
+	get(id: string) {
+		return { id, name: 'Jeremy' }
+	}
+}
+
+const rq = supertest(register(express(), [UserController, MessageController, UserService]))
 
 describe('With Router', () => {
 	test('@Get', async () => {
