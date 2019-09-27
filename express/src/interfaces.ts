@@ -98,6 +98,7 @@ export type RoutingMethod =
 	| 'trace'
 	| 'unlock'
 	| 'unsubscribe'
+	| 'all'
 
 /**
  * @public
