@@ -1,5 +1,7 @@
-import { Request, Response, NextFunction, Application, RequestHandler, ErrorRequestHandler } from 'express'
 import { isErrorHandlerParams, isPathParams } from './type-guards'
+import { Request, Response, NextFunction, Application } from 'express'
+// tslint:disable-next-line: no-implicit-dependencies
+import { RequestHandlerParams, PathParams } from 'express-serve-static-core'
 
 /**
  * Adds json response detection and status code detection to express default error handler.
@@ -9,18 +11,33 @@ import { isErrorHandlerParams, isPathParams } from './type-guards'
  * @internal
  */
 export function globalErrorHandler(err: any, req: Request, res: Response, next: NextFunction) {
+	// ─── Status detection ───
+
+	let status = StatusParser.getFromError(err)
+
+	if (status) {
+		// Remove status from beginning of message only if it was correctly parsed from error.
+		err = StatusParser.cleanMessage(err)
+	} else {
+		// Error has no recognizable error status.
+		status = StatusParser.getFromResponse(res)
+	}
+
+	res.status(status)
+
+	// ─── Json detection ───
+
 	// https://regex101.com/r/oBuEQY/4
 	const definitelyJson = /(.*[^\w\s]|^)json(; ?charset.*)?$/m.test(res.get('Content-Type'))
 	const probablyJson =
 		!res.get('Content-Type') && (req.xhr || (!!req.get('Accept') && !!req.accepts('json')))
 
-	const status = getErrorStatus(err, res)
-	res.status(status)
-
 	if (!res.headersSent && (definitelyJson || probablyJson)) {
 		if (err instanceof Error) {
 			// Make `message` property visible in the response https://stackoverflow.com/questions/18391212
 			Object.defineProperty(err, 'message', { enumerable: true })
+
+			/* istanbul ignore if */
 			// Remove sensitive info in production environment
 			if (process.env.NODE_ENV === 'production') delete err.stack
 		}
@@ -31,59 +48,28 @@ export function globalErrorHandler(err: any, req: Request, res: Response, next: 
 	}
 }
 
-/**
- * Infer status code from all types of error.
- * @internal
- */
-function getErrorStatus(err: any, res: Response): number {
-	switch (typeof err) {
-		case 'number':
-		case 'string':
-			return parse(err)
-
-		case 'object':
-			// Look for the status in a similar priority order than express finalhandler
-			// https://github.com/pillarjs/finalhandler/blob/v1.1.2/index.js#L99-L104
-			return parse(err.status || err.statusCode || err.message || res.statusCode)
-
-		default:
-			return parse(res.statusCode)
-	}
-
-	function parse(value: string | number): number {
-		const code = Number.parseInt(value as string, 10)
-		if (Number.isNaN(code) || code < 400 || code > 599) return 500
-		return code
-	}
-}
-
 // Unique name of global error handler to retrieve it later from `app._router.stack`.
 const globalErrorHandlerName = '@reflet/express.globalErrorHandler' as string
 Object.defineProperty(globalErrorHandler, 'name', { value: globalErrorHandlerName })
 
 /**
- * Patch `app.use` to allow developpers redefining their own global error handler.
+ * Patch `app.use` to detect new global error handler and remove ours.
  * @internal
  */
 export function makeGlobalErrorHandlerRemovable(app: Application): void {
 	// https://expressjs.com/en/4x/api.html#middleware-callback-function-examples
-
-	type PathParams = string | RegExp | (string | RegExp)[]
-
-	type RequestHandlerParams =
-		| RequestHandler
-		| ErrorRequestHandler
-		| (RequestHandler | ErrorRequestHandler)[]
-
 	const use0 = app.use
 
 	app.use = function use(first: RequestHandlerParams | PathParams, ...others: RequestHandlerParams[]) {
 		if (isErrorHandlerParams(first) || (!isPathParams(first) && others.some(isErrorHandlerParams))) {
 			// patch back to original implementation
 			app.use = use0
+
 			// remove our default error handler from the stack
 			const index = app._router.stack.findIndex((layer) => layer.name === globalErrorHandlerName)
-			if (index !== -1) app._router.stack.splice(index, 1)
+			if (index !== -1) {
+				app._router.stack.splice(index, 1)
+			}
 		}
 
 		return use0.apply(app, (arguments as unknown) as Parameters<Application['use']>)
@@ -91,8 +77,87 @@ export function makeGlobalErrorHandlerRemovable(app: Application): void {
 }
 
 /**
+ * For testing purposes.
  * @internal
  */
 export function hasGlobalErrorHandler(app: Application): boolean {
 	return app._router.stack.some((layer) => layer.name === globalErrorHandlerName)
+}
+
+/**
+ * Infer status code from all types of error.
+ * Look for the status in a similar priority order than express finalhandler.
+ * @see https://github.com/pillarjs/finalhandler/blob/v1.1.2/index.js#L99-L104
+ * @internal
+ */
+namespace StatusParser {
+	/**
+	 * Try to get status code from error.
+	 * @see https://github.com/pillarjs/finalhandler/blob/v1.1.2/index.js#L195
+	 * @internal
+	 */
+	export function getFromError(err: any): number | undefined {
+		const code = extractCode(err)
+
+		if (!code || Number.isNaN(code) || code < 400 || code > 599) return undefined
+		else return code
+	}
+
+	/**
+	 * Retrieve code number.
+	 * @internal
+	 */
+	function extractCode(err: any): number | undefined {
+		if (!err) return undefined
+
+		switch (typeof err) {
+			case 'number':
+				return err
+
+			case 'string':
+				return Number.parseInt(err, 10)
+
+			// Parse both object litteral and Error instance.
+			case 'object':
+				return extractCode(err.status) || extractCode(err.statusCode) || extractCode(err.message)
+
+			/* istanbul ignore next - don't care about any other type */
+			default:
+				return undefined
+		}
+	}
+
+	/**
+	 * Get status code from response.
+	 * @see https://github.com/pillarjs/finalhandler/blob/v1.1.2/index.js#L236
+	 * @internal
+	 */
+	export function getFromResponse(res: Response): number {
+		if (typeof res.statusCode !== 'number' || res.statusCode < 400 || res.statusCode > 599) {
+			return 500
+		}
+		return res.statusCode
+	}
+
+	/**
+	 * Remove eventual status code from error message.
+	 * @internal
+	 */
+	export function cleanMessage(err: string | ErrorWithStatus) {
+		const errorStatusAtStart = /^[45]\d{2}(?!\d)\W?\s*/m // https://regex101.com/r/7rGUsp/3
+
+		// Only clean message of errors without status property.
+		if (typeof err === 'object' && !err.status && !err.statusCode) {
+			err.message = err.message.replace(errorStatusAtStart, '')
+			return err
+		} else if (typeof err === 'string') {
+			return err.replace(errorStatusAtStart, '')
+		} else if (typeof err === 'number') {
+			return ''
+		} else {
+			return err
+		}
+	}
+
+	type ErrorWithStatus = Error & { status?: number; statusCode?: number }
 }
