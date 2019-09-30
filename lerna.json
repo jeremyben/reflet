@@ -16,6 +16,7 @@
 		"**/*.test.ts",
 		"**/test.ts",
 		"**/*.md",
-		"**/*.MD"
+		"**/*.MD",
+		"**/coverage-summary.json"
 	]
 }

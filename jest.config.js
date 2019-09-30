@@ -12,11 +12,10 @@ const config = {
 	},
 	// https://jestjs.io/docs/en/configuration#setupfiles-array
 	setupFiles: [join(__dirname, 'testing', 'eachfile-setup.ts')],
+	coverageReporters: ['json-summary', 'text', 'lcov'],
 	globals: {
 		'ts-jest': {
-			diagnostics: {
-				warnOnly: true,
-			},
+			diagnostics: { warnOnly: true },
 		},
 	},
 }
