@@ -99,32 +99,32 @@ describe('status extraction', () => {
 
 	const rq = supertest(register(express(), [Controller]))
 
-	test('infer from number and clean it', async () => {
+	test('infer from number and normalize it', async () => {
 		let res = await rq.get('').send({ number: 400 })
 		expect(res.status).toBe(400)
-		expect(res.body).toBeFalsy()
+		expect(res.body).toEqual({ status: 400, message: '' })
 
 		res = await rq.get('').send({ number: 200 })
 		expect(res.status).toBe(500)
-		// Don't clean wrong status
+		// Don't normalize wrong status
 		expect(res.body).toBe(200)
 	})
 
-	test('infer from string and clean it', async () => {
+	test('infer from string and normalize it', async () => {
 		let res = await rq.post('').send({ string: '400: impossible' })
 		expect(res.status).toBe(400)
-		expect(res.body).toBe('impossible')
+		expect(res.body).toEqual({ status: 400, message: 'impossible' })
 
 		res = await rq.post('').send({ string: '300 the movie' })
 		expect(res.status).toBe(500)
-		// Don't clean wrong status
+		// Don't normalize wrong status
 		expect(res.body).toBe('300 the movie')
 	})
 
-	test('infer from Error message and clean it', async () => {
+	test('infer from Error message and normalize it', async () => {
 		let res = await rq.put('').send({ message: '503 wtf' })
 		expect(res.status).toBe(503)
-		expect(res.body).toEqual({ message: 'wtf' })
+		expect(res.body).toEqual({ status: 503, message: 'wtf' })
 
 		// Priority on status property
 		res = await rq.put('').send({ status: 422, message: '503 megawatts' })

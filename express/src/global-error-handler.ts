@@ -16,8 +16,8 @@ export function globalErrorHandler(err: any, req: Request, res: Response, next: 
 	let status = StatusParser.getFromError(err)
 
 	if (status) {
-		// Remove status from beginning of message only if it was correctly parsed from error.
-		err = StatusParser.cleanMessage(err)
+		// Normalize only if it was correctly parsed from error.
+		err = StatusParser.normalize(err, status)
 	} else {
 		// Error has no recognizable error status.
 		status = StatusParser.getFromResponse(res)
@@ -140,24 +140,26 @@ namespace StatusParser {
 	}
 
 	/**
-	 * Remove eventual status code from error message.
+	 * Normalize primitive types to objects.
+	 * Remove eventual status code from message.
 	 * @internal
 	 */
-	export function cleanMessage(err: string | ErrorWithStatus) {
-		const errorStatusAtStart = /^[45]\d{2}(?!\d)\W?\s*/m // https://regex101.com/r/7rGUsp/3
+	export function normalize(err: any, status: number) {
+		const errorStatusAtStart = new RegExp(`^${status}(?!\\d)\\W?\\s*`, 'm') // https://regex101.com/r/7rGUsp/3
 
-		// Only clean message of errors without status property.
-		if (typeof err === 'object' && !err.status && !err.statusCode) {
+		// Only normalize errors without status property.
+		if (!!err && typeof err === 'object' && err.message && !err.status && !err.statusCode) {
+			err.status = status
 			err.message = err.message.replace(errorStatusAtStart, '')
 			return err
 		} else if (typeof err === 'string') {
-			return err.replace(errorStatusAtStart, '')
+			return { status, message: err.replace(errorStatusAtStart, '') }
 		} else if (typeof err === 'number') {
-			return ''
+			// We must return a truthy value for express final handler to work as expected
+			// https://github.com/pillarjs/finalhandler/blob/v1.1.2/index.js#L98
+			return { status, message: '' }
 		} else {
 			return err
 		}
 	}
-
-	type ErrorWithStatus = Error & { status?: number; statusCode?: number }
 }
