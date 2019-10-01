@@ -462,6 +462,12 @@ export function extractParamsMiddlewares(
 			}
 
 			paramMwares.push(mware)
+
+			// todo?: alreadyNames.push(mware.name)
+			// Should we dedupe by *name* the same middleware on different param decorators ?
+			// Or should we just warn the user of a potential conflict, and suggest to move
+			// the middleware to an explicit place on the controller as an easy fix ?
+			// See 'param middlewares deduplication' tests.
 		}
 	}
 

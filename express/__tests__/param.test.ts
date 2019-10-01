@@ -113,29 +113,40 @@ describe('custom decorators', () => {
 })
 
 describe('param middlewares deduplication', () => {
-	test('body-parsers', async () => {
+	test('body-parsers on the route', async () => {
+		@Use(json(), urlencoded({ extended: false }))
+		class Foo {
+			@Use(json())
+			@Post()
+			post(@Body('foo') foo: string, @Body body: any, @Res res: Response) {
+				res.send(foo)
+			}
+		}
+
+		const sharedMwares = extractMiddlewares(Foo)
+		const routeMwares = extractMiddlewares(Foo, 'post')
+		const paramMwares = extractParamsMiddlewares(Foo, 'post', [[], sharedMwares, routeMwares])
+
+		expect(paramMwares).toHaveLength(0)
+	})
+
+	test('body-parsers in different param decorators', async () => {
 		const BodyTrimmed = (subKey: string) =>
 			createParamDecorator((req) => req.body[subKey].trim(), [json()], true)
 
-		@Use(json(), urlencoded({ extended: false }))
-		class FooRouter {
-			@Use(json())
+		class Foo {
 			@Post()
-			post(
-				@BodyTrimmed('foo') fooTrimmed: string,
-				@Body('foo') foo: string,
-				@Body body: any,
-				@Res res: Response
-			) {
+			post(@BodyTrimmed('foo') fooTrimmed: string, @Body('foo') foo: string, @Res res: Response) {
 				res.send(fooTrimmed)
 			}
 		}
 
-		const sharedMwares = extractMiddlewares(FooRouter)
-		const routeMwares = extractMiddlewares(FooRouter, 'post')
-		const paramMwares = extractParamsMiddlewares(FooRouter, 'post', [[], sharedMwares, routeMwares])
+		const sharedMwares = extractMiddlewares(Foo)
+		const routeMwares = extractMiddlewares(Foo, 'post')
+		const paramMwares = extractParamsMiddlewares(Foo, 'post', [[], sharedMwares, routeMwares])
 
-		expect(paramMwares).toHaveLength(0)
+		// Won't dedupe
+		expect(paramMwares).toHaveLength(3)
 	})
 
 	test('custom middleware', async () => {
@@ -150,7 +161,7 @@ describe('param middlewares deduplication', () => {
 		const CurrentUser = createParamDecorator((req: RequestAuth) => req.user!, [authent], true)
 
 		@Use(authent)
-		class BarRouter {
+		class Bar {
 			@Post('user/:yo')
 			post(@CurrentUser user: User, @Res res: Response) {
 				res.send(user)
@@ -159,13 +170,9 @@ describe('param middlewares deduplication', () => {
 		const app = express()
 		app.use(authent)
 		const globalMwares = getGlobalMiddlewares(app)
-		const sharedMwares = extractMiddlewares(BarRouter)
-		const routeMwares = extractMiddlewares(BarRouter, 'post')
-		const paramMwares = extractParamsMiddlewares(BarRouter, 'post', [
-			globalMwares,
-			sharedMwares,
-			routeMwares,
-		])
+		const sharedMwares = extractMiddlewares(Bar)
+		const routeMwares = extractMiddlewares(Bar, 'post')
+		const paramMwares = extractParamsMiddlewares(Bar, 'post', [globalMwares, sharedMwares, routeMwares])
 
 		expect(sharedMwares.some((m) => globalMwares.includes(m))).toBe(true)
 		expect(paramMwares).toHaveLength(0)
