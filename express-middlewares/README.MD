@@ -1,3 +1,243 @@
-# @reflet/express-middlewares
+# `@reflet/express-middlewares` 🧩
 
-Convenient middlewares to use with [@reflet/express](../express)
+[![lines coverage](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/jeremyben/reflet/master/express-middlewares/coverage-summary.json&label=lines&query=total.lines.pct&color=brightgreen&suffix=%&logo=jest)](./coverage-summary.json)
+[![statements coverage](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/jeremyben/reflet/master/express-middlewares/coverage-summary.json&label=statements&query=total.statements.pct&color=brightgreen&suffix=%&logo=jest)](./coverage-summary.json)
+[![functions coverage](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/jeremyben/reflet/master/express-middlewares/coverage-summary.json&label=functions&query=total.functions.pct&color=brightgreen&suffix=%&logo=jest)](./coverage-summary.json)
+[![branches coverage](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/jeremyben/reflet/master/express-middlewares/coverage-summary.json&label=branches&query=total.branches.pct&color=brightgreen&suffix=%&logo=jest)](./coverage-summary.json)
+
+Convenient middleware decorators to use with [Reflet/express](../express).
+
+* [Getting started](#getting-started)
+* [Request authorizations](#request-authorizations)
+* [Response interception](#response-interception)
+* [Response side-effect](#response-side-effect)
+* [Response status](#response-status)
+* [Response headers](#response-headers)
+* [Response type](#response-type)
+* [Conditional middleware](#conditional-middleware)
+
+## Getting started
+
+1. [Get started with Reflet/express](../express/README.MD#Getting-started).
+
+2. Install the package.
+
+    ```sh
+    yarn add @reflet/express-middlewares
+    ```
+
+3. Apply middleware decorators on controllers or specific routes.
+
+## Request authorizations
+
+> 🔦 `@UseGuards(...guards)`
+
+A guard is a filter function that takes the Request object as parameter and should return a boolean (asynchronously or not) to authorize the request or not.
+
+```ts
+class Controller {
+  @UseGuards(
+    (req) => req.user != null,
+    (req) => req.user.admin === true,
+  )
+  @Get('/secret')
+  get() {}
+}
+```
+
+If the guard returns...
+
+* `true`: The request will be processed.
+* `false`: The request will be denied with a **`403`** HTTP status and a **`"Access Denied"`** message.
+
+#### Custom error message
+
+If you want to override the default `"Access denied"` message,
+you can **return** (not throw) an `Error` instance instead of just `false`.
+
+```ts
+@UseGuards((req) => Boolean(req.user.admin) || Error('You must be admin'))
+```
+
+🗣️ Again, be sure to return the `Error` and not throw it, unless you want it to be handled elsewhere.
+
+## Response interception
+
+> 🔦 `@UseInterceptor(mapper)`
+
+Intercept and manipulate the response body before it is sent, with a mapping function (asynchronous or not).
+
+```ts
+class Controller {
+  @UseInterceptor<{ foo: number }>((data) => ({ foo: data.foo * 5 }))
+  @Get('/things')
+  list(@Res res: Response) {
+    res.send({ foo: 1 }) // expect { foo: 5 }
+  }
+
+  // Gives also access to Request and Response objects:
+  @UseInterceptor<{ foo: number }>((data, context) => ({ foo: context.res.statusCode }))
+  @Get('/things/:id')
+  get(@Res res: Response) {
+    res.send({ foo: 1 }) // expect { foo: 200 }
+  }
+
+  // You can add a different constraint on the return shape:
+  @UseInterceptor<{ foo: number }, { foo: string }>((data) => ({ foo: data.foo.toString() }))
+  @Get('/things/:id')
+  get(@Res res: Response) {
+    res.send({ foo: 1 }) // expect { foo: "1" }
+  }
+}
+```
+
+A counter `wasIntercepted` is added on the Response object, to know later if (and how many times) the body was intercepted (_e.g. on the [`finish` side-effect](#response-side-effect)_).
+
+#### About errors
+
+`UseInterceptor` won't intercept errors, whether:
+
+* the response body is an `Error` instance,
+* the response has an error status (>=400).
+
+If you need to intercept errors as well, you should simply add a `@Catch` decorator:
+
+```ts
+@Catch((err, req, res, next) => { /* intercept errors */ })
+@UseInterceptor((data, context) => { /* intercept success */ })
+```
+
+🗣️ Don't forget to set a proper error status in your error handler, or else the error body will actually be intercepted.
+
+#### About streams
+
+`UseInterceptor` won't intercept streaming responses either (_e.g. files sent with `res.sendFile` or `res.download`_).<br>Instead you should just use a [transform stream](https://nodejs.org/api/stream.html#stream_class_stream_transform):
+
+```ts
+createReadStream('path/to/file').pipe(transform).pipe(res)
+```
+
+In fact, it won't intercept any response sent by chunks with the `res.write` native method.
+
+## Response side-effect
+
+> 🔦 `@UseOnFinish(sideEffect, exposeResponseBody?)`<br>
+> 💫 Related Node.js event: [`finish`](https://nodejs.org/api/http.html#http_event_finish)
+
+You need to trigger side-effects ? Logging details, sending an email, etc.<br>`UseOnFinish` defines a callback on each response, on the [`finish` Response event](https://nodejs.org/api/http.html#http_event_finish) to be exact.
+
+```ts
+class Controller {
+  @UseOnFinish((req, res) => {
+    console.log('Request:', req.method, req.originalUrl, req.body)
+    console.log('Response:', res.statusCode)
+  })
+  @Post('/things')
+  create() {}
+}
+```
+
+As a safety net, any exception happening in your callback will be caught and logged to `stderr` instead of crashing the server. You don't want the latter for a side-effect. _This does not exempt you to properly handle your errors, though._
+
+#### Retrieve the response body
+
+You can expose the response body on the Response object by switching the last parameter on. Streaming responses will have their body truncated to the first 64kb, to avoid eating up memory.
+
+```ts
+class Controller {
+  @UseOnFinish((req, res) => {
+    console.log('Request:', req.method, req.originalUrl)
+    console.log('Response:', res.statusCode, res.body)
+  }, true)
+  @Get('/things')
+  list() {}
+}
+```
+
+## Response status
+
+> 🔦 `@UseStatus(code)`<br>
+> 💫 Related Express method: [`res.status`](https://expressjs.com/en/4x/api.html#res.status)
+
+Set the response status code with a dedicated decorator.
+
+```ts
+class Controller {
+  @UseStatus(201)
+  @Post('/things')
+  create() {}
+}
+```
+
+`UseStatus` input type is narrowed to a union of known **`1XX`, `2XX` and `3XX` status codes** (instead of just `number`). You can still opt-out by expanding the input type to `number` or `any`:
+
+```ts
+@UseStatus<number>(199)
+```
+
+##### 💡 Tip
+
+Use **[HTTP status enums](https://github.com/jeremyben/tshttp/tree/master/status)** from the same maintainer for an even better developer experience.
+
+## Response headers
+
+> 🔦 `@UseSet(header, value)|(headers)` alias `@UseHeader`<br>
+> 💫 Related Express method: [`res.set`](https://expressjs.com/en/4x/api.html#res.set)
+
+Set any response header with a dedicated decorator.
+
+```ts
+@UseSet({ 'x-powered-by': 'brainfuck' })
+class Controller {
+  @UseSet('allow', 'GET')
+  @Post('/things')
+  create(@Res res: Response) {
+    res.sendStatus(405)
+  }
+}
+```
+
+`UseSet`/`UseHeader` input type is narrowed to a union of known **response headers** (instead of just `string`). You can still opt-out by expanding the input type to `string` or `any`:
+
+```ts
+@UseSet<string>('x-custom', 'value')
+```
+
+##### 💡 Tip
+
+Use **[HTTP response headers enum](https://github.com/jeremyben/tshttp/tree/master/header)** from the same maintainer for an even better developer experience.
+
+## Response type
+
+> 🔦 `@UseType(contentType)` alias `@UseContentType`<br>
+> 💫 Related Express method: [`res.type`](https://expressjs.com/en/4x/api.html#res.type)
+
+Set the response `Content-Type` with a dedicated decorator.
+
+```ts
+class Controller {
+  @UseType('application/msword')
+  @Send()
+  @Get('/document')
+  download() {
+    return createReadStream('path/to/doc')
+  }
+}
+```
+
+`UseType`/`UseContentType` input type is narrowed to a union of common content types (instead of just `string`). You can still opt-out by expanding the input type to `string` or `any`:
+
+```ts
+@UseType<string>('application/x-my-type')
+```
+
+## Conditional middleware
+
+> 🔦 `@UseIf(filter, [middlewares])`
+
+In some case, you might want to separate a middleware logic from its applying conditions. `UseIf` is made for such case.
+
+```ts
+UseIf((req) => req.method === 'POST', [express.json()])
+class Controller {}
+```

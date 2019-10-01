@@ -4,6 +4,7 @@
 	"author": "Jeremy Bensimon",
 	"license": "MIT",
 	"repository": "https://github.com/jeremyben/reflet/tree/master/express",
+	"description": "Well-defined and well-typed express decorators",
 	"keywords": [
 		"express",
 		"decorators",

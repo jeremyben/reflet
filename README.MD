@@ -1,8 +1,10 @@
 <h1 align="center">Reflet 💫</h1>
 
+[![node](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/jeremyben/reflet/master/package.json&label=node&query=engines.node&color=green&logo=node.js)](https://nodejs.org)
+
 Reflet is a suite of modules made of well-typed [decorators](https://www.typescriptlang.org/docs/handbook/decorators.html), to enhance Node.js and established libraries.<br>Reflet is simple, flexible. It will help you organize your app, without the pitfall of verbosity.<br>But most importantly, Reflet is french for reflection (pronounce _ruh flay_ 🐔).
 
-## [reflet/express](./express)
+## [Reflet/express](./express)
 
 Organize your [Express](https://expressjs.com/) application. Have a little taste before **[heading to the doc](./express/README.MD)**:
 
@@ -12,17 +14,20 @@ Organize your [Express](https://expressjs.com/) application. Have a little taste
 class ThingController {
 
   @Get('/:id')
-  async get(@Params('id') id: string, @Res res: express.Response) {
+  async get(@Params('id') id: string, @Res res: Response) {
     const thing = await db.collection('things').find({ id })
     res.status(200).send(thing)
   }
 
   @Send({ status: 201 })
+  @UseGuards((req) => canCreateThing(req.user))
   @Post()
   async create(@Body('item') item: string) {
     const newThing = await db.collection('things').insertOne({ item })
     return newThing
 ```
+
+_Add-on: [Reflet/express-middlewares](./express-middlewares)_
 
 ## Philosophy 📣
 
@@ -32,7 +37,7 @@ Why another decorator framework ? Simply <sub>(and biasedly)</sub> put, a better
 
 Reflet modules aim to stay close to the technology's underlying abstractions they decorate, <br>so you **don't have to learn** a whole new terminology to be productive. 🏌️‍
 
-_e.g. [reflet/express](./express) has decorators like `Use` for `app.use` method, `Router` for `express.Router`, `Send` for `res.send`.<br>If you're familiar with Express, you're gonna love its Reflet decorators._
+_e.g. [Reflet/express](./express) has decorators like `Use` for `app.use` method, `Router` for `express.Router`, `Send` for `res.send`.<br>If you're familiar with Express, you're gonna love its Reflet decorators._
 
 As such, Reflet modules don't try to be agnostic or compatible with multiple technologies at once (_e.g. decorators for both Express, Koa, Fastify_), because that would mean :
 
@@ -46,7 +51,7 @@ Instead, Reflet hopes to provide a well-defined and well-typed module for each l
 
 Reflet takes full advantage of TypeScript by **narrowing** its type signatures, to prevent as much mistakes as possible. 🎯
 
-_e.g. `Headers` decorator narrows its input to a [union of request headers](./express/src/interfaces.ts#L25) instead of just `string`, <br>`Send` decorator narrows its status options to a [union of status codes](./express/src/interfaces.ts#L165) instead of just `number`._
+_e.g. [`Headers` decorator](./express/README.MD#request-headers) narrows its input to a union of request headers instead of just `string`, <br>[`UseStatus` decorator](./express-middlewares/README.MD#response-status) narrows its input to a union of status codes instead of just `number`._
 
 #### With documentation at hand
 
@@ -58,13 +63,13 @@ Most decorator frameworks are great for the simple stuff, but inevitably get in 
 
 Reflet does its best to avoid this by staying simple and to the point, **composable**, and by eating its own dog food: common decorators are built with lower-level tools, that are also provided to you. 🐎
 
-_e.g. exposed [express parameter decorators](./express/src/param-decorators.ts) are created by the same `createParamDecorator` method that is provided to you. Same goes for the [express route decorators](./express/src/route-decorators.ts), built from the `Method` decorator._
+_e.g. exposed Express [parameter decorators](./express/README.MD#request-properties-injection) are created by the same `createParamDecorator` method that is provided to you._
 
 #### With progressive features
 
 This design allows for easy extension and plugins. 🧩<br>In this regard, Reflet generally provides a core module with all the basic decorators to do everything, and **add-ons** for extra convenient features.
 
-_e.g. [reflet/express-middlewares](./express-middlewares) provides middleware decorators to handle authorization (`UseGuards`), response mapping (`UseInterceptor`), to complete the features of [reflet/express](./express)._
+_e.g. [Reflet/express-middlewares](./express-middlewares) provides middleware decorators to handle authorization (`UseGuards`), response mapping (`UseInterceptor`), to complete the features of [Reflet/express](./express)._
 
 ### Self-control
 
@@ -72,7 +77,7 @@ NPM ecosystem got a bad rep by encouraging intricate third-party dependencies fo
 
 Reflet modules fully **own** their codebase. No direct third-party dependencies, only peer ones.
 
-_e.g. [reflet/express](./express) only asks for the necessary **peer** dependencies: `express`, `@types/express`, `reflect-metadata`._
+_e.g. [Reflet/express](./express) only asks for the necessary **peer** dependencies: `express`, `@types/express`, `reflect-metadata`._
 
 ### Readable `source code`
 
