@@ -1,6 +1,7 @@
 <h1 align="center">Reflet 💫</h1>
 
-[![node](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/jeremyben/reflet/master/package.json&label=node&query=engines.node&color=green&logo=node.js)](https://nodejs.org)
+[![Node version](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/jeremyben/reflet/master/package.json&label=Node&query=engines.node&color=green&logo=node.js)](https://nodejs.org)
+[![CI](https://github.com/jeremyben/reflet/workflows/Node%20CI/badge.svg)](https://github.com/jeremyben/reflet/actions)
 
 Reflet is a suite of modules made of well-typed [decorators](https://www.typescriptlang.org/docs/handbook/decorators.html), to enhance Node.js and established libraries.<br>Reflet is simple, flexible. It will help you organize your app, without the pitfall of verbosity.<br>But most importantly, Reflet is french for reflection (pronounce _ruh flay_ 🐔).
 
