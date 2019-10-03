@@ -34,7 +34,7 @@
 		"reflect-metadata": "^0.1.13"
 	},
 	"devDependencies": {
-		"@reflet/express": "1.0.0"
+		"@reflet/express": "^1.0.0"
 	},
 	"scripts": {
 		"build": "ts-node -T ../build.ts",
