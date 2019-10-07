@@ -29,7 +29,7 @@ build({
 
 const dtsPath = join(basePath, 'dist', 'index.d.ts')
 const state = bundleDefinitions('public')
-syncOverloadsDoc(state.program.getCompilerOptions())
+syncOverloadsDoc(state.program.getCompilerOptions() as ts.CompilerOptions)
 
 /**
  * @see https://api-extractor.com/pages/overview/demo_rollup/

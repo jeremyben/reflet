@@ -13,7 +13,12 @@
 			"allow-trailing-underscore"
 		],
 		"interface-name": [true, "never-prefix"],
-		"no-implicit-dependencies": [true, "dev", ["supertest", "reflect-metadata"]],
+		"no-implicit-dependencies": [
+			true,
+			"dev",
+			["supertest", "reflect-metadata", "express", "express-serve-static-core", "rxjs", "tsc-prog"]
+		],
+		"no-submodule-imports": [true, "rxjs"],
 		"interface-over-type-literal": false,
 		"no-angle-bracket-type-assertion": false,
 		"no-console": false,

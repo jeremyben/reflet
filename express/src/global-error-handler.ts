@@ -1,6 +1,5 @@
 import { isErrorHandlerParams, isPathParams } from './type-guards'
 import { Request, Response, NextFunction, Application } from 'express'
-// tslint:disable-next-line: no-implicit-dependencies
 import { RequestHandlerParams, PathParams } from 'express-serve-static-core'
 
 /**
