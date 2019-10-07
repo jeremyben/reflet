@@ -30,6 +30,7 @@
 	"peerDependencies": {
 		"@reflet/express": "^1.0.0",
 		"@types/express": "^4.16.0",
+		"@types/node": ">=8",
 		"express": "^4.16.0",
 		"reflect-metadata": "^0.1.13"
 	},

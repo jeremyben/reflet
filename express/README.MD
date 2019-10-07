@@ -45,7 +45,7 @@ The **best** decorators for [Express](https://expressjs.com/). Have a look at [R
 2. Install the package along with peer dependencies.
 
     ```sh
-    yarn add @reflet/express express && yarn add -D @types/express
+    yarn add @reflet/express express && yarn add -D @types/express @types/node
     ```
 
 3. Create your decorated routing controllers.
