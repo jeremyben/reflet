@@ -112,7 +112,11 @@ export function UseOnFinish<ResBody = any>(
 
 				if (data) {
 					// Concatenate chunks if multiple write calls.
-					res.body = concatChunks(data, res.body as any, encodingOrCallback) as any
+					res.body = concatChunks(
+						data,
+						res.body as any,
+						encodingOrCallback as BufferEncoding
+					) as any
 				}
 
 				return write0.apply(res, (arguments as unknown) as Parameters<Response['write']>)
@@ -135,7 +139,11 @@ export function UseOnFinish<ResBody = any>(
 				// Make sure parameter is of the right type.
 				if (dataOrCallback && typeof dataOrCallback !== 'function') {
 					// Concatenate chunks if write calls have been made before.
-					res.body = concatChunks(dataOrCallback, res.body as any, encodingOrCallback) as any
+					res.body = concatChunks(
+						dataOrCallback,
+						res.body as any,
+						encodingOrCallback as BufferEncoding
+					) as any
 				}
 
 				return end0.apply(res, (arguments as unknown) as Parameters<Response['end']>)
@@ -163,7 +171,7 @@ export function UseOnFinish<ResBody = any>(
 function concatChunks(
 	chunk: string | Buffer,
 	body: string | Buffer | undefined,
-	encodingOrCallback: string | Function | undefined,
+	encodingOrCallback: BufferEncoding | Function | undefined,
 	bodyMaxLength = 65536
 ) {
 	// Assuming body is the same type as chunk (decided by the first chunk).
