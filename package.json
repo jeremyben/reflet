@@ -7,7 +7,8 @@
 	"repository": "github:jeremyben/reflet",
 	"workspaces": [
 		"express",
-		"express-middlewares"
+		"express-middlewares",
+		"benchmarks"
 	],
 	"engines": {
 		"node": ">=8.10"

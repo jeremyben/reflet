@@ -1,0 +1,23 @@
+{
+	"name": "@reflet/benchmarks",
+	"version": "0.0.0",
+	"repository": "https://github.com/jeremyben/reflet/tree/master/benchmarks",
+	"author": "Jeremy Bensimon",
+	"license": "MIT",
+	"private": true,
+	"scripts": {
+		"start": "ts-node -T run.ts"
+	},
+	"devDependencies": {
+		"@nestjs/common": "^6.8.2",
+		"@nestjs/core": "^6.8.2",
+		"@nestjs/platform-express": "^6.8.2",
+		"@reflet/express": "^1.0.0",
+		"@types/autocannon": "^4.1.0",
+		"autocannon": "^4.1.1",
+		"class-transformer": "^0.2.3",
+		"class-validator": "^0.10.1",
+		"routing-controllers": "^0.8.0",
+		"rxjs": "^6.5.3"
+	}
+}
