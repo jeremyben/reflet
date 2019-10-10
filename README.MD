@@ -82,6 +82,6 @@ _e.g. [Reflet/express](./express) only asks for the necessary **peer** dependenc
 
 ### Readable `source code`
 
-Careful abstractions `&&` clear-cut modules `&&` reduced number of files and folders `===` reduced indirection and complexity. 🧵
+Careful abstractions `&&` clear-cut modules `&&` commented/documented code `&&` small number of files/folders `===` reduced indirection and complexity. 🧵
 
 [Have a look](./express/src) and compare with similar frameworks. 🧶

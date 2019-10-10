@@ -124,7 +124,7 @@ In fact, it won't intercept any response sent by chunks with the `res.write` nat
 > 🔦 `@UseOnFinish(sideEffect, exposeResponseBody?)`<br>
 > 💫 Related Node.js event: [`finish`](https://nodejs.org/api/http.html#http_event_finish)
 
-You need to trigger side-effects ? Logging details, sending an email, etc.<br>`UseOnFinish` defines a callback on each response, on the [`finish` Response event](https://nodejs.org/api/http.html#http_event_finish) to be exact.
+You need to trigger side-effects ? Log details, send an email, etc.<br>`UseOnFinish` helps you define a callback on each response, on the [`finish` event](https://nodejs.org/api/http.html#http_event_finish) to be exact.
 
 ```ts
 class Controller {
