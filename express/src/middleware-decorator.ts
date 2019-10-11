@@ -1,6 +1,6 @@
 import Meta from './metadata-keys'
 import { RequestHandler } from 'express'
-import { ClassType, ClassOrMethodDecorator } from './interfaces'
+import { ClassType, MiddlewareDecorator } from './interfaces'
 import { concatPrependFast } from './array-manipulation'
 
 /**
@@ -32,7 +32,7 @@ import { concatPrependFast } from './array-manipulation'
  * @decorator class, method
  * @public
  */
-export function Use(...middlewares: RequestHandler[]): ClassOrMethodDecorator {
+export function Use(...middlewares: RequestHandler[]): MiddlewareDecorator {
 	return (target, key, descriptor) => {
 		// Method middleware
 		if (key) {

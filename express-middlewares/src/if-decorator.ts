@@ -10,12 +10,12 @@ import { isPromise } from './type-guards'
  *
  * @remarks
  * Example :
- *
  * ```ts
  * ＠UseIf((req) => req.method === 'POST', [express.json()])
  * class Foo {}
  * ```
- *
+ * ------
+ * @decorator class, method
  * @public
  */
 export function UseIf(

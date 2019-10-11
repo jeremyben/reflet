@@ -1,5 +1,5 @@
 import Meta from './metadata-keys'
-import { ClassOrMethodDecorator, ClassType, StatusU } from './interfaces'
+import { ClassType, StatusCode, SendDecorator, DontSendDecorator } from './interfaces'
 
 /**
  * @public
@@ -9,13 +9,13 @@ type SendOptions = {
 	json?: boolean
 
 	/** Sets default response status */
-	status?: StatusU
+	status?: StatusCode
 
 	/** Overrides response status for `undefined` return value */
-	undefinedStatus?: StatusU
+	undefinedStatus?: StatusCode
 
 	/** Overrides response status for `null` return value */
-	nullStatus?: StatusU
+	nullStatus?: StatusCode
 }
 
 /**
@@ -61,7 +61,7 @@ type SendOptions = {
  * @decorator class, method
  * @public
  */
-export function Send(options: SendOptions = {}): ClassOrMethodDecorator {
+export function Send(options: SendOptions = {}): SendDecorator {
 	return (target, key, descriptor) => {
 		if (key) Reflect.defineMetadata(Meta.Send, options, target, key)
 		else Reflect.defineMetadata(Meta.Send, options, target)
@@ -93,7 +93,7 @@ export function Send(options: SendOptions = {}): ClassOrMethodDecorator {
  * @decorator method
  * @public
  */
-export function DontSend(): MethodDecorator {
+export function DontSend(): DontSendDecorator {
 	return (target, key, descriptor) => {
 		Reflect.defineMetadata(Meta.Send, null, target, key)
 	}

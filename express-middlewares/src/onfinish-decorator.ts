@@ -1,6 +1,6 @@
 import { Use } from '@reflet/express'
 import { Request, Response, NextFunction } from 'express'
-import { ClassOrMethodDecorator, ResponseReadonly } from './interfaces'
+import { ResponseReadonly, MiddlewareDecorator } from './interfaces'
 
 /**
  * Triggers a side-effect on the `finish` event of the response.
@@ -38,14 +38,15 @@ import { ClassOrMethodDecorator, ResponseReadonly } from './interfaces'
 export function UseOnFinish<ResBody = any>(
 	effect: (req: Request, res: ResponseSentAndBody<ResBody>) => void | Promise<void>,
 	exposeBody: true
-): ClassOrMethodDecorator
+): MiddlewareDecorator
 
 /**
  * {@inheritDoc (UseOnFinish:1)}
+ * @public
  */
 export function UseOnFinish(
 	effect: (req: Request, res: ResponseSent) => void | Promise<void>
-): ClassOrMethodDecorator
+): MiddlewareDecorator
 
 export function UseOnFinish<ResBody = any>(
 	effect: (req: Request, res: ResponseSentAndBody<ResBody>) => void | Promise<void>,

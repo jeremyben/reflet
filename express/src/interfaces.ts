@@ -10,13 +10,77 @@ export type ClassType<T = any> = new (...args: any[]) => T
 export type Fn<T = any> = (...args: any[]) => T
 
 /**
+ * Equivalent to native ClassDecorator.
+ * Used as a distinct symbol for the compiler API.
  * @public
  */
-export type ClassOrMethodDecorator = (
+export type RouterDecorator = <T extends Function>(target: T) => T | void
+
+/**
+ * Equivalent to native MethodDecorator.
+ * Used as a distinct symbol for the compiler API.
+ * @public
+ */
+export type RouteDecorator = (
+	target: object,
+	key: string | symbol,
+	descriptor: TypedPropertyDescriptor<any>
+) => TypedPropertyDescriptor<any> | void
+
+/**
+ * Equivalent to native ParameterDecorator.
+ * Used as a distinct symbol for the compiler API.
+ * @public
+ */
+export type HandlerParameterDecorator = (
+	target: object,
+	propertyKey: string | symbol,
+	parameterIndex: number
+) => void
+
+/**
+ * Equivalent to a union of native ClassDecorator and MethodDecorator.
+ * Used as a distinct symbol for the compiler API.
+ * @public
+ */
+export type MiddlewareDecorator = (
 	target: object,
 	propertyKey?: string | symbol,
 	descriptor?: TypedPropertyDescriptor<any>
 ) => any
+
+/**
+ * Equivalent to a union of native ClassDecorator and MethodDecorator.
+ * Used as a distinct symbol for the compiler API.
+ * @public
+ */
+export type ErrorHandlerDecorator = (
+	target: object,
+	propertyKey?: string | symbol,
+	descriptor?: TypedPropertyDescriptor<any>
+) => any
+
+/**
+ * Equivalent to a union of native ClassDecorator and MethodDecorator.
+ * Used as a distinct symbol for the compiler API.
+ * @public
+ */
+export type SendDecorator = (
+	target: object,
+	propertyKey?: string | symbol,
+	descriptor?: TypedPropertyDescriptor<any>
+) => any
+
+/**
+ * Equivalent to native MethodDecorator.
+ * Used as a distinct symbol for the compiler API.
+ * @public
+ */
+export type DontSendDecorator = (
+	target: object,
+	key: string | symbol,
+	descriptor: TypedPropertyDescriptor<any>
+) => TypedPropertyDescriptor<any> | void
 
 /**
  * Request headers union.
@@ -103,67 +167,21 @@ export type RoutingMethod =
 /**
  * @public
  */
-export type InformationStatusU = 100 | 101 | 102 | 103
+export type StatusCode =
+	| StatusCodes.Information
+	| StatusCodes.Success
+	| StatusCodes.Redirection
+	| StatusCodes.ClientError
+	| StatusCodes.ServerError
 
-/**
- * @public
- */
-export type SuccessStatusU = 200 | 201 | 202 | 203 | 204 | 205 | 206 | 207 | 208 | 226
-
-/**
- * @public
- */
-export type RedirectionStatusU = 300 | 301 | 302 | 303 | 304 | 307 | 308
-
-/**
- * @public
- */
-export type ErrorStatusU =
-	| 400
-	| 401
-	| 402
-	| 403
-	| 404
-	| 405
-	| 406
-	| 407
-	| 408
-	| 409
-	| 410
-	| 411
-	| 412
-	| 413
-	| 414
-	| 415
-	| 416
-	| 417
-	| 418
-	| 421
-	| 422
-	| 423
-	| 424
-	| 425
-	| 426
-	| 428
-	| 429
-	| 431
-	| 451
-	| 500
-	| 501
-	| 502
-	| 503
-	| 504
-	| 505
-	| 506
-	| 507
-	| 508
-	| 510
-	| 511
-
-/**
- * @public
- */
-export type StatusU = InformationStatusU | SuccessStatusU | RedirectionStatusU | ErrorStatusU
+namespace StatusCodes {
+	export type Information = 100 | 101 | 102 | 103
+	export type Success = 200 | 201 | 202 | 203 | 204 | 205 | 206 | 207 | 208 | 226
+	export type Redirection = 300 | 301 | 302 | 303 | 304 | 307 | 308
+	// prettier-ignore
+	export type ClientError = 400 | 401 | 402 | 403 | 404 | 405 | 406 | 407 | 408 | 409 | 410 | 411 | 412 | 413 | 414 | 415 | 416 | 417 | 418 | 421 | 422 | 423 | 424 | 425 | 426 | 428 | 429 | 431 | 451
+	export type ServerError = 500 | 501 | 502 | 503 | 504 | 505 | 506 | 507 | 508 | 510 | 511
+}
 
 declare module 'express' {
 	export interface Application {

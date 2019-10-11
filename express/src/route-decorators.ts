@@ -1,7 +1,10 @@
 import Meta from './metadata-keys'
-import { ClassType, RoutingMethod } from './interfaces'
+import { ClassType, RoutingMethod, RouteDecorator } from './interfaces'
 
-type Route = {
+/**
+ * @internal
+ */
+type RouteMeta = {
 	path: string | RegExp
 	method: RoutingMethod
 	key: string | symbol
@@ -136,10 +139,10 @@ export const Delete = (path: string | RegExp = '') => Method('delete', path)
  * @decorator method
  * @public
  */
-export function Method(method: RoutingMethod, path: string | RegExp): MethodDecorator {
+export function Method(method: RoutingMethod, path: string | RegExp): RouteDecorator {
 	return (target, key, descriptor) => {
 		// Attach routes to class instead of methods to extract and traverse all of them at once
-		const routes: Route[] = Reflect.getOwnMetadata(Meta.Route, target) || []
+		const routes: RouteMeta[] = Reflect.getOwnMetadata(Meta.Route, target) || []
 		routes.push({ path, method, key })
 		Reflect.defineMetadata(Meta.Route, routes, target)
 	}
@@ -150,6 +153,6 @@ export function Method(method: RoutingMethod, path: string | RegExp): MethodDeco
  * Get methods metadata from the prototype (no need to create an instance).
  * @internal
  */
-export function extractRoutes(target: ClassType): Route[] {
+export function extractRoutes(target: ClassType): RouteMeta[] {
 	return Reflect.getOwnMetadata(Meta.Route, target.prototype) || []
 }
