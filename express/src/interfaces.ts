@@ -168,13 +168,13 @@ export type RoutingMethod =
  * @public
  */
 export type StatusCode =
-	| StatusCodes.Information
-	| StatusCodes.Success
-	| StatusCodes.Redirection
-	| StatusCodes.ClientError
-	| StatusCodes.ServerError
+	| StatusCode.Information
+	| StatusCode.Success
+	| StatusCode.Redirection
+	| StatusCode.ClientError
+	| StatusCode.ServerError
 
-namespace StatusCodes {
+export namespace StatusCode {
 	export type Information = 100 | 101 | 102 | 103
 	export type Success = 200 | 201 | 202 | 203 | 204 | 205 | 206 | 207 | 208 | 226
 	export type Redirection = 300 | 301 | 302 | 303 | 304 | 307 | 308
@@ -201,7 +201,7 @@ declare module 'express' {
 	}
 
 	type Layer = {
-		handle: RequestHandler_ | RequestHandler_ & _Router
+		handle: RequestHandler_ | (RequestHandler_ & _Router)
 		name:
 			| '<anonymous>'
 			| 'query'

@@ -141,9 +141,12 @@ namespace CommonTypes {
 /**
  * @public
  */
-export type NonErrorStatusCode = StatusCodes.Information | StatusCodes.Redirection | StatusCodes.Success
+export type NonErrorStatusCode =
+	| NonErrorStatusCode.Information
+	| NonErrorStatusCode.Redirection
+	| NonErrorStatusCode.Success
 
-namespace StatusCodes {
+export namespace NonErrorStatusCode {
 	export type Information = 100 | 101 | 102 | 103
 	export type Success = 200 | 201 | 202 | 203 | 204 | 205 | 206 | 207 | 208 | 226
 	export type Redirection = 300 | 301 | 302 | 303 | 304 | 307 | 308
