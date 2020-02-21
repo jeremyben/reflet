@@ -1,86 +1,145 @@
 /**
+ * Exported decorators interfaces.
+ * Branded as distinct symbols for the dedicated linter and the compiler API.
+ * @public
+ */
+export namespace Decorator {
+	/**
+	 * Used for `@Router` decorator.
+	 * Equivalent to `ClassDecorator`.
+	 * @public
+	 */
+	export type Router = ClassDecorator & { __refletRouter?: never }
+
+	/**
+	 * Used for `@Get, @Post, @Put, @Patch, @Delete, @Method` decorators.
+	 * Equivalent to `MethodDecorator`.
+	 * @public
+	 */
+	export type Route = MethodDecorator & { __refletRoute?: never }
+
+	/**
+	 * Used for `createParamDecorator`.
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type HandlerParameter = ParameterDecorator & { __refletHandlerParameter?: never }
+
+	/**
+	 * Used for `@Req` decorator.
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Req = ParameterDecorator & { __refletReq?: never; __refletHandlerParameter?: never }
+
+	/**
+	 * Used for `@Res` decorator.
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Res = ParameterDecorator & { __refletRes?: never; __refletHandlerParameter?: never }
+
+	/**
+	 * Used for `@Next` decorator.
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Next = ParameterDecorator & { __refletNext?: never; __refletHandlerParameter?: never }
+
+	/**
+	 * Used for `@Body` decorator.
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Body = ParameterDecorator & { __refletBody?: never; __refletHandlerParameter?: never }
+
+	/**
+	 * Used for `@Params` decorator.
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Params = ParameterDecorator & { __refletParams?: never; __refletHandlerParameter?: never }
+
+	/**
+	 * Used for `@Query` decorator.
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Query = ParameterDecorator & { __refletQuery?: never; __refletHandlerParameter?: never }
+
+	/**
+	 * Used for `@Headers` decorator.
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Headers = ParameterDecorator & { __refletHeaders?: never; __refletHandlerParameter?: never }
+
+	/**
+	 * Used for `@Use` decorator.
+	 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
+	 * @public
+	 */
+	export type Use<T extends ClassOrMethodUnion = 'class|method'> = ClassOrMethodDecorator<T> & {
+		__refletUse?: never
+	}
+
+	/**
+	 * Used for `@Catch` decorator.
+	 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
+	 * @public
+	 */
+	export type Catch<T extends ClassOrMethodUnion = 'class|method'> = ClassOrMethodDecorator<T> & {
+		__refletCatch?: never
+	}
+
+	/**
+	 * Used for `@Send` decorator.
+	 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
+	 * @public
+	 */
+	export type Send<T extends ClassOrMethodUnion = 'class|method'> = ClassOrMethodDecorator<T> & {
+		__refletSend?: never
+	}
+
+	/**
+	 * Used for `@DontSend` decorator.
+	 * Equivalent to `MethodDecorator`.
+	 * @public
+	 */
+	export type DontSend = MethodDecorator & { __refletDontSend?: never }
+}
+
+/**
+ * @public
+ */
+type ClassOrMethodUnion = 'class' | 'method' | 'class|method'
+
+/**
+ * Generic decorator type to choose beetween `ClassDecorator`, `MethodDecorator`, or both.
+ * @public
+ */
+type ClassOrMethodDecorator<T extends ClassOrMethodUnion = 'class|method'> = T extends 'class'
+	? ClassDecorator
+	: T extends 'method'
+	? MethodDecorator
+	: T extends 'class|method'
+	? <TFunction extends Function>(
+			target: TFunction | Object,
+			propertyKey?: string | symbol,
+			descriptor?: TypedPropertyDescriptor<any>
+	  ) => any
+	: never
+
+/**
  * Defines a class type. Does the opposite of built-in `InstanceType`.
  * @public
  */
-export type ClassType<T = any> = new (...args: any[]) => T
+export type ClassType<T = unknown> = new (...args: any[]) => T
 
 /**
  * @public
  */
-export type Fn<T = any> = (...args: any[]) => T
-
-/**
- * Equivalent to native ClassDecorator.
- * Used as a distinct symbol for the compiler API.
- * @public
- */
-export type RouterDecorator = <T extends Function>(target: T) => T | void
-
-/**
- * Equivalent to native MethodDecorator.
- * Used as a distinct symbol for the compiler API.
- * @public
- */
-export type RouteDecorator = (
-	target: object,
-	key: string | symbol,
-	descriptor: TypedPropertyDescriptor<any>
-) => TypedPropertyDescriptor<any> | void
-
-/**
- * Equivalent to native ParameterDecorator.
- * Used as a distinct symbol for the compiler API.
- * @public
- */
-export type HandlerParameterDecorator = (
-	target: object,
-	propertyKey: string | symbol,
-	parameterIndex: number
-) => void
-
-/**
- * Equivalent to a union of native ClassDecorator and MethodDecorator.
- * Used as a distinct symbol for the compiler API.
- * @public
- */
-export type MiddlewareDecorator = (
-	target: object,
-	propertyKey?: string | symbol,
-	descriptor?: TypedPropertyDescriptor<any>
-) => any
-
-/**
- * Equivalent to a union of native ClassDecorator and MethodDecorator.
- * Used as a distinct symbol for the compiler API.
- * @public
- */
-export type ErrorHandlerDecorator = (
-	target: object,
-	propertyKey?: string | symbol,
-	descriptor?: TypedPropertyDescriptor<any>
-) => any
-
-/**
- * Equivalent to a union of native ClassDecorator and MethodDecorator.
- * Used as a distinct symbol for the compiler API.
- * @public
- */
-export type SendDecorator = (
-	target: object,
-	propertyKey?: string | symbol,
-	descriptor?: TypedPropertyDescriptor<any>
-) => any
-
-/**
- * Equivalent to native MethodDecorator.
- * Used as a distinct symbol for the compiler API.
- * @public
- */
-export type DontSendDecorator = (
-	target: object,
-	key: string | symbol,
-	descriptor: TypedPropertyDescriptor<any>
-) => TypedPropertyDescriptor<any> | void
+export type Fn<T = unknown> = (...args: any[]) => T
 
 /**
  * Request headers union.

@@ -1,5 +1,5 @@
 import Meta from './metadata-keys'
-import { ClassType, StatusCode, SendDecorator, DontSendDecorator } from './interfaces'
+import { ClassType, StatusCode, Decorator } from './interfaces'
 
 /**
  * @public
@@ -61,7 +61,7 @@ type SendOptions = {
  * @decorator class, method
  * @public
  */
-export function Send(options: SendOptions = {}): SendDecorator {
+export function Send(options: SendOptions = {}): Decorator.Send {
 	return (target, key, descriptor) => {
 		if (key) Reflect.defineMetadata(Meta.Send, options, target, key)
 		else Reflect.defineMetadata(Meta.Send, options, target)
@@ -93,7 +93,7 @@ export function Send(options: SendOptions = {}): SendDecorator {
  * @decorator method
  * @public
  */
-export function DontSend(): DontSendDecorator {
+export function DontSend(): Decorator.DontSend {
 	return (target, key, descriptor) => {
 		Reflect.defineMetadata(Meta.Send, null, target, key)
 	}

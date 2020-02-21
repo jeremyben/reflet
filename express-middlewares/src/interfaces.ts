@@ -1,17 +1,6 @@
 import { Response } from 'express'
 
 /**
- * Equivalent to a union of native ClassDecorator and MethodDecorator.
- * Used as a distinct symbol for the compiler API.
- * @public
- */
-export type MiddlewareDecorator = (
-	target: object,
-	propertyKey?: string | symbol,
-	descriptor?: TypedPropertyDescriptor<any>
-) => any
-
-/**
  * @see https://developer.mozilla.org/en-US/docs/Glossary/Response_header
  * @public
  */

@@ -1,7 +1,7 @@
 import Meta from './metadata-keys'
 import { RequestHandler } from 'express'
-import { ClassType, MiddlewareDecorator } from './interfaces'
 import { concatPrependFast } from './array-manipulation'
+import { ClassType, Decorator } from './interfaces'
 
 /**
  * Applies middlewares on a single route when applied to a method, or on multipe routes when applied to a controller class.
@@ -32,7 +32,7 @@ import { concatPrependFast } from './array-manipulation'
  * @decorator class, method
  * @public
  */
-export function Use(...middlewares: RequestHandler[]): MiddlewareDecorator {
+export function Use(...middlewares: RequestHandler[]): Decorator.Use {
 	return (target, key, descriptor) => {
 		// Method middleware
 		if (key) {

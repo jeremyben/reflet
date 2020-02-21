@@ -1,5 +1,5 @@
-import { Use } from '@reflet/express'
-import { MiddlewareDecorator, ResponseHeaderName, CommonType } from './interfaces'
+import { Use, Decorator } from '@reflet/express'
+import { ResponseHeaderName, CommonType } from './interfaces'
 
 /**
  * Sets response HTTP headers.
@@ -28,17 +28,15 @@ import { MiddlewareDecorator, ResponseHeaderName, CommonType } from './interface
 export function UseSet<T extends string = ResponseHeaderName>(
 	field: T extends ResponseHeaderName ? ResponseHeaderName : string,
 	value: string
-): MiddlewareDecorator
+): Decorator.Use
 
 /**
  * {@inheritDoc (UseSet:1)}
  * @public
  */
-export function UseSet<T extends string = ResponseHeaderName>(
-	headers: ResponseHeaders<T>
-): MiddlewareDecorator
+export function UseSet<T extends string = ResponseHeaderName>(headers: ResponseHeaders<T>): Decorator.Use
 
-export function UseSet(field: string | ResponseHeaders, value?: string): MiddlewareDecorator {
+export function UseSet(field: string | ResponseHeaders, value?: string) {
 	const headers: ResponseHeaders = typeof field === 'string' ? { [field]: value } : field
 
 	return Use((req, res, next) => {
@@ -82,5 +80,5 @@ export { UseType as UseContentType }
  * @public
  */
 type ResponseHeaders<T extends string = ResponseHeaderName> = T extends ResponseHeaderName
-	? ({ [name in ResponseHeaderName]?: string })
+	? { [name in ResponseHeaderName]?: string }
 	: { [name: string]: string }

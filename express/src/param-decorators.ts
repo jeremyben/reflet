@@ -1,7 +1,7 @@
 import Meta from './metadata-keys'
-import { ClassType, RequestHeaderName, Fn, HandlerParameterDecorator } from './interfaces'
 import { json, urlencoded, Request, Response, NextFunction, RequestHandler } from 'express'
 import { flatMapFast } from './array-manipulation'
+import { ClassType, RequestHeaderName, Fn, Decorator } from './interfaces'
 
 /**
  * @internal
@@ -35,13 +35,13 @@ type ParamMeta = {
  * @decorator parameter, optional invokation
  * @public
  */
-export function Req(): HandlerParameterDecorator
+export function Req(): Decorator.Req
 
 /**
  * {@inheritDoc (Req:1)}
  * @public
  */
-export function Req(...args: Parameters<HandlerParameterDecorator>): void
+export function Req(...args: Parameters<Decorator.Req>): void
 
 export function Req() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
@@ -73,13 +73,13 @@ export function Req() {
  * @decorator parameter, optional invokation
  * @public
  */
-export function Res(): HandlerParameterDecorator
+export function Res(): Decorator.Res
 
 /**
  * {@inheritDoc (Res:1)}
  * @public
  */
-export function Res(...args: Parameters<HandlerParameterDecorator>): void
+export function Res(...args: Parameters<Decorator.Res>): void
 
 export function Res() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
@@ -113,13 +113,13 @@ export function Res() {
  * @decorator parameter, optional invokation
  * @public
  */
-export function Next(): HandlerParameterDecorator
+export function Next(): Decorator.Next
 
 /**
  * {@inheritDoc (Next:1)}
  * @public
  */
-export function Next(...args: Parameters<HandlerParameterDecorator>): void
+export function Next(...args: Parameters<Decorator.Next>): void
 
 export function Next() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
@@ -162,13 +162,13 @@ const bodyParsers = [json(), urlencoded({ extended: true })]
  * @decorator parameter, optional invokation
  * @public
  */
-export function Body<T extends object>(key?: keyof T): HandlerParameterDecorator
+export function Body<T extends object>(key?: keyof T): Decorator.Body
 
 /**
  * {@inheritDoc (Body:1)}
  * @public
  */
-export function Body(...args: Parameters<HandlerParameterDecorator>): void
+export function Body(...args: Parameters<Decorator.Body>): void
 
 export function Body<T extends object>(
 	keyOrTarget?: keyof T | object,
@@ -216,13 +216,13 @@ export function Body<T extends object>(
  * @decorator parameter, optional invokation
  * @public
  */
-export function Params(name?: string): HandlerParameterDecorator
+export function Params(name?: string): Decorator.Params
 
 /**
  * {@inheritDoc (Params:1)}
  * @public
  */
-export function Params(...args: Parameters<HandlerParameterDecorator>): void
+export function Params(...args: Parameters<Decorator.Params>): void
 
 export function Params(
 	nameOrTarget?: string | object,
@@ -266,13 +266,13 @@ export function Params(
  * @decorator parameter, optional invokation
  * @public
  */
-export function Query(field?: string): HandlerParameterDecorator
+export function Query(field?: string): Decorator.Query
 
 /**
  * {@inheritDoc (Query:1)}
  * @public
  */
-export function Query(...args: Parameters<HandlerParameterDecorator>): void
+export function Query(...args: Parameters<Decorator.Query>): void
 
 export function Query(
 	fieldOrTarget?: string | object,
@@ -318,13 +318,13 @@ export function Query(
  */
 export function Headers<T extends string = RequestHeaderName>(
 	name?: T extends RequestHeaderName ? RequestHeaderName : string
-): HandlerParameterDecorator
+): Decorator.Headers
 
 /**
  * {@inheritDoc (Headers:1)}
  * @public
  */
-export function Headers(...args: Parameters<HandlerParameterDecorator>): void
+export function Headers(...args: Parameters<Decorator.Headers>): void
 
 export function Headers(
 	nameOrTarget?: string | object,
@@ -385,7 +385,7 @@ export function createParamDecorator<T = any>(
 	mapper: (req: Request) => T,
 	use?: RequestHandler[],
 	dedupeUse?: boolean
-): HandlerParameterDecorator {
+): Decorator.HandlerParameter {
 	return (target, key, index) => {
 		const params: ParamMeta[] = Reflect.getOwnMetadata(Meta.Param, target, key) || []
 

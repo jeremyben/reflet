@@ -1,6 +1,6 @@
 import Meta from './metadata-keys'
 import { ErrorRequestHandler, Request, Response, NextFunction } from 'express'
-import { ClassType, ErrorHandlerDecorator } from './interfaces'
+import { ClassType, Decorator } from './interfaces'
 
 /**
  * Attaches an error handler on a single route when applied to a method, or on multipe routes when applied to a controller class.
@@ -32,7 +32,7 @@ import { ClassType, ErrorHandlerDecorator } from './interfaces'
  */
 export function Catch<T = any>(
 	errorHandler: (err: T, req: Request, res: Response, next: NextFunction) => any
-): ErrorHandlerDecorator {
+): Decorator.Catch {
 	return (target, key, descriptor) => {
 		// Method
 		if (key) {

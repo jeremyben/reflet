@@ -1,6 +1,6 @@
 import Meta from './metadata-keys'
-import { ClassType, RouterDecorator } from './interfaces'
 import { RouterOptions } from 'express'
+import { ClassType, Decorator } from './interfaces'
 
 /**
  * @internal
@@ -35,7 +35,7 @@ type RouterMeta = { root: string | RegExp; options?: RouterOptions }
  * @decorator class
  * @public
  */
-export function Router(root: string | RegExp, options?: RouterOptions): RouterDecorator {
+export function Router(root: string | RegExp, options?: RouterOptions): Decorator.Router {
 	return (target) => {
 		Reflect.defineMetadata(Meta.Router, { root, options }, target)
 	}

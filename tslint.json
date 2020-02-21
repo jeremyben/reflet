@@ -32,7 +32,6 @@
 		"prefer-object-spread": false,
 		"ban-types": [
 			true,
-			["Object", "Did you mean `object`?"],
 			["Boolean", "Did you mean `boolean`?"],
 			["Number", "Did you mean `number`?"],
 			["String", "Did you mean `string`?"],
