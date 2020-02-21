@@ -7521,10 +7521,10 @@ ts-node@^8.6.2:
     source-map-support "^0.5.6"
     yn "3.1.1"
 
-tsc-prog@^2.1.0:
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/tsc-prog/-/tsc-prog-2.1.0.tgz#7014bd7dbe84d1ea16119c4ed4c349433e5cde38"
-  integrity sha512-RFcs/MmxKsbwpknWTDGKYrMKxvY85sCXaZD0bEWfsiw102G3UWlmtFtXbfgtKp6WzFIIsABpYTsX6UBcaf/Sow==
+tsc-prog@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/tsc-prog/-/tsc-prog-2.1.1.tgz#20421c4f8036d621b34a34315482833947a44b5c"
+  integrity sha512-bgw5g1/ZET5KDNCknUs7P1BsQ4saDg5vzpPiObNKHcZHW54uhtdb+YOFM/3HMwqCHRQxK1LrVU3brWMHGXoXCg==
 
 tslib@^1.10.0, tslib@^1.9.0:
   version "1.10.0"
