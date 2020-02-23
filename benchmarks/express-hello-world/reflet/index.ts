@@ -8,4 +8,4 @@ const app = express()
 
 register(app, [AppController])
 
-app.listen(3000)
+app.listen(3001)

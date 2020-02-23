@@ -3,4 +3,4 @@ import { AppController } from './app.controller'
 
 const app = createExpressServer({ controllers: [AppController] })
 
-app.listen(3000)
+app.listen(3001)

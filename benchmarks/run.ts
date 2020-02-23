@@ -29,14 +29,14 @@ async function runExpressWith(lib: typeof libs[number]) {
 	const libPath = join(__dirname, outDir, lib, 'index.js')
 	const process = spawn('node', [libPath])
 
-	console.log('\n==============\n' + lib.toUpperCase())
+	console.log(`\n===============\n${lib.toUpperCase()}\n===============\n`)
 
 	await new Promise((resolve) => setTimeout(resolve, 1000))
 
 	return new Promise<Result>((resolve, reject) => {
 		const instance = autocannon(
 			{
-				url: 'http://localhost:3000',
+				url: 'http://localhost:3001',
 				title: lib,
 				connections: 100,
 				duration: '10s',
