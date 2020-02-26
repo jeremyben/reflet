@@ -5,42 +5,33 @@ import { isPromise } from './type-guards'
 
 /**
  * Intercepts and manipulates the response body.
- *
- * @param transform - mapper function that takes the intercepted response body and must return the modified response body. Gives also access to Request and Response objects.
+ * @param transform - mapper function that takes the intercepted response body and must return the modified response body. _Gives access to Request and Response objects._
  *
  * @remarks
  * Adds a counter `wasIntercepted` on the Response object.
  *
- * ------
- * Example :
- * ```ts
- * class Foo {
- *   ＠UseInterceptor<{ foo: number }>((data, context) => {
- *     return { foo: data.foo * 5 }
- *   })
- *   ＠Get('/')
- *   get(＠Res res: Response) {
- *     res.send({ foo: 1 }) // expect { foo: 5 }
- *   }
- * }
- * ```
- * ------
- * Errors :
- *
+ * **Errors:**
  * It won't intercept errors, whether the body is an `Error` instance or the status is >= 400.
  * Instead you should use a `@Catch` decorator.
  *
- * Streams :
- *
- * It won't intercept streaming responses either (_e.g. files sent with `res.sendFile`).
+ * **Streams:**
+ * It won't intercept streaming responses either (_e.g. files sent with `res.sendFile`_).
  * Instead you should use a [transform stream](https://nodejs.org/api/stream.html#stream_class_stream_transform).
- *
  * In fact, it won't intercept any data sent with `res.write` native method.
  *
- * ------
  * Works by patching `res.send`, `res.json`, `res.jsonp` and `res.end` methods.
  *
- * @decorator class, method
+ * @example
+ * ```ts
+ * ＠UseInterceptor<{ foo: number }>((data, context) => {
+ *   return { foo: data.foo * 5 }
+ * })
+ * ＠Get('/')
+ * get(＠Res res: Response) {
+ *   res.send({ foo: 1 }) // expect { foo: 5 }
+ * }
+ * ```
+ * ------
  * @public
  */
 export function UseInterceptor<T, U = T>(

@@ -5,14 +5,11 @@ import { isPromise } from './type-guards'
 /**
  * Middleware to handle authorization.
  *
- * @param guards - functions that should return a boolean (asynchronously or not), indicating the current request is allowed or not. Have access to the Request object.
- *
- * @remarks
+ * @param guards - functions that should return a boolean (asynchronously or not), indicating the current request is allowed or not:
  * - returns `true`-> request will be processed.
- * - returns `false`-> request will be denied with a **403** HTTP code and a **"Access Denied"** message.
+ * - returns `false`-> request will be denied with a **403** HTTP code and a "Access Denied" message.
  *
- * ------
- * Example :
+ * @example
  * ```ts
  * ＠UseGuards(
  *   (req) => req.user != null,
@@ -22,15 +19,14 @@ import { isPromise } from './type-guards'
  * get() {}
  * ```
  * ------
- * Custom message :
- *
- * If you want to override the default 'Access denied' message,
+ * **Custom message:**
+ * If you want to override the default "Access denied" message,
  * you can _return_ (not throw) an `Error` instance instead of just `false`.
+ * @example
  * ```ts
  * ＠UseGuards((req) => Boolean(req.user.admin) || Error('You must be admin'))
  * ```
  * ------
- * @decorator class, method
  * @public
  */
 export function UseGuards(...guards: ((req: Request) => boolean | Error | Promise<boolean | Error>)[]) {

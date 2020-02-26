@@ -3,12 +3,13 @@ import { NonErrorStatusCode } from './interfaces'
 
 /**
  * Sets response status.
- *
  * @param statusCode - either a `1XX`, `2XX` or `3XX` status code.
- *
  * @see http://expressjs.com/en/4x/api.html#res.status
- *
- * @decorator class, method
+ * @example
+ * ```ts
+ * ＠UseStatus(201)
+ * ```
+ * ------
  * @public
  */
 export function UseStatus<T extends number = NonErrorStatusCode>(

@@ -3,26 +3,16 @@ import { ResponseHeaderName, CommonType } from './interfaces'
 
 /**
  * Sets response HTTP headers.
- *
- * @remarks
  * Aliased as `@UseSet` and `@UseHeader`.
- *
- * ------
- * Example :
+ * @see https://expressjs.com/en/api.html#res.set
+ * @example
  * ```ts
  * // Single field:
  * ＠UseSet('allow', 'GET')
- *
  * // Multiple fields:
- * ＠UseSet({
- *   'allow': 'GET',
- *   'x-powered-by': 'brainfuck'
- * })
+ * ＠UseSet({ 'allow': 'GET', 'x-powered-by': 'brainfuck' })
  * ```
  * ------
- * @see https://expressjs.com/en/api.html#res.set
- *
- * @decorator class, method
  * @public
  */
 export function UseSet<T extends string = ResponseHeaderName>(
@@ -50,19 +40,13 @@ export { UseSet as UseHeader }
 
 /**
  * Sets the `Content-Type` HTTP header to the specified MIME type.
- *
- * @remarks
  * Aliased as `@UseType` and `@UseContentType`.
- *
- * ------
- * Example :
+ * @see https://expressjs.com/en/api.html#res.type
+ * @example
  * ```ts
  * ＠UseType('application/json')
  * ```
  * ------
- * @see https://expressjs.com/en/api.html#res.type
- *
- * @decorator class, method
  * @public
  */
 export function UseType<T extends string = CommonType>(type: T extends CommonType ? CommonType : string) {

@@ -5,34 +5,27 @@ import { ResponseReadonly } from './interfaces'
 /**
  * Triggers a side-effect on the `finish` event of the response.
  *
- * @param effect - callback that should not return anything. Gives access to Request and Response objects.
- * @param exposeBody - exposes the response body as `body` property on the Response object.
+ * @param effect - callback that should not return anything. _Gives access to Request and Response objects._
+ * @param exposeBody - exposes the response body as `body` property on the Response object _(streaming responses will have their body truncated to the first 64kb, to avoid eating up memory)_.
+ * @see https://nodejs.org/api/http.html#http_event_finish
  *
  * @remarks
- * Exceptions will be caught and logged to stderr instead of crashing the server.
- *
- * ------
- * Example :
- * ```ts
- * class Foo {
- *   ＠UseOnFinish((req, res) => {
- *     console.log('request:', req.method, req.originalUrl, req.body)
- *     console.log('response:', res.statusCode, res.body)
- *   }, true)
- *   ＠Post('/')
- *   create(＠Res res: Response) {
- *     res.send('done')
- *   }
- * }
- * ```
- * ------
- * If you expose the response body, streaming responses will have their body truncated to the first 64kb, to avoid eating up memory.
+ * Exceptions will be caught and logged to `stderr` instead of crashing the server.
  *
  * Works by patching `res.send`, `res.json`, `res.jsonp`, `res.write` and `res.end` methods.
  *
- * @see https://nodejs.org/api/http.html#http_event_finish
- *
- * @decorator class, method
+ * @example
+ * ```ts
+ * ＠UseOnFinish((req, res) => {
+ *   console.log('request:', req.method, req.originalUrl, req.body)
+ *   console.log('response:', res.statusCode, res.body)
+ * }, true)
+ * ＠Post('/')
+ * create(＠Res res: Response) {
+ *   res.send('done')
+ * }
+ * ```
+ * ------
  * @public
  */
 export function UseOnFinish<ResBody = any>(

@@ -4,18 +4,14 @@ import { isPromise } from './type-guards'
 
 /**
  * Applies middlewares conditionally.
- *
  * @param condition - function that should return a boolean (asynchronously or not). Has access to the Request object.
  * @param middlewares - middlewares that are applied in case the condition returns `true`.
  *
- * @remarks
- * Example :
+ * @example
  * ```ts
  * ＠UseIf((req) => req.method === 'POST', [express.json()])
- * class Foo {}
  * ```
  * ------
- * @decorator class, method
  * @public
  */
 export function UseIf(
