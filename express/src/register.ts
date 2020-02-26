@@ -14,12 +14,10 @@ import { extractSend } from './send-decorator'
 
 /**
  * Main method to register controllers into an express application.
- *
  * @param app - express application.
  * @param controllers - classes with decorated routes.
  *
- * @remarks
- * Example :
+ * @example
  * ```ts
  * class Foo {
  *   ＠Get('/some')

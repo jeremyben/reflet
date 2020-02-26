@@ -4,12 +4,13 @@ import { ClassType, Decorator } from './interfaces'
 
 /**
  * Attaches an error handler on a single route when applied to a method, or on multipe routes when applied to a controller class.
+ * @see http://expressjs.com/en/guide/error-handling.html
  *
  * @remarks
  * You can apply as many `Catch` decorators as you want.
+ * Error handlers are applied on the routes in the order they are written.
  *
- * ------
- * Example :
+ * @example
  * ```ts
  * ＠Catch(someDefaultErrorHandler)
  * class Foo {
@@ -23,11 +24,6 @@ import { ClassType, Decorator } from './interfaces'
  * }
  * ```
  * ------
- * Error handlers are applied on the routes in the order they are written.
- *
- * @see http://expressjs.com/en/guide/error-handling.html
- *
- * @decorator class, method
  * @public
  */
 export function Catch<T = any>(

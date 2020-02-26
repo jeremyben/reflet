@@ -15,24 +15,18 @@ type ParamMeta = {
 
 /**
  * Injects Request object in the method's parameters.
- *
- * @remarks
- * Example :
+ * @see https://expressjs.com/en/4x/api.html#req
+ * @example
  * ```ts
- * class Foo {
- *   // Without invokation:
- *   ＠Get('/some')
- *   get(＠Req req: Request) {}
+ * // Without invokation:
+ * ＠Get('/some')
+ * get(＠Req req: Request) {}
  *
- *   // With invokation:
- *   ＠Post('/some')
- *   create(＠Req() req: Request) {}
- * }
+ * // With invokation:
+ * ＠Post('/some')
+ * create(＠Req() req: Request) {}
  * ```
  * ------
- * @see https://expressjs.com/en/4x/api.html#req
- *
- * @decorator parameter, optional invokation
  * @public
  */
 export function Req(): Decorator.Req
@@ -53,24 +47,18 @@ export function Req() {
 
 /**
  * Inject Response object in the method's parameters.
- *
- * @remarks
- * Example :
+ * @see https://expressjs.com/en/4x/api.html#res
+ * @example
  * ```ts
- * class Foo {
- *   // Without invokation:
- *   ＠Get('/some')
- *   get(＠Res res: Response) {}
+ * // Without invokation:
+ * ＠Get('/some')
+ * get(＠Res res: Response) {}
  *
- *   // With invokation:
- *   ＠Post('/some')
- *   create(＠Res() res: Response) {}
- * }
+ * // With invokation:
+ * ＠Post('/some')
+ * create(＠Res() res: Response) {}
  * ```
  * ------
- * @see https://expressjs.com/en/4x/api.html#res
- *
- * @decorator parameter, optional invokation
  * @public
  */
 export function Res(): Decorator.Res
@@ -93,24 +81,18 @@ export function Res() {
 
 /**
  * Injects `next` callback function in the method's parameters.
- *
- * @remarks
- * Example :
+ * @see https://expressjs.com/en/guide/writing-middleware.html
+ * @example
  * ```ts
- * class Foo {
- *   // Without invokation:
- *   ＠Get('/some')
- *   get(＠Next next: NextFunction) {}
+ * // Without invokation:
+ * ＠Get('/some')
+ * get(＠Next next: NextFunction) {}
  *
- *   // With invokation:
- *   ＠Post('/some')
- *   create(＠Next() next: NextFunction) {}
- * }
+ * // With invokation:
+ * ＠Post('/some')
+ * create(＠Next() next: NextFunction) {}
  * ```
  * ------
- * @see https://expressjs.com/en/guide/writing-middleware.html
- *
- * @decorator parameter, optional invokation
  * @public
  */
 export function Next(): Decorator.Next
@@ -136,30 +118,23 @@ const bodyParsers = [json(), urlencoded({ extended: true })]
 
 /**
  * Injects request body in the method's parameters.
- *
  * @param key - directly injects a body property.
- *
- * @remarks
- * Example :
+ * @see https://expressjs.com/en/4x/api.html#req.body
+ * @example
  * ```ts
- * class Foo {
- *   // Whole body without invokation:
- *   ＠Post('/some')
- *   create(＠Body body: object) {}
+ * // Whole body without invokation:
+ * ＠Post('/some')
+ * create(＠Body body: object) {}
  *
- *   // Whole body with invokation:
- *   ＠Put('/some')
- *   replace(＠Body() body: object) {}
+ * // Whole body with invokation:
+ * ＠Put('/some')
+ * replace(＠Body() body: object) {}
  *
- *   // Sub property:
- *   ＠Patch('/some')
- *   update(＠Body('email') email: string) {}
- * }
+ * // Sub property:
+ * ＠Patch('/some')
+ * update(＠Body<User>('email') email: string) {}
  * ```
  * ------
- * @see https://expressjs.com/en/4x/api.html#req.body
- *
- * @decorator parameter, optional invokation
  * @public
  */
 export function Body<T extends object>(key?: keyof T): Decorator.Body
@@ -190,30 +165,23 @@ export function Body<T extends object>(
 
 /**
  * Injects named route parameters in the method's parameters.
- *
  * @param name - directly injects a single route parameter.
- *
- * @remarks
- * Example :
+ * @see https://expressjs.com/en/4x/api.html#req.params
+ * @example
  * ```ts
- * class Foo {
- *   // Route parameters object without invokation:
- *   ＠Get('/:col/:id')
- *   get(＠Params params: { col: string; id: string }) {}
+ * // Route parameters object without invokation:
+ * ＠Get('/:col/:id')
+ * get(＠Params params: { col: string; id: string }) {}
  *
- *   // Route parameters object with invokation:
- *   ＠Get('/:col/:id')
- *   get(＠Params() params: { col: string; id: string }) {}
+ * // Route parameters object with invokation:
+ * ＠Get('/:col/:id')
+ * get(＠Params() params: { col: string; id: string }) {}
  *
- *   // Single route parameter:
- *   ＠Get('/:col/:id')
- *   get(＠Params('col') col: string, ＠Params('id') id: string) {}
- * }
+ * // Single route parameter:
+ * ＠Get('/:col/:id')
+ * get(＠Params('col') col: string, ＠Params('id') id: string) {}
  * ```
  * ------
- * @see https://expressjs.com/en/4x/api.html#req.params
- *
- * @decorator parameter, optional invokation
  * @public
  */
 export function Params(name?: string): Decorator.Params
@@ -240,30 +208,23 @@ export function Params(
 
 /**
  * Injects query string parameters in the method's parameters.
- *
  * @param field - directly injects a value.
- *
- * @remarks
- * Example :
+ * @see https://expressjs.com/en/4x/api.html#req.query
+ * @example
  * ```ts
- * class Foo {
- *   // Query string parameters object without invokation:
- *   ＠Get('/search')
- *   search(＠Query queries: any) {}
+ * // Query string parameters object without invokation:
+ * ＠Get('/search')
+ * search(＠Query queries: any) {}
  *
- *   // Query string parameters object with invokation:
- *   ＠Get('/search')
- *   search(＠Query() queries: any) {}
+ * // Query string parameters object with invokation:
+ * ＠Get('/search')
+ * search(＠Query() queries: any) {}
  *
- *   // Single query string parameter:
- *   ＠Get('/search')
- *   search(＠Query('name') name: string, ＠Query('sort') sort: string) {}
- * }
+ * // Single query string parameter:
+ * ＠Get('/search')
+ * search(＠Query('name') name: string, ＠Query('sort') sort: string) {}
  * ```
  * ------
- * @see https://expressjs.com/en/4x/api.html#req.query
- *
- * @decorator parameter, optional invokation
  * @public
  */
 export function Query(field?: string): Decorator.Query
@@ -290,30 +251,23 @@ export function Query(
 
 /**
  * Injects request headers object in the method's parameters.
- *
  * @param name - directly injects a specific header.
- *
- * @remarks
- * Example :
+ * @see https://nodejs.org/api/http.html#http_message_headers
+ * @example
  * ```ts
- * class Foo {
- *   // Request headers object without invokation:
- *   ＠Get('/some')
- *   get(＠Headers headers: IncomingHttpHeaders) {}
+ * // Request headers object without invokation:
+ * ＠Get('/some')
+ * get(＠Headers headers: IncomingHttpHeaders) {}
  *
- *   // Request headers object with invokation:
- *   ＠Get('/some')
- *   get(＠Headers() headers: IncomingHttpHeaders) {}
+ * // Request headers object with invokation:
+ * ＠Get('/some')
+ * get(＠Headers() headers: IncomingHttpHeaders) {}
  *
- *   // Single request header:
- *   ＠Get('/some')
- *   get(＠Headers('user-agent') userAgent: string) {}
- * }
+ * // Single request header:
+ * ＠Get('/some')
+ * get(＠Headers('user-agent') userAgent: string) {}
  * ```
  * ------
- * @see https://nodejs.org/api/http.html#http_message_headers
- *
- * @decorator parameter, optional invokation
  * @public
  */
 export function Headers<T extends string = RequestHeaderName>(
@@ -344,9 +298,7 @@ export function Headers(
  * Creates a parameter decorator, to inject anything we want in decorated routes.
  *
  * @param mapper - function that should return the thing we want to inject. Has access to the Request object.
- *
  * @param use - adds middlewares to the route if the mapper needs them (_e.g. we need body-parser middlewares to retrieve `req.body`_).
- *
  * @param dedupeUse - marks the middlewares for deduplication based on the function reference and name (_e.g. if 'jsonParser' is already in use locally or globally, it won't be added again_).
  *
  * @remarks
@@ -354,31 +306,30 @@ export function Headers(
  * Simple decorators without options are applied without being invoked.
  *
  * ------
- * Simple decorator example :
+ * @example
  * ```ts
+ * // Simple decorator:
  * const CurrentUser = createParamDecorator((req) => req.user)
- *
  * class Foo {
  *   ＠Get('/me')
  *   get(＠CurrentUser user: User) {}
  * }
  * ```
  * ------
- * Advanced decorator example (with option and middleware) :
+ * @example
  * ```ts
+ * // Advanced decorator (with option and middleware):
  * const BodyTrimmed = (key: string) => createParamDecorator(
  *   (req) => req.body[key].trim(),
  *   [express.json()],
  *   true
  * )
- *
  * class Foo {
  *   ＠Post('/message')
  *   create(＠BodyTrimmed('text') text: string) {}
  * }
  * ```
  * ------
- * @decorator parameter
  * @public
  */
 export function createParamDecorator<T = any>(

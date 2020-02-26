@@ -13,9 +13,8 @@ type RouteMeta = {
 /**
  * Routes HTTP `GET` requests.
  * @param path - path for which the decorated class method is invoked.
- *
- * @remarks
- * Example :
+ * @see https://expressjs.com/en/4x/api.html#app.get.method
+ * @example
  * ```ts
  * class Foo {
  *   ＠Get('/things/:id')
@@ -23,9 +22,6 @@ type RouteMeta = {
  * }
  * ```
  * ------
- * @see https://expressjs.com/en/4x/api.html#app.get.method
- *
- * @decorator method
  * @public
  */
 export const Get = (path: string | RegExp = '') => Method('get', path)
@@ -33,9 +29,8 @@ export const Get = (path: string | RegExp = '') => Method('get', path)
 /**
  * Routes HTTP `POST` requests.
  * @param path - path for which the decorated class method is invoked.
- *
- * @remarks
- * Example :
+ * @see https://expressjs.com/en/4x/api.html#app.post.method
+ * @example
  * ```ts
  * class Foo {
  *   ＠Post('/things')
@@ -43,9 +38,6 @@ export const Get = (path: string | RegExp = '') => Method('get', path)
  * }
  * ```
  * ------
- * @see https://expressjs.com/en/4x/api.html#app.post.method
- *
- * @decorator method
  * @public
  */
 export const Post = (path: string | RegExp = '') => Method('post', path)
@@ -53,9 +45,8 @@ export const Post = (path: string | RegExp = '') => Method('post', path)
 /**
  * Routes HTTP `PUT` requests.
  * @param path - path for which the decorated class method is invoked.
- *
- * @remarks
- * Example :
+ * @see https://expressjs.com/en/4x/api.html#app.put.method
+ * @example
  * ```ts
  * class Foo {
  *   ＠Put('/things/:id')
@@ -63,9 +54,6 @@ export const Post = (path: string | RegExp = '') => Method('post', path)
  * }
  * ```
  * ------
- * @see https://expressjs.com/en/4x/api.html#app.put.method
- *
- * @decorator method
  * @public
  */
 export const Put = (path: string | RegExp = '') => Method('put', path)
@@ -73,9 +61,8 @@ export const Put = (path: string | RegExp = '') => Method('put', path)
 /**
  * Routes HTTP `PATCH` requests.
  * @param path - path for which the decorated class method is invoked.
- *
- * @remarks
- * Example :
+ * @see https://expressjs.com/en/4x/api.html#app.METHOD
+ * @example
  * ```ts
  * class Foo {
  *   ＠Patch('/things/:id')
@@ -83,9 +70,6 @@ export const Put = (path: string | RegExp = '') => Method('put', path)
  * }
  * ```
  * ------
- * @see https://expressjs.com/en/4x/api.html#app.METHOD
- *
- * @decorator method
  * @public
  */
 export const Patch = (path: string | RegExp = '') => Method('patch', path)
@@ -93,9 +77,8 @@ export const Patch = (path: string | RegExp = '') => Method('patch', path)
 /**
  * Routes HTTP `DELETE` requests.
  * @param path - path for which the decorated class method is invoked.
- *
- * @remarks
- * Example :
+ * @see https://expressjs.com/en/4x/api.html#app.delete.method
+ * @example
  * ```ts
  * class Foo {
  *   ＠Delete('/things/:id')
@@ -103,9 +86,6 @@ export const Patch = (path: string | RegExp = '') => Method('patch', path)
  * }
  * ```
  * ------
- * @see https://expressjs.com/en/4x/api.html#app.delete.method
- *
- * @decorator method
  * @public
  */
 export const Delete = (path: string | RegExp = '') => Method('delete', path)
@@ -114,29 +94,21 @@ export const Delete = (path: string | RegExp = '') => Method('delete', path)
  * Routes an HTTP request.
  * @param method - HTTP method of the request, in lowercase.
  * @param path - path for which the decorated class method is invoked.
- *
+ * @see https://expressjs.com/en/4x/api.html#app.METHOD
  * @remarks
- * Should be used as a tool to create a custom route decorator :
+ * Should be used as a tool to create a custom route decorator, but you can apply it directly.
+ *
+ * ------
+ * @example
  * ```ts
  * const Options = (path: string | RegExp) => Method('options', path)
- * // then, on a class method:
+ *
  * class Foo {
  *   ＠Options('/things')
  *   options(req: Request, res: Response, next: NextFunction) {}
  * }
  * ```
  * ------
- * But you can apply it directly :
- * ```ts
- * class Foo {
- *   ＠Method('options', '/things')
- *   options(req: Request, res: Response, next: NextFunction) {}
- * }
- * ```
- * ------
- * @see https://expressjs.com/en/4x/api.html#app.METHOD
- *
- * @decorator method
  * @public
  */
 export function Method(method: RoutingMethod, path: string | RegExp): Decorator.Route {

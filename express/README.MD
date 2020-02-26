@@ -330,7 +330,7 @@ class Controller {
 }
 ```
 
-You can apply them **with or without** invokation, how flexible is that. 😉
+You can apply them **with or without invokation**, how flexible is that. 😉
 
 Looking for other decorators like `@Body` ? [Request properties injection](#request-properties-injection).
 
@@ -470,7 +470,7 @@ Convinced yet ? Go over to [the doc](../express-middlewares/README.MD).
 
 ## Request properties injection
 
-Directly inject Request properties (and even their sub-properties) in handler parameters. Just like with `Req`, `Res` or `Next`, invokation is **optional**.
+Directly inject Request properties (and even their sub-properties) in handler parameters. Just like with `Req`, `Res` or `Next`, **invokation is optional**.
 
 ### Route params
 

@@ -9,16 +9,12 @@ type RouterMeta = { root: string | RegExp; options?: RouterOptions }
 
 /**
  * Creates and attaches an express Router object to a controller class.
- *
+ * The routes in the controller class to which the decorator is applied will be attached to the newly created router at its `root` path.
  * @param root - root path of the router.
  * @param options - specifies router behavior.
  *
- * @remarks
- * The routes in the controller class to which the decorator is applied
- * will be attached to the newly created router at its `root` path.
- *
- * ------
- * Example :
+ * @see https://expressjs.com/en/4x/api.html#router
+ * @example
  * ```ts
  * ＠Router('/things')
  * class Foo {
@@ -30,9 +26,7 @@ type RouterMeta = { root: string | RegExp; options?: RouterOptions }
  * }
  * ```
  * ------
- * @see https://expressjs.com/en/4x/api.html#router
  *
- * @decorator class
  * @public
  */
 export function Router(root: string | RegExp, options?: RouterOptions): Decorator.Router {
