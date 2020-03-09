@@ -6,6 +6,7 @@ import Mongoose from 'mongoose'
 const MetaField = Symbol('field')
 
 /**
+ * Defines a SchemaType on a property.
  * @see https://mongoosejs.com/docs/schematypes.html#schematype-options
  * @public
  */
@@ -21,6 +22,7 @@ export function Field<T extends SchemaType>(
 
 export namespace Field {
 	/**
+	 * Defines a SchemaType on a property, using directly the type.
 	 * @see https://mongoosejs.com/docs/schematypes.html#schematype-options
 	 * @public
 	 */
@@ -33,6 +35,7 @@ export namespace Field {
 	}
 
 	/**
+	 * Defines a nested SchemaType on a property.
 	 * @see https://mongoosejs.com/docs/schematypes.html#schematype-options
 	 * @public
 	 */

@@ -4,11 +4,20 @@ import { assignBaseDiscriminatorKey } from './base-discriminator-key-decorator'
 
 /**
  * Transforms the class directly into a Model class.
- *
  * @param collection - custom collection name.
  * @param skipInit - whether to skip initialization (defaults to `false`).
- *
  * @see https://mongoosejs.com/docs/models.html
+ * @example
+ * ```ts
+ * ＠Model()
+ * class User extends Model.Interface {
+ *   ＠Field({ type: String, required: true })
+ *   name: string
+ * }
+ *
+ * const user = await User.create({ name: 'Jeremy' })
+ * ```
+ * ---
  * @public
  */
 export function Model<T extends Mongoose.Model<Mongoose.Document>>(collection?: string, skipInit?: boolean) {
@@ -28,6 +37,24 @@ export namespace Model {
 	 * @param rootModel - discriminated base model.
 	 *
 	 * @see https://mongoosejs.com/docs/discriminators.html#the-model-discriminator-function
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Model()
+	 * class User extends Model.Interface {
+	 *   ＠Field({ type: String, required: true })
+	 *   name: string
+	 * }
+	 *
+	 * ＠Model.Discrminator(User)
+	 * class Worker extends User {
+	 *   ＠Field({ type: String, required: true })
+	 *   job: string
+	 * }
+	 *
+	 * const worker = await Worker.create({ name: 'Jeremy', job: 'developer' })
+	 * ```
+	 * ---
 	 * @public
 	 */
 	export function Discriminator<T extends Mongoose.Model<Mongoose.Document>>(rootModel: T) {

@@ -1,6 +1,7 @@
 import Mongoose from 'mongoose'
 
 /**
+ * Helps with constructor typing of `@Model` decorated classes.
  * @public
  */
 export type NewDoc<T extends Mongoose.Document> = Omit<Partial<T>, keyof Mongoose.Document | MethodKeys<T>>

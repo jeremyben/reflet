@@ -37,18 +37,21 @@ export function BaseDiscriminatorKey(valueOrTarget: string | Object, key?: strin
 /**
  * @private
  */
-export function getBaseDiscriminatorKey(target: object): [string | undefined, string | undefined] {
+export function getBaseDiscriminatorKey(target: object): [string?, string?] {
 	return Reflect.getMetadata(MetaBaseDiscriminatorKey, target) || []
 }
 
 /**
+ * Checks that the `@BaseDiscriminatorKey` is the same on all siblings discriminators
+ * and does not overwrite a `discriminatorKey` already defined on the root model.
+ * Then assign it to the root model and return its custom discriminator value if any.
  * @private
  */
 export function assignBaseDiscriminatorKey(
 	discriminatorClass: ConstructorType,
 	baseModel: Mongoose.Model<Mongoose.Document>
 ): string | undefined {
-	const [baseD11rKey, value] = getBaseDiscriminatorKey(discriminatorClass)
+	const [baseD11rKey, d11rValue] = getBaseDiscriminatorKey(discriminatorClass)
 	const otherD11rs: { [key: string]: Mongoose.Model<any> } | undefined = baseModel.discriminators
 
 	if (baseD11rKey || otherD11rs) {
@@ -60,12 +63,12 @@ export function assignBaseDiscriminatorKey(
 			if (otherD11rKey && otherD11rKey !== baseD11rKey) {
 				if (!baseD11rKey) {
 					throw Error(
-						` Discriminator "${discriminatorClass.name}" must have @BaseDiscriminatorKey "${otherD11rKey}", like sibling discriminator "${otherD11rName}"`
+						` Discriminator "${discriminatorClass.name}" must have @BaseDiscriminatorKey "${otherD11rKey}", like sibling discriminator "${otherD11rName}".`
 					)
 				}
 
 				throw Error(
-					` Discriminator "${discriminatorClass.name}" cannot use @BaseDiscriminatorKey "${baseD11rKey}", because sibling discriminator "${otherD11rName}" has different discriminatorKey "${otherD11rKey}"`
+					` Discriminator "${discriminatorClass.name}" cannot use @BaseDiscriminatorKey "${baseD11rKey}", because sibling discriminator "${otherD11rName}" has different discriminatorKey "${otherD11rKey}".`
 				)
 			}
 		}
@@ -74,12 +77,12 @@ export function assignBaseDiscriminatorKey(
 
 		if (parentD11rKey && parentD11rKey !== baseD11rKey) {
 			throw Error(
-				`Discriminator "${discriminatorClass.name}" Cannot overwrite custom discriminatorKey "${parentD11rKey}" on root model "${baseModel.modelName}" with @BaseDiscriminatorKey "${baseD11rKey}"`
+				`Discriminator "${discriminatorClass.name}" Cannot overwrite custom discriminatorKey "${parentD11rKey}" on root model "${baseModel.modelName}" with @BaseDiscriminatorKey "${baseD11rKey}".`
 			)
 		}
 
 		baseModel.schema.set('discriminatorKey', baseD11rKey)
 	}
 
-	return value
+	return d11rValue
 }

@@ -1,12 +1,17 @@
 import Mongoose from 'mongoose'
 import { ConstructorType } from './interfaces'
 
+//
+// ═════════ Schema Options (Class) ═════════
+//
+
 /**
  * @private
  */
 const MetaSchemaOptions = Symbol('schema-options')
 
 /**
+ * Defines schema options.
  * @see https://mongoosejs.com/docs/guide.html#options
  * @public
  */
@@ -23,13 +28,17 @@ export function getSchemaOptions(target: ConstructorType): Mongoose.SchemaOption
 	return Reflect.getMetadata(MetaSchemaOptions, target)
 }
 
+//
+// ═════════ Schema Callback (Class) ═════════
+//
+
 /**
  * @private
  */
 const MetaSchemaCallback = Symbol('schema-callback')
 
 /**
- * Allows more advanced schema manipulation.
+ * Allows more advanced schema manipulation, after its creation.
  * @see https://mongoosejs.com/docs/api/schema.html
  * @public
  */

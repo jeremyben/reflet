@@ -7,8 +7,29 @@ import { ConstructorType, ConstructorInstance } from './interfaces'
 import { getFieldDiscriminators } from './field-discriminator-decorator'
 
 /**
+ * Creates a schema from a decorated class.
+ *
  * @see https://mongoosejs.com/docs/guide.html#definition
  * @see https://mongoosejs.com/docs/api.html#schema_Schema-loadClass
+ *
+ * @example
+ * ```ts
+ * ＠SchemaOptions({ _id: false })
+ * class Person {
+ *   ＠Field({ type: String })
+ *   firstname: string
+ *
+ *   ＠Field({ type: String })
+ *   lastname: string
+ *
+ *   get fullname() {
+ *     return `${this.firstname} ${this.lastname}`
+ *   }
+ * }
+ *
+ * const personSchema = schemaFrom(Person)
+ * ```
+ * ---
  * @public
  */
 export function schemaFrom<T extends ConstructorType>(target: T) {
