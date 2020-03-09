@@ -6,6 +6,7 @@ const tsPreset = require('ts-jest/presets').defaults
 /** @type {Partial<import('@jest/types').Config.DefaultOptions> & {rootDir: string, preset: string, transform: any}} */
 const config = {
 	rootDir: process.cwd(),
+	// https://github.com/shelfio/jest-mongodb
 	preset: '@shelf/jest-mongodb',
 	transform: { ...tsPreset.transform },
 	testPathIgnorePatterns: ['/node_modules/', '/__tests__/shared/', '/dist/'],
@@ -14,6 +15,7 @@ const config = {
 	},
 	// https://jestjs.io/docs/en/configuration#setupfiles-array
 	setupFiles: [join(__dirname, '..', 'testing', 'eachfile-setup.ts')],
+	setupFilesAfterEnv: [join(__dirname, 'jest-setup-afterenv.ts')],
 	coverageReporters: ['json-summary', 'text', 'lcov'],
 	globals: {
 		'ts-jest': {
