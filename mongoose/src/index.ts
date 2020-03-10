@@ -1,12 +1,10 @@
-export { Field } from './field-decorator'
+export { Field } from './field-decorators'
 
-export { FieldDiscriminators } from './field-discriminator-decorator'
+export { SchemaOptions, CreatedAt, UpdatedAt, DiscriminatorKey, VersionKey } from './schema-options-decorators'
 
-export { SchemaOptions, SchemaCallback } from './schema-options-decorators'
+export { SchemaCallback } from './schema-callback-decorator'
 
-export { CreatedAtKey, UpdatedAtKey, DiscriminatorKey, VersionKey } from './schema-keys-decorators'
-
-export { BaseDiscriminatorKey } from './base-discriminator-key-decorator'
+export { Kind } from './kind-decorator'
 
 export { Model } from './model-decorators'
 

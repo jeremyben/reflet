@@ -1,4 +1,4 @@
-import { Field, Model, SchemaOptions, schemaFrom, NewDoc, FieldDiscriminators, BaseDiscriminatorKey } from '../src'
+import { Field, Model, schemaFrom, NewDoc, Kind } from '../src'
 
 test('simple model', async () => {
 	@Model()
@@ -64,7 +64,7 @@ test('model discriminator', async () => {
 		@Field.Type([String])
 		languages: string[]
 
-		@BaseDiscriminatorKey('developer')
+		@Kind('developer')
 		kind: 'developer'
 
 		constructor(doc?: NewDoc<Developer>) {
@@ -77,7 +77,7 @@ test('model discriminator', async () => {
 		@Field.Type(String)
 		specialty: string
 
-		@BaseDiscriminatorKey('doctor')
+		@Kind('doctor')
 		kind: 'doctor'
 
 		get fullname() {

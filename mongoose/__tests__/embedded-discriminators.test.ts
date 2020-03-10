@@ -1,4 +1,51 @@
-import { SchemaOptions, Field, BaseDiscriminatorKey, Model, FieldDiscriminators, NewDoc } from '../src'
+// tslint:disable: variable-name
+import mongoose from 'mongoose'
+import { SchemaOptions, Field, Kind, Model, NewDoc } from '../src'
+
+/**
+ * https://mongoosejs.com/docs/discriminators.html#single-nested-discriminators
+ */
+test('single nested discriminators', async () => {
+	class Circle {
+		@Field.Type(Number)
+		radius: number
+
+		__t: 'Circle'
+	}
+
+	class Square {
+		@Field.Type(Number)
+		side: number
+
+		__t: 'Square'
+	}
+
+	@Model()
+	class Shape extends Model.I {
+		@Field.Discriminators(Circle, Square)
+		shape: Circle | Square
+
+		constructor(doc?: NewDoc<Shape>) {
+			super()
+		}
+	}
+
+	const circle = new Shape({ shape: { __t: 'Circle', radius: 5 } })
+	expect(circle.toObject()).toStrictEqual({
+		_id: expect.any(mongoose.Types.ObjectId),
+		shape: {
+			_id: expect.any(mongoose.Types.ObjectId),
+			radius: 5,
+			__t: 'Circle',
+		},
+	})
+
+	const wrongSquare = new Shape({ shape: { side: 5 } as any })
+	expect(wrongSquare.toObject()).toStrictEqual({
+		_id: expect.any(mongoose.Types.ObjectId),
+		shape: {},
+	})
+})
 
 /**
  * https://mongoosejs.com/docs/discriminators.html#embedded-discriminators-in-arrays
@@ -14,7 +61,7 @@ test('embedded discriminators in arrays', async () => {
 		@Field({ type: String, required: true })
 		element: string
 
-		@BaseDiscriminatorKey
+		@Kind
 		kind: 'Clicked'
 	}
 
@@ -22,14 +69,14 @@ test('embedded discriminators in arrays', async () => {
 		@Field({ type: String, required: true })
 		product: string
 
-		@BaseDiscriminatorKey
+		@Kind
 		kind: 'Purchased'
 	}
 
 	@Model()
 	@SchemaOptions({})
-	class Batch extends Model.Interface {
-		@FieldDiscriminators([Clicked, Purchased])
+	class Batch extends Model.I {
+		@Field.Discriminators.ArrayOf(Clicked, Purchased)
 		events: (Clicked | Purchased)[]
 
 		constructor(doc?: NewDoc<Batch>) {
@@ -37,12 +84,10 @@ test('embedded discriminators in arrays', async () => {
 		}
 	}
 
-	const batch = await new Batch({
-		events: [
-			{ kind: 'Clicked', element: '#hero', message: 'hello' },
-			{ kind: 'Purchased', product: 'action-figure', message: 'world' },
-		],
-	}).save()
-
-	console.log('batch', batch)
+	const events: Batch['events'] = [
+		{ kind: 'Clicked', element: '#hero', message: 'hello' },
+		{ kind: 'Purchased', product: 'action-figure', message: 'world' },
+	]
+	const batch = new Batch({ events })
+	expect(batch.toObject()).toStrictEqual({ _id: expect.any(mongoose.Types.ObjectId), events })
 })

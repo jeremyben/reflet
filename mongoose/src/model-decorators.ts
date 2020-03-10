@@ -1,12 +1,16 @@
-import Mongoose from 'mongoose'
+import mongoose from 'mongoose'
 import { createSchema } from './schema-creation'
-import { assignBaseDiscriminatorKey } from './base-discriminator-key-decorator'
+import { getKind, MetaKind } from './kind-decorator'
 
 /**
- * Transforms the class directly into a Model class.
+ * Transforms the decorated class into a mongoose Model.
+ *
+ * `Model` decorator should always be at the top of class decorators.
+ *
  * @param collection - custom collection name.
  * @param skipInit - whether to skip initialization (defaults to `false`).
- * @see https://mongoosejs.com/docs/models.html
+ *
+ * @see https://mongoosejs.com/docs/models
  * @example
  * ```ts
  * ＠Model()
@@ -15,28 +19,30 @@ import { assignBaseDiscriminatorKey } from './base-discriminator-key-decorator'
  *   name: string
  * }
  *
- * const user = await User.create({ name: 'Jeremy' })
+ * const user = await new User({ name: 'Jeremy' }).save()
  * ```
  * ---
  * @public
  */
-export function Model<T extends Mongoose.Model<Mongoose.Document>>(collection?: string, skipInit?: boolean) {
+export function Model<T extends mongoose.Model<mongoose.Document>>(collection?: string, skipInit?: boolean) {
 	return (target: T) => {
 		const schema = createSchema(target)
 		// console.log('model-schema', schema)
-		return Mongoose.model(target.name, schema, collection, skipInit) as any
+		return mongoose.model(target.name, schema, collection, skipInit) as any
 	}
 }
 
 export namespace Model {
 	/**
-	 * Transforms the class directly into a Model class, whose schema is the intersection of the parent schema and the discriminator schema.
+	 * Transforms the decorated class into a mongoose Model, whose schema is the intersection of the parent schema and the discriminator schema.
 	 *
-	 * The string stored in the `discriminatorKey` property will be the name of the class.
+	 * The string stored in the `discriminatorKey` property will be the name of the class (you can change it with the help of `Kind` decorator).
+	 *
+	 * `Model.Discriminator` decorator should always be at the top of class decorators.
 	 *
 	 * @param rootModel - discriminated base model.
 	 *
-	 * @see https://mongoosejs.com/docs/discriminators.html#the-model-discriminator-function
+	 * @see https://mongoosejs.com/docs/discriminators#the-model-discriminator-function
 	 *
 	 * @example
 	 * ```ts
@@ -57,21 +63,45 @@ export namespace Model {
 	 * ---
 	 * @public
 	 */
-	export function Discriminator<T extends Mongoose.Model<Mongoose.Document>>(rootModel: T) {
-		return (target: T) => {
-			const discriminatorValue = assignBaseDiscriminatorKey(target, rootModel)
+	export function Discriminator<T extends mongoose.Model<mongoose.Document>>(rootModel: T) {
+		return (Class: T) => {
+			const [kindKey, kindValue] = getKind(Class)
+			const rootProvidedD11rKey = rootModel.schema._userProvidedOptions.discriminatorKey
+			const alreadyProvidedKindKey = rootModel[(MetaKind as any) as keyof mongoose.Model<any>]
+			// const otherD11rs = rootModel.discriminators as { [key: string]: mongoose.Model<any> } | undefined
 
-			const schema = createSchema(target)
-			// console.log('discriminator-schema', schema)
-			return rootModel.discriminator(target.name, schema, discriminatorValue) as any
+			// Check that sibling discriminators have the same @Kind key.
+			if (
+				(alreadyProvidedKindKey && !kindKey) ||
+				(alreadyProvidedKindKey && kindKey && alreadyProvidedKindKey !== kindKey)
+			) {
+				throw Error(
+					`Discriminator "${Class.name}" must have @Kind named "${alreadyProvidedKindKey}", like its sibling discriminator(s).`
+				)
+			}
+
+			// Then check overwriting of the discriminatorKey provided by the user on the root model.
+			if (rootProvidedD11rKey && kindKey && rootProvidedD11rKey !== kindKey) {
+				throw Error(
+					`Discriminator "${Class.name}" Cannot overwrite discriminatorKey "${rootProvidedD11rKey}" of root model "${rootModel.modelName}" with @Kind named "${kindKey}".`
+				)
+			}
+
+			// Finally assign the key on the root model and keep reference of @Kind key, only once for all discriminators.
+			if (kindKey && !alreadyProvidedKindKey) {
+				rootModel[(MetaKind as any) as keyof mongoose.Model<any>] = kindKey
+				rootModel.schema.set('discriminatorKey', kindKey)
+			}
+
+			const schema = createSchema(Class)
+			return rootModel.discriminator(Class.name, schema, kindValue) as any
 		}
 	}
 
 	/**
 	 * Dummy class to extend from, in order to get all the types from mongoose Model and Document.
-	 * @public
 	 */
-	export const Interface = class {} as Mongoose.Model<Mongoose.Document>
+	export const Interface = class {} as mongoose.Model<mongoose.Document>
 
 	/**
 	 * Dummy class to extend from, in order to get all the types from mongoose Model and Document.
@@ -80,11 +110,11 @@ export namespace Model {
 	export const I = Interface
 
 	// todo: query helpers
-	// https://mongoosejs.com/docs/guide.html#query-helpers
+	// https://mongoosejs.com/docs/guide#query-helpers
 	// https://stackoverflow.com/questions/52856264/how-to-define-custom-query-helper-in-mongoose-model-with-typescript
 
 	/**
 	 * @public
 	 */
-	const InterfaceQuery = <QueryHelpers extends {}>() => class {} as Mongoose.Model<Mongoose.Document, QueryHelpers>
+	const InterfaceQuery = <QueryHelpers extends {}>() => class {} as mongoose.Model<mongoose.Document, QueryHelpers>
 }

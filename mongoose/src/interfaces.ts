@@ -1,10 +1,25 @@
-import Mongoose from 'mongoose'
+import mongoose from 'mongoose'
 
 /**
  * Helps with constructor typing of `@Model` decorated classes.
+ *
+ * @example
+ * ```ts
+ * ＠Model()
+ * class User extends Model.Interface {
+ *   ＠Field({ type: String, required: true })
+ *   name: string
+ *
+ *   constructor(doc?: NewDoc<User>) {
+ *     super()
+ *   }
+ * }
+ *
+ * const user = await new User({ name: 'Jeremy' }).save()
+ * ```
  * @public
  */
-export type NewDoc<T extends Mongoose.Document> = Omit<Partial<T>, keyof Mongoose.Document | MethodKeys<T>>
+export type NewDoc<T extends mongoose.Document> = Omit<Partial<T>, keyof mongoose.Document | MethodKeys<T>>
 
 /**
  * @public
@@ -22,12 +37,16 @@ export type ConstructorInstance<T extends ConstructorType> = T extends Function 
 type MethodKeys<T> = { [P in keyof T]: T[P] extends Function ? P : never }[keyof T]
 
 declare module 'mongoose' {
-	export interface SchemaType {
-		discriminator<U extends Document>(name: string, schema: Schema, value?: string): Model<U>
-	}
-
 	export interface Schema {
 		_userProvidedOptions: SchemaOptions
-		discriminatorMapping: { key: string; value: string; isRoot: boolean }
+	}
+
+	export interface MongooseDocument {
+		populate<T extends this & Document>(path: keyof NewDoc<T>, callback?: (err: any, res: this) => void): this
+		populate<T extends this & Document>(
+			path: keyof NewDoc<T>,
+			names: string,
+			callback?: (err: any, res: this) => void
+		): this
 	}
 }
