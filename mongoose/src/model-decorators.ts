@@ -8,7 +8,7 @@ import { getKind, MetaKind } from './kind-decorator'
  * `Model` decorator should always be at the top of class decorators.
  *
  * @param collection - custom collection name.
- * @param skipInit - whether to skip initialization (defaults to `false`).
+ * @param connection - mongoose connection to use in case of [multiple connections](https://mongoosejs.com/docs/connections.html#multiple_connections).
  *
  * @see https://mongoosejs.com/docs/models
  * @example
@@ -24,11 +24,15 @@ import { getKind, MetaKind } from './kind-decorator'
  * ---
  * @public
  */
-export function Model<T extends mongoose.Model<mongoose.Document>>(collection?: string, skipInit?: boolean) {
+export function Model<T extends mongoose.Model<mongoose.Document>>(
+	collection?: string,
+	connection?: mongoose.Connection
+) {
 	return (target: T) => {
 		const schema = createSchema(target)
-		// console.log('model-schema', schema)
-		return mongoose.model(target.name, schema, collection, skipInit) as any
+
+		if (connection) return connection.model(target.name, schema, collection) as any
+		return mongoose.model(target.name, schema, collection) as any
 	}
 }
 
