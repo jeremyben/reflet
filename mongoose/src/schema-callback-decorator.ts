@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import { ConstructorType } from './interfaces'
+import { ConstructorType, Decorator } from './interfaces'
 
 const MetaSchemaCallback = Symbol('schema-callback')
 
@@ -23,9 +23,9 @@ const MetaSchemaCallback = Symbol('schema-callback')
  * ---
  * @public
  */
-export function SchemaCallback<T>(cb: (schema: mongoose.Schema<T>) => void): ClassDecorator {
+export function SchemaCallback<T>(callback: (schema: mongoose.Schema<T>) => void): Decorator.SchemaCallback {
 	return (target) => {
-		Reflect.defineMetadata(MetaSchemaCallback, cb, target)
+		Reflect.defineMetadata(MetaSchemaCallback, callback, target)
 	}
 }
 

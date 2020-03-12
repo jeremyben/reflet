@@ -1,8 +1,8 @@
 import mongoose from 'mongoose'
-import { ConstructorType } from './interfaces'
+import { ConstructorType, Decorator } from './interfaces'
 
 const MetaSchemaOptions = Symbol('schema-options')
-const MetaSchemaKeys = Symbol('schema-keys')
+const MetaSchemaOptionsKeys = Symbol('schema-options-keys')
 
 /**
  * Defines schema options.
@@ -18,16 +18,16 @@ const MetaSchemaKeys = Symbol('schema-keys')
  * ---
  * @public
  */
-export function SchemaOptions(options: mongoose.SchemaOptions): ClassDecorator {
-	return (target) => {
-		Reflect.defineMetadata(MetaSchemaOptions, options, target)
+export function SchemaOptions(options: mongoose.SchemaOptions): Decorator.SchemaOptions {
+	return (Class) => {
+		Reflect.defineMetadata(MetaSchemaOptions, options, Class)
 	}
 }
 
 /**
  * @internal
  */
-type SchemaKeysMeta = Partial<{
+type SchemaOptionsKeysMeta = Partial<{
 	CreatedAt: string
 	UpdatedAt: string
 	DiscriminatorKey: string
@@ -39,9 +39,9 @@ type SchemaKeysMeta = Partial<{
  * @public
  */
 export const CreatedAt: PropertyDecorator = (target, key) => {
-	const customKeys = getSchemaKeys(target.constructor)
-	customKeys.CreatedAt = key as string
-	Reflect.defineMetadata(MetaSchemaKeys, customKeys, target.constructor)
+	const schemaKeys = getSchemaOptionsKeys(target.constructor)
+	schemaKeys.CreatedAt = key as string
+	Reflect.defineMetadata(MetaSchemaOptionsKeys, schemaKeys, target.constructor)
 }
 
 /**
@@ -49,9 +49,9 @@ export const CreatedAt: PropertyDecorator = (target, key) => {
  * @public
  */
 export const UpdatedAt: PropertyDecorator = (target, key) => {
-	const customKeys = getSchemaKeys(target.constructor)
-	customKeys.UpdatedAt = key as string
-	Reflect.defineMetadata(MetaSchemaKeys, customKeys, target.constructor)
+	const schemaKeys = getSchemaOptionsKeys(target.constructor)
+	schemaKeys.UpdatedAt = key as string
+	Reflect.defineMetadata(MetaSchemaOptionsKeys, schemaKeys, target.constructor)
 }
 
 /**
@@ -59,9 +59,9 @@ export const UpdatedAt: PropertyDecorator = (target, key) => {
  * @public
  */
 export const DiscriminatorKey: PropertyDecorator = (target, key) => {
-	const customKeys = getSchemaKeys(target.constructor)
-	customKeys.DiscriminatorKey = key as string
-	Reflect.defineMetadata(MetaSchemaKeys, customKeys, target.constructor)
+	const schemaKeys = getSchemaOptionsKeys(target.constructor)
+	schemaKeys.DiscriminatorKey = key as string
+	Reflect.defineMetadata(MetaSchemaOptionsKeys, schemaKeys, target.constructor)
 }
 
 /**
@@ -69,9 +69,9 @@ export const DiscriminatorKey: PropertyDecorator = (target, key) => {
  * @public
  */
 export const VersionKey: PropertyDecorator = (target, key) => {
-	const customKeys = getSchemaKeys(target.constructor)
-	customKeys.VersionKey = key as string
-	Reflect.defineMetadata(MetaSchemaKeys, customKeys, target.constructor)
+	const schemaKeys = getSchemaOptionsKeys(target.constructor)
+	schemaKeys.VersionKey = key as string
+	Reflect.defineMetadata(MetaSchemaOptionsKeys, schemaKeys, target.constructor)
 }
 
 /**
@@ -84,10 +84,9 @@ function getSchemaOptions(target: ConstructorType): mongoose.SchemaOptions | und
 /**
  * @internal
  */
-function getSchemaKeys(target: object): SchemaKeysMeta {
-	// Clone the object to avoid inheritance issues like
-	// https://github.com/rbuckton/reflect-metadata/issues/62
-	return Object.assign({}, Reflect.getMetadata(MetaSchemaKeys, target))
+function getSchemaOptionsKeys(target: object): SchemaOptionsKeysMeta {
+	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
+	return Object.assign({}, Reflect.getMetadata(MetaSchemaOptionsKeys, target))
 }
 
 /**
@@ -97,7 +96,7 @@ function getSchemaKeys(target: object): SchemaKeysMeta {
  */
 export function mergeSchemaOptionsAndKeys(Class: ConstructorType): mongoose.SchemaOptions | undefined {
 	let options = getSchemaOptions(Class)
-	const keys = getSchemaKeys(Class)
+	const keys = getSchemaOptionsKeys(Class)
 
 	if (!!keys.CreatedAt || !!keys.UpdatedAt) {
 		options = options || {}

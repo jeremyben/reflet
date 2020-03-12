@@ -1,3 +1,5 @@
+import { Decorator } from './interfaces'
+
 /**
  * Used by `@Model.Discriminator` to keep a reference of already defined `@Kind`.
  * @internal
@@ -25,13 +27,13 @@ export const MetaKind = Symbol('kind')
  * ---
  * @public
  */
-export function Kind(value?: string): PropertyDecorator
+export function Kind(value?: string): Decorator.Kind
 
 /**
  * {@inheritDoc (Kind:1)}
  * @public
  */
-export function Kind(...args: Parameters<PropertyDecorator>): void
+export function Kind(...args: Parameters<Decorator.Kind>): void
 
 export function Kind(valueOrTarget?: string | Object, key?: string | symbol) {
 	if (typeof valueOrTarget === 'string' && !key) {

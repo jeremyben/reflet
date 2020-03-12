@@ -1,6 +1,7 @@
 import mongoose from 'mongoose'
 import { createSchema } from './schema-creation'
 import { getKind, MetaKind } from './kind-decorator'
+import { Decorator } from './interfaces'
 
 /**
  * Transforms the decorated class into a mongoose Model.
@@ -27,12 +28,12 @@ import { getKind, MetaKind } from './kind-decorator'
 export function Model<T extends mongoose.Model<mongoose.Document>>(
 	collection?: string,
 	connection?: mongoose.Connection
-) {
-	return (target: T) => {
-		const schema = createSchema(target)
+): Decorator.Model<T> {
+	return (Class) => {
+		const schema = createSchema(Class)
 
-		if (connection) return connection.model(target.name, schema, collection) as any
-		return mongoose.model(target.name, schema, collection) as any
+		if (connection) return connection.model(Class.name, schema, collection)
+		return mongoose.model(Class.name, schema, collection)
 	}
 }
 
@@ -67,8 +68,10 @@ export namespace Model {
 	 * ---
 	 * @public
 	 */
-	export function Discriminator<T extends mongoose.Model<mongoose.Document>>(rootModel: T) {
-		return (Class: T) => {
+	export function Discriminator<T extends mongoose.Model<mongoose.Document>>(
+		rootModel: T
+	): Decorator.ModelDiscriminator<T> {
+		return (Class) => {
 			const [kindKey, kindValue] = getKind(Class)
 			const rootProvidedD11rKey = rootModel.schema._userProvidedOptions.discriminatorKey
 			const alreadyProvidedKindKey = rootModel[(MetaKind as any) as keyof mongoose.Model<any>]
@@ -98,7 +101,7 @@ export namespace Model {
 			}
 
 			const schema = createSchema(Class)
-			return rootModel.discriminator(Class.name, schema, kindValue) as any
+			return rootModel.discriminator(Class.name, schema, kindValue)
 		}
 	}
 
@@ -106,12 +109,14 @@ export namespace Model {
 	 * Dummy class to extend from, in order to get all the types from mongoose Model and Document.
 	 */
 	export const Interface = class {} as mongoose.Model<mongoose.Document>
+	export type Interface = typeof Model.Interface
 
 	/**
 	 * Dummy class to extend from, in order to get all the types from mongoose Model and Document.
 	 * @public
 	 */
 	export const I = Interface
+	export type I = typeof Model.I
 
 	// todo: query helpers
 	// https://mongoosejs.com/docs/guide#query-helpers

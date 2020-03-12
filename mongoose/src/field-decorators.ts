@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import { ConstructorType } from './interfaces'
+import { ConstructorType, Decorator } from './interfaces'
 
 const MetaField = Symbol('field')
 const MetaFieldDiscriminators = Symbol('field-discriminators')
@@ -11,8 +11,8 @@ const MetaFieldDiscriminatorsArray = Symbol('field-discriminators-array')
  * @public
  */
 export function Field<T extends SchemaType>(
-	field: SchemaField<T> | SchemaField<T>[] | SchemaField<T>[][]
-): PropertyDecorator {
+	field: SchemaTypeOptions<T> | SchemaTypeOptions<T>[] | SchemaTypeOptions<T>[][] | T | [T] | [[T]]
+): Decorator.Field {
 	return (target, key) => {
 		const fields = getFields(target.constructor)
 		fields[<string>key] = field
@@ -20,26 +20,14 @@ export function Field<T extends SchemaType>(
 	}
 }
 
+/* istanbul ignore next https://github.com/istanbuljs/nyc/issues/1209 */
 export namespace Field {
-	/**
-	 * Defines a SchemaType on a property, using directly the type.
-	 * @see https://mongoosejs.com/docs/schematypes#schematype-options
-	 * @public
-	 */
-	export function Type<T extends SchemaType>(field: T | [T] | [[T]]): PropertyDecorator {
-		return (target, key) => {
-			const fields = getFields(target.constructor)
-			fields[<string>key] = field
-			Reflect.defineMetadata(MetaField, fields, target.constructor)
-		}
-	}
-
 	/**
 	 * Defines a nested SchemaType on a property.
 	 * @see https://mongoosejs.com/docs/schematypes#schematype-options
 	 * @public
 	 */
-	export function Nested(field: SchemaFieldNested | SchemaFieldNested[]): PropertyDecorator {
+	export function Nested(field: SchemaTypeNested | SchemaTypeNested[]): Decorator.FieldNested {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
 			fields[<string>key] = field
@@ -52,26 +40,24 @@ export namespace Field {
 	 * @see https://mongoosejs.com/docs/discriminators#single-nested-discriminators
 	 * @public
 	 */
-	export function Discriminators(...schemaClasses: ConstructorType[]): PropertyDecorator {
+	export function Union(...classes: ConstructorType[]): Decorator.FieldUnion {
 		return (target, key) => {
 			const d11rFields = getDiscriminatorFields(target.constructor)
-			d11rFields[<string>key] = schemaClasses
+			d11rFields[<string>key] = classes
 			Reflect.defineMetadata(MetaFieldDiscriminators, d11rFields, target.constructor)
 		}
 	}
 
-	export namespace Discriminators {
-		/**
-		 * Defines a union of discriminators on a embedded document array.
-		 * @see https://mongoosejs.com/docs/discriminators#embedded-discriminators-in-arrays
-		 * @public
-		 */
-		export function ArrayOf(...schemaClasses: ConstructorType[]): PropertyDecorator {
-			return (target, key) => {
-				const d11rArrayFields = getDiscriminatorArrayFields(target.constructor)
-				d11rArrayFields[<string>key] = schemaClasses
-				Reflect.defineMetadata(MetaFieldDiscriminatorsArray, d11rArrayFields, target.constructor)
-			}
+	/**
+	 * Defines a union of discriminators on a embedded document array.
+	 * @see https://mongoosejs.com/docs/discriminators#embedded-discriminators-in-arrays
+	 * @public
+	 */
+	export function ArrayOfUnion(...classes: ConstructorType[]): Decorator.FieldArrayOfUnion {
+		return (target, key) => {
+			const d11rArrayFields = getDiscriminatorArrayFields(target.constructor)
+			d11rArrayFields[<string>key] = classes
+			Reflect.defineMetadata(MetaFieldDiscriminatorsArray, d11rArrayFields, target.constructor)
 		}
 	}
 }
@@ -80,8 +66,7 @@ export namespace Field {
  * @internal
  */
 export function getFields(target: object): { [key: string]: any } {
-	// Clone the object to avoid inheritance issues like
-	// https://github.com/rbuckton/reflect-metadata/issues/62
+	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
 	return Object.assign({}, Reflect.getMetadata(MetaField, target))
 }
 
@@ -89,8 +74,7 @@ export function getFields(target: object): { [key: string]: any } {
  * @internal
  */
 export function getDiscriminatorFields(target: object): { [key: string]: ConstructorType[] } {
-	// Clone the object to avoid inheritance issues like
-	// https://github.com/rbuckton/reflect-metadata/issues/62
+	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
 	return Object.assign({}, Reflect.getMetadata(MetaFieldDiscriminators, target))
 }
 
@@ -98,9 +82,19 @@ export function getDiscriminatorFields(target: object): { [key: string]: Constru
  * @internal
  */
 export function getDiscriminatorArrayFields(target: object): { [key: string]: ConstructorType[] } {
-	// Clone the object to avoid inheritance issues like
-	// https://github.com/rbuckton/reflect-metadata/issues/62
+	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
 	return Object.assign({}, Reflect.getMetadata(MetaFieldDiscriminatorsArray, target))
+}
+
+/**
+ * @public
+ */
+type SchemaTypeNested = {
+	[key: string]:
+		| SchemaTypeOptions<SchemaType>
+		| SchemaTypeOptions<SchemaType>[]
+		| SchemaTypeNested
+		| SchemaTypeNested[]
 }
 
 /**
@@ -119,14 +113,7 @@ type SchemaType =
 /**
  * @public
  */
-type SchemaFieldNested = {
-	[key: string]: SchemaField<SchemaType> | SchemaField<SchemaType>[] | SchemaFieldNested | SchemaFieldNested[]
-}
-
-/**
- * @public
- */
-type SchemaField<T extends SchemaType> = {
+interface SchemaTypeOptions<T extends SchemaType> extends RefletMongoose.SchemaTypeOptions {
 	type: T | [T] | [[T]]
 
 	/**
@@ -214,7 +201,9 @@ type SchemaField<T extends SchemaType> = {
 	 * ObjectId : [Guide reference](https://mongoosejs.com/docs/populate)
 	 * | [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-ref)
 	 */
-	ref?: T extends typeof mongoose.Schema.Types.ObjectId ? Function | string : never
+	ref?: T extends typeof mongoose.Schema.Types.ObjectId
+		? ConstructorType | (keyof RefletMongoose.Ref extends undefined ? string : keyof RefletMongoose.Ref)
+		: never
 
 	/**
 	 * ObjectId : [Guide reference](https://mongoosejs.com/docs/populate#dynamic-ref)

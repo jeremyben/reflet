@@ -1,4 +1,3 @@
-// tslint:disable: variable-name
 import mongoose from 'mongoose'
 import { SchemaOptions, Field, Kind, Model, NewDoc } from '../src'
 
@@ -6,15 +5,15 @@ import { SchemaOptions, Field, Kind, Model, NewDoc } from '../src'
  * https://mongoosejs.com/docs/discriminators.html#single-nested-discriminators
  */
 test('single nested discriminators', async () => {
-	class Circle {
-		@Field.Type(Number)
+	abstract class Circle {
+		@Field(Number)
 		radius: number
 
 		__t: 'Circle'
 	}
 
-	class Square {
-		@Field.Type(Number)
+	abstract class Square {
+		@Field(Number)
 		side: number
 
 		__t: 'Square'
@@ -22,7 +21,7 @@ test('single nested discriminators', async () => {
 
 	@Model()
 	class Shape extends Model.I {
-		@Field.Discriminators(Circle, Square)
+		@Field.Union(Circle, Square)
 		shape: Circle | Square
 
 		constructor(doc?: NewDoc<Shape>) {
@@ -53,7 +52,7 @@ test('single nested discriminators', async () => {
 test('embedded discriminators in arrays', async () => {
 	@SchemaOptions({ _id: false })
 	abstract class Event {
-		@Field.Type(String)
+		@Field(String)
 		message: string
 	}
 
@@ -74,9 +73,8 @@ test('embedded discriminators in arrays', async () => {
 	}
 
 	@Model()
-	@SchemaOptions({})
 	class Batch extends Model.I {
-		@Field.Discriminators.ArrayOf(Clicked, Purchased)
+		@Field.ArrayOfUnion(Clicked, Purchased)
 		events: (Clicked | Purchased)[]
 
 		constructor(doc?: NewDoc<Batch>) {

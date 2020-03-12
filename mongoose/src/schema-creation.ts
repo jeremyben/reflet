@@ -2,12 +2,12 @@ import mongoose from 'mongoose'
 import { getFields, getDiscriminatorFields, getDiscriminatorArrayFields } from './field-decorators'
 import { mergeSchemaOptionsAndKeys } from './schema-options-decorators'
 import { getPreHooks, getPostHooks } from './hooks-decorators'
-import { ConstructorType, ConstructorInstance } from './interfaces'
-import { getKind, MetaKind } from './kind-decorator'
+import { getKind } from './kind-decorator'
 import { getSchemaCallback } from './schema-callback-decorator'
+import { ConstructorType, ConstructorInstance } from './interfaces'
 
 /**
- * Creates a schema from a decorated class.
+ * Retrieves the schema from a decorated class.
  *
  * @see https://mongoosejs.com/docs/guide#definition
  * @see https://mongoosejs.com/docs/api#schema_Schema-loadClass
@@ -42,7 +42,7 @@ export function schemaFrom<T extends ConstructorType>(Class: T): mongoose.Schema
 
 /**
  * Used directly by `@Model` and `@Model.Discriminator` to avoid the check and bypass of `schemaFrom` method.
- * @private
+ * @internal
  */
 export function createSchema<T extends ConstructorType>(Class: T) {
 	const fields = getFields(Class)
@@ -77,7 +77,7 @@ export function createSchema<T extends ConstructorType>(Class: T) {
 
 /**
  * @see https://github.com/Automattic/mongoose/blob/5.9/lib/schema.js#L1944-L1986
- * @private
+ * @internal
  */
 function loadClassMethods<T>(schema: mongoose.Schema<T>, Class: ConstructorType): void {
 	// If we extend a class decorated by @Model (when we need to use @Model.Discriminator for example),
@@ -116,12 +116,14 @@ function loadClassMethods<T>(schema: mongoose.Schema<T>, Class: ConstructorType)
  */
 function loadDiscriminatorsFields<T>(schema: mongoose.Schema<T>, Class: ConstructorType) {
 	// https://mongoosejs.com/docs/discriminators#single-nested-discriminators
-	attach(getDiscriminatorFields(Class))
+	const singleFields = getDiscriminatorFields(Class)
+	attachToSchema(singleFields)
 
 	// https://mongoosejs.com/docs/discriminators#embedded-discriminators-in-arrays
-	attach(getDiscriminatorArrayFields(Class), true)
+	const arrayFields = getDiscriminatorArrayFields(Class)
+	attachToSchema(arrayFields, { asArray: true })
 
-	function attach(d11rFields: { [key: string]: ConstructorType[] }, asArray = false) {
+	function attachToSchema(d11rFields: { [key: string]: ConstructorType[] }, { asArray = false } = {}) {
 		for (const key in d11rFields) {
 			if (!d11rFields.hasOwnProperty(key)) continue
 			const nestedSchemaClasses = d11rFields[key]

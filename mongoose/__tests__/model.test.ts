@@ -10,7 +10,7 @@ test('simple model', async () => {
 		@Field({ type: String, required: true })
 		firstname: string
 
-		@Field.Type(String)
+		@Field(String)
 		lastname: string
 
 		get fullname() {
@@ -61,7 +61,7 @@ test('model discriminator', async () => {
 
 	@Model.Discriminator(User)
 	class Developer extends User {
-		@Field.Type([String])
+		@Field([String])
 		languages: string[]
 
 		@Kind('developer')
@@ -74,7 +74,7 @@ test('model discriminator', async () => {
 
 	@Model.Discriminator(User)
 	class Doctor extends User {
-		@Field.Type(String)
+		@Field(String)
 		specialty: string
 
 		@Kind('doctor')

@@ -1,6 +1,94 @@
 import mongoose from 'mongoose'
 
 /**
+ * Exported decorators interfaces.
+ * Branded as distinct symbols for the dedicated linter and the compiler API.
+ * @public
+ */
+export namespace Decorator {
+	/**
+	 * Used for `@Model` decorator.
+	 * Equivalent to `ClassDecorator`.
+	 * @public
+	 */
+	export type Model<T extends mongoose.Model<mongoose.Document>> = ((target: T) => any) & {
+		__mongooseModel?: never
+	}
+
+	/**
+	 * Used for `@Model.Discriminator` decorator.
+	 * Equivalent to `ClassDecorator`.
+	 * @public
+	 */
+	export type ModelDiscriminator<T extends mongoose.Model<mongoose.Document>> = ((target: T) => any) & {
+		__mongooseModelDiscriminator?: never
+	}
+
+	/**
+	 * Used for `@SchemaOptions` decorator.
+	 * Equivalent to `ClassDecorator`.
+	 * @public
+	 */
+	export type SchemaOptions = ClassDecorator & {
+		__mongooseSchemaOptions?: never
+	}
+
+	/**
+	 * Used for `@SchemaCallback` decorator.
+	 * Equivalent to `ClassDecorator`.
+	 * @public
+	 */
+	export type SchemaCallback = ClassDecorator & {
+		__mongooseSchemaCallback?: never
+	}
+
+	/**
+	 * Used for `@Field` decorators.
+	 * Equivalent to `PropertyDecorator`.
+	 * @public
+	 */
+	export type Field = PropertyDecorator & {
+		__mongooseField?: never
+	}
+
+	/**
+	 * Used for `@Field` decorators.
+	 * Equivalent to `PropertyDecorator`.
+	 * @public
+	 */
+	export type FieldNested = PropertyDecorator & {
+		__mongooseFieldNested?: never
+	}
+
+	/**
+	 * Used for `@Field.Union` decorator.
+	 * Equivalent to `PropertyDecorator`.
+	 * @public
+	 */
+	export type FieldUnion = PropertyDecorator & {
+		__mongooseFieldUnion?: never
+	}
+
+	/**
+	 * Used for `@Field.ArrayOfUnion` decorator.
+	 * Equivalent to `PropertyDecorator`.
+	 * @public
+	 */
+	export type FieldArrayOfUnion = PropertyDecorator & {
+		__mongooseFieldArrayOfUnion?: never
+	}
+
+	/**
+	 * Used for `@Kind` decorator.
+	 * Equivalent to `PropertyDecorator`.
+	 * @public
+	 */
+	export type Kind = PropertyDecorator & {
+		__mongooseKind?: never
+	}
+}
+
+/**
  * Helps with constructor typing of `@Model` decorated classes.
  *
  * @example
