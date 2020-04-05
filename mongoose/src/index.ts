@@ -1,6 +1,6 @@
 export { Field } from './field-decorators'
 
-export { SchemaOptions, CreatedAt, UpdatedAt, DiscriminatorKey, VersionKey } from './schema-options-decorators'
+export { SchemaOptions, CreatedAt, UpdatedAt, VersionKey } from './schema-options-decorators'
 
 export { SchemaCallback } from './schema-callback-decorator'
 
