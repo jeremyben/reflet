@@ -38,6 +38,7 @@ export function Kind(...args: Parameters<Decorator.Kind>): void
 export function Kind(valueOrTarget?: string | Object, key?: string | symbol) {
 	if (typeof valueOrTarget === 'string' && !key) {
 		return (target: Object, key_: string | symbol) => {
+			/* istanbul ignore if - checked by the compiler */
 			if (!valueOrTarget) throw Error(`Schema ${target.constructor.name} cannot have an empty @Kind value`)
 
 			Reflect.defineMetadata(MetaKind, [key_, valueOrTarget], target.constructor)

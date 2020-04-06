@@ -9,7 +9,7 @@ import { Decorator } from './interfaces'
  * `Model` decorator should always be at the top of class decorators.
  *
  * @param collection - custom collection name.
- * @param connection - mongoose connection to use in case of [multiple connections](https://mongoosejs.com/docs/connections.html#multiple_connections).
+ * @param connection - mongoose connection to use in case of [multiple connections](https://mongoosejs.com/docs/connections#multiple_connections).
  *
  * @see https://mongoosejs.com/docs/models
  * @example
@@ -37,7 +37,6 @@ export function Model<T extends mongoose.Model<mongoose.Document>>(
 	}
 }
 
-/* istanbul ignore next https://github.com/istanbuljs/nyc/issues/1209 */
 export namespace Model {
 	/**
 	 * Transforms the decorated class into a mongoose Model, whose schema is the intersection of the parent schema and the discriminator schema.
@@ -120,13 +119,4 @@ export namespace Model {
 	 */
 	export const I = Interface
 	export type I = typeof Model.I
-
-	// todo: query helpers
-	// https://mongoosejs.com/docs/guide#query-helpers
-	// https://stackoverflow.com/questions/52856264/how-to-define-custom-query-helper-in-mongoose-model-with-typescript
-
-	/**
-	 * @public
-	 */
-	const InterfaceQuery = <QueryHelpers extends {}>() => class {} as mongoose.Model<mongoose.Document, QueryHelpers>
 }

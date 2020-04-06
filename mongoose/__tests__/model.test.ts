@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import { Field, Model, schemaFrom, Kind, Plain } from '../src'
+import { Field, Model, schemaFrom, Kind, Plain, SchemaOptions } from '../src'
 
 test('model with custom collection and connection', async () => {
 	const db = mongoose.createConnection(process.env.MONGO_URL!, {
@@ -50,7 +50,7 @@ test('model with custom collection and connection', async () => {
 	await db.close()
 })
 
-test('model discriminator', async () => {
+test('model discriminators', async () => {
 	@Model()
 	class User extends Model.Interface {
 		@Field({ type: String, required: true })
@@ -110,4 +110,54 @@ test('model discriminator', async () => {
 	expect(doctor.fullname).toBe('Dr Jeremy B')
 	expect(doctor.specialty).toBe('surgery')
 	expect(doctor.kind).toBe('doctor')
+})
+
+describe('model discriminators kind key coercion', () => {
+	test('siblings should have same kind key', async () => {
+		@Model()
+		class A extends Model.Interface {
+			@Field(String)
+			firstname: string
+		}
+
+		@Model.Discriminator(A)
+		class B extends A {
+			@Field(String)
+			lastname: string
+
+			@Kind
+			kind: 'B'
+		}
+
+		expect(() => {
+			@Model.Discriminator(A)
+			class C extends A {
+				@Field(String)
+				lastname: string
+
+				@Kind('c')
+				type: 'c'
+			}
+		}).toThrowError(/sibling/)
+	})
+
+	test('kind key should not overwrite options', async () => {
+		@Model()
+		@SchemaOptions({ discriminatorKey: 'kind' })
+		class A1 extends Model.Interface {
+			@Field(String)
+			firstname: string
+		}
+
+		expect(() => {
+			@Model.Discriminator(A1)
+			class B1 extends A1 {
+				@Field(String)
+				lastname: string
+
+				@Kind
+				type: 'B1'
+			}
+		}).toThrowError(/overwrite discriminatorKey/)
+	})
 })

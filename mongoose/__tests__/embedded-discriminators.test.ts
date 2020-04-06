@@ -2,7 +2,7 @@ import mongoose from 'mongoose'
 import { SchemaOptions, Field, Kind, Model, Plain } from '../src'
 
 /**
- * https://mongoosejs.com/docs/discriminators.html#single-nested-discriminators
+ * https://mongoosejs.com/docs/discriminators#single-nested-discriminators
  */
 test('single nested discriminators', async () => {
 	abstract class Circle {
@@ -49,7 +49,7 @@ test('single nested discriminators', async () => {
 })
 
 /**
- * https://mongoosejs.com/docs/discriminators.html#embedded-discriminators-in-arrays
+ * https://mongoosejs.com/docs/discriminators#embedded-discriminators-in-arrays
  */
 test('embedded discriminators in arrays', async () => {
 	@SchemaOptions({ _id: false })
@@ -90,4 +90,30 @@ test('embedded discriminators in arrays', async () => {
 	]
 	const batch = new Batch({ events })
 	expect(batch.toObject()).toStrictEqual({ _id: expect.any(mongoose.Types.ObjectId), events })
+})
+
+test('nested discriminators kind key coercion', async () => {
+	abstract class N1 {
+		@Field(Number)
+		radius: number
+
+		@Kind
+		kind: 'N1'
+	}
+
+	abstract class N2 {
+		@Field(Number)
+		side: number
+
+		@Kind('n2')
+		type: 'n2'
+	}
+
+	expect(() => {
+		@Model()
+		class N extends Model.I {
+			@Field.Union(N1, N2)
+			shape: N1 | N2
+		}
+	}).toThrowError(/sibling/)
 })

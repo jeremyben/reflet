@@ -125,6 +125,7 @@ function loadDiscriminatorsFields<T>(schema: mongoose.Schema<T>, Class: Construc
 
 	function attachToSchema(d11rFields: { [key: string]: ConstructorType[] }, { asArray = false } = {}) {
 		for (const key in d11rFields) {
+			/* istanbul ignore if - routine check */
 			if (!d11rFields.hasOwnProperty(key)) continue
 			const nestedSchemaClasses = d11rFields[key]
 

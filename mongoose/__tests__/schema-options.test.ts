@@ -153,3 +153,44 @@ describe('timestamps', () => {
 		expect(() => schemaFrom(TS3b)).toThrowError(/cannot overwrite/)
 	})
 })
+
+describe('versionKey', () => {
+	test('without schema options', async () => {
+		class VK {
+			@Field(String)
+			name: string
+
+			@VersionKey
+			version: number
+		}
+
+		const vkSchema = schemaFrom(VK)
+		expect((vkSchema as any).options.versionKey).toBe('version')
+	})
+
+	test('key is different than option', async () => {
+		@SchemaOptions({ versionKey: 'v' })
+		class VK1 {
+			@Field(String)
+			name: string
+
+			@VersionKey
+			version: number
+		}
+
+		expect(() => schemaFrom(VK1)).toThrowError(/cannot overwrite/)
+	})
+
+	test('key is defined and option is false', async () => {
+		@SchemaOptions({ versionKey: false })
+		class VK2 {
+			@Field(String)
+			name: string
+
+			@VersionKey
+			version: number
+		}
+
+		expect(() => schemaFrom(VK2)).toThrowError(/cannot overwrite/)
+	})
+})

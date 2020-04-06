@@ -32,7 +32,6 @@ export function Field<T extends SchemaType>(
 	}
 }
 
-/* istanbul ignore next https://github.com/istanbuljs/nyc/issues/1209 */
 export namespace Field {
 	/**
 	 * Defines a nested SchemaType on a property.
