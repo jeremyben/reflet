@@ -9,70 +9,70 @@ export namespace Decorator {
 	 * Equivalent to `ClassDecorator`.
 	 * @public
 	 */
-	export type Router = ClassDecorator & { __refletRouter?: never }
+	export type Router = ClassDecorator & { __expressRouter?: never }
 
 	/**
 	 * Used for `@Get, @Post, @Put, @Patch, @Delete, @Method` decorators.
 	 * Equivalent to `MethodDecorator`.
 	 * @public
 	 */
-	export type Route = MethodDecorator & { __refletRoute?: never }
+	export type Route = MethodDecorator & { __expressRoute?: never }
 
 	/**
 	 * Used for `createParamDecorator`.
 	 * Equivalent to `ParameterDecorator`.
 	 * @public
 	 */
-	export type HandlerParameter = ParameterDecorator & { __refletHandlerParameter?: never }
+	export type HandlerParameter = ParameterDecorator & { __expressHandlerParameter?: never }
 
 	/**
 	 * Used for `@Req` decorator.
 	 * Equivalent to `ParameterDecorator`.
 	 * @public
 	 */
-	export type Req = ParameterDecorator & { __refletReq?: never; __refletHandlerParameter?: never }
+	export type Req = ParameterDecorator & { __expressReq?: never; __expressHandlerParameter?: never }
 
 	/**
 	 * Used for `@Res` decorator.
 	 * Equivalent to `ParameterDecorator`.
 	 * @public
 	 */
-	export type Res = ParameterDecorator & { __refletRes?: never; __refletHandlerParameter?: never }
+	export type Res = ParameterDecorator & { __expressRes?: never; __expressHandlerParameter?: never }
 
 	/**
 	 * Used for `@Next` decorator.
 	 * Equivalent to `ParameterDecorator`.
 	 * @public
 	 */
-	export type Next = ParameterDecorator & { __refletNext?: never; __refletHandlerParameter?: never }
+	export type Next = ParameterDecorator & { __expressNext?: never; __expressHandlerParameter?: never }
 
 	/**
 	 * Used for `@Body` decorator.
 	 * Equivalent to `ParameterDecorator`.
 	 * @public
 	 */
-	export type Body = ParameterDecorator & { __refletBody?: never; __refletHandlerParameter?: never }
+	export type Body = ParameterDecorator & { __expressBody?: never; __expressHandlerParameter?: never }
 
 	/**
 	 * Used for `@Params` decorator.
 	 * Equivalent to `ParameterDecorator`.
 	 * @public
 	 */
-	export type Params = ParameterDecorator & { __refletParams?: never; __refletHandlerParameter?: never }
+	export type Params = ParameterDecorator & { __expressParams?: never; __expressHandlerParameter?: never }
 
 	/**
 	 * Used for `@Query` decorator.
 	 * Equivalent to `ParameterDecorator`.
 	 * @public
 	 */
-	export type Query = ParameterDecorator & { __refletQuery?: never; __refletHandlerParameter?: never }
+	export type Query = ParameterDecorator & { __expressQuery?: never; __expressHandlerParameter?: never }
 
 	/**
 	 * Used for `@Headers` decorator.
 	 * Equivalent to `ParameterDecorator`.
 	 * @public
 	 */
-	export type Headers = ParameterDecorator & { __refletHeaders?: never; __refletHandlerParameter?: never }
+	export type Headers = ParameterDecorator & { __expressHeaders?: never; __expressHandlerParameter?: never }
 
 	/**
 	 * Used for `@Use` decorator.
@@ -80,7 +80,7 @@ export namespace Decorator {
 	 * @public
 	 */
 	export type Use<T extends ClassOrMethodUnion = 'class|method'> = ClassOrMethodDecorator<T> & {
-		__refletUse?: never
+		__expressUse?: never
 	}
 
 	/**
@@ -89,7 +89,7 @@ export namespace Decorator {
 	 * @public
 	 */
 	export type Catch<T extends ClassOrMethodUnion = 'class|method'> = ClassOrMethodDecorator<T> & {
-		__refletCatch?: never
+		__expressCatch?: never
 	}
 
 	/**
@@ -98,7 +98,7 @@ export namespace Decorator {
 	 * @public
 	 */
 	export type Send<T extends ClassOrMethodUnion = 'class|method'> = ClassOrMethodDecorator<T> & {
-		__refletSend?: never
+		__expressSend?: never
 	}
 
 	/**
@@ -106,7 +106,7 @@ export namespace Decorator {
 	 * Equivalent to `MethodDecorator`.
 	 * @public
 	 */
-	export type DontSend = MethodDecorator & { __refletDontSend?: never }
+	export type DontSend = MethodDecorator & { __expressDontSend?: never }
 }
 
 /**
