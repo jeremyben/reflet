@@ -43,6 +43,25 @@ export namespace Decorator {
 	}
 
 	/**
+	 * Used for `@Pre` decorator.
+	 * Equivalent to `ClassDecorator`.
+	 * @public
+	 */
+	export type Pre = ClassDecorator & {
+		__mongoosePre?: never
+	}
+
+	/**
+	 * Used for `@Post` decorator.
+	 * Equivalent to `ClassDecorator`.
+	 * @public
+	 */
+	export type Post = ClassDecorator & {
+		__mongoosePost?: never
+	}
+
+	/**
+	 * Used for `@Field` decorator.
 	 * Equivalent to `PropertyDecorator`.
 	 * @public
 	 */
@@ -185,5 +204,7 @@ declare module 'mongoose' {
 			names: string,
 			callback?: (err: any, res: this) => void
 		): this
+
+		deleteOne(): Promise<this & Document>
 	}
 }

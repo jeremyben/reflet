@@ -56,11 +56,11 @@ export function createSchema<T extends ConstructorType>(Class: T) {
 	loadClassMethods(schema, Class)
 
 	for (const preHook of preHooks) {
-		schema.pre(preHook.method, preHook.fn as any)
+		;(schema.pre as Function)(preHook.method, preHook.callbackOrOptions, preHook.callbackIfOptions)
 	}
 
 	for (const postHook of postHooks) {
-		schema.pre(postHook.method, postHook.fn as any)
+		;(schema.post as Function)(postHook.method, postHook.callbackOrOptions, postHook.callbackIfOptions)
 	}
 
 	// Add embedded discriminators after hooks, like the mongoose documentation recommends.
