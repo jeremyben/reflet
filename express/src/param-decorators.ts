@@ -107,9 +107,9 @@ export function Next() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
 		// next is not defined in the public method signature, but is still used later
 		// by the route params extractor so we must pass it as optional for the compiler
-		return (createParamDecorator((req, res?, next?: NextFunction) => next!) as Fn)(...arguments)
+		return (createParamDecorator((req, res?: Response, next?: NextFunction) => next!) as Fn)(...arguments)
 	} else {
-		return createParamDecorator((req, res?, next?: NextFunction) => next!)
+		return createParamDecorator((req, res?: Response, next?: NextFunction) => next!)
 	}
 }
 
@@ -138,6 +138,7 @@ const bodyParsers = [json(), urlencoded({ extended: true })]
  * @public
  */
 export function Body<T extends object>(key?: keyof T): Decorator.Body
+// todo: https://codewithstyle.info/Deep-property-access-in-TypeScript/
 
 /**
  * {@inheritDoc (Body:1)}

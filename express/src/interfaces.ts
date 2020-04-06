@@ -247,11 +247,8 @@ declare module 'express' {
 		_router: _Router
 	}
 
-	// prevent ts4033 or ts2717 errors on build
-	type RequestHandler_ = import('express').RequestHandler
-
 	export type _Router = {
-		params: {}
+		params: { [key: string]: any }
 		_params: any[]
 		caseSensitive: boolean
 		mergeParams: boolean | undefined
@@ -260,17 +257,10 @@ declare module 'express' {
 	}
 
 	type Layer = {
-		handle: RequestHandler_ | (RequestHandler_ & _Router)
-		name:
-			| '<anonymous>'
-			| 'query'
-			| 'expressInit'
-			| 'bound dispatch'
-			| 'router'
-			| 'serveStatic'
-			| 'jsonParser'
-			| 'urlencodedParser'
-		params: {} | undefined
+		// prevent ts4033 or ts2717 errors on build
+		handle: import('express').RequestHandler | (import('express').RequestHandler & _Router)
+		name: string // '<anonymous>' | 'query' | 'expressInit' | 'bound dispatch' | 'router' | 'serveStatic' | 'jsonParser' | 'urlencodedParser'
+		params: { [key: string]: any } | undefined
 		path: string | undefined
 		keys: { name: string; optional: boolean; offset: number }[]
 		regexp: RegExp & { fast_star: boolean; fast_slash: boolean }
@@ -281,9 +271,9 @@ declare module 'express' {
 		path: string
 		methods: { [key in RoutingMethod]?: true }
 		stack: {
-			handle: RequestHandler_
+			handle: import('express').RequestHandler
 			name: string
-			params: {} | undefined
+			params: { [key: string]: any } | undefined
 			path: string | undefined
 			keys: { name: string; optional: boolean; offset: number }[]
 			regexp: RegExp
