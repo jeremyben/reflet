@@ -30,13 +30,17 @@ import { extractSend } from './send-decorator'
  * ------
  * @public
  */
-export function register(app: Application, controllers: ClassType[]): Application {
+export function register(app: Application, controllers: ClassType<any>[]): Application {
 	const globalMwares = getGlobalMiddlewares(app)
 
 	for (const controller of controllers) {
+		// Create an instance if the user wants to define and use class properties
+		// (before, Reflet only used the prototype, because a controller is mostly about methods).
+		const controllerInstance = new controller()
+
 		// Either attach middlewares/handlers to an intermediary router or directly to the app.
 		const router = extractRouter(controller)
-		const instance = router ? Router(router.options) : app
+		const appInstance = router ? Router(router.options) : app
 
 		const routes = extractRoutes(controller)
 		const sharedMwares = extractMiddlewares(controller)
@@ -50,22 +54,18 @@ export function register(app: Application, controllers: ClassType[]): Applicatio
 		// or to each of the routes if the class is attached on the base app.
 
 		if (router) {
-			for (const mware of sharedMwares) instance.use(promisifyHandler(mware))
+			for (const mware of sharedMwares) appInstance.use(promisifyHandler(mware))
 		}
 
 		for (const { path, method, key } of routes) {
 			const routeMwares = extractMiddlewares(controller, key)
 			const routeErrHandlers = extractErrorHandlers(controller, key)
-			const paramsMwares = extractParamsMiddlewares(controller, key, [
-				globalMwares,
-				sharedMwares,
-				routeMwares,
-			])
+			const paramsMwares = extractParamsMiddlewares(controller, key, [globalMwares, sharedMwares, routeMwares])
 			const toSend = extractSend(controller, key)
 
 			const handler = promisifyHandler((req, res, next) => {
 				const args = extractParams(controller, key, { req, res, next })
-				const result = controller.prototype[key].apply(controller.prototype, args)
+				const result = controllerInstance[key].apply(controllerInstance, args)
 
 				// Handle or bypass sending the method's result according to @Send decorator,
 				// if the response has already been sent to the client, we also bypass.
@@ -106,7 +106,7 @@ export function register(app: Application, controllers: ClassType[]): Applicatio
 			})
 
 			if (router) {
-				instance[method](
+				appInstance[method](
 					path,
 					routeMwares.map(promisifyHandler),
 					paramsMwares.map(promisifyHandler),
@@ -115,7 +115,7 @@ export function register(app: Application, controllers: ClassType[]): Applicatio
 				)
 			} else {
 				// Have same order of middlewares by surrounding route specific ones by shared ones.
-				instance[method](
+				appInstance[method](
 					path,
 					sharedMwares.map(promisifyHandler),
 					routeMwares.map(promisifyHandler),
@@ -128,10 +128,10 @@ export function register(app: Application, controllers: ClassType[]): Applicatio
 		}
 
 		if (router) {
-			for (const errHandler of sharedErrHandlers) instance.use(promisifyErrorHandler(errHandler))
+			for (const errHandler of sharedErrHandlers) appInstance.use(promisifyErrorHandler(errHandler))
 
 			// Finally attach the router to the app
-			app.use(router.root, instance)
+			app.use(router.root, appInstance)
 		}
 	}
 

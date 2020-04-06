@@ -27,9 +27,11 @@ class UserController {
 
 // Without Router
 class MessageController {
+	prop = 1
+
 	@Method('options', '/message')
 	options(req: Request, res: Response, next: NextFunction) {
-		res.send([{ id: 1 }])
+		res.send([{ id: this.prop }])
 	}
 
 	@Get('/message/:id')
