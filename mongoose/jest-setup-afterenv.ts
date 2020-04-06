@@ -4,7 +4,11 @@ let mongoose: typeof Mongoose
 
 beforeAll(async () => {
 	// https://github.com/shelfio/jest-mongodb#3-configure-mongodb-client
-	mongoose = await Mongoose.connect(process.env.MONGO_URL!, { useNewUrlParser: true, useUnifiedTopology: true })
+	mongoose = await Mongoose.connect(process.env.MONGO_URL!, {
+		useNewUrlParser: true,
+		useUnifiedTopology: true,
+		useCreateIndex: true,
+	})
 })
 
 afterAll(async () => {
