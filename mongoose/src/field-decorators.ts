@@ -6,10 +6,22 @@ const MetaFieldDiscriminators = Symbol('field-discriminators')
 const MetaFieldDiscriminatorsArray = Symbol('field-discriminators-array')
 
 /**
- * Defines a SchemaType on a property.
- * @see https://mongoosejs.com/docs/schematypes#schematype-options
+ * Defines SchemaType options on a property.
+ * @see https://mongoosejs.com/docs/schematypes
  * @public
  */
+export function Field<T extends SchemaType>(
+	field: SchemaTypeOptions<T> | SchemaTypeOptions<T>[] | SchemaTypeOptions<T>[][]
+): Decorator.Field
+
+/**
+ * Defines a SchemaType on a property.
+ * @see https://mongoosejs.com/docs/schematypes
+ * @public
+ */
+// tslint:disable-next-line: unified-signatures - more precise compiler errors
+export function Field<T extends SchemaType>(field: T | [T] | [[T]]): Decorator.Field
+
 export function Field<T extends SchemaType>(
 	field: SchemaTypeOptions<T> | SchemaTypeOptions<T>[] | SchemaTypeOptions<T>[][] | T | [T] | [[T]]
 ): Decorator.Field {
@@ -24,7 +36,10 @@ export function Field<T extends SchemaType>(
 export namespace Field {
 	/**
 	 * Defines a nested SchemaType on a property.
-	 * @see https://mongoosejs.com/docs/schematypes#schematype-options
+	 *
+	 * Logic is the same as `@Field` but types are looser to allow nested objects.
+	 *
+	 * @see https://mongoosejs.com/docs/schematypes
 	 * @public
 	 */
 	export function Nested(field: SchemaTypeNested | SchemaTypeNested[]): Decorator.FieldNested {
@@ -113,7 +128,10 @@ type SchemaType =
 /**
  * @public
  */
-interface SchemaTypeOptions<T extends SchemaType> extends RefletMongoose.SchemaTypeOptions {
+interface SchemaTypeOptions<T extends SchemaType> extends Partial<RefletMongoose.SchemaTypeOptions> {
+	/**
+	 * [Guide reference](https://mongoosejs.com/docs/schematypes#type-key)
+	 */
 	type: T | [T] | [[T]]
 
 	/**
@@ -202,7 +220,9 @@ interface SchemaTypeOptions<T extends SchemaType> extends RefletMongoose.SchemaT
 	 * | [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-ref)
 	 */
 	ref?: T extends typeof mongoose.Schema.Types.ObjectId
-		? ConstructorType | (keyof RefletMongoose.Ref extends undefined ? string : keyof RefletMongoose.Ref)
+		? keyof RefletMongoose.Ref extends undefined
+			? string | ConstructorType
+			: keyof RefletMongoose.Ref | ConstructorType<RefletMongoose.Ref[keyof RefletMongoose.Ref]>
 		: never
 
 	/**

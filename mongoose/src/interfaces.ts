@@ -43,7 +43,6 @@ export namespace Decorator {
 	}
 
 	/**
-	 * Used for `@Field` decorators.
 	 * Equivalent to `PropertyDecorator`.
 	 * @public
 	 */
@@ -52,7 +51,7 @@ export namespace Decorator {
 	}
 
 	/**
-	 * Used for `@Field` decorators.
+	 * Used for `@Field.Nested` decorator.
 	 * Equivalent to `PropertyDecorator`.
 	 * @public
 	 */
@@ -156,6 +155,27 @@ export type ConstructorType<T = any> = Function & { prototype: T }
  * @public
  */
 export type ConstructorInstance<T extends ConstructorType> = T extends Function & { prototype: infer R } ? R : never
+
+// tslint:disable: no-empty-interface
+declare global {
+	/**
+	 * Namespace dedicated to application-specific declaration merging.
+	 * @public
+	 */
+	namespace RefletMongoose {
+		/**
+		 * Open interface to extend `@Field` SchemaType options. Useful for plugins.
+		 * @public
+		 */
+		interface SchemaTypeOptions {}
+
+		/**
+		 * Open interface to enforce an union of model names in `ref` SchemaType option.
+		 * @public
+		 */
+		interface Ref {}
+	}
+}
 
 declare module 'mongoose' {
 	interface MongooseDocument {
