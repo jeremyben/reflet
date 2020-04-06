@@ -20,7 +20,7 @@ build({
 	include: [`src/**/*`],
 	exclude: ['**/__tests__', '**/test.ts', '**/*.test.ts', '**/*.spec.ts', 'node_modules'],
 	clean: { outDir: true },
-	bundleDeclaration: { entryPoint: dtsEntryPoint },
+	bundleDeclaration: { entryPoint: dtsEntryPoint, augmentations: false },
 })
 
 syncOverloadsDoc()

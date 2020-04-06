@@ -1,9 +1,8 @@
 const { join } = require('path')
-const rootDir = process.cwd()
 
-/** @type {jest.InitialOptions} */
+/** @type {Partial<import('@jest/types').Config.DefaultOptions & { rootDir: string, preset: string }>} */
 const config = {
-	rootDir,
+	rootDir: process.cwd(),
 	preset: 'ts-jest',
 	testEnvironment: 'node',
 	testPathIgnorePatterns: ['/node_modules/', '/__tests__/shared/', '/dist/'],
