@@ -1,8 +1,15 @@
-import { Field, Model, schemaFrom, NewDoc, Kind } from '../src'
+import mongoose from 'mongoose'
+import { Field, Model, schemaFrom, Kind, Plain } from '../src'
 
-test('simple model', async () => {
-	@Model()
-	class Simple extends Model.Interface {
+test('model with custom collection and connection', async () => {
+	const db = mongoose.createConnection(process.env.MONGO_URL!, {
+		useNewUrlParser: true,
+		useUnifiedTopology: true,
+		useCreateIndex: true,
+	})
+
+	@Model('people', db)
+	class UserOther extends Model.Interface {
 		static col() {
 			return this.collection.collectionName
 		}
@@ -27,18 +34,20 @@ test('simple model', async () => {
 			return this.__v
 		}
 
-		constructor(doc?: NewDoc<Simple>) {
+		constructor(doc?: Plain.Partial<UserOther>) {
 			super()
 		}
 	}
 
-	const simpleSchema = schemaFrom(Simple)
-	expect(simpleSchema.obj).toStrictEqual({ firstname: { type: String, required: true }, lastname: String })
+	const userOtherSchema = schemaFrom(UserOther)
+	expect(userOtherSchema.obj).toStrictEqual({ firstname: { type: String, required: true }, lastname: String })
 
-	expect(Simple.col()).toBe('simples')
+	expect(UserOther.col()).toBe('people')
 
-	const simple = await new Simple({ firstname: 'Jeremy' }).save()
+	const simple = await new UserOther({ firstname: 'Jeremy' }).save()
 	expect(simple.version()).toBe(simple.__v)
+
+	await db.close()
 })
 
 test('model discriminator', async () => {
@@ -54,7 +63,7 @@ test('model discriminator', async () => {
 			return this.firstname + ' ' + this.lastname
 		}
 
-		constructor(doc?: NewDoc<User>) {
+		constructor(doc?: Plain.Without<User, 'fullname' | '_id'>) {
 			super()
 		}
 	}
@@ -67,7 +76,7 @@ test('model discriminator', async () => {
 		@Kind('developer')
 		kind: 'developer'
 
-		constructor(doc?: NewDoc<Developer>) {
+		constructor(doc?: Plain.Without<Developer, 'fullname' | 'kind' | '_id'>) {
 			super()
 		}
 	}
@@ -84,7 +93,7 @@ test('model discriminator', async () => {
 			return 'Dr ' + this.firstname + ' ' + this.lastname
 		}
 
-		constructor(doc?: NewDoc<Doctor>) {
+		constructor(doc?: Plain.Without<Doctor, 'fullname' | 'kind' | '_id'>) {
 			super()
 		}
 	}

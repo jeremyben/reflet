@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import { SchemaOptions, Field, Kind, Model, NewDoc } from '../src'
+import { SchemaOptions, Field, Kind, Model, Plain } from '../src'
 
 /**
  * https://mongoosejs.com/docs/discriminators.html#single-nested-discriminators
@@ -24,13 +24,14 @@ test('single nested discriminators', async () => {
 		@Field.Union(Circle, Square)
 		shape: Circle | Square
 
-		constructor(doc?: NewDoc<Shape>) {
+		constructor(doc?: Plain.Partial<Shape>) {
 			super()
 		}
 	}
 
 	const circle = new Shape({ shape: { __t: 'Circle', radius: 5 } })
-	expect(circle.toObject()).toStrictEqual({
+	const circleObject = circle.toObject() as Plain<Shape>
+	expect(circleObject).toStrictEqual({
 		_id: expect.any(mongoose.Types.ObjectId),
 		shape: {
 			_id: expect.any(mongoose.Types.ObjectId),
@@ -40,7 +41,8 @@ test('single nested discriminators', async () => {
 	})
 
 	const wrongSquare = new Shape({ shape: { side: 5 } as any })
-	expect(wrongSquare.toObject()).toStrictEqual({
+	const wrongSquareObject = wrongSquare.toObject() as Plain<Shape>
+	expect(wrongSquareObject).toStrictEqual({
 		_id: expect.any(mongoose.Types.ObjectId),
 		shape: {},
 	})
@@ -77,7 +79,7 @@ test('embedded discriminators in arrays', async () => {
 		@Field.ArrayOfUnion(Clicked, Purchased)
 		events: (Clicked | Purchased)[]
 
-		constructor(doc?: NewDoc<Batch>) {
+		constructor(doc?: Plain.Partial<Batch>) {
 			super()
 		}
 	}

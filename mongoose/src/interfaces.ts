@@ -89,25 +89,63 @@ export namespace Decorator {
 }
 
 /**
- * Helps with constructor typing of `@Model` decorated classes.
+ * Omits Mongoose properties and all methods.
+ *
+ * Helps with the return type of `toObject()` and `toJson()`.
  *
  * @example
  * ```ts
- * ＠Model()
- * class User extends Model.Interface {
- *   ＠Field({ type: String, required: true })
- *   name: string
- *
- *   constructor(doc?: NewDoc<User>) {
- *     super()
- *   }
- * }
- *
- * const user = await new User({ name: 'Jeremy' }).save()
+ * const userObject = userDocument.toObject() as Plain<User>
  * ```
  * @public
  */
-export type NewDoc<T extends mongoose.Document> = Omit<Partial<T>, keyof mongoose.Document | MethodKeys<T>>
+export type Plain<T> = Omit<T, keyof mongoose.Document | MethodKeys<T>> &
+	(T extends mongoose.Document ? { _id: any } : {})
+
+export namespace Plain {
+	/**
+	 * Omits Mongoose properties, all methods, and custom keys.
+	 *
+	 * Helps with the constructor parameter type of `@Model` decorated classes.
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Model()
+	 * class User extends Model.Interface {
+	 *   ＠Field({ type: String })
+	 *   name: string
+	 *
+	 *   get greet() {
+	 *     return 'hello ' + this.name
+	 *   }
+	 *
+	 *   constructor(doc: Plain.Without<User, '_id' | 'greet'>) {
+	 *     super()
+	 *   }
+	 * }
+	 *
+	 * const user = await new User({ name: 'Jeremy' }).save()
+	 * ```
+	 * @public
+	 */
+	export type Without<T, U extends keyof T> = Omit<T, keyof mongoose.Document | MethodKeys<T> | U> &
+		(T extends mongoose.Document ? Omit<{ _id: any }, U> : {})
+
+	/**
+	 * Omits Mongoose properties and all methods, and makes remaining properties optional.
+	 *
+	 * Helps with the constructor parameter type of `@Model` decorated classes.
+	 *
+	 * @public
+	 */
+	export type Partial<T> = Omit<{ [P in keyof T]?: T[P] }, keyof mongoose.Document | MethodKeys<T>> &
+		(T extends mongoose.Document ? { _id?: any } : {})
+}
+
+/**
+ * @public
+ */
+type MethodKeys<T> = { [P in keyof T]: T[P] extends Function ? P : never }[keyof T]
 
 /**
  * @public
@@ -119,20 +157,11 @@ export type ConstructorType<T = any> = Function & { prototype: T }
  */
 export type ConstructorInstance<T extends ConstructorType> = T extends Function & { prototype: infer R } ? R : never
 
-/**
- * @public
- */
-type MethodKeys<T> = { [P in keyof T]: T[P] extends Function ? P : never }[keyof T]
-
 declare module 'mongoose' {
-	export interface Schema {
-		_userProvidedOptions: SchemaOptions
-	}
-
-	export interface MongooseDocument {
-		populate<T extends this & Document>(path: keyof NewDoc<T>, callback?: (err: any, res: this) => void): this
+	interface MongooseDocument {
+		populate<T extends this & Document>(path: keyof Plain<T>, callback?: (err: any, res: this) => void): this
 		populate<T extends this & Document>(
-			path: keyof NewDoc<T>,
+			path: keyof Plain<T>,
 			names: string,
 			callback?: (err: any, res: this) => void
 		): this

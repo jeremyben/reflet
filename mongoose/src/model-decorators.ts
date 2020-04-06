@@ -37,6 +37,7 @@ export function Model<T extends mongoose.Model<mongoose.Document>>(
 	}
 }
 
+/* istanbul ignore next https://github.com/istanbuljs/nyc/issues/1209 */
 export namespace Model {
 	/**
 	 * Transforms the decorated class into a mongoose Model, whose schema is the intersection of the parent schema and the discriminator schema.
@@ -73,8 +74,8 @@ export namespace Model {
 	): Decorator.ModelDiscriminator<T> {
 		return (Class) => {
 			const [kindKey, kindValue] = getKind(Class)
-			const rootProvidedD11rKey = rootModel.schema._userProvidedOptions.discriminatorKey
-			const alreadyProvidedKindKey = rootModel[(MetaKind as any) as keyof mongoose.Model<any>]
+			const rootProvidedD11rKey = (rootModel.schema as SchemaFix)._userProvidedOptions.discriminatorKey
+			const alreadyProvidedKindKey = rootModel[(MetaKind as unknown) as keyof mongoose.Model<any>]
 			// const otherD11rs = rootModel.discriminators as { [key: string]: mongoose.Model<any> } | undefined
 
 			// Check that sibling discriminators have the same @Kind key.
@@ -96,12 +97,14 @@ export namespace Model {
 
 			// Finally assign the key on the root model and keep reference of @Kind key, only once for all discriminators.
 			if (kindKey && !alreadyProvidedKindKey) {
-				rootModel[(MetaKind as any) as keyof mongoose.Model<any>] = kindKey
+				rootModel[(MetaKind as unknown) as keyof mongoose.Model<any>] = kindKey
 				rootModel.schema.set('discriminatorKey', kindKey)
 			}
 
 			const schema = createSchema(Class)
 			return rootModel.discriminator(Class.name, schema, kindValue)
+
+			type SchemaFix = mongoose.Schema & { _userProvidedOptions: mongoose.SchemaOptions }
 		}
 	}
 

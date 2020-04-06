@@ -10,4 +10,4 @@ export { Model } from './model-decorators'
 
 export { schemaFrom } from './schema-creation'
 
-export { NewDoc } from './interfaces'
+export { Plain } from './interfaces'
