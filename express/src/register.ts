@@ -42,6 +42,10 @@ export function register(app: Application, controllers: ClassType[]): Applicatio
 		const sharedMwares = extractMiddlewares(controller)
 		const sharedErrHandlers = extractErrorHandlers(controller)
 
+		if (!routes.length) {
+			console.warn(`${controller.name} doesn't have any route to register.`)
+		}
+
 		// Apply shared middlewares to the router instance
 		// or to each of the routes if the class is attached on the base app.
 
