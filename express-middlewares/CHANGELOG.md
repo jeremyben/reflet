@@ -3,6 +3,21 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.1.0](https://github.com/jeremyben/reflet/tree/master/express-middlewares/compare/@reflet/express-middlewares@1.0.0...@reflet/express-middlewares@1.1.0) (2020-04-07)
+
+
+### Bug Fixes
+
+* **express:** brand decorators ([c87b66d](https://github.com/jeremyben/reflet/tree/master/express-middlewares/commit/c87b66d))
+* **express:** typings ([48744fd](https://github.com/jeremyben/reflet/tree/master/express-middlewares/commit/48744fd))
+* use distinct decorator types ([ee55013](https://github.com/jeremyben/reflet/tree/master/express-middlewares/commit/ee55013))
+* **express:** add node typings as peer dependency ([6284948](https://github.com/jeremyben/reflet/tree/master/express-middlewares/commit/6284948))
+* **express-middlewares:** internal types for buffer encoding in useonfinish ([47fdf6e](https://github.com/jeremyben/reflet/tree/master/express-middlewares/commit/47fdf6e))
+
+
+
+
+
 # 1.0.0 (2019-10-03)
 
 

@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.1.0](https://github.com/jeremyben/reflet/tree/master/express/compare/@reflet/express@1.0.0...@reflet/express@1.1.0) (2020-04-07)
+
+
+### Bug Fixes
+
+* **express:** add node typings as peer dependency ([6284948](https://github.com/jeremyben/reflet/tree/master/express/commit/6284948))
+* **express:** brand decorators ([c87b66d](https://github.com/jeremyben/reflet/tree/master/express/commit/c87b66d))
+* **express:** instantiate controller to let access eventual properties ([a6f9b41](https://github.com/jeremyben/reflet/tree/master/express/commit/a6f9b41))
+* **express:** rebrand decorators ([253d65a](https://github.com/jeremyben/reflet/tree/master/express/commit/253d65a))
+* **express:** typings ([48744fd](https://github.com/jeremyben/reflet/tree/master/express/commit/48744fd))
+* use distinct decorator types ([ee55013](https://github.com/jeremyben/reflet/tree/master/express/commit/ee55013))
+
+
+### Features
+
+* **express:** warn for controllers without route ([345b3e6](https://github.com/jeremyben/reflet/tree/master/express/commit/345b3e6))
+
+
+
+
+
 # 1.0.0 (2019-10-03)
 
 
