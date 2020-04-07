@@ -6,7 +6,7 @@ Reflet is a suite of modules made of well-typed [decorators](https://www.typescr
 
 ## [Reflet/express](./express)
 
-Organize your [Express](https://expressjs.com/) application. Have a little taste before **[heading to the doc](./express/README.MD)**:
+Organize your [Express](https://expressjs.com/) application. Have a little taste before heading **[to the doc](./express/README.MD)**.
 
 ```ts
 @Use(isAuthenticated)
@@ -28,6 +28,29 @@ class ThingController {
 ```
 
 _Add-on: [Reflet/express-middlewares](./express-middlewares)_
+
+## [Reflet/mongoose](./mongoose)
+
+Declare your [Mongoose](https://mongoosejs.com/) models in a more concise way. The **[doc is here](./mongoose/README.MD)**.
+
+```ts
+@Model()
+@SchemaOptions({ autoIndex: false })
+class User extends Model.I {
+  static findByEmail(email) {
+    return this.findOne({ email });
+  }
+
+  @Field({ type: String, required: true })
+  email: string
+
+  @Field(String)
+  name: string
+}
+
+const user = new User({ email: 'jeremy@example.com', name: 'Jeremy' })
+await user.save()
+```
 
 ## Philosophy 📣
 
@@ -75,9 +98,17 @@ _e.g. [Reflet/express-middlewares](./express-middlewares) provides middleware de
 
 NPM ecosystem got a bad rep by encouraging intricate third-party dependencies for the sake of DRY principle. <br>Time has come for a smarter dependency diet. 🍳
 
+![no dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
+
 Reflet modules fully **own** their codebase. No direct third-party dependencies, only peer ones.
 
 _e.g. [Reflet/express](./express) only asks for the necessary **peer** dependencies: `express`, `@types/express`, `reflect-metadata`._
+
+### Integration-tested
+
+Reflet uses extensive integration testing, to make sure its decorators work with the underlying library.
+
+_e.g. [Reflet/express](./express) is tested with HTTP requests, [Reflet/mongoose](./mongoose) is tested with mongoose queries and an in-memory mongo._
 
 ### Readable `source code`
 
