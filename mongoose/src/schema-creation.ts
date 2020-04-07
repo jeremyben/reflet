@@ -70,7 +70,7 @@ export function createSchema<T extends ConstructorType>(Class: T) {
 		schemaCallback(schema)
 	}
 
-	// console.log(target.name, schema)
+	// console.log(Class.name, schema)
 
 	return schema
 }

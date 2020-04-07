@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 import { createSchema } from './schema-creation'
-import { getKind, MetaKind } from './kind-decorator'
+import { getKind, assignKindKey } from './kind-decorator'
 import { Decorator } from './interfaces'
 
 /**
@@ -73,37 +73,15 @@ export namespace Model {
 	): Decorator.ModelDiscriminator<T> {
 		return (Class) => {
 			const [kindKey, kindValue] = getKind(Class)
-			const rootProvidedD11rKey = (rootModel.schema as SchemaFix)._userProvidedOptions.discriminatorKey
-			const alreadyProvidedKindKey = rootModel[(MetaKind as unknown) as keyof mongoose.Model<any>]
-			// const otherD11rs = rootModel.discriminators as { [key: string]: mongoose.Model<any> } | undefined
+			assignKindKey({ kindKey, rootModel, discriminatorModel: Class })
 
-			// Check that sibling discriminators have the same @Kind key.
-			if (
-				(alreadyProvidedKindKey && !kindKey) ||
-				(alreadyProvidedKindKey && kindKey && alreadyProvidedKindKey !== kindKey)
-			) {
-				throw Error(
-					`Discriminator "${Class.name}" must have @Kind named "${alreadyProvidedKindKey}", like its sibling discriminator(s).`
-				)
-			}
-
-			// Then check overwriting of the discriminatorKey provided by the user on the root model.
-			if (rootProvidedD11rKey && kindKey && rootProvidedD11rKey !== kindKey) {
-				throw Error(
-					`Discriminator "${Class.name}" Cannot overwrite discriminatorKey "${rootProvidedD11rKey}" of root model "${rootModel.modelName}" with @Kind named "${kindKey}".`
-				)
-			}
-
-			// Finally assign the key on the root model and keep reference of @Kind key, only once for all discriminators.
-			if (kindKey && !alreadyProvidedKindKey) {
-				rootModel[(MetaKind as unknown) as keyof mongoose.Model<any>] = kindKey
-				rootModel.schema.set('discriminatorKey', kindKey)
-			}
+			// If the discriminator class extends the root class, e.g. `class Child extends Root`,
+			// we don't worry about Child inheriting Reflet metadata from Root,
+			// because Root has already been transformed into a Mongoose Model
+			// which does not have any Reflet metadata.
 
 			const schema = createSchema(Class)
 			return rootModel.discriminator(Class.name, schema, kindValue)
-
-			type SchemaFix = mongoose.Schema & { _userProvidedOptions: mongoose.SchemaOptions }
 		}
 	}
 
