@@ -1,5 +1,10 @@
 # `@reflet/mongoose` 🌠
 
+[![lines coverage](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/jeremyben/reflet/master/mongoose/coverage-summary.json&label=lines&query=total.lines.pct&color=brightgreen&suffix=%&logo=jest)](./coverage-summary.json)
+[![statements coverage](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/jeremyben/reflet/master/mongoose/coverage-summary.json&label=statements&query=total.statements.pct&color=brightgreen&suffix=%&logo=jest)](./coverage-summary.json)
+[![functions coverage](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/jeremyben/reflet/master/mongoose/coverage-summary.json&label=functions&query=total.functions.pct&color=brightgreen&suffix=%&logo=jest)](./coverage-summary.json)
+[![branches coverage](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/jeremyben/reflet/master/mongoose/coverage-summary.json&label=branches&query=total.branches.pct&color=brightgreen&suffix=%&logo=jest)](./coverage-summary.json)
+
 The **best** decorators for [Mongoose](https://mongoosejs.com/). Have a look at [Reflet's philosophy](../README.MD#Philosophy-).
 
 * [Getting started](#getting-started)
@@ -274,6 +279,8 @@ class City extends Model.Interface {
 const citySchema = schemaFrom(City)
 ```
 
+🗣️ As a good practice, you should make your schema-only classes `abstract`, so that only use `schemaFrom` and don't instantiate them by mistake.
+
 ## Hooks
 
 ### Pre middleware
@@ -399,6 +406,8 @@ A mecanism will check and prevent you from defining a different `@Kind` key on s
 > 🔦 `@Field.Union(...classes)`<br>
 > 💫 Related Mongoose method: [`SingleNestedPath.discriminator`](https://mongoosejs.com/docs/discriminators#single-nested-discriminators)
 
+`@Field.Union` allows you to embed discriminators on an single property.
+
 ```ts
 abstract class Circle {
   @Field(Number)
@@ -430,6 +439,8 @@ const square = new Shape({ shape: { __t: 'Square', side: 4 } })
 
 > 🔦 `@Field.ArrayOfUnion(...classes)`<br>
 > 💫 Related Mongoose method: [`DocumentArrayPath.discriminator`](https://mongoosejs.com/docs/discriminators#embedded-discriminators-in-arrays)
+
+`@Field.ArrayOfUnion` allows you to embed discriminators in an array.
 
 ```ts
 @SchemaOptions({ _id: false })
