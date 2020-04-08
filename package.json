@@ -19,6 +19,7 @@
 		"bootstrap": "yarn install --force",
 		"test": "lerna run test --stream",
 		"build": "lerna run build --stream",
+		"create-package": "ts-node -T ./create-package.ts",
 		"release:version": "lerna version",
 		"release:publish": "lerna publish from-package"
 	},
