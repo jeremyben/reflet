@@ -145,7 +145,7 @@ _`@Field.Nested` works the same as `@Field` at runtime. Its type is simply loose
 > 🔦 `@Model(collection?, connection?)`<br>
 > 💫 Related Mongoose method: [`model`](https://mongoosejs.com/docs/models#compiling)
 
-TypeScript [class decorators](https://www.typescriptlang.org/docs/handbook/decorators#class-decorators) can modify and even replace class constructors. Reflet take advantages of this, by transforming a decorated class directly into a Mongoose Model.
+TypeScript [class decorators](https://www.typescriptlang.org/docs/handbook/decorators#class-decorators) can modify and even replace class constructors. Reflet takes advantage of this feature and transforms a class directly into a Mongoose Model.
 
 This means you don't have to deal with the procedural and separate creation of both schema and model anymore !
 And now your properties and methods are statically typed.
@@ -160,7 +160,7 @@ class User extends Model.Interface {
 const user = await User.create({ email: 'jeremy@example.com '})
 ```
 
-To have Mongoose document properties and methods, your class needs to inherit a special empty class: `Model.Interface` or `Model.I`. _it's the only way to inherit (not implement) an interface in TypeScript._
+To have Mongoose document properties and methods, your class needs to inherit a special empty class: `Model.Interface`. _it's the only way to inherit (not implement) an interface in TypeScript._
 
 ⚠️ `@Model` should always be at the top of your class decorators. _Why? Because decorators are executed bottom to top, so if `@Model` directly compiles your class into a Mongooose Model, other class decorators won't be properly applied._
 
@@ -279,7 +279,7 @@ class City extends Model.Interface {
 const citySchema = schemaFrom(City)
 ```
 
-🗣️ As a good practice, you should make your schema-only classes `abstract`, so that only use `schemaFrom` and don't instantiate them by mistake.
+🗣️ As a good practice, you should make your schema-only classes `abstract`, so you don't instantiate them by mistake.
 
 ## Hooks
 
@@ -345,7 +345,7 @@ class User extends Model.Interface {
 
 ```ts
 @Model()
-class User extends Model.I {
+class User extends Model.Interface {
   @Field(String)
   name: string
 }
@@ -377,7 +377,7 @@ Mongoose `discriminatorKey` is usually defined in the parent model options, and 
 
 ```ts
 @Model()
-class User extends Model.I {
+class User extends Model.Interface {
   @Field(String)
   name: string
 }
@@ -426,7 +426,7 @@ abstract class Square {
 }
 
 @Model()
-class Shape extends Model.I {
+class Shape extends Model.Interface {
   @Field.Union(Circle, Square)
   shape: Circle | Square
 }
@@ -468,7 +468,7 @@ abstract class Purchased {
 }
 
 @Model()
-class Batch extends Model.I {
+class Batch extends Model.Interface {
   @Field.ArrayOfUnion(Clicked, Purchased)
   events: (Clicked | Purchased)[]
 }
@@ -493,7 +493,7 @@ Some Mongoose methods return plain JS objects instead of Mongoose Documents, whi
 
 ```ts
 @Model()
-class User extends Model.I {
+class User extends Model.Interface {
   @Field(String)
   name: string
 
@@ -529,7 +529,7 @@ Now you have access to `autopopulate` option in your schemas:
 
 ```ts
 @Model()
-class User extends Model.I {
+class User extends Model.Interface {
   @Field({
     type: mongoose.Schema.Types.ObjectId,
     ref: Company,
@@ -553,7 +553,7 @@ By augmenting the global interface `Ref`, you can:
 ```ts
 // company.model.ts
 @Model()
-class Company extends Model.I {
+class Company extends Model.Interface {
   @Field(String)
   name: string
 }
@@ -571,7 +571,7 @@ declare global {
 ```ts
 // user.model.ts
 @Model()
-class User extends Model.I {
+class User extends Model.Interface {
   @Field({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Company',
