@@ -14,7 +14,7 @@ const MetaKind = Symbol('kind')
  * @example
  * ```ts
  * ＠Model()
- * class User extends Model.I {
+ * class User extends Model.Interface {
  *   ＠Field({ type: String })
  *   name: string
  * }

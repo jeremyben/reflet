@@ -117,8 +117,19 @@ export namespace Decorator {
  * ```
  * @public
  */
-export type Plain<T> = Omit<T, keyof mongoose.Document | MethodKeys<T>> &
-	(T extends mongoose.Document ? { _id: any } : {})
+export type Plain<T> = Pick<
+	T,
+	Exclude<
+		{
+			[K in keyof T]: K extends Exclude<keyof mongoose.Document, '_id'>
+				? never
+				: T[K] extends Function
+				? never
+				: K
+		}[keyof T],
+		undefined
+	>
+>
 
 export namespace Plain {
 	/**
@@ -146,9 +157,7 @@ export namespace Plain {
 	 * ```
 	 * @public
 	 */
-	export type Without<T, U extends keyof T> = Omit<T, keyof mongoose.Document | MethodKeys<T> | U> &
-		(T extends mongoose.Document ? Omit<{ _id: any }, U> : {})
-
+	export type Without<T, U extends keyof T> = Omit<Plain<T>, U>
 	/**
 	 * Omits Mongoose properties and all methods, and makes remaining properties optional.
 	 *
@@ -156,8 +165,7 @@ export namespace Plain {
 	 *
 	 * @public
 	 */
-	export type Partial<T> = Omit<{ [P in keyof T]?: T[P] }, keyof mongoose.Document | MethodKeys<T>> &
-		(T extends mongoose.Document ? { _id?: any } : {})
+	export type Partial<T> = Partial_<Plain<T>>
 }
 
 /**
@@ -174,6 +182,11 @@ export type ConstructorType<T = any> = Function & { prototype: T }
  * @public
  */
 export type ConstructorInstance<T extends ConstructorType> = T extends Function & { prototype: infer R } ? R : never
+
+/**
+ * @public
+ */
+type Partial_<T> = Partial<T>
 
 // tslint:disable: no-empty-interface
 declare global {
