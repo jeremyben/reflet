@@ -1,7 +1,7 @@
 {
 	"version": "independent",
 	"npmClient": "yarn",
-	"useWorkspaces": true,
+	"packages": ["express", "express-middlewares", "mongoose"],
 	"command": {
 		"version": {
 			"allowBranch": "master",
