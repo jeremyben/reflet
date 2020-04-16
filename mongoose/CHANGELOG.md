@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.0.1](https://github.com/jeremyben/reflet/tree/master/mongoose/compare/@reflet/mongoose@1.0.0...@reflet/mongoose@1.0.1) (2020-04-16)
+
+
+### Bug Fixes
+
+* **mongoose:** fix inference on model static methods ([1f16382](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/1f16382))
+* improve Plain types ([77e1675](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/77e1675))
+
+
+
+
+
 # 1.0.0 (2020-04-07)
 
 
