@@ -65,7 +65,7 @@ test('init, validate, save, findOne, remove', async () => {
 	await UserHookIVSFR.remove({ name: 'jeremy' })
 
 	try {
-		await UserHookIVSFR.create({ name: ['jeremy'] }) // will error out
+		await UserHookIVSFR.create({ name: ['jeremy'] as any }) // will error out
 	} catch (error) {} // tslint:disable-line: no-empty
 
 	expect(consoleSpy).toBeCalledWith('pre-init', expect.objectContaining({ name: 'jeremy' }))
@@ -165,11 +165,11 @@ test('insertMany, find, update, updateMany, count, deleteMany', async () => {
 	await UserHookIFUUCD.deleteMany({ name: 'marc' })
 
 	try {
-		await UserHookIFUUCD.find({ name: { $or: ['marc'] } }) // will error out
+		await UserHookIFUUCD.find({ name: { $or: ['marc'] } as any }) // will error out
 	} catch (error) {} // tslint:disable-line: no-empty
 
 	try {
-		await UserHookIFUUCD.deleteMany({ name: { $or: ['marc'] } }) // will error out
+		await UserHookIFUUCD.deleteMany({ name: { $or: ['marc'] } as any }) // will error out
 	} catch (error) {} // tslint:disable-line: no-empty
 
 	expect(consoleSpy).toBeCalledWith('pre-insertMany', UserHookIFUUCD.modelName)

@@ -30,7 +30,7 @@ test('single nested discriminators', async () => {
 	}
 
 	const circle = new Shape({ shape: { __t: 'Circle', radius: 5 } })
-	const circleObject = circle.toObject() as Plain<Shape>
+	const circleObject = circle.toObject()
 	expect(circleObject).toStrictEqual({
 		_id: expect.any(mongoose.Types.ObjectId),
 		shape: {

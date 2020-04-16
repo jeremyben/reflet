@@ -1,7 +1,8 @@
 import mongoose from 'mongoose'
 import { createSchema } from './schema-creation'
 import { getKind, assignKindKey } from './kind-decorator'
-import { Decorator } from './interfaces'
+import { IModel } from './i-model'
+import { Decorator, ModelAny } from './interfaces'
 
 /**
  * Transforms the decorated class into a mongoose Model.
@@ -25,10 +26,7 @@ import { Decorator } from './interfaces'
  * ---
  * @public
  */
-export function Model<T extends mongoose.Model<mongoose.Document>>(
-	collection?: string,
-	connection?: mongoose.Connection
-): Decorator.Model<T> {
+export function Model<T extends ModelAny>(collection?: string, connection?: mongoose.Connection): Decorator.Model<T> {
 	return (Class) => {
 		const schema = createSchema(Class)
 
@@ -68,9 +66,7 @@ export namespace Model {
 	 * ---
 	 * @public
 	 */
-	export function Discriminator<T extends mongoose.Model<mongoose.Document>>(
-		rootModel: T
-	): Decorator.ModelDiscriminator<T> {
+	export function Discriminator<T extends ModelAny>(rootModel: T): Decorator.ModelDiscriminator<T> {
 		return (Class) => {
 			const [kindKey, kindValue] = getKind(Class)
 			assignKindKey({ kindKey, rootModel, discriminatorModel: Class })
@@ -86,15 +82,18 @@ export namespace Model {
 	}
 
 	/**
-	 * Dummy class to extend from, in order to get all the types from mongoose Model and Document.
-	 */
-	export const Interface = class {} as mongoose.Model<mongoose.Document>
-	export type Interface = typeof Model.Interface
-
-	/**
-	 * Dummy class to extend from, in order to get all the types from mongoose Model and Document.
+	 * Dummy class to extend from, to get all the (narrowed) types from mongoose Model and Document.
+	 * @abstract
 	 * @public
 	 */
-	export const I = Interface
-	export type I = typeof Model.I
+	export const Interface = IModel
+	export type Interface = IModel
+
+	/**
+	 * Dummy class to extend from, to get all the (narrowed) types from mongoose Model and Document.
+	 * @abstract
+	 * @public
+	 */
+	export const I = IModel
+	export type I = IModel
 }

@@ -11,7 +11,7 @@ export namespace Decorator {
 	 * Equivalent to `ClassDecorator`.
 	 * @public
 	 */
-	export type Model<T extends mongoose.Model<mongoose.Document>> = ((target: T) => any) & {
+	export type Model<T extends ConstructorType> = ((target: T) => any) & {
 		__mongooseModel?: never
 	}
 
@@ -20,7 +20,7 @@ export namespace Decorator {
 	 * Equivalent to `ClassDecorator`.
 	 * @public
 	 */
-	export type ModelDiscriminator<T extends mongoose.Model<mongoose.Document>> = ((target: T) => any) & {
+	export type ModelDiscriminator<T extends ConstructorType> = ((target: T) => any) & {
 		__mongooseModelDiscriminator?: never
 	}
 
@@ -169,9 +169,12 @@ export namespace Plain {
 }
 
 /**
+ * Interface with the right keys but with `any` types, so we can enforce decorated classes to a minimal interface,
+ * and we can overwrite the methods' signatures without worrying about an update of `@types/mongoose` breaking our types.
  * @public
  */
-type MethodKeys<T> = { [P in keyof T]: T[P] extends Function ? P : never }[keyof T]
+export type ModelAny = { [K in keyof mongoose.Model<mongoose.Document>]: any } &
+	(new (...args: any[]) => { [K in keyof mongoose.Document]: any })
 
 /**
  * @public
@@ -211,13 +214,25 @@ declare global {
 
 declare module 'mongoose' {
 	interface MongooseDocument {
-		populate<T extends this & Document>(path: keyof Plain<T>, callback?: (err: any, res: this) => void): this
-		populate<T extends this & Document>(
+		populate<T extends Document>(path: keyof Plain<T>, callback?: (err: any, res: this) => void): this
+		populate<T extends Document>(
 			path: keyof Plain<T>,
 			names: string,
 			callback?: (err: any, res: this) => void
 		): this
 
-		deleteOne(): Promise<this & Document>
+		deleteOne(): Promise<this>
+
+		updateOne(doc: Plain.Partial<this>, callback?: (err: any, raw: any) => void): Query<this>
+
+		updateOne(
+			doc: Plain.Partial<this>,
+			options: ModelUpdateOptions,
+			callback?: (err: any, raw: any) => void
+		): Query<this>
+
+		toObject(options?: DocumentToObjectOptions): Plain<this>
+
+		toJSON(options?: DocumentToObjectOptions): Plain<this>
 	}
 }
