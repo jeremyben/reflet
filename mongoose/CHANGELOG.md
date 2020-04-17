@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.0.2](https://github.com/jeremyben/reflet/tree/master/mongoose/compare/@reflet/mongoose@1.0.1...@reflet/mongoose@1.0.2) (2020-04-17)
+
+
+### Bug Fixes
+
+* **mongoose:** narrow type of model constructor parameter ([5a83a3b](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/5a83a3b))
+
+
+
+
+
 ## [1.0.1](https://github.com/jeremyben/reflet/tree/master/mongoose/compare/@reflet/mongoose@1.0.0...@reflet/mongoose@1.0.1) (2020-04-16)
 
 
