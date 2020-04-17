@@ -160,7 +160,19 @@ class User extends Model.Interface {
 const user = await User.create({ email: 'jeremy@example.com '})
 ```
 
-To have Mongoose document properties and methods, your class needs to inherit a special empty class: `Model.Interface`. _it's the only way to inherit (not implement) an interface in TypeScript._
+To have Mongoose document properties and methods, your class needs to inherit a special empty class: **`Model.Interface`** or **`Model.I`**. _it's the only way to inherit (not implement) an interface in TypeScript._
+
+To infer the constructor parameter of your model without overwriting it, use your class as the type argument of `Model.Interface` :
+
+```ts
+@Model()
+class User extends Model.I<User> {
+  @Field({ type: String, required: true })
+  email: string
+}
+
+const user = new User({ email: 'jeremy@example.com' })
+```
 
 ⚠️ `@Model` should always be at the top of your class decorators. _Why? Because decorators are executed bottom to top, so if `@Model` directly compiles your class into a Mongooose Model, other class decorators won't be properly applied._
 
@@ -426,7 +438,7 @@ abstract class Square {
 }
 
 @Model()
-class Shape extends Model.Interface {
+class Shape extends Model.I<Shape> {
   @Field.Union(Circle, Square)
   shape: Circle | Square
 }
@@ -493,10 +505,11 @@ Some Mongoose methods return plain JS objects instead of Mongoose Documents, whi
 
 ```ts
 @Model()
-class User extends Model.Interface {
+class User extends Model.I {
   @Field(String)
   name: string
 
+  // You can define an even stricter interface on your constructor.
   constructor(user: Plain.Without<User, '_id'>) {
     super() // required by the compiler.
   }

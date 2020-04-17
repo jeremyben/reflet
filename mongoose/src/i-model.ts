@@ -8,7 +8,10 @@ const IBase = class {} as mongoose.Model<mongoose.Document>
  * Intermediary abstract class with overloaded static methods to properly infer the child class.
  * @public
  */
-export abstract class IModel extends IBase {
+export abstract class IModel<C extends IModel = any> extends IBase {
+	// @ts-ignore implementation
+	constructor(doc?: Plain.Partial<C>)
+
 	static findById<T extends mongoose.Document>(
 		this: new (...a: any[]) => T,
 		id: any | string | number,

@@ -9,7 +9,7 @@ test('model with custom collection and connection', async () => {
 	})
 
 	@Model('people', db)
-	class UserOther extends Model.Interface {
+	class UserOther extends Model.I<UserOther> {
 		static col() {
 			return this.collection.collectionName
 		}
@@ -32,10 +32,6 @@ test('model with custom collection and connection', async () => {
 
 		version() {
 			return this.__v
-		}
-
-		constructor(doc?: Plain.Partial<UserOther>) {
-			super()
 		}
 	}
 

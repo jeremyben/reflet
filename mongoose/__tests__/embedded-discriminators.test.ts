@@ -20,13 +20,9 @@ test('single nested discriminators', async () => {
 	}
 
 	@Model()
-	class Shape extends Model.I {
+	class Shape extends Model.I<Shape> {
 		@Field.Union(Circle, Square)
 		shape: Circle | Square
-
-		constructor(doc?: Plain.Partial<Shape>) {
-			super()
-		}
 	}
 
 	const circle = new Shape({ shape: { __t: 'Circle', radius: 5 } })
@@ -75,13 +71,9 @@ test('embedded discriminators in arrays', async () => {
 	}
 
 	@Model()
-	class Batch extends Model.I {
+	class Batch extends Model.I<Batch> {
 		@Field.ArrayOfUnion(Clicked, Purchased)
 		events: (Clicked | Purchased)[]
-
-		constructor(doc?: Plain.Partial<Batch>) {
-			super()
-		}
 	}
 
 	const events: Batch['events'] = [

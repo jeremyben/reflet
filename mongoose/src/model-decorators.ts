@@ -16,7 +16,7 @@ import { Decorator, ModelAny } from './interfaces'
  * @example
  * ```ts
  * ＠Model()
- * class User extends Model.Interface {
+ * class User extends Model.I<User> {
  *   ＠Field({ type: String, required: true })
  *   name: string
  * }
