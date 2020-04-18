@@ -2,8 +2,23 @@ import mongoose from 'mongoose'
 import { Field, SchemaOptions, schemaFrom, VersionKey, CreatedAt, UpdatedAt, SchemaCallback, Model } from '../src'
 
 test('simple schema', async () => {
+	@SchemaOptions({ _id: false })
+	abstract class SubSchema {
+		@Field({
+			type: [String],
+			enum: ['julia', 'arthur'],
+		})
+		names: string[]
+	}
+
 	@Model()
-	@SchemaOptions({ strict: 'throw' })
+	@SchemaOptions({
+		strict: 'throw',
+		minimize: false,
+		versionKey: false,
+		toJSON: { getters: true },
+		toObject: { getters: true },
+	})
 	@SchemaCallback<S>((schema) => schema.index({ name: 1, numbers: -1 }))
 	class S extends Model.I {
 		@Field({
@@ -11,11 +26,15 @@ test('simple schema', async () => {
 			lowercase: true,
 			required: true,
 			get: (v) => v.replace('y', 'ie'),
+			set: (v) => v.replace(/e/g, 'é'),
 		})
 		name: string
 
-		@Field([Number])
-		numbers: number[]
+		@Field({
+			type: [[Number]],
+			set: (a) => a.map((v) => v.map((n) => n * 2)),
+		})
+		numbers: number[][]
 
 		@Field({
 			type: mongoose.Schema.Types.ObjectId,
@@ -36,15 +55,19 @@ test('simple schema', async () => {
 			a: { b: { c: string } }[]
 		}
 
+		@Field(schemaFrom(SubSchema))
+		sub: SubSchema
+
 		hello() {
 			return 'hello'
 		}
 	}
 
-	// await S.create({ name: 's' })
-	const SSchema = schemaFrom(S)
+	const s = await S.create({ name: 'Jeremy', numbers: [[1, 2, 3]], sub: { names: ['julia', 'arthur'] } })
+	// console.log(s)
 
-	// console.log(SSchema)
+	expect(s.name).toBe('jérémie')
+	expect(s.nested).toHaveProperty('lat', undefined)
 })
 
 describe('timestamps', () => {

@@ -10,8 +10,8 @@ const MetaFieldDiscriminatorsArray = Symbol('field-discriminators-array')
  * @see https://mongoosejs.com/docs/schematypes
  * @public
  */
-export function Field<T extends SchemaType>(
-	field: SchemaTypeOptions<T> | SchemaTypeOptions<T>[] | SchemaTypeOptions<T>[][]
+export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(
+	field: SchemaTypeOptions<T>
 ): Decorator.Field
 
 /**
@@ -20,10 +20,10 @@ export function Field<T extends SchemaType>(
  * @public
  */
 // tslint:disable-next-line: unified-signatures - more precise compiler errors
-export function Field<T extends SchemaType>(field: T | [T] | [[T]]): Decorator.Field
+export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(field: T): Decorator.Field
 
-export function Field<T extends SchemaType>(
-	field: SchemaTypeOptions<T> | SchemaTypeOptions<T>[] | SchemaTypeOptions<T>[][] | T | [T] | [[T]]
+export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(
+	field: T | SchemaTypeOptions<T>
 ): Decorator.Field {
 	return (target, key) => {
 		const fields = getFields(target.constructor)
@@ -41,7 +41,7 @@ export namespace Field {
 	 * @see https://mongoosejs.com/docs/schematypes
 	 * @public
 	 */
-	export function Nested(field: SchemaTypeNested | SchemaTypeNested[]): Decorator.FieldNested {
+	export function Nested<T extends SchemaTypeNested | SchemaTypeNested[]>(field: T): Decorator.FieldNested {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
 			fields[<string>key] = field
@@ -127,11 +127,12 @@ type SchemaType =
 /**
  * @public
  */
-interface SchemaTypeOptions<T extends SchemaType> extends Partial<RefletMongoose.SchemaTypeOptions> {
+interface SchemaTypeOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]>
+	extends Partial<RefletMongoose.SchemaTypeOptions> {
 	/**
 	 * [Guide reference](https://mongoosejs.com/docs/schematypes#type-key)
 	 */
-	type: T | [T] | [[T]]
+	type: T
 
 	/**
 	 * All Types : [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-required)
@@ -149,7 +150,7 @@ interface SchemaTypeOptions<T extends SchemaType> extends Partial<RefletMongoose
 	 * All Types: [Guide reference](https://mongoosejs.com/docs/validation#custom-validators)
 	 * | [Method reference](https://mongoosejs.com/docs/api#schematype_SchemaType-validate)
 	 */
-	validate?: ValidateFn | [ValidateFn, string] | ValidateObj | ValidateObj[]
+	validate?: ValidateFn<Infer<T>> | [ValidateFn<Infer<T>>, string] | ValidateObj<Infer<T>> | ValidateObj<Infer<T>>[]
 
 	/** All Types : [Method reference](https://mongoosejs.com/docs/api#schematype_SchemaType-get) */
 	get?: (value: Infer<T>) => Infer<T>
@@ -164,7 +165,7 @@ interface SchemaTypeOptions<T extends SchemaType> extends Partial<RefletMongoose
 	alias?: string
 
 	/** All Types : [Method reference](https://mongoosejs.com/docs/api#schematype_SchemaType-index) */
-	index?: boolean
+	index?: boolean | string | mongoose.SchemaTypeOpts.IndexOpts
 
 	/** All Types : [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-unique) */
 	unique?: boolean
@@ -212,7 +213,11 @@ interface SchemaTypeOptions<T extends SchemaType> extends Partial<RefletMongoose
 	 * - Number : [Option reference](https://mongoosejs.com/docs/api#schemanumberoptions_SchemaNumberOptions-enum)
 	 * - Array : [Option reference](https://mongoosejs.com/docs/api#schemaarrayoptions_SchemaArrayOptions-enum)
 	 */
-	enum?: T extends StringConstructor ? string[] : T extends NumberConstructor ? number[] : never
+	enum?: T extends StringConstructor | StringConstructor[]
+		? string[]
+		: T extends NumberConstructor | NumberConstructor[]
+		? number[]
+		: never
 
 	/**
 	 * ObjectId : [Guide reference](https://mongoosejs.com/docs/populate)
@@ -236,7 +241,7 @@ interface SchemaTypeOptions<T extends SchemaType> extends Partial<RefletMongoose
 /**
  * @public
  */
-type Infer<T extends SchemaType> = T extends NumberConstructor
+type Infer<T> = T extends NumberConstructor
 	? number
 	: T extends StringConstructor
 	? string
@@ -246,14 +251,18 @@ type Infer<T extends SchemaType> = T extends NumberConstructor
 	? Date
 	: T extends typeof mongoose.Schema.Types.ObjectId
 	? mongoose.Types.ObjectId
+	: T extends [infer U]
+	? Infer<U>[]
+	: T extends [[infer V]]
+	? Infer<V>[][]
 	: Object
 
 /**
  * @public
  */
-type ValidateFn = (value: unknown) => boolean | Promise<boolean>
+type ValidateFn<T> = (value: T) => boolean | Promise<boolean>
 
 /**
  * @public
  */
-type ValidateObj = { validator: ValidateFn; msg: string }
+type ValidateObj<T> = { validator: ValidateFn<T>; msg: string }
