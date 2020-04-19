@@ -160,9 +160,9 @@ class User extends Model.Interface {
 const user = await User.create({ email: 'jeremy@example.com '})
 ```
 
-To have Mongoose document properties and methods, your class needs to inherit a special empty class: **`Model.Interface`** or **`Model.I`**. _it's the only way to inherit (not implement) an interface in TypeScript._
+Your class needs to inherit a special empty class, **`Model.Interface`** or **`Model.I`**, to have Mongoose document properties and methods.
 
-To infer the constructor parameter of your model without overwriting it, use your class as the type argument of `Model.Interface` :
+By using your class as the type argument of `Model.Interface`, you can quickly type the constructor:
 
 ```ts
 @Model()
