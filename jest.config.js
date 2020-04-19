@@ -1,6 +1,6 @@
 const { join } = require('path')
 
-/** @type {Partial<import('@jest/types').Config.DefaultOptions & { rootDir: string, preset: string }>} */
+/** @type {import('@jest/types').Config.InitialOptionsWithRootDir} */
 const config = {
 	rootDir: process.cwd(),
 	preset: 'ts-jest',
