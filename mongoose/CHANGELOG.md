@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.0.3](https://github.com/jeremyben/reflet/tree/master/mongoose/compare/@reflet/mongoose@1.0.2...@reflet/mongoose@1.0.3) (2020-04-19)
+
+
+### Bug Fixes
+
+* **mongoose:** i-model typings in update methods ([1eb159a](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/1eb159a))
+* **mongoose:** proper array inference in Field decorator, fix validate option typings ([5651f0b](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/5651f0b))
+
+
+
+
+
 ## [1.0.2](https://github.com/jeremyben/reflet/tree/master/mongoose/compare/@reflet/mongoose@1.0.1...@reflet/mongoose@1.0.2) (2020-04-17)
 
 
