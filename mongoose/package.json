@@ -24,7 +24,7 @@
 	},
 	"engineStrict": true,
 	"peerDependencies": {
-		"@types/mongoose": "^5.7.6",
+		"@types/mongoose": "^5.7.12",
 		"@types/node": ">=8",
 		"mongoose": "^5",
 		"reflect-metadata": "^0.1.13"
