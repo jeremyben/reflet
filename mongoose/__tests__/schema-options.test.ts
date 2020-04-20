@@ -22,7 +22,7 @@ test('simple schema', async () => {
 	@SchemaCallback<S>((schema) => schema.index({ name: 1, numbers: -1 }))
 	class S extends Model.I {
 		@Field({
-			type: String,
+			type: mongoose.Schema.Types.String,
 			lowercase: true,
 			required: true,
 			get: (v) => v.replace('y', 'ie'),
@@ -32,6 +32,7 @@ test('simple schema', async () => {
 
 		@Field({
 			type: [[Number]],
+			enum: [2, 4, 6],
 			set: (a) => a.map((v) => v.map((n) => n * 2)),
 		})
 		numbers: number[][]

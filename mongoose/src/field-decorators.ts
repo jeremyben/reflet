@@ -104,11 +104,7 @@ export function getDiscriminatorArrayFields(target: object): { [key: string]: Co
  * @public
  */
 type SchemaTypeNested = {
-	[key: string]:
-		| SchemaTypeOptions<SchemaType>
-		| SchemaTypeOptions<SchemaType>[]
-		| SchemaTypeNested
-		| SchemaTypeNested[]
+	[key: string]: SchemaTypeOptions<SchemaType | [SchemaType] | [[SchemaType]]> | SchemaTypeNested | SchemaTypeNested[]
 }
 
 /**
@@ -120,134 +116,315 @@ type SchemaType =
 	| BooleanConstructor
 	| DateConstructor
 	| MapConstructor
-	| typeof mongoose.Schema.Types.ObjectId
-	| typeof mongoose.Schema.Types.Mixed
+	| typeof Buffer
+	| typeof mongoose.SchemaType
 	| mongoose.Schema
 
 /**
  * @public
  */
-interface SchemaTypeOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]>
-	extends Partial<RefletMongoose.SchemaTypeOptions> {
+type SchemaTypeOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]> = RefletMongoose.SchemaTypeOptions & {
 	/**
+	 * The type to cast this path to.
+	 *
 	 * [Guide reference](https://mongoosejs.com/docs/schematypes#type-key)
 	 */
 	type: T
 
 	/**
-	 * All Types : [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-required)
+	 * If `true`, attach a required validator to this path, which ensures this path path cannot be set to a nullish value.
+	 * If a function, Mongoose calls the function and only checks for nullish values if the function returns a truthy value.
+	 *
+	 * _All types_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-required)
 	 * | [Method reference](https://mongoosejs.com/docs/api#schematype_SchemaType-required)
 	 */
 	required?: boolean | string | [true, string] | (() => boolean) | [() => boolean, string]
 
-	/** All Types : [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-default) */
+	/**
+	 * The default value for this path.
+	 * If a function, Mongoose executes the function and uses the return value as the default.
+	 *
+	 * _All types_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-default)
+	 */
 	default?: Infer<T> | (() => Infer<T>)
 
-	/** All Types : [Method reference](https://mongoosejs.com/docs/api#schematype_SchemaType-select) */
+	/**
+	 * Whether to include or exclude this path by default when loading documents using find(), findOne(), etc.
+	 *
+	 * _All types_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-select)
+	 * | [Method reference](https://mongoosejs.com/docs/api#schematype_SchemaType-select)
+	 */
 	select?: boolean
 
 	/**
-	 * All Types: [Guide reference](https://mongoosejs.com/docs/validation#custom-validators)
+	 * Function or object describing how to validate this schematype.
+	 *
+	 * _All types_
+	 *
+	 * [Guide reference](https://mongoosejs.com/docs/validation#custom-validators)
 	 * | [Method reference](https://mongoosejs.com/docs/api#schematype_SchemaType-validate)
 	 */
 	validate?: ValidateFn<Infer<T>> | [ValidateFn<Infer<T>>, string] | ValidateObj<Infer<T>> | ValidateObj<Infer<T>>[]
 
-	/** All Types : [Method reference](https://mongoosejs.com/docs/api#schematype_SchemaType-get) */
+	/**
+	 * _All types_
+	 *
+	 * [Method reference](https://mongoosejs.com/docs/api#schematype_SchemaType-get)
+	 */
 	get?: (value: Infer<T>) => Infer<T>
 
-	/** All Types : [Method reference](https://mongoosejs.com/docs/api#schematype_SchemaType-set) */
+	/**
+	 * _All types_
+	 *
+	 * [Method reference](https://mongoosejs.com/docs/api#schematype_SchemaType-set)
+	 */
 	set?: (value: Infer<T>) => Infer<T>
 
-	/** All Types : [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-transform) */
+	/**
+	 * Define a transform function for this individual schema type. Only called when calling `toJSON()` or `toObject()`.
+	 *
+	 * _All types_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-transform)
+	 */
 	transform?: <U>(value: Infer<T>) => U
 
-	/** All Types : [Guide](https://mongoosejs.com/docs/guide#aliases) */
+	/**
+	 * Defines a virtual with the given name that gets/sets this path.
+	 *
+	 * _All types_
+	 *
+	 * [Guide](https://mongoosejs.com/docs/guide#aliases)
+	 */
 	alias?: string
 
-	/** All Types : [Method reference](https://mongoosejs.com/docs/api#schematype_SchemaType-index) */
+	/**
+	 * Build an index on this path when the model is compiled.
+	 *
+	 * _All types_
+	 *
+	 * [Method reference](https://mongoosejs.com/docs/api#schematype_SchemaType-index)
+	 */
 	index?: boolean | string | mongoose.SchemaTypeOpts.IndexOpts
 
-	/** All Types : [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-unique) */
+	/**
+	 * Build a unique index on this path when the model is compiled. The unique option is not a validator.
+	 *
+	 * _All types_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-unique)
+	 */
 	unique?: boolean
 
 	/**
-	 * All Types : [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-immutable)
+	 * Disallow changes to this path once the document is saved to the database for the first time.
+	 *
+	 * _All types_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-immutable)
 	 * | [Method reference](https://mongoosejs.com/docs/api#schematype_SchemaType-immutable)
 	 */
 	immutable?: boolean
 
-	/** All Types : [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-cast) */
+	/**
+	 * Allows overriding casting logic for this individual path.
+	 * If a `string`, the given string overwrites Mongoose's default cast error message.
+	 *
+	 *  _All types_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-cast)
+	 */
 	cast?: string
+} & (T extends StringConstructor | typeof mongoose.Schema.Types.String
+		? StringOptions
+		: T extends StringConstructor[] | StringConstructor[][]
+		? ArrayOptions<string>
+		: T extends NumberConstructor | typeof mongoose.Schema.Types.Number
+		? NumberOptions
+		: T extends NumberConstructor[] | NumberConstructor[][]
+		? ArrayOptions<number>
+		: T extends DateConstructor | typeof mongoose.Schema.Types.Date
+		? DateOptions
+		: T extends typeof mongoose.Schema.Types.ObjectId
+		? ObjectIdOptions
+		: T extends MapConstructor
+		? MapOptions
+		: {})
 
-	/** String : [Option reference](https://mongoosejs.com/docs/api#schemastringoptions_SchemaStringOptions-lowercase) */
-	lowercase?: T extends StringConstructor ? boolean : never
-
-	/** String : [Option reference](https://mongoosejs.com/docs/api#schemastringoptions_SchemaStringOptions-uppercase) */
-	uppercase?: T extends StringConstructor ? boolean : never
-
-	/** String : [Option reference](https://mongoosejs.com/docs/api#schemastringoptions_SchemaStringOptions-trim) */
-	trim?: T extends StringConstructor ? boolean : never
-
-	/** String : [Option reference](https://mongoosejs.com/docs/api#schemastringoptions_SchemaStringOptions-match) */
-	match?: T extends StringConstructor ? RegExp : never
-
-	/** String : [Option reference](https://mongoosejs.com/docs/api#schemastringoptions_SchemaStringOptions-minlength) */
-	minLength?: T extends StringConstructor ? number : never
-
-	/** String : [Option reference](https://mongoosejs.com/docs/api#schemastringoptions_SchemaStringOptions-maxlength) */
-	maxLength?: T extends StringConstructor ? number : never
+/**
+ * @public
+ */
+type StringOptions = {
+	/**
+	 * Add a custom setter that lowercases this string using JavaScript's built-in `String#toLowerCase()`.
+	 *
+	 * _String type_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api#schemastringoptions_SchemaStringOptions-lowercase)
+	 */
+	lowercase?: boolean
 
 	/**
-	 * - Number : [Option reference](https://mongoosejs.com/docs/api#schemanumberoptions_SchemaNumberOptions-min)
-	 * - Date : [Option reference](https://mongoosejs.com/docs/api#schemadateoptions_SchemaDateOptions-min)
+	 * Add a custom setter that uppercases this string using JavaScript's built-in `String#toUpperCase()`.
+	 *
+	 * _String type_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api#schemastringoptions_SchemaStringOptions-uppercase)
 	 */
-	min?: T extends NumberConstructor ? number : T extends DateConstructor ? Date : never
-	/**
-	 * - Number : [Option reference](https://mongoosejs.com/docs/api#schemanumberoptions_SchemaNumberOptions-max)
-	 * - Date : [Option reference](https://mongoosejs.com/docs/api#schemadateoptions_SchemaDateOptions-max)
-	 */
-	max?: T extends NumberConstructor ? number : T extends DateConstructor ? Date : never
+	uppercase?: boolean
 
 	/**
-	 * - String : [Option reference](https://mongoosejs.com/docs/api#schemastringoptions_SchemaStringOptions-enum)
-	 * - Number : [Option reference](https://mongoosejs.com/docs/api#schemanumberoptions_SchemaNumberOptions-enum)
-	 * - Array : [Option reference](https://mongoosejs.com/docs/api#schemaarrayoptions_SchemaArrayOptions-enum)
+	 * Add a custom setter that removes leading and trailing whitespace using JavaScript's built-in `String#trim()`.
+	 *
+	 * _String type_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api#schemastringoptions_SchemaStringOptions-trim)
 	 */
-	enum?: T extends StringConstructor | StringConstructor[]
-		? string[]
-		: T extends NumberConstructor | NumberConstructor[]
-		? number[]
-		: never
+	trim?: boolean
 
 	/**
-	 * ObjectId : [Guide reference](https://mongoosejs.com/docs/populate)
-	 * | [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-ref)
+	 * _String type_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api#schemastringoptions_SchemaStringOptions-match)
 	 */
-	ref?: T extends typeof mongoose.Schema.Types.ObjectId
-		? keyof RefletMongoose.Ref extends undefined
-			? string | ConstructorType
-			: keyof RefletMongoose.Ref | ConstructorType<RefletMongoose.Ref[keyof RefletMongoose.Ref]>
-		: never
+	match?: RegExp
 
 	/**
-	 * ObjectId : [Guide reference](https://mongoosejs.com/docs/populate#dynamic-ref)
+	 * Add a custom validator that ensures the given string's `length` is at least the given number.
+	 *
+	 * _String type_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api#schemastringoptions_SchemaStringOptions-minlength)
 	 */
-	refPath?: T extends typeof mongoose.Schema.Types.ObjectId ? string : never
+	minLength?: number
 
-	/** Map : [Guide reference](https://mongoosejs.com/docs/schematypes#maps) */
-	of?: T extends MapConstructor ? SchemaType : never
+	/**
+	 * Add a custom validator that ensures the given string's `length` is at most the given number.
+	 *
+	 * _String type_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api#schemastringoptions_SchemaStringOptions-maxlength)
+	 */
+	maxLength?: number
+
+	/**
+	 * Array of allowed values for this path.
+	 *
+	 * _String type_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api#schemastringoptions_SchemaStringOptions-enum)
+	 */
+	enum?: string[]
 }
 
 /**
  * @public
  */
-type Infer<T> = T extends NumberConstructor
+type NumberOptions = {
+	/**
+	 * _Number type_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api#schemanumberoptions_SchemaNumberOptions-min)
+	 */
+	min?: number
+
+	/**
+	 * _Number type_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api#schemanumberoptions_SchemaNumberOptions-max)
+	 */
+	max?: number
+
+	/**
+	 * _Number type_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api#schemanumberoptions_SchemaNumberOptions-enum)
+	 */
+	enum?: number[]
+}
+
+/**
+ * @public
+ */
+type ArrayOptions<T extends string | number> = {
+	/**
+	 * _Array type_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api#schemaarrayoptions_SchemaArrayOptions-enum)
+	 */
+	enum?: T[]
+}
+
+/**
+ * @public
+ */
+type DateOptions = {
+	/**
+	 * _Date type_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api#schemadateoptions_SchemaDateOptions-min)
+	 */
+	min?: Date
+	/**
+	 * _Date type_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api#schemadateoptions_SchemaDateOptions-max)
+	 */
+	max?: Date
+}
+
+/**
+ * @public
+ */
+type ObjectIdOptions = {
+	/**
+	 * The model that `populate()` should use if populating this path.
+	 *
+	 * _ObjectId type_
+	 *
+	 * [Guide reference](https://mongoosejs.com/docs/populate)
+	 * | [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-ref)
+	 */
+	ref?: keyof RefletMongoose.Ref extends undefined
+		? string | ConstructorType
+		: keyof RefletMongoose.Ref | ConstructorType<RefletMongoose.Ref[keyof RefletMongoose.Ref]>
+
+	/**
+	 * _ObjectId type_
+	 *
+	 * [Guide reference](https://mongoosejs.com/docs/populate#dynamic-ref)
+	 */
+	refPath?: string
+}
+
+/**
+ * @public
+ */
+type MapOptions = {
+	/**
+	 *  _Map type_
+	 *
+	 * [Guide reference](https://mongoosejs.com/docs/schematypes#maps)
+	 */
+	of?: SchemaType
+}
+
+/**
+ * @public
+ */
+type Infer<T> = T extends NumberConstructor | typeof mongoose.Schema.Types.Number
 	? number
-	: T extends StringConstructor
+	: T extends StringConstructor | typeof mongoose.Schema.Types.String
 	? string
-	: T extends BooleanConstructor
+	: T extends BooleanConstructor | typeof mongoose.Schema.Types.Boolean
 	? boolean
-	: T extends DateConstructor
+	: T extends DateConstructor | typeof mongoose.Schema.Types.Date
 	? Date
 	: T extends typeof mongoose.Schema.Types.ObjectId
 	? mongoose.Types.ObjectId

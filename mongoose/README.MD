@@ -532,7 +532,7 @@ you can augment the global interface `SchemaTypeOptions` to have new options in 
 declare global {
   namespace RefletMongoose {
     interface SchemaTypeOptions {
-      autopopulate: boolean
+      autopopulate?: boolean
     }
   }
 }
@@ -551,8 +551,6 @@ class User extends Model.Interface {
   company: Company
 }
 ```
-
-_Every option defined this way will be optional in the schemas._
 
 ### References narrowing
 
