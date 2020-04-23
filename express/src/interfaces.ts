@@ -134,12 +134,7 @@ type ClassOrMethodDecorator<T extends ClassOrMethodUnion = 'class|method'> = T e
  * Defines a class type. Does the opposite of built-in `InstanceType`.
  * @public
  */
-export type ClassType<T = unknown> = new (...args: any[]) => T
-
-/**
- * @public
- */
-export type Fn<T = unknown> = (...args: any[]) => T
+export type ClassType<T = any> = new (...args: any[]) => T
 
 /**
  * Request headers union.

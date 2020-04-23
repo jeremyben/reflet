@@ -1,7 +1,7 @@
 import Meta from './metadata-keys'
 import { json, urlencoded, Request, Response, NextFunction, RequestHandler } from 'express'
 import { flatMapFast } from './array-manipulation'
-import { ClassType, RequestHeaderName, Fn, Decorator } from './interfaces'
+import { ClassType, RequestHeaderName, Decorator } from './interfaces'
 
 /**
  * @internal
@@ -39,7 +39,7 @@ export function Req(...args: Parameters<Decorator.Req>): void
 
 export function Req() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
-		return (createParamDecorator((req) => req) as Fn)(...arguments)
+		return (createParamDecorator((req) => req) as Function)(...arguments)
 	} else {
 		return createParamDecorator((req) => req)
 	}
@@ -73,7 +73,7 @@ export function Res() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
 		// res is not defined in the public method signature, but is still used later
 		// by the route params extractor so we must pass it as optional for the compiler
-		return (createParamDecorator((req, res?: Response) => res!) as Fn)(...arguments)
+		return (createParamDecorator((req, res?: Response) => res!) as Function)(...arguments)
 	} else {
 		return createParamDecorator((req, res?: Response) => res!)
 	}
@@ -107,7 +107,7 @@ export function Next() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
 		// next is not defined in the public method signature, but is still used later
 		// by the route params extractor so we must pass it as optional for the compiler
-		return (createParamDecorator((req, res?: Response, next?: NextFunction) => next!) as Fn)(...arguments)
+		return (createParamDecorator((req, res?: Response, next?: NextFunction) => next!) as Function)(...arguments)
 	} else {
 		return createParamDecorator((req, res?: Response, next?: NextFunction) => next!)
 	}
@@ -153,11 +153,7 @@ export function Body<T extends object>(
 ) {
 	if (arguments.length === 3 && typeof keyOrTarget === 'object') {
 		const target = keyOrTarget
-		return createParamDecorator((req) => req.body, bodyParsers, true)(
-			target,
-			propertyKey!,
-			parameterIndex!
-		)
+		return createParamDecorator((req) => req.body, bodyParsers, true)(target, propertyKey!, parameterIndex!)
 	} else {
 		const subKey = keyOrTarget as keyof T | undefined
 		return createParamDecorator((req) => (subKey ? req.body[subKey] : req.body), bodyParsers, true)
@@ -193,11 +189,7 @@ export function Params(name?: string): Decorator.Params
  */
 export function Params(...args: Parameters<Decorator.Params>): void
 
-export function Params(
-	nameOrTarget?: string | object,
-	propertyKey?: string | symbol,
-	parameterIndex?: number
-) {
+export function Params(nameOrTarget?: string | object, propertyKey?: string | symbol, parameterIndex?: number) {
 	if (arguments.length === 3 && typeof nameOrTarget === 'object') {
 		const target = nameOrTarget
 		return createParamDecorator((req) => req.params)(target, propertyKey!, parameterIndex!)
@@ -236,11 +228,7 @@ export function Query(field?: string): Decorator.Query
  */
 export function Query(...args: Parameters<Decorator.Query>): void
 
-export function Query(
-	fieldOrTarget?: string | object,
-	propertyKey?: string | symbol,
-	parameterIndex?: number
-) {
+export function Query(fieldOrTarget?: string | object, propertyKey?: string | symbol, parameterIndex?: number) {
 	if (arguments.length === 3 && typeof fieldOrTarget === 'object') {
 		const target = fieldOrTarget
 		return createParamDecorator((req) => req.query)(target, propertyKey!, parameterIndex!)
@@ -281,11 +269,7 @@ export function Headers<T extends string = RequestHeaderName>(
  */
 export function Headers(...args: Parameters<Decorator.Headers>): void
 
-export function Headers(
-	nameOrTarget?: string | object,
-	propertyKey?: string | symbol,
-	parameterIndex?: number
-) {
+export function Headers(nameOrTarget?: string | object, propertyKey?: string | symbol, parameterIndex?: number) {
 	if (arguments.length === 3 && typeof nameOrTarget === 'object') {
 		const target = nameOrTarget
 		return createParamDecorator((req) => req.headers)(target, propertyKey!, parameterIndex!)

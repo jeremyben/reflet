@@ -3,6 +3,7 @@
 
 import { RequestHandler, ErrorRequestHandler } from 'express'
 import { Readable, Writable } from 'stream'
+import { ClassType } from './interfaces'
 
 /**
  * Checks if given object is a Promise or Promise-like.
@@ -10,6 +11,14 @@ import { Readable, Writable } from 'stream'
  */
 export function isPromise<T = any>(obj: any): obj is Promise<T> {
 	return obj instanceof Promise || (!!obj && typeof obj === 'object' && typeof obj.then === 'function')
+}
+
+/**
+ * Simply checks if given object is a function to distinguish between a class and its instance.
+ * @internal
+ */
+export function isClass(obj: object): obj is ClassType {
+	return typeof obj === 'function'
 }
 
 /**
@@ -56,9 +65,7 @@ export function isErrorHandler(obj: any): obj is ErrorRequestHandler {
  * Checks if given object is an express `app.use` parameter that contains at least one error handler.
  * @internal
  */
-export function isErrorHandlerParams(
-	obj: any
-): obj is ErrorRequestHandler | (RequestHandler | ErrorRequestHandler)[] {
+export function isErrorHandlerParams(obj: any): obj is ErrorRequestHandler | (RequestHandler | ErrorRequestHandler)[] {
 	return isErrorHandler(obj) || (Array.isArray(obj) && obj.some(isErrorHandler))
 }
 
@@ -94,11 +101,7 @@ namespace Rx {
 	 */
 	export interface Observable<T> {
 		subscribe(observer?: PartialObserver<T>): Unsubscribable
-		subscribe(
-			next?: (value: T) => void,
-			error?: (error: any) => void,
-			complete?: () => void
-		): Unsubscribable
+		subscribe(next?: (value: T) => void, error?: (error: any) => void, complete?: () => void): Unsubscribable
 	}
 
 	interface Unsubscribable {

@@ -13,6 +13,7 @@ The **best** decorators for [Express](https://expressjs.com/). Have a look at [R
 * [Request properties injection](#request-properties-injection)
 * [Sending return value](#sending-return-value)
 * [Error handling](#error-handling)
+* [Pure dependency injection](#pure-dependency-injection)
 
 ## Getting started
 
@@ -965,3 +966,37 @@ app.listen(3000)
 ```
 
 No need for a weird option in `register`.
+
+## Pure dependency injection
+
+If you need to go full OOP, you can pass instances (along with their dependencies) instead of classes, to the `register` function which acts as a _[Composition Root](https://blog.ploeh.dk/2011/07/28/CompositionRoot/)_.
+
+```ts
+interface IUserService {
+  getUsers(): Promise<User[]>
+}
+
+class UserService implements IUserService {
+  async getUsers() {
+    return db.collection('users').find({})
+  }
+}
+
+class UserController {
+  constructor(private userService: IUserService) {}
+
+  @Get('/user')
+  async getAllUsers(@Res res: Response) {
+    const users = await this.userService.getUsers()
+    res.send(users)
+  }
+}
+
+register(app, [
+  new UserController(new UserService())
+])
+```
+
+No DI Container magic, no cumbersome `@Inject` decorator 😵...<br>Only _**[pure DI](https://blog.ploeh.dk/2014/06/10/pure-di/)**_, which is the simplest and the most strongly typed DI.
+
+_Reflet also makes sure that your controllers are all passed either as classes or instances, so you can enforce DI all the way._

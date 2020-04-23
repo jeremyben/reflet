@@ -3,18 +3,30 @@ import express, { Response, Request, NextFunction } from 'express'
 import { register, Router, Get, Post, Put, Patch, Method, Res, Req } from '../src'
 import { log } from '../../testing/tools'
 
-// With Router
+class UserService {
+	private users = [
+		{ id: '1', name: 'Jeremy' },
+		{ id: '2', name: 'Julia' },
+	]
+
+	getUserById(id: string) {
+		return this.users.find((user) => user.id === id)
+	}
+}
+
 @Router('/user', { caseSensitive: true })
 class UserController {
+	constructor(private userService: UserService) {}
+
 	@Get()
 	get(@Res res: Response) {
 		res.send([{ id: 1 }])
 	}
 
 	@Patch('/:id')
-	patch(@Req() req: Request, @Res() res: Response) {
-		const id = Number.parseInt(req.params.id, 10)
-		res.send({ id })
+	patch(@Req() req: Request<{ id: string }>, @Res() res: Response) {
+		const user = this.userService.getUserById(req.params.id)
+		res.send(user)
 	}
 
 	@Post()
@@ -25,7 +37,6 @@ class UserController {
 	}
 }
 
-// Without Router
 class MessageController {
 	prop = 1
 
@@ -41,14 +52,13 @@ class MessageController {
 	}
 }
 
-// No routes
-class UserService {
-	get(id: string) {
-		return { id, name: 'Jeremy' }
-	}
-}
-
-const rq = supertest(register(express(), [UserController, MessageController, UserService]))
+const rq = supertest(
+	register(express(), [
+		new UserController(new UserService()),
+		new MessageController(),
+		/* will warn */ new UserService(),
+	])
+)
 
 describe('With Router', () => {
 	test('@Get', async () => {
@@ -58,9 +68,9 @@ describe('With Router', () => {
 	})
 
 	test('@Patch, params', async () => {
-		const res = await rq.patch('/user/2')
+		const res = await rq.patch('/user/1')
 		expect(res.status).toBe(200)
-		expect(res.body).toEqual({ id: 2 })
+		expect(res.body).toEqual({ id: '1', name: 'Jeremy' })
 	})
 
 	test('@Post, async', async () => {

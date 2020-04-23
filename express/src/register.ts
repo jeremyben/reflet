@@ -2,7 +2,7 @@ import { Router, Application, RequestHandler, Response } from 'express'
 import { ClassType } from './interfaces'
 import { promisifyHandler, promisifyErrorHandler } from './async-wrapper'
 import { globalErrorHandler, makeGlobalErrorHandlerRemovable } from './global-error-handler'
-import { isPromise, isReadableStream } from './type-guards'
+import { isPromise, isReadableStream, isClass } from './type-guards'
 
 // Extractors
 import { extractRouter } from './router-decorator'
@@ -15,7 +15,7 @@ import { extractSend } from './send-decorator'
 /**
  * Main method to register controllers into an express application.
  * @param app - express application.
- * @param controllers - classes with decorated routes.
+ * @param controllers - classes or instances with decorated routes.
  *
  * @example
  * ```ts
@@ -24,30 +24,36 @@ import { extractSend } from './send-decorator'
  *   get() {}
  * }
  * const app = express()
- * register(app, [Foo]) // where the magic happens
+ * register(app, [Foo])
  * app.listen(3000)
+ *
+ * // ------
+ * // or with instantiation:
+ * register(app, [new Foo()])
  * ```
  * ------
  * @public
  */
-export function register(app: Application, controllers: ClassType<any>[]): Application {
+export function register<T extends object>(
+	app: Application,
+	controllers: ClassType[] | Exclude<T, ClassType>[]
+): Application {
 	const globalMwares = getGlobalMiddlewares(app)
 
 	for (const controller of controllers) {
-		// Create an instance if the user wants to define and use class properties
-		// (before, Reflet only used the prototype, because a controller is mostly about methods).
-		const controllerInstance = new controller()
+		const controllerInstance = isClass(controller) ? new controller() : controller
+		const controllerClass = isClass(controller) ? controller : (controllerInstance.constructor as ClassType)
 
 		// Either attach middlewares/handlers to an intermediary router or directly to the app.
-		const router = extractRouter(controller)
+		const router = extractRouter(controllerClass)
 		const appInstance = router ? Router(router.options) : app
 
-		const routes = extractRoutes(controller)
-		const sharedMwares = extractMiddlewares(controller)
-		const sharedErrHandlers = extractErrorHandlers(controller)
+		const routes = extractRoutes(controllerClass)
+		const sharedMwares = extractMiddlewares(controllerClass)
+		const sharedErrHandlers = extractErrorHandlers(controllerClass)
 
 		if (!routes.length) {
-			console.warn(`${controller.name} doesn't have any route to register.`)
+			console.warn(`${controllerClass.name} doesn't have any route to register.`)
 		}
 
 		// Apply shared middlewares to the router instance
@@ -58,13 +64,17 @@ export function register(app: Application, controllers: ClassType<any>[]): Appli
 		}
 
 		for (const { path, method, key } of routes) {
-			const routeMwares = extractMiddlewares(controller, key)
-			const routeErrHandlers = extractErrorHandlers(controller, key)
-			const paramsMwares = extractParamsMiddlewares(controller, key, [globalMwares, sharedMwares, routeMwares])
-			const toSend = extractSend(controller, key)
+			const routeMwares = extractMiddlewares(controllerClass, key)
+			const routeErrHandlers = extractErrorHandlers(controllerClass, key)
+			const paramsMwares = extractParamsMiddlewares(controllerClass, key, [
+				globalMwares,
+				sharedMwares,
+				routeMwares,
+			])
+			const toSend = extractSend(controllerClass, key)
 
 			const handler = promisifyHandler((req, res, next) => {
-				const args = extractParams(controller, key, { req, res, next })
+				const args = extractParams(controllerClass, key, { req, res, next })
 				const result = controllerInstance[key].apply(controllerInstance, args)
 
 				// Handle or bypass sending the method's result according to @Send decorator,
