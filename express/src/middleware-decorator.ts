@@ -44,7 +44,6 @@ export function Use(...middlewares: RequestHandler[]): Decorator.Use {
 }
 
 /**
- * Get methods metadata from the prototype (no need to create an instance).
  * @internal
  */
 export function extractMiddlewares(target: ClassType, key?: string | symbol): RequestHandler[] {

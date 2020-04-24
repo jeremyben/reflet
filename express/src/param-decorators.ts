@@ -334,8 +334,6 @@ export function createParamDecorator<T = any>(
  * Used to intercept a decorated handler execution and extract the Request, Response, Next,
  * or Request properties, by applying the mapper defined in the metadata.
  *
- * Get methods metadata from the prototype (no need to create an instance).
- *
  * @internal
  */
 export function extractParams(
@@ -366,8 +364,6 @@ export function extractParams(
  *
  * Extracted separately from the mapper, because middlewares are applied on route registering,
  * and the mapper is applied later inside a closure on route handling.
- *
- * Get methods metadata from the prototype (no need to create an instance).
  *
  * @internal
  */

@@ -122,7 +122,6 @@ export function Method(method: RoutingMethod, path: string | RegExp): Decorator.
 
 /**
  * Retrieve routes of a class.
- * Get methods metadata from the prototype (no need to create an instance).
  * @internal
  */
 export function extractRoutes(target: ClassType): RouteMeta[] {

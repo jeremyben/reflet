@@ -46,7 +46,6 @@ export function Catch<T = any>(
 }
 
 /**
- * Get methods metadata from the prototype (no need to create an instance).
  * @internal
  */
 export function extractErrorHandlers(target: ClassType, key?: string | symbol): ErrorRequestHandler[] {

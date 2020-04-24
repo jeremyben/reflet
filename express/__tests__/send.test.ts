@@ -1,20 +1,7 @@
 import supertest from 'supertest'
-import express, { Response, Request } from 'express'
+import express, { Response } from 'express'
 import { createReadStream, readFileSync } from 'fs'
-import {
-	register,
-	Router,
-	Get,
-	Put,
-	Post,
-	Patch,
-	Delete,
-	Res,
-	Params,
-	Send,
-	DontSend,
-	Decorator,
-} from '../src'
+import { register, Router, Get, Put, Post, Patch, Delete, Res, Params, Send, DontSend, Decorator } from '../src'
 import { log } from '../../testing/tools'
 
 describe('handle return value', () => {

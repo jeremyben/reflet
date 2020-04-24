@@ -1,19 +1,6 @@
 import supertest from 'supertest'
 import express, { Response, Request, RequestHandler, json, urlencoded } from 'express'
-import {
-	register,
-	Get,
-	Post,
-	Put,
-	Patch,
-	Use,
-	Res,
-	Body,
-	Params,
-	Headers,
-	Query,
-	createParamDecorator,
-} from '../src'
+import { register, Get, Post, Put, Patch, Use, Res, Body, Params, Headers, Query, createParamDecorator } from '../src'
 import { extractMiddlewares } from '../src/middleware-decorator'
 import { extractParamsMiddlewares } from '../src/param-decorators'
 import { getGlobalMiddlewares } from '../src/register'
@@ -131,8 +118,7 @@ describe('param middlewares deduplication', () => {
 	})
 
 	test('body-parsers in different param decorators', async () => {
-		const BodyTrimmed = (subKey: string) =>
-			createParamDecorator((req) => req.body[subKey].trim(), [json()], true)
+		const BodyTrimmed = (subKey: string) => createParamDecorator((req) => req.body[subKey].trim(), [json()], true)
 
 		class Foo {
 			@Post()

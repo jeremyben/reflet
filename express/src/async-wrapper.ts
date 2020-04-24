@@ -4,8 +4,7 @@ import { RequestHandler, ErrorRequestHandler, Request, Response, NextFunction } 
  * @internal
  */
 export function promisifyHandler(handler: RequestHandler) {
-	return (req: Request, res: Response, next: NextFunction) =>
-		Promise.resolve(handler(req, res, next)).catch(next)
+	return (req: Request, res: Response, next: NextFunction) => Promise.resolve(handler(req, res, next)).catch(next)
 }
 
 /**
