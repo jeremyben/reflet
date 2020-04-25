@@ -3,7 +3,6 @@
  * @see https://dev.to/uilicious/javascript-array-push-is-945x-faster-than-array-concat-1oki
  * @internal
  */
-/* istanbul ignore next unused */
 export function concatFast<T>(source: T[], added: T[]): T[] {
 	const sourceLength = source.length
 	const addedLength = added.length
@@ -81,6 +80,7 @@ export function flatMapFast<T, U>(array: T[][], mapper?: (value: T) => U): U[] {
 			// at `i` in case it is an array, or we deleted an empty array at `i`.
 		} else {
 			// it's not an array so map the value and move on to the next element.
+			/* istanbul ignore else - unused */
 			if (mapper) {
 				flattened[i] = mapper(value)
 			}

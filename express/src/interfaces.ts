@@ -137,6 +137,11 @@ type ClassOrMethodDecorator<T extends ClassOrMethodUnion = 'class|method'> = T e
 export type ClassType<T = any> = new (...args: any[]) => T
 
 /**
+ * @public
+ */
+export type ObjectNotFunction = object & { bind?: never }
+
+/**
  * Request headers union.
  * @public
  */

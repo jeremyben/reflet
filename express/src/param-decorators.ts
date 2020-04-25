@@ -370,7 +370,7 @@ export function extractParams(
 export function extractParamsMiddlewares(
 	target: ClassType,
 	key: string | symbol,
-	alreadyMwares: [RequestHandler[], RequestHandler[], RequestHandler[]]
+	alreadyMwares: [RequestHandler[], RequestHandler[], RequestHandler[], RequestHandler[]]
 ): RequestHandler[] {
 	const params: ParamMeta[] = Reflect.getOwnMetadata(Meta.Param, target.prototype, key) || []
 	if (!params.length) return []
@@ -383,6 +383,7 @@ export function extractParamsMiddlewares(
 		if (!use) continue
 
 		if (dedupeUse && !alreadyNames.length) {
+			// Perform the flatmap only if one of the parameter requires deduplication.
 			alreadyNames = flatMapFast(alreadyMwares, (m) => m.name)
 		}
 
@@ -391,15 +392,17 @@ export function extractParamsMiddlewares(
 			// whether or not it's marked for dedupe, to do that we simply compare by reference.
 			if (paramMwares.includes(mware)) continue
 
-			// dedupe middlewares in upper layers
+			// Dedupe middlewares in upper layers.
 			if (dedupeUse) {
 				const sameRef =
 					alreadyMwares[0].includes(mware) ||
 					alreadyMwares[1].includes(mware) ||
-					alreadyMwares[2].includes(mware)
+					alreadyMwares[2].includes(mware) ||
+					alreadyMwares[3].includes(mware)
 
 				const sameName = !!mware.name && alreadyNames.includes(mware.name)
 
+				// console.log('dedupe:', mware.name, sameRef || sameName)
 				if (sameRef || sameName) continue
 			}
 

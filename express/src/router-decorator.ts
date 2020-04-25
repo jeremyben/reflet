@@ -1,11 +1,15 @@
 import Meta from './metadata-keys'
 import { RouterOptions } from 'express'
-import { ClassType, Decorator } from './interfaces'
+import { ClassType, Decorator, ObjectNotFunction } from './interfaces'
 
 /**
  * @internal
  */
-type RouterMeta = { root: string | RegExp; options?: RouterOptions }
+type RouterMeta = {
+	root: string | RegExp
+	options?: RouterOptions
+	children?: object[]
+}
 
 /**
  * Creates and attaches an express Router object to a controller class.
@@ -31,7 +35,44 @@ type RouterMeta = { root: string | RegExp; options?: RouterOptions }
  */
 export function Router(root: string | RegExp, options?: RouterOptions): Decorator.Router {
 	return (target) => {
-		Reflect.defineMetadata(Meta.Router, { root, options }, target)
+		const routerMeta: RouterMeta = { root, options }
+		Reflect.defineMetadata(Meta.Router, routerMeta, target)
+	}
+}
+
+export namespace Router {
+	/**
+	 * Attaches children controllers to a parent router, to have nested routers.
+	 *
+	 * To be used in the **constructor** of a `@Router` decorated class.
+	 *
+	 * @param router - should simply be `this`.
+	 * @param children - classes or instances with decorated routes.
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Router('/foo', { mergeParams: true })
+	 * class Foo {
+	 *   constructor() {
+	 *     Router.register(this, [Bar, Baz])
+	 *   }
+	 * }
+	 * ```
+	 * ------
+	 * @public
+	 */
+	export function register<T extends object>(
+		router: ObjectNotFunction,
+		children: ClassType[] | Exclude<T, ClassType>[]
+	) {
+		const routerMeta = extractRouter(router.constructor as ClassType)
+
+		if (!routerMeta) {
+			throw Error(`"${router.constructor.name}" must be decorated with @Router.`)
+		}
+
+		routerMeta.children = children
+		Reflect.defineMetadata(Meta.Router, routerMeta, router.constructor)
 	}
 }
 
