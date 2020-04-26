@@ -310,6 +310,25 @@ Express [Router options](https://expressjs.com/en/4x/api.html#express.router) ca
 
 🗣️ Beware of VSCode auto-import, it will first try to import `Router` from Express instead of Reflet.
 
+#### Nested routers
+
+> 🔦 `@Router.register(parent, [controllers])`
+
+You can register child routers within the `constructor` of the parent router, using a method similar to the main `register` function.
+
+```ts
+@Router('/album')
+class AlbumController {
+  constructor() {
+    // ⚠️ Should always be used within the constructor of a `@Router` decorated class.
+    Router.register(this, [TrackController])
+  }
+}
+
+@Router('/:albumId/track', { mergeParams: true })
+class TrackController {}
+```
+
 ### Handler parameters injection
 
 > 🔦 `@Req`, `@Res`, `@Next`<br>
@@ -417,10 +436,10 @@ class Foo {
   <td>
 
 ```ts
-const subapp = express.Router()
-subapp.use(A, B, C)
-subapp.get('', D, (req, res, next) => {})
-app.use('/foo', subapp)
+const router = express.Router()
+router.use(A, B, C)
+router.get('', D, (req, res, next) => {})
+app.use('/foo', router)
 ```
 
   </td>
@@ -881,10 +900,10 @@ class Foo {
   <td>
 
 ```ts
-const subapp = express.Router()
-subapp.get('', (req, res, next) => { throw Error() }, B, C)
-subapp.use(A)
-app.use('/foo', subapp)
+const router = express.Router()
+router.get('', (req, res, next) => { throw Error() }, B, C)
+router.use(A)
+app.use('/foo', router)
 ```
 
   </td>
@@ -969,8 +988,6 @@ app.use((err, req, res, next) => res.status(500).send(err))
 app.listen(3000)
 ```
 
-No need for a weird option in `register`.
-
 ## Pure dependency injection
 
 If you need to go full OOP, you can pass instances (along with their dependencies) instead of classes, to the `register` function which acts as a _[Composition Root](https://blog.ploeh.dk/2011/07/28/CompositionRoot/)_.
@@ -1003,4 +1020,17 @@ register(app, [
 
 No DI Container magic, no cumbersome `@Inject` decorator 😵...<br>Only _**[pure DI](https://blog.ploeh.dk/2014/06/10/pure-di/)**_, which is the simplest and the most strongly typed DI.
 
-_Reflet also makes sure that your controllers are all passed either as classes or instances, so you can enforce DI all the way._
+Reflet makes sure that your controllers are all passed either as classes or instances, so you can enforce DI all the way.
+
+You can even pass dependencies down your nested controllers:
+
+```ts
+@Router('/parent')
+class ParentController {
+  constructor(private service: Service) {
+    Router.register(this, [new ChildController(service)])
+  }
+}
+
+register(app, [new ParentController(new Service())])
+```
