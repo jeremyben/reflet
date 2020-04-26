@@ -1,7 +1,8 @@
-import Meta from './metadata-keys'
 import { json, urlencoded, Request, Response, NextFunction, RequestHandler } from 'express'
 import { flatMapFast } from './array-manipulation'
 import { ClassType, RequestHeaderName, Decorator } from './interfaces'
+
+const MetaKey = Symbol('param')
 
 /**
  * @internal
@@ -323,10 +324,10 @@ export function createParamDecorator<T = any>(
 	dedupeUse?: boolean
 ): Decorator.HandlerParameter {
 	return (target, key, index) => {
-		const params: ParamMeta[] = Reflect.getOwnMetadata(Meta.Param, target, key) || []
+		const params: ParamMeta[] = Reflect.getOwnMetadata(MetaKey, target, key) || []
 
 		params.push({ index, mapper, use, dedupeUse })
-		Reflect.defineMetadata(Meta.Param, params, target, key)
+		Reflect.defineMetadata(MetaKey, params, target, key)
 	}
 }
 
@@ -341,7 +342,7 @@ export function extractParams(
 	key: string | symbol,
 	{ req, res, next }: { req: Request; res: Response; next: NextFunction }
 ): any[] {
-	const params: ParamMeta[] = Reflect.getOwnMetadata(Meta.Param, target.prototype, key) || []
+	const params: ParamMeta[] = Reflect.getOwnMetadata(MetaKey, target.prototype, key) || []
 
 	// No decorator found in the method: simply return the original arguments in the original order
 	if (!params.length) return [req, res, next]
@@ -372,7 +373,7 @@ export function extractParamsMiddlewares(
 	key: string | symbol,
 	alreadyMwares: [RequestHandler[], RequestHandler[], RequestHandler[], RequestHandler[]]
 ): RequestHandler[] {
-	const params: ParamMeta[] = Reflect.getOwnMetadata(Meta.Param, target.prototype, key) || []
+	const params: ParamMeta[] = Reflect.getOwnMetadata(MetaKey, target.prototype, key) || []
 	if (!params.length) return []
 
 	const paramMwares: RequestHandler[] = []

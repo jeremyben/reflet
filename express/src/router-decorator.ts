@@ -1,6 +1,7 @@
-import Meta from './metadata-keys'
 import { RouterOptions } from 'express'
 import { ClassType, Decorator, ObjectNotFunction } from './interfaces'
+
+const MetaKey = Symbol('router')
 
 /**
  * @internal
@@ -36,7 +37,7 @@ type RouterMeta = {
 export function Router(root: string | RegExp, options?: RouterOptions): Decorator.Router {
 	return (target) => {
 		const routerMeta: RouterMeta = { root, options }
-		Reflect.defineMetadata(Meta.Router, routerMeta, target)
+		Reflect.defineMetadata(MetaKey, routerMeta, target)
 	}
 }
 
@@ -72,7 +73,7 @@ export namespace Router {
 		}
 
 		routerMeta.children = children
-		Reflect.defineMetadata(Meta.Router, routerMeta, router.constructor)
+		Reflect.defineMetadata(MetaKey, routerMeta, router.constructor)
 	}
 }
 
@@ -80,5 +81,5 @@ export namespace Router {
  * @internal
  */
 export function extractRouter(target: ClassType): RouterMeta | undefined {
-	return Reflect.getOwnMetadata(Meta.Router, target)
+	return Reflect.getOwnMetadata(MetaKey, target)
 }

@@ -1,5 +1,6 @@
-import Meta from './metadata-keys'
 import { ClassType, RoutingMethod, Decorator } from './interfaces'
+
+const MetaKey = Symbol('route')
 
 /**
  * @internal
@@ -114,9 +115,9 @@ export const Delete = (path: string | RegExp = '') => Method('delete', path)
 export function Method(method: RoutingMethod, path: string | RegExp): Decorator.Route {
 	return (target, key, descriptor) => {
 		// Attach routes to class instead of methods to extract and traverse all of them at once
-		const routes: RouteMeta[] = Reflect.getOwnMetadata(Meta.Route, target) || []
+		const routes: RouteMeta[] = Reflect.getOwnMetadata(MetaKey, target) || []
 		routes.push({ path, method, key })
-		Reflect.defineMetadata(Meta.Route, routes, target)
+		Reflect.defineMetadata(MetaKey, routes, target)
 	}
 }
 
@@ -125,5 +126,5 @@ export function Method(method: RoutingMethod, path: string | RegExp): Decorator.
  * @internal
  */
 export function extractRoutes(target: ClassType): RouteMeta[] {
-	return Reflect.getOwnMetadata(Meta.Route, target.prototype) || []
+	return Reflect.getOwnMetadata(MetaKey, target.prototype) || []
 }

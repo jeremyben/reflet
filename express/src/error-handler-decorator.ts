@@ -1,6 +1,7 @@
-import Meta from './metadata-keys'
 import { ErrorRequestHandler, Request, Response, NextFunction } from 'express'
 import { ClassType, Decorator } from './interfaces'
+
+const MetaKey = Symbol('catch')
 
 /**
  * Attaches an error handler on a single route when applied to a method, or on multipe routes when applied to a controller class.
@@ -32,15 +33,15 @@ export function Catch<T = any>(
 	return (target, key, descriptor) => {
 		// Method
 		if (key) {
-			const handlers: ErrorRequestHandler[] = Reflect.getOwnMetadata(Meta.Catch, target, key) || []
+			const handlers: ErrorRequestHandler[] = Reflect.getOwnMetadata(MetaKey, target, key) || []
 			handlers.unshift(errorHandler)
-			Reflect.defineMetadata(Meta.Catch, handlers, target, key)
+			Reflect.defineMetadata(MetaKey, handlers, target, key)
 		}
 		// Class
 		else {
-			const handlers: ErrorRequestHandler[] = Reflect.getOwnMetadata(Meta.Catch, target) || []
+			const handlers: ErrorRequestHandler[] = Reflect.getOwnMetadata(MetaKey, target) || []
 			handlers.unshift(errorHandler)
-			Reflect.defineMetadata(Meta.Catch, handlers, target)
+			Reflect.defineMetadata(MetaKey, handlers, target)
 		}
 	}
 }
@@ -50,7 +51,7 @@ export function Catch<T = any>(
  */
 export function extractErrorHandlers(target: ClassType, key?: string | symbol): ErrorRequestHandler[] {
 	// Method
-	if (key) return Reflect.getOwnMetadata(Meta.Catch, target.prototype, key) || []
+	if (key) return Reflect.getOwnMetadata(MetaKey, target.prototype, key) || []
 	// Class
-	return Reflect.getOwnMetadata(Meta.Catch, target) || []
+	return Reflect.getOwnMetadata(MetaKey, target) || []
 }

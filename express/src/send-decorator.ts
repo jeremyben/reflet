@@ -1,5 +1,6 @@
-import Meta from './metadata-keys'
 import { ClassType, StatusCode, Decorator } from './interfaces'
+
+const MetaKey = Symbol('send')
 
 /**
  * @public
@@ -55,8 +56,8 @@ type SendOptions = {
  */
 export function Send(options: SendOptions = {}): Decorator.Send {
 	return (target, key, descriptor) => {
-		if (key) Reflect.defineMetadata(Meta.Send, options, target, key)
-		else Reflect.defineMetadata(Meta.Send, options, target)
+		if (key) Reflect.defineMetadata(MetaKey, options, target, key)
+		else Reflect.defineMetadata(MetaKey, options, target)
 	}
 }
 
@@ -84,7 +85,7 @@ export function Send(options: SendOptions = {}): Decorator.Send {
  */
 export function DontSend(): Decorator.DontSend {
 	return (target, key, descriptor) => {
-		Reflect.defineMetadata(Meta.Send, null, target, key)
+		Reflect.defineMetadata(MetaKey, null, target, key)
 	}
 }
 
@@ -93,9 +94,9 @@ export function DontSend(): Decorator.DontSend {
  * @internal
  */
 export function extractSend(target: ClassType, key: string | symbol): SendOptions | null {
-	const sendOnClass: SendOptions | null = Reflect.getOwnMetadata(Meta.Send, target) || null
+	const sendOnClass: SendOptions | null = Reflect.getOwnMetadata(MetaKey, target) || null
 
-	const sendOnMethod: SendOptions | null | undefined = Reflect.getOwnMetadata(Meta.Send, target.prototype, key)
+	const sendOnMethod: SendOptions | null | undefined = Reflect.getOwnMetadata(MetaKey, target.prototype, key)
 
 	switch (sendOnMethod) {
 		// none

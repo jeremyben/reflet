@@ -1,7 +1,8 @@
-import Meta from './metadata-keys'
 import { RequestHandler } from 'express'
 import { concatPrependFast } from './array-manipulation'
 import { ClassType, Decorator } from './interfaces'
+
+const MetaKey = Symbol('use')
 
 /**
  * Applies middlewares on a single route when applied to a method, or on multipe routes when applied to a class.
@@ -32,13 +33,13 @@ export function Use(...middlewares: RequestHandler[]): Decorator.Use {
 	return (target, key, descriptor) => {
 		// Method middleware
 		if (key) {
-			concatPrependFast(Reflect.getOwnMetadata(Meta.Use, target, key) || [], middlewares)
-			Reflect.defineMetadata(Meta.Use, middlewares, target, key)
+			concatPrependFast(Reflect.getOwnMetadata(MetaKey, target, key) || [], middlewares)
+			Reflect.defineMetadata(MetaKey, middlewares, target, key)
 		}
 		// Class middleware
 		else {
-			concatPrependFast(Reflect.getOwnMetadata(Meta.Use, target) || [], middlewares)
-			Reflect.defineMetadata(Meta.Use, middlewares, target)
+			concatPrependFast(Reflect.getOwnMetadata(MetaKey, target) || [], middlewares)
+			Reflect.defineMetadata(MetaKey, middlewares, target)
 		}
 	}
 }
@@ -48,7 +49,7 @@ export function Use(...middlewares: RequestHandler[]): Decorator.Use {
  */
 export function extractMiddlewares(target: ClassType, key?: string | symbol): RequestHandler[] {
 	// Method middlewares
-	if (key) return Reflect.getOwnMetadata(Meta.Use, target.prototype, key) || []
+	if (key) return Reflect.getOwnMetadata(MetaKey, target.prototype, key) || []
 	// Class middlewares
-	return Reflect.getOwnMetadata(Meta.Use, target) || []
+	return Reflect.getOwnMetadata(MetaKey, target) || []
 }
