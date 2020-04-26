@@ -137,7 +137,7 @@ function attach(
 
 					// The response will try to send itself, which will cause a cryptic error
 					// ('TypeError: Converting circular structure to JSON')
-					throw Error('You tried to send the whole Response object')
+					throw Error('Cannot send the whole Response object')
 				}
 
 				if (json) return res.json(value)

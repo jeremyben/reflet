@@ -4,6 +4,10 @@ import { register, Use, Get, Post, Put, Patch, Delete, Req, Next } from '../src'
 import { hasGlobalErrorHandler } from '../src/global-error-handler'
 import { log } from '../../testing/tools'
 
+const consoleSpy = jest.spyOn(console, 'error').mockImplementation()
+afterEach(() => consoleSpy.mockClear())
+afterAll(() => consoleSpy.mockRestore())
+
 describe('json detection', () => {
 	@Use(json())
 	class Controller {
@@ -26,13 +30,15 @@ describe('json detection', () => {
 		}
 	}
 
-	const rq = supertest(register(express(), [Controller]))
+	const app = register(express(), [Controller])
+	const rq = supertest(app)
 
 	test('infer json from response Content-Type header', async () => {
 		const res = await rq.get('')
 		expect(res.type).toBe('application/json')
 		expect(res.status).toBe(500)
 		expect(res.body).toBe(1)
+		expect(consoleSpy).toBeCalledWith(1)
 	})
 
 	test('infer json from request Accept header', async () => {
@@ -40,6 +46,7 @@ describe('json detection', () => {
 		expect(res.type).toBe('application/json')
 		expect(res.status).toBe(500)
 		expect(res.body).toEqual({ message: 'wtf' })
+		expect(consoleSpy).toBeCalledWith(expect.any(Error))
 	})
 
 	test('infer json from request X-Requested-With header', async () => {
@@ -47,12 +54,14 @@ describe('json detection', () => {
 		expect(res.type).toBe('application/json')
 		expect(res.status).toBe(418)
 		expect(res.body).toEqual({ status: 418, message: 'wtf' })
+		expect(consoleSpy).not.toBeCalled()
 	})
 
 	test('cannot infer json and pass to express final handler', async () => {
 		const res = await rq.post('')
 		expect(res.type).toBe('text/html')
 		expect(res.status).toBe(418)
+		expect(consoleSpy).not.toBeCalled()
 	})
 })
 
@@ -108,6 +117,7 @@ describe('status extraction', () => {
 		expect(res.status).toBe(500)
 		// Don't normalize wrong status
 		expect(res.body).toBe(200)
+		expect(consoleSpy).toBeCalledWith(200)
 	})
 
 	test('infer from string and normalize it', async () => {
@@ -119,12 +129,14 @@ describe('status extraction', () => {
 		expect(res.status).toBe(500)
 		// Don't normalize wrong status
 		expect(res.body).toBe('300 the movie')
+		expect(consoleSpy).toBeCalledWith('300 the movie')
 	})
 
 	test('infer from Error message and normalize it', async () => {
 		let res = await rq.put('').send({ message: '503 wtf' })
 		expect(res.status).toBe(503)
 		expect(res.body).toEqual({ status: 503, message: 'wtf' })
+		expect(consoleSpy).toBeCalledWith(expect.any(Error))
 
 		// Priority on status property
 		res = await rq.put('').send({ status: 422, message: '503 megawatts' })

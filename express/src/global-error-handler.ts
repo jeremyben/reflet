@@ -22,6 +22,10 @@ export function globalErrorHandler(err: any, req: Request, res: Response, next: 
 		status = StatusParser.getFromResponse(res)
 	}
 
+	if (status >= 500) {
+		console.error(err)
+	}
+
 	res.status(status)
 
 	// ─── Json detection ───

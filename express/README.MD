@@ -951,6 +951,10 @@ throw err // the Express way
 
 If none is found, it will look at the response status code, and if still nothing, will set `500` as default.
 
+#### Error logging
+
+If the error has a `5xx` status code, Reflet will also log it to stderr.
+
 #### Simply the default
 
 Don't want all that smartness ? 😥 After registering your controllers, attach your own global error handler and Reflet's global error handler will be removed from handlers' stack.

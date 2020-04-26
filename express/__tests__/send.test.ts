@@ -88,9 +88,12 @@ describe('handle return value', () => {
 	})
 
 	test('response object', async () => {
+		const consoleSpy = jest.spyOn(console, 'error').mockImplementation()
 		const res = await rq.put('').accept('json')
 		expect(res.status).toBe(500)
 		expect(res.body.message).toMatch('Response')
+		expect(consoleSpy).toBeCalledWith(expect.any(Error))
+		consoleSpy.mockRestore()
 	})
 })
 
