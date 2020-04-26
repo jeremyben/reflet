@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.3.0](https://github.com/jeremyben/reflet/tree/master/express/compare/@reflet/express@1.2.0...@reflet/express@1.3.0) (2020-04-26)
+
+
+### Features
+
+* **express:** log 5xx errors ([9cef2ef](https://github.com/jeremyben/reflet/tree/master/express/commit/9cef2ef))
+* **express:** register nested routers ([8eb76ad](https://github.com/jeremyben/reflet/tree/master/express/commit/8eb76ad))
+
+
+
+
+
 # [1.2.0](https://github.com/jeremyben/reflet/tree/master/express/compare/@reflet/express@1.1.0...@reflet/express@1.2.0) (2020-04-23)
 
 
