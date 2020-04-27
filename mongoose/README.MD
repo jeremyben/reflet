@@ -150,6 +150,17 @@ TypeScript [class decorators](https://www.typescriptlang.org/docs/handbook/decor
 This means you don't have to deal with the procedural and separate creation of both schema and model anymore !
 And now your properties and methods are statically typed.
 
+<table>
+<thead>
+<tr>
+  <th>Reflet</th>
+  <th>Mongoose equivalent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>
+
 ```ts
 @Model()
 class User extends Model.Interface {
@@ -157,8 +168,38 @@ class User extends Model.Interface {
   email: string
 }
 
-const user = await User.create({ email: 'jeremy@example.com '})
+const user = await User.create({
+  email: 'jeremy@example.com '
+})
+
+
+
+
 ```
+
+  </td>
+  <td>
+
+```ts
+interface UserDocument extends mongoose.Document {
+  email: string
+}
+
+const userSchema = new mongoose.Schema({
+  email: { type: String, required: true }
+})
+
+const User = mongoose.model<UserDocument>('User', userSchema)
+
+const user = await User.create({
+  email: 'jeremy@example.com '
+})
+```
+
+  </td>
+</tr>
+<tbody>
+</table>
 
 Your class needs to inherit a special empty class, **`Model.Interface`** or **`Model.I`**, to have Mongoose document properties and methods.
 
@@ -207,14 +248,56 @@ class User extends Model.Interface {
 > 🔦 `@SchemaOptions(options)`<br>
 > 💫 Related Mongoose object: [Schema options](https://mongoosejs.com/docs/guide#options)
 
+<table>
+<thead>
+<tr>
+  <th>Reflet</th>
+  <th>Mongoose equivalent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>
+
 ```ts
 @Model()
-@SchemaOptions({ autoIndex: false, strict: 'throw' })
-class User extends Model.Interface {
+@SchemaOptions({
+  autoIndex: false,
+  strict: 'throw'
+})
+class User extends Model.Interface {    
   @Field(String)
   name: string
 }
+
+
+
+
 ```
+
+  </td>
+  <td>
+
+```ts
+interface UserDocument extends mongoose.Document {
+  name: string
+}
+
+const userSchema = new mongoose.Schema(
+  { name: String },
+  {
+    autoIndex: false,
+    strict: 'throw'
+  }
+)
+
+const User = mongoose.model<UserDocument>('User', userSchema)
+```
+
+  </td>
+</tr>
+<tbody>
+</table>
 
 The `@SchemaOptions` API is a direct wrapper of Mongoose [schema options](https://mongoosejs.com/docs/guide#options), you can put in there everything that you used to.
 
@@ -223,10 +306,21 @@ The `@SchemaOptions` API is a direct wrapper of Mongoose [schema options](https:
 > 🔦 `@CreatedAt`, `@UpdatedAt`<br>
 > 💫 Related Mongoose option property: [`timestamps`](https://mongoosejs.com/docs/guide#timestamps)
 
+<table>
+<thead>
+<tr>
+  <th>Reflet</th>
+  <th>Mongoose equivalent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>
+
 ```ts
 @Model()
 @SchemaOptions({ minimize: false })
-class User extends Model.Interface {
+class User extends Model.Interface {     
   @Field(String)
   name: string
 
@@ -236,7 +330,42 @@ class User extends Model.Interface {
   @UpdatedAt
   updateDate: Date
 }
+
+
+
+
+
+
 ```
+
+  </td>
+  <td>
+
+```ts
+interface UserDocument extends mongoose.Document {
+  name: string
+  creationDate: Date
+  updateDate: Date
+}
+
+const userSchema = new mongoose.Schema(
+  { name: String },
+  {
+    minimize: false,
+    timestamps: {
+      createdAt: 'creationDate',
+      updatedAt: 'updateDate'
+    },
+  }
+)
+
+const User = mongoose.model<UserDocument>('User', userSchema)
+```
+
+  </td>
+</tr>
+<tbody>
+</table>
 
 ### Advanced schema manipulation
 
@@ -244,6 +373,17 @@ class User extends Model.Interface {
 > 💫 Related Mongoose object: [`Schema`](https://mongoosejs.com/docs/api/schema)
 
 If you need more advanced schema manipulation before `@Model` compiles it, you can use `@SchemaCallback`:
+
+<table>
+<thead>
+<tr>
+  <th>Reflet</th>
+  <th>Mongoose equivalent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>
 
 ```ts
 @Model()
@@ -257,7 +397,33 @@ class Animal extends Model.Interface {
   @Field(String)
   type: string
 }
+
+
 ```
+
+  </td>
+  <td>
+
+```ts
+interface AnimalDocument extends mongoose.Document {
+  name: string
+  type: string
+}
+
+const userSchema = new mongoose.Schema({
+  name: String,
+  type: String
+})
+
+userSchema.index({ name: 1, type: -1 })
+
+const Animal = mongoose.model<AnimalDocument>('Animal', userSchema)
+```
+
+  </td>
+</tr>
+<tbody>
+</table>
 
 _Beware of defining hooks in the callback if your schema has embedded discriminators. Mongoose documentation recommends declaring hooks **before** embedded discriminators, the callback is applied **after** them. You should use the dedicated hooks decorators `@Pre` and `@Post`._
 
@@ -266,6 +432,17 @@ _Beware of defining hooks in the callback if your schema has embedded discrimina
 > 🔦 `schemaFrom(class)`
 
 You can retrieve a schema from any decorated class, for advanced manipulation or embedded use in another schema.
+
+<table>
+<thead>
+<tr>
+  <th>Reflet</th>
+  <th>Mongoose equivalent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>
 
 ```ts
 @SchemaOptions({ _id: false })
@@ -277,19 +454,47 @@ abstract class Location {
   lng: number
 }
 
-const locationSchema = schemaFrom(Location)
-
 @Model()
-class City extends Model.Interface {
+class City extends Model.Interface {     
   @Field(String)
   name: string
 
-  @Field(locationSchema)
+  @Field(schemaFrom(Location))
   location: Location
 }
 
 const citySchema = schemaFrom(City)
 ```
+
+  </td>
+  <td>
+
+```ts
+interface CityDocument extends mongoose.Document {
+  name: string
+  location: {
+    lat: number,
+    lng: number
+  }
+}
+
+const locationSchema = new mongoose.Schema(
+  { lat: Number, lng: Number },
+  { _id: false }
+)
+
+const citySchema = new mongoose.Schema({
+  name: String,
+  location: locationSchema
+})
+
+const City = mongoose.model<CityDocument>('City', citySchema)
+```
+
+  </td>
+</tr>
+<tbody>
+</table>
 
 🗣️ As a good practice, you should make your schema-only classes `abstract`, so you don't instantiate them by mistake.
 
@@ -300,16 +505,52 @@ const citySchema = schemaFrom(City)
 > 🔦 `@Pre(method, callback)`<br>
 > 💫 Related Mongoose method: [`schema.pre`](https://mongoosejs.com/docs/middleware#pre)
 
+<table>
+<thead>
+<tr>
+  <th>Reflet</th>
+  <th>Mongoose equivalent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>
+
 ```ts
 @Model()
 @Pre<User>('save', function(next) {
   next()
 })
-class User extends Model.Interface {
+class User extends Model.Interface {     
   @Field(String)
   name: string
 }
+
+
+
 ```
+
+  </td>
+  <td>
+
+```ts
+interface UserDocument extends mongoose.Document {
+  name: string
+}
+
+const userSchema = new mongoose.Schema({ name: String })
+
+userSchema.pre<UserDocument>('save', function (doc, next) {
+  next()
+})
+
+const User = mongoose.model<UserDocument>('User', userSchema)
+```
+
+  </td>
+</tr>
+<tbody>
+</table>
 
 The `@Pre` API is a direct wrapper of Mongoose [Schema.pre method](https://mongoosejs.com/docs/api/schema#schema_Schema-pre), you can put in there everything that you used to.
 
@@ -318,16 +559,52 @@ The `@Pre` API is a direct wrapper of Mongoose [Schema.pre method](https://mongo
 > 🔦 `@Post(method, callback)`<br>
 > 💫 Related Mongoose method: [`schema.post`](https://mongoosejs.com/docs/middleware#post)
 
+<table>
+<thead>
+<tr>
+  <th>Reflet</th>
+  <th>Mongoose equivalent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>
+
 ```ts
 @Model()
-@Post<User>('save', function(doc, next) {
-  next()
+@Post<User>('find', function(result) {
+  console.log(result)
 })
-class User extends Model.Interface {
+class User extends Model.Interface {     
   @Field(String)
   name: string
 }
+
+
+
 ```
+
+  </td>
+  <td>
+
+```ts
+interface UserDocument extends mongoose.Document {
+  name: string
+}
+
+const userSchema = new mongoose.Schema({ name: String })
+
+userSchema.post<UserDocument>('find', function (result) {
+  console.log(result)
+})
+
+const User = mongoose.model<UserDocument>('User', userSchema)
+```
+
+  </td>
+</tr>
+<tbody>
+</table>
 
 The `@Post` API is a direct wrapper of Mongoose [Schema.post method](https://mongoosejs.com/docs/api/schema#schema_Schema-post), you can put in there everything that you used to.
 
