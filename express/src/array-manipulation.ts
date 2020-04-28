@@ -43,9 +43,6 @@ export function concatPrependFast<T>(source: T[], added: T[]): T[] {
  */
 export function flatMapFast<T>(array: T[][]): T[]
 
-/**
- * {@inheritDoc (flatMapFast:1)}
- */
 export function flatMapFast<T, U>(array: T[][], mapper: (value: T) => U): U[]
 
 export function flatMapFast<T, U>(array: T[][], mapper?: (value: T) => U): U[] {

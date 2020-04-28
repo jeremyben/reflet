@@ -30,9 +30,11 @@ export function globalErrorHandler(err: any, req: Request, res: Response, next: 
 
 	// ─── Json detection ───
 
+	const responseType = res.get('Content-Type')
+
 	// https://regex101.com/r/oBuEQY/4
-	const definitelyJson = /(.*[^\w\s]|^)json(; ?charset.*)?$/m.test(res.get('Content-Type'))
-	const probablyJson = !res.get('Content-Type') && (req.xhr || (!!req.get('Accept') && !!req.accepts('json')))
+	const definitelyJson = /(.*[^\w\s]|^)json(; ?charset.*)?$/m.test(responseType)
+	const probablyJson = !responseType && (req.xhr || (!!req.get('Accept') && !!req.accepts('json')))
 
 	if (!res.headersSent && (definitelyJson || probablyJson)) {
 		if (err instanceof Error) {

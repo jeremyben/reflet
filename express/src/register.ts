@@ -82,16 +82,6 @@ function attach(
 		for (const mware of sharedMwares) appInstance.use(promisifyHandler(mware))
 	}
 
-	// Recursively attach children controllers
-	if (routerMeta?.children) {
-		// Keep track of all shared middlewares for dedupe.
-		concatFast(parentSharedMwares, sharedMwares)
-
-		for (const child of routerMeta.children) {
-			attach(child, appInstance, globalMwares, parentSharedMwares)
-		}
-	}
-
 	for (const { path, method, key } of routes) {
 		const routeMwares = extractMiddlewares(controllerClass, key)
 		const routeErrHandlers = extractErrorHandlers(controllerClass, key)
@@ -164,6 +154,16 @@ function attach(
 				routeErrHandlers.map(promisifyErrorHandler),
 				sharedErrHandlers.map(promisifyErrorHandler)
 			)
+		}
+	}
+
+	// Recursively attach children controllers
+	if (routerMeta?.children) {
+		// Keep track of all shared middlewares for dedupe.
+		concatFast(parentSharedMwares, sharedMwares)
+
+		for (const child of routerMeta.children) {
+			attach(child, appInstance, globalMwares, parentSharedMwares)
 		}
 	}
 
