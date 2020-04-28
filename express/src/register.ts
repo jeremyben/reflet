@@ -1,7 +1,7 @@
 import { Router, Application, RequestHandler, Response } from 'express'
 import { promisifyHandler, promisifyErrorHandler } from './async-wrapper'
 import { globalErrorHandler, makeGlobalErrorHandlerRemovable } from './global-error-handler'
-import { ClassType } from './interfaces'
+import { ClassType, ObjectNotFunction } from './interfaces'
 import { isPromise, isReadableStream, isClass } from './type-guards'
 import { concatFast } from './array-manipulation'
 
@@ -35,10 +35,7 @@ import { extractSend } from './send-decorator'
  * ------
  * @public
  */
-export function register<T extends object>(
-	app: Application,
-	controllers: ClassType[] | Exclude<T, ClassType>[]
-): Application {
+export function register(app: Application, controllers: (new () => any)[] | ObjectNotFunction[]): Application {
 	const globalMwares = getGlobalMiddlewares(app)
 
 	for (const controller of controllers) {

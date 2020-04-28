@@ -122,7 +122,8 @@ describe('children controllers', () => {
 			}
 		}
 
-		const rq = supertest(register(express(), [Module]))
+		const app = register(express(), [Module])
+		const rq = supertest(app)
 
 		const resGet = await rq.get('/module/foo')
 		expect(resGet.status).toBe(201)

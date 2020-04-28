@@ -62,10 +62,7 @@ export namespace Router {
 	 * ------
 	 * @public
 	 */
-	export function register<T extends object>(
-		router: ObjectNotFunction,
-		children: ClassType[] | Exclude<T, ClassType>[]
-	) {
+	export function register(router: ObjectNotFunction, children: (new () => any)[] | ObjectNotFunction[]) {
 		const routerMeta = extractRouter(router.constructor as ClassType)
 
 		if (!routerMeta) {
