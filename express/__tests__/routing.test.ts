@@ -103,6 +103,10 @@ describe('basic routing', () => {
 
 describe('children controllers', () => {
 	test('simple registration', async () => {
+		const barRouter = express.Router().get('', (req, res, next) => {
+			res.send({})
+		})
+
 		@Use((req, res, next) => {
 			res.status(201)
 			next()
@@ -110,7 +114,7 @@ describe('children controllers', () => {
 		@Router('/module')
 		class Module {
 			constructor() {
-				Router.register(this, [Controller])
+				Router.register(this, [Controller, ['/bar', barRouter] as any])
 			}
 		}
 
@@ -125,8 +129,11 @@ describe('children controllers', () => {
 		const app = register(express(), [Module])
 		const rq = supertest(app)
 
-		const resGet = await rq.get('/module/foo')
-		expect(resGet.status).toBe(201)
+		const fooGet = await rq.get('/module/foo')
+		expect(fooGet.status).toBe(201)
+
+		const barGet = await rq.get('/module/bar')
+		expect(barGet.status).toBe(201)
 	})
 
 	test('passing down dependencies, shared params, jsonParser deduplication', async () => {

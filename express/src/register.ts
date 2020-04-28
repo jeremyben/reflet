@@ -160,7 +160,12 @@ function attach(
 		concatFast(parentSharedMwares, sharedMwares)
 
 		for (const child of routerMeta.children) {
-			attach(child, appInstance, globalMwares, parentSharedMwares)
+			// Undocumented and untyped feature to attach normal express Routers. Will be removed.
+			if (Array.isArray(child) && typeof child[0] === 'string' && typeof child[1] === 'function') {
+				appInstance.use(child[0], child[1])
+			} else {
+				attach(child, appInstance, globalMwares, parentSharedMwares)
+			}
 		}
 	}
 
