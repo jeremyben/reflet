@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.3.1](https://github.com/jeremyben/reflet/tree/master/express/compare/@reflet/express@1.3.0...@reflet/express@1.3.1) (2020-04-28)
+
+
+### Bug Fixes
+
+* **express:** attach children routers after routes of parent routers ([323a2b1](https://github.com/jeremyben/reflet/tree/master/express/commit/323a2b1))
+* **express:** class with dependencies should be instantiated ([8e6c89f](https://github.com/jeremyben/reflet/tree/master/express/commit/8e6c89f))
+* **express:** temporary allow to register nested express routers, untyped and undocumented ([d2fe64f](https://github.com/jeremyben/reflet/tree/master/express/commit/d2fe64f))
+
+
+
+
+
 # [1.3.0](https://github.com/jeremyben/reflet/tree/master/express/compare/@reflet/express@1.2.0...@reflet/express@1.3.0) (2020-04-26)
 
 
