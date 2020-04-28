@@ -53,6 +53,8 @@ describe('basic routing', () => {
 		}
 	}
 
+	const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
+
 	const rq = supertest(
 		register(express(), [
 			new UserController(new UserService()),
@@ -60,6 +62,8 @@ describe('basic routing', () => {
 			/* will warn */ new UserService(),
 		])
 	)
+	expect(consoleSpy).toBeCalledWith(expect.stringContaining('register'))
+	consoleSpy.mockRestore()
 
 	test('@Get with Router', async () => {
 		const res = await rq.get('/user')
