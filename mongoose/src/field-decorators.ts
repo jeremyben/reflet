@@ -251,7 +251,7 @@ type SchemaTypeOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]> = R
 		? ArrayOptions<number>
 		: T extends DateConstructor | typeof mongoose.Schema.Types.Date
 		? DateOptions
-		: T extends typeof mongoose.Schema.Types.ObjectId
+		: T extends typeof mongoose.Schema.Types.ObjectId | typeof mongoose.Schema.Types.ObjectId[]
 		? ObjectIdOptions
 		: T extends MapConstructor
 		? MapOptions

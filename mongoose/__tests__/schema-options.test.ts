@@ -38,10 +38,10 @@ test('simple schema', async () => {
 		numbers: number[][]
 
 		@Field({
-			type: mongoose.Schema.Types.ObjectId,
+			type: [mongoose.Schema.Types.ObjectId],
 			ref: '',
 		})
-		ref: string
+		ref: string[]
 
 		@Field.Nested({
 			lat: { type: Number },
