@@ -1,5 +1,5 @@
-import supertest from 'supertest'
-import express, { Request, Response, NextFunction } from 'express'
+import * as supertest from 'supertest'
+import * as express from 'express'
 import { register, Get, Put } from '@reflet/express'
 import { UseStatus } from '../src'
 import { log } from '../../testing/tools'
@@ -7,12 +7,12 @@ import { log } from '../../testing/tools'
 @UseStatus(204)
 class Controller {
 	@Get()
-	get(req: Request, res: Response, next: NextFunction) {
+	get(req: express.Request, res: express.Response, next: express.NextFunction) {
 		res.send('done')
 	}
 
 	@Put()
-	put(req: Request, res: Response, next: NextFunction) {
+	put(req: express.Request, res: express.Response, next: express.NextFunction) {
 		next(400)
 	}
 }

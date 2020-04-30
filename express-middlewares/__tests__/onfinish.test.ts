@@ -1,6 +1,6 @@
-import supertest from 'supertest'
+import * as supertest from 'supertest'
+import * as express from 'express'
 import { createReadStream } from 'fs'
-import express, { Request, Response, NextFunction } from 'express'
 import { register, Get, Post, Put, Patch, Delete } from '@reflet/express'
 import { UseOnFinish, UseInterceptor } from '../src'
 import { createDummyFile, log } from '../../testing/tools'
@@ -9,7 +9,7 @@ describe('response properties on finish event', () => {
 	class Controller {
 		@UseOnFinish((req, res) => console.info(res.headersSent, res.finished, res.statusCode))
 		@Get()
-		get(req: Request, res: Response, next: NextFunction) {
+		get(req: express.Request, res: express.Response, next: express.NextFunction) {
 			res.sendStatus(201)
 		}
 
@@ -18,13 +18,13 @@ describe('response properties on finish event', () => {
 		@UseInterceptor((body) => body)
 		@UseInterceptor((body) => body)
 		@Put()
-		put(req: Request, res: Response, next: NextFunction) {
+		put(req: express.Request, res: express.Response, next: express.NextFunction) {
 			res.send('done')
 		}
 
 		@UseOnFinish((req, res) => Promise.reject('nope'))
 		@Post()
-		post(req: Request, res: Response, next: NextFunction) {
+		post(req: express.Request, res: express.Response, next: express.NextFunction) {
 			res.send('done')
 		}
 	}
@@ -57,32 +57,32 @@ describe('retrieve body with express methods', () => {
 	class Controller {
 		@UseOnFinish<string>((req, res) => console.info(res.body.toUpperCase()), true)
 		@Get()
-		get(req: Request, res: Response, next: NextFunction) {
+		get(req: express.Request, res: express.Response, next: express.NextFunction) {
 			res.send('done')
 		}
 
 		@UseOnFinish<string>((req, res) => console.info(res.body.toUpperCase()), true)
 		@Put()
-		put(req: Request, res: Response, next: NextFunction) {
+		put(req: express.Request, res: express.Response, next: express.NextFunction) {
 			res.json('done')
 		}
 
 		@UseOnFinish<{ foo: number }>((req, res) => console.info(res.body), true)
 		@Post()
-		post(req: Request, res: Response, next: NextFunction) {
+		post(req: express.Request, res: express.Response, next: express.NextFunction) {
 			res.jsonp({ foo: 1 })
 		}
 
 		@UseOnFinish((req, res) => console.info(res.statusCode, res.body), true)
 		@Patch()
-		patch(req: Request, res: Response, next: NextFunction) {
+		patch(req: express.Request, res: express.Response, next: express.NextFunction) {
 			throw { status: 400 }
 		}
 
 		@UseOnFinish((req, res) => console.info(res.wasIntercepted, res.body), true)
 		@UseInterceptor<{ foo: string }, { foo: number }>((body) => ({ foo: 3 }))
 		@Delete()
-		delete(req: Request, res: Response, next: NextFunction) {
+		delete(req: express.Request, res: express.Response, next: express.NextFunction) {
 			res.send({ foo: 'foo' })
 		}
 	}
@@ -138,19 +138,19 @@ describe('retrieve body with native methods', () => {
 	class Controller {
 		@UseOnFinish<string>((req, res) => console.info(res.body), true)
 		@Get()
-		get(req: Request, res: Response, next: NextFunction) {
+		get(req: express.Request, res: express.Response, next: express.NextFunction) {
 			res.end('done')
 		}
 
 		@UseOnFinish<string>((req, res) => console.info(res.body), true)
 		@Patch()
-		patch(req: Request, res: Response, next: NextFunction) {
+		patch(req: express.Request, res: express.Response, next: express.NextFunction) {
 			res.end('iVBORw', 'base64')
 		}
 
 		@UseOnFinish<string>((req, res) => console.info(res.body), true)
 		@Post()
-		post(req: Request, res: Response, next: NextFunction) {
+		post(req: express.Request, res: express.Response, next: express.NextFunction) {
 			res.write('<html>')
 			res.write('<body>')
 			res.write('<h1>coucou</h1>')
@@ -160,7 +160,7 @@ describe('retrieve body with native methods', () => {
 
 		@UseOnFinish<string>((req, res) => console.info(res.body), true)
 		@Put()
-		put(req: Request, res: Response, next: NextFunction) {
+		put(req: express.Request, res: express.Response, next: express.NextFunction) {
 			res.setHeader('content-type', 'application/octet-stream')
 			res.write(Buffer.from('done', 'binary'))
 			res.end()
@@ -204,7 +204,7 @@ describe('retrieve streamed body', () => {
 	class Controller {
 		@UseOnFinish<string>((req, res) => console.info(res.body.length), true)
 		@Get()
-		get(req: Request, res: Response, next: NextFunction) {
+		get(req: express.Request, res: express.Response, next: express.NextFunction) {
 			createReadStream(__filename, 'utf8').pipe(res)
 		}
 
@@ -213,13 +213,13 @@ describe('retrieve streamed body', () => {
 			console.info(res.body.length)
 		}, true)
 		@Patch()
-		patch(req: Request, res: Response, next: NextFunction) {
+		patch(req: express.Request, res: express.Response, next: express.NextFunction) {
 			res.download(__filename)
 		}
 
 		@UseOnFinish<string>((req, res) => console.info(res.body.length), true)
 		@Put()
-		put(req: Request, res: Response, next: NextFunction) {
+		put(req: express.Request, res: express.Response, next: express.NextFunction) {
 			createReadStream(`${__dirname}/temp`, 'utf8').pipe(res)
 		}
 
@@ -228,7 +228,7 @@ describe('retrieve streamed body', () => {
 			console.info(res.body.length)
 		}, true)
 		@Post()
-		post(req: Request, res: Response, next: NextFunction) {
+		post(req: express.Request, res: express.Response, next: express.NextFunction) {
 			res.sendFile(`${__dirname}/temp`)
 		}
 	}

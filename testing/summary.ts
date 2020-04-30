@@ -1,5 +1,6 @@
 import { join, relative } from 'path'
 import { readFileSync, writeFileSync } from 'fs'
+import { CoverageSummaryData } from 'istanbul-lib-coverage' // tslint:disable-line: no-implicit-dependencies
 
 // Copy jest coverage summary to project root to be used by dynamic shields.io badges.
 // Change absolute paths to relative.
@@ -22,6 +23,6 @@ for (const path of paths) {
 writeFileSync(outputFile, JSON.stringify(output, null, '\t'), 'utf-8')
 
 type Summary = {
-	total: jest.CoverageSummary
-	[path: string]: jest.CoverageSummary
+	total: CoverageSummaryData
+	[path: string]: CoverageSummaryData
 }

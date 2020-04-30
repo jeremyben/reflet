@@ -78,7 +78,7 @@ The **best** decorators for [Mongoose](https://mongoosejs.com/). Have a look at 
     ```ts
     // server.ts
     import 'reflect-metadata'
-    import mongoose from 'mongoose'
+    import * as mongoose from 'mongoose'
     import { User } from './user.model.ts'
 
     mongoose.connect('mongodb://localhost/test', { useNewUrlParser: true })

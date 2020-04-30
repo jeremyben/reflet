@@ -1,19 +1,19 @@
-import supertest from 'supertest'
-import express, { json, urlencoded, Request, Response, NextFunction } from 'express'
+import * as supertest from 'supertest'
+import * as express from 'express'
 import { register, Post, Put } from '@reflet/express'
 import { UseIf } from '../src'
 import { log } from '../../testing/tools'
 
-@UseIf((req) => req.method === 'POST', [json()])
-@UseIf(async (req) => req.method === 'PUT', [urlencoded({ extended: true })])
+@UseIf((req) => req.method === 'POST', [express.json()])
+@UseIf(async (req) => req.method === 'PUT', [express.urlencoded({ extended: true })])
 class Controller {
 	@Post()
-	post(req: Request, res: Response, next: NextFunction) {
+	post(req: express.Request, res: express.Response, next: express.NextFunction) {
 		res.json(req.body)
 	}
 
 	@Put()
-	put(req: Request, res: Response, next: NextFunction) {
+	put(req: express.Request, res: express.Response, next: express.NextFunction) {
 		res.json(req.body)
 	}
 }

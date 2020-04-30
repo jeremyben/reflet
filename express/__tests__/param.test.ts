@@ -1,5 +1,5 @@
-import supertest from 'supertest'
-import express, { Response, Request, RequestHandler, json, urlencoded } from 'express'
+import * as supertest from 'supertest'
+import * as express from 'express'
 import { register, Get, Post, Put, Patch, Use, Res, Body, Params, Headers, Query, createParamDecorator } from '../src'
 import { extractMiddlewares } from '../src/middleware-decorator'
 import { extractParamsMiddlewares } from '../src/param-decorators'
@@ -14,23 +14,23 @@ describe('basic decorators', () => {
 	})
 	class Controller {
 		@Get()
-		async get(@Headers headers: any, @Headers('via') via: string, @Res res: Response) {
+		async get(@Headers headers: any, @Headers('via') via: string, @Res res: express.Response) {
 			res.send({ via, shared: headers.shared })
 		}
 
 		@Post()
-		post(@Body body: { foo: number }, @Body<{ foo: number }>('foo') foo: number, @Res res: Response) {
+		post(@Body body: { foo: number }, @Body<{ foo: number }>('foo') foo: number, @Res res: express.Response) {
 			res.send({ bar: foo * body.foo })
 		}
 
 		@Patch('/:id')
-		patch(@Params params: any, @Query queries: any, @Res res: Response) {
+		patch(@Params params: any, @Query queries: any, @Res res: express.Response) {
 			const bar = Number.parseInt(params.id, 10) * 2
 			res.send({ bar, baz: queries.q })
 		}
 
 		@Put('/:id')
-		put(@Params('id') id: string, @Query('q') q: string, @Res res: Response) {
+		put(@Params('id') id: string, @Query('q') q: string, @Res res: express.Response) {
 			const bar = Number.parseInt(id, 10) * 2
 			res.send({ bar, baz: q })
 		}
@@ -60,21 +60,21 @@ describe('basic decorators', () => {
 })
 
 describe('custom decorators', () => {
-	const CurrentUser = createParamDecorator((req: Request & { user?: any }) => req.user)
-	const BodyTrimmed = (subKey: string) => createParamDecorator((req) => req.body[subKey].trim(), [json()])
+	const CurrentUser = createParamDecorator((req: express.Request & { user?: any }) => req.user)
+	const BodyTrimmed = (subKey: string) => createParamDecorator((req) => req.body[subKey].trim(), [express.json()])
 
-	@Use((req: Request & { user?: any }, res, next) => {
+	@Use((req: express.Request & { user?: any }, res, next) => {
 		req.user = { id: 1, name: 'jeremy' }
 		next()
 	})
 	class Controller {
 		@Get()
-		get(@CurrentUser user: object, @Res res: Response) {
+		get(@CurrentUser user: object, @Res res: express.Response) {
 			res.send({ user })
 		}
 
 		@Put()
-		put(@BodyTrimmed('foot') foot: string, @BodyTrimmed('pub') pub: string, @Res res: Response) {
+		put(@BodyTrimmed('foot') foot: string, @BodyTrimmed('pub') pub: string, @Res res: express.Response) {
 			foot = foot + '!'
 			pub = pub + '!'
 			res.send({ foot, pub })
@@ -101,11 +101,11 @@ describe('custom decorators', () => {
 
 describe('param middlewares deduplication', () => {
 	test('body-parsers on the route', async () => {
-		@Use(json(), urlencoded({ extended: false }))
+		@Use(express.json(), express.urlencoded({ extended: false }))
 		class Foo {
-			@Use(json())
+			@Use(express.json())
 			@Post()
-			post(@Body('foo') foo: string, @Body body: any, @Res res: Response) {
+			post(@Body('foo') foo: string, @Body body: any, @Res res: express.Response) {
 				res.send(foo)
 			}
 		}
@@ -118,11 +118,12 @@ describe('param middlewares deduplication', () => {
 	})
 
 	test('body-parsers in different param decorators', async () => {
-		const BodyTrimmed = (subKey: string) => createParamDecorator((req) => req.body[subKey].trim(), [json()], true)
+		const BodyTrimmed = (subKey: string) =>
+			createParamDecorator((req) => req.body[subKey].trim(), [express.json()], true)
 
 		class Foo {
 			@Post()
-			post(@BodyTrimmed('foo') fooTrimmed: string, @Body('foo') foo: string, @Res res: Response) {
+			post(@BodyTrimmed('foo') fooTrimmed: string, @Body('foo') foo: string, @Res res: express.Response) {
 				res.send(fooTrimmed)
 			}
 		}
@@ -137,9 +138,9 @@ describe('param middlewares deduplication', () => {
 
 	test('custom middleware', async () => {
 		type User = { id: number; name: string }
-		type RequestAuth = Request & { user?: User }
+		type RequestAuth = express.Request & { user?: User }
 
-		const authent: RequestHandler = (req: RequestAuth, res, next) => {
+		const authent: express.RequestHandler = (req: RequestAuth, res, next) => {
 			req.user = { id: 1, name: 'jeremy' }
 			next()
 		}
@@ -149,7 +150,7 @@ describe('param middlewares deduplication', () => {
 		@Use(authent)
 		class Bar {
 			@Post('user/:yo')
-			post(@CurrentUser user: User, @Res res: Response) {
+			post(@CurrentUser user: User, @Res res: express.Response) {
 				res.send(user)
 			}
 		}

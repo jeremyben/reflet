@@ -1,5 +1,5 @@
-import supertest from 'supertest'
-import express, { Request, Response, NextFunction } from 'express'
+import * as supertest from 'supertest'
+import * as express from 'express'
 import { register, Get, Post, Put, Patch, Catch, Send, Delete } from '@reflet/express'
 import { UseInterceptor } from '../src'
 import { log } from '../../testing/tools'
@@ -10,7 +10,7 @@ describe('intercept responses', () => {
 			return { ...data, foo: data.foo * 2 }
 		})
 		@Get()
-		get(req: Request, res: Response, next: NextFunction) {
+		get(req: express.Request, res: express.Response, next: express.NextFunction) {
 			res.send({ foo: 2, bar: 5 })
 		}
 
@@ -26,7 +26,7 @@ describe('intercept responses', () => {
 		@UseInterceptor<string>((data) => `<div>${data}</div>`)
 		@UseInterceptor<string>(async (data) => `<p>${data}</p>`)
 		@Post()
-		post(req: Request, res: Response, next: NextFunction) {
+		post(req: express.Request, res: express.Response, next: express.NextFunction) {
 			res.end('foo')
 		}
 
@@ -35,7 +35,7 @@ describe('intercept responses', () => {
 			return { foo: data.foo * 2 }
 		})
 		@Patch()
-		patch(req: Request, res: Response, next: NextFunction) {
+		patch(req: express.Request, res: express.Response, next: express.NextFunction) {
 			res.send({ foo: 2 })
 		}
 	}
@@ -70,12 +70,12 @@ describe("don't intercept", () => {
 	})
 	class Controller {
 		@Get()
-		get(req: Request, res: Response, next: NextFunction) {
+		get(req: express.Request, res: express.Response, next: express.NextFunction) {
 			throw Error('400')
 		}
 
 		@Put()
-		async put(req: Request, res: Response, next: NextFunction) {
+		async put(req: express.Request, res: express.Response, next: express.NextFunction) {
 			throw 418
 		}
 
@@ -83,18 +83,18 @@ describe("don't intercept", () => {
 			res.status(422).send(err)
 		})
 		@Post()
-		post(req: Request, res: Response, next: NextFunction) {
+		post(req: express.Request, res: express.Response, next: express.NextFunction) {
 			next('please stop')
 		}
 
 		@Patch()
-		patch(req: Request, res: Response, next: NextFunction) {
+		patch(req: express.Request, res: express.Response, next: express.NextFunction) {
 			res.write('nope')
 			res.end('!')
 		}
 
 		@Delete()
-		delete(req: Request, res: Response, next: NextFunction) {
+		delete(req: express.Request, res: express.Response, next: express.NextFunction) {
 			res.end()
 		}
 	}

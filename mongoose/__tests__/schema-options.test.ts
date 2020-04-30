@@ -1,4 +1,4 @@
-import mongoose from 'mongoose'
+import * as mongoose from 'mongoose'
 import { Field, SchemaOptions, schemaFrom, VersionKey, CreatedAt, UpdatedAt, SchemaCallback, Model } from '../src'
 
 test('simple schema', async () => {

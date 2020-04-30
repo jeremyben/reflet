@@ -1,5 +1,5 @@
-import supertest from 'supertest'
-import express, { Request, Response, NextFunction } from 'express'
+import * as supertest from 'supertest'
+import * as express from 'express'
 import { register, Get, Put } from '@reflet/express'
 import { UseSet, UseType } from '../src'
 import { log } from '../../testing/tools'
@@ -8,13 +8,13 @@ import { log } from '../../testing/tools'
 class Controller {
 	@UseSet('allow', 'GET')
 	@Get()
-	get(req: Request, res: Response, next: NextFunction) {
+	get(req: express.Request, res: express.Response, next: express.NextFunction) {
 		res.sendStatus(406)
 	}
 
 	@UseType('application/vnd.api+json')
 	@Put()
-	put(req: Request, res: Response, next: NextFunction) {
+	put(req: express.Request, res: express.Response, next: express.NextFunction) {
 		res.json('done')
 	}
 }

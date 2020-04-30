@@ -1,6 +1,6 @@
 import { join } from 'path'
 import { build } from 'tsc-prog'
-import ts from 'typescript'
+import * as ts from 'typescript'
 import * as tsdoc from '@microsoft/tsdoc'
 import { writeFileSync } from 'fs'
 

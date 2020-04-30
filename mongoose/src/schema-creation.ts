@@ -1,4 +1,4 @@
-import mongoose from 'mongoose'
+import * as mongoose from 'mongoose'
 import { getFields, getDiscriminatorFields, getDiscriminatorArrayFields } from './field-decorators'
 import { mergeSchemaOptionsAndKeys } from './schema-options-decorators'
 import { getPreHooks, getPostHooks } from './hooks-decorators'

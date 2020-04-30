@@ -1,4 +1,4 @@
-import mongoose from 'mongoose'
+import * as mongoose from 'mongoose'
 import { createSchema } from './schema-creation'
 import { getKind, assignKindKey } from './kind-decorator'
 import { IModel } from './i-model'

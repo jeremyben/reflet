@@ -1,5 +1,5 @@
-import supertest from 'supertest'
-import express, { json, Response, NextFunction, Request, ErrorRequestHandler, RequestHandler } from 'express'
+import * as supertest from 'supertest'
+import * as express from 'express'
 import { register, Use, Get, Post, Put, Patch, Delete, Req, Next } from '../src'
 import { hasGlobalErrorHandler } from '../src/global-error-handler'
 import { log } from '../../testing/tools'
@@ -9,16 +9,16 @@ afterEach(() => consoleSpy.mockClear())
 afterAll(() => consoleSpy.mockRestore())
 
 describe('json detection', () => {
-	@Use(json())
+	@Use(express.json())
 	class Controller {
 		@Get()
-		get(req: Request, res: Response) {
+		get(req: express.Request, res: express.Response) {
 			res.type('json')
 			throw req.httpVersionMajor
 		}
 
 		@Put()
-		async put(@Next() next: NextFunction) {
+		async put(@Next() next: express.NextFunction) {
 			next(Error('wtf'))
 		}
 
@@ -66,13 +66,13 @@ describe('json detection', () => {
 })
 
 describe('status extraction', () => {
-	@Use(json(), (req, res, next) => {
+	@Use(express.json(), (req, res, next) => {
 		res.type('json')
 		next()
 	})
 	class Controller {
 		@Get()
-		get(@Next next: NextFunction, @Req req: Request) {
+		get(@Next next: express.NextFunction, @Req req: express.Request) {
 			// tslint:disable-next-line: variable-name
 			let { number } = req.body
 			number = Number.parseInt(number, 10)
@@ -80,14 +80,14 @@ describe('status extraction', () => {
 		}
 
 		@Post()
-		async post(req: Request) {
+		async post(req: express.Request) {
 			// tslint:disable-next-line: variable-name
 			const { string } = req.body
 			throw string
 		}
 
 		@Put()
-		async put(req: Request) {
+		async put(req: express.Request) {
 			const { message, status } = req.body
 			const err = Error(message) as Error & { status: number }
 			if (status) err.status = status
@@ -95,12 +95,12 @@ describe('status extraction', () => {
 		}
 
 		@Patch()
-		patch(req: Request) {
+		patch(req: express.Request) {
 			throw req.body
 		}
 
 		@Delete()
-		delete(req: Request, res: Response) {
+		delete(req: express.Request, res: express.Response) {
 			res.status(418)
 			throw Error('200')
 		}
@@ -159,10 +159,10 @@ describe('status extraction', () => {
 })
 
 describe('removable', () => {
-	@Use(json())
+	@Use(express.json())
 	class Controller {
 		@Get()
-		get(req: Request, res: Response) {
+		get(req: express.Request, res: express.Response) {
 			res.type('json')
 			throw req.httpVersionMajor
 		}
@@ -178,8 +178,8 @@ describe('removable', () => {
 	const app = express()
 	const rq = supertest(register(app, [Controller]))
 
-	const afterHandler: RequestHandler = (req, res, next) => next()
-	const errorHandler: ErrorRequestHandler = (err, req, res, next) => next(err)
+	const afterHandler: express.RequestHandler = (req, res, next) => next()
+	const errorHandler: express.ErrorRequestHandler = (err, req, res, next) => next(err)
 
 	test('not removed by simple handler', async () => {
 		expect(hasGlobalErrorHandler(app)).toBe(true)
@@ -200,7 +200,7 @@ describe('removable', () => {
 	})
 
 	test('custom handling', async () => {
-		const customErrorHandler: ErrorRequestHandler = (err, req, resp, next) =>
+		const customErrorHandler: express.ErrorRequestHandler = (err, req, resp, next) =>
 			err.status === 418 ? resp.status(err.status).send({ err }) : next(err)
 
 		app.use(customErrorHandler)

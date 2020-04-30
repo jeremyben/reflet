@@ -1,33 +1,33 @@
-import supertest from 'supertest'
-import express, { json, Response, NextFunction, Request } from 'express'
+import * as supertest from 'supertest'
+import * as express from 'express'
 import { register, Get, Post, Put, Use, Catch, Router } from '../src'
 import { log } from '../../testing/tools'
 
 @Catch((err, req, res, next) => res.status(418).send({ err }))
-@Use(json())
+@Use(express.json())
 @Router('')
 class FooController {
 	@Use(
-		(req: Request & { user?: any }, res, next) => {
+		(req: express.Request & { user?: any }, res, next) => {
 			req.user = { id: 1, name: 'jeremy' }
 			next()
 		},
-		(req: Request & { user?: any }, res, next) => {
+		(req: express.Request & { user?: any }, res, next) => {
 			req.user.id = 2
 			next()
 		}
 	)
-	@Use((req: Request & { user?: any }, res, next) => {
+	@Use((req: express.Request & { user?: any }, res, next) => {
 		req.user.id = 3
 		next()
 	})
 	@Get()
-	get(req: Request & { user: any }, res: Response) {
+	get(req: express.Request & { user: any }, res: express.Response) {
 		res.send({ user: req.user })
 	}
 
 	@Post()
-	post(req: Request, res: Response) {
+	post(req: express.Request, res: express.Response) {
 		res.send({ bar: req.body.foo * 2 })
 	}
 

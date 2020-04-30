@@ -1,10 +1,10 @@
-import Mongoose from 'mongoose'
+import * as mongoose from 'mongoose'
 
-let mongoose: typeof Mongoose
+let Mongoose: typeof mongoose
 
 beforeAll(async () => {
 	// https://github.com/shelfio/jest-mongodb#3-configure-mongodb-client
-	mongoose = await Mongoose.connect(process.env.MONGO_URL!, {
+	Mongoose = await mongoose.connect(process.env.MONGO_URL!, {
 		useNewUrlParser: true,
 		useUnifiedTopology: true,
 		useCreateIndex: true,
@@ -12,5 +12,5 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-	await mongoose.connection.close()
+	await Mongoose.connection.close()
 })

@@ -1,5 +1,5 @@
-import supertest from 'supertest'
-import express, { Response, Request, NextFunction } from 'express'
+import * as supertest from 'supertest'
+import * as express from 'express'
 import { register, Router, Get, Post, Put, Patch, Method, Res, Req, Use, Params, Body } from '../src'
 import { log } from '../../testing/tools'
 
@@ -20,19 +20,19 @@ describe('basic routing', () => {
 		constructor(private userService: UserService) {}
 
 		@Get()
-		get(@Res res: Response) {
+		get(@Res res: express.Response) {
 			res.send([{ id: 1 }])
 		}
 
 		@Patch('/:id')
-		patch(@Req() req: Request<{ id: string }>, @Res() res: Response) {
+		patch(@Req() req: express.Request<{ id: string }>, @Res() res: express.Response) {
 			const user = this.userService.getUserById(req.params.id)
 			res.send(user)
 		}
 
 		@Post()
 		@Put('/me')
-		async post(req: Request, res: Response, next: NextFunction) {
+		async post(req: express.Request, res: express.Response, next: express.NextFunction) {
 			await new Promise((resolve) => setTimeout(resolve, 20))
 			res.send({ id: 3 })
 		}
@@ -42,12 +42,12 @@ describe('basic routing', () => {
 		prop = 1
 
 		@Method('options', '/message')
-		options(req: Request, res: Response, next: NextFunction) {
+		options(req: express.Request, res: express.Response, next: express.NextFunction) {
 			res.send([{ id: this.prop }])
 		}
 
 		@Get('/message/:id')
-		get(@Res res: Response, @Req req: Request) {
+		get(@Res res: express.Response, @Req req: express.Request) {
 			const id = Number.parseInt(req.params.id, 10)
 			res.send({ id })
 		}
@@ -121,7 +121,7 @@ describe('children controllers', () => {
 		@Router('/foo')
 		class Controller {
 			@Get()
-			get(@Res res: Response) {
+			get(@Res res: express.Response) {
 				res.send({})
 			}
 		}
@@ -159,7 +159,7 @@ describe('children controllers', () => {
 			}
 
 			@Post()
-			post(@Res res: Response, @Body() body: any) {
+			post(@Res res: express.Response, @Body() body: any) {
 				res.send(body === null)
 			}
 		}
@@ -169,7 +169,7 @@ describe('children controllers', () => {
 			constructor(private service: UserService) {}
 
 			@Get()
-			get(@Res res: Response, @Params { userId, itemId }: { userId: string; itemId: string }) {
+			get(@Res res: express.Response, @Params { userId, itemId }: { userId: string; itemId: string }) {
 				const userIndex = Number.parseInt(userId, 10)
 				const itemIndex = Number.parseInt(itemId, 10)
 				res.json(this.service.users[userIndex].items[itemIndex])
@@ -195,7 +195,7 @@ describe('children controllers', () => {
 		@Router('/bar')
 		class Bar {
 			@Get()
-			get(@Res res: Response) {
+			get(@Res res: express.Response) {
 				res.sendStatus(200)
 			}
 		}
@@ -205,7 +205,7 @@ describe('children controllers', () => {
 			}
 
 			@Get('/foo')
-			get(@Res res: Response) {
+			get(@Res res: express.Response) {
 				res.sendStatus(200)
 			}
 		}

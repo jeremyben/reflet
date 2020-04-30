@@ -1,4 +1,4 @@
-import mongoose from 'mongoose'
+import * as mongoose from 'mongoose'
 import { Field, Model, schemaFrom, Kind, Plain, SchemaOptions } from '../src'
 
 test('model with custom collection and connection', async () => {

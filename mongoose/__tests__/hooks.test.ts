@@ -1,5 +1,5 @@
 import { Model, Field, Pre, Post } from '../src'
-import mongoose from 'mongoose'
+import * as mongoose from 'mongoose'
 
 const consoleSpy = jest.spyOn(console, 'info').mockImplementation()
 afterEach(() => {

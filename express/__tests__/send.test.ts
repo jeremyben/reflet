@@ -1,5 +1,5 @@
-import supertest from 'supertest'
-import express, { Response } from 'express'
+import * as supertest from 'supertest'
+import * as express from 'express'
 import { createReadStream, readFileSync } from 'fs'
 import { register, Router, Get, Put, Post, Patch, Delete, Res, Params, Send, DontSend, Decorator } from '../src'
 import { log } from '../../testing/tools'
@@ -33,14 +33,14 @@ describe('handle return value', () => {
 
 		@Send()
 		@Patch()
-		patch(@Res res: Response) {
+		patch(@Res res: express.Response) {
 			res.send({ foo: 4 })
 			return { foo: 13 }
 		}
 
 		@Send()
 		@Put()
-		async put(@Res res: Response) {
+		async put(@Res res: express.Response) {
 			return res
 		}
 	}
@@ -148,7 +148,7 @@ describe('streams', () => {
 
 		@Send({ status: 201 })
 		@Post()
-		async post(@Res res: Response) {
+		async post(@Res res: express.Response) {
 			const readable = createReadStream(__filename)
 			return readable.pipe(res)
 		}

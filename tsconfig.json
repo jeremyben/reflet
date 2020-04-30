@@ -43,8 +43,8 @@
 		// "rootDirs": [],
 		// "typeRoots": ["node_modules/@types"],
 		"types": ["reflect-metadata", "@types/jest"],
-		// "allowSyntheticDefaultImports": true,
-		"esModuleInterop": true,
+		// "allowSyntheticDefaultImports": false,
+		// "esModuleInterop": false,
 		// "preserveSymlinks": true,
 		"resolveJsonModule": true,
 

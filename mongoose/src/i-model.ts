@@ -1,5 +1,5 @@
-import mongoose from 'mongoose'
-import mongodb from 'mongodb' // tslint:disable-line: no-implicit-dependencies
+import * as mongoose from 'mongoose'
+import * as mongodb from 'mongodb' // tslint:disable-line: no-implicit-dependencies
 import { Plain } from './interfaces'
 
 const IBase = class {} as mongoose.Model<mongoose.Document>

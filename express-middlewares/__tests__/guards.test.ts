@@ -1,5 +1,5 @@
-import supertest from 'supertest'
-import express, { Request, Response, NextFunction } from 'express'
+import * as supertest from 'supertest'
+import * as express from 'express'
 import { register, Get, Post } from '@reflet/express'
 import { UseGuards } from '../src'
 import { log } from '../../testing/tools'
@@ -8,13 +8,13 @@ class Controller {
 	@UseGuards(async (req) => req.method === 'GET')
 	@UseGuards((req) => true, (req) => req.headers.via === 'jest')
 	@Get()
-	get(req: Request, res: Response, next: NextFunction) {
+	get(req: express.Request, res: express.Response, next: express.NextFunction) {
 		res.send('hi')
 	}
 
 	@UseGuards(async (req) => (req as any).admin || Error('You must be admin'))
 	@Post()
-	post(req: Request, res: Response, next: NextFunction) {
+	post(req: express.Request, res: express.Response, next: express.NextFunction) {
 		res.send('hi')
 	}
 }
