@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.0.6](https://github.com/jeremyben/reflet/tree/master/mongoose/compare/@reflet/mongoose@1.0.5...@reflet/mongoose@1.0.6) (2020-04-30)
+
+
+### Bug Fixes
+
+* remove esModuleInterop for better typing compatibility ([0987cc8](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/0987cc8))
+
+
+
+
+
 ## [1.0.5](https://github.com/jeremyben/reflet/tree/master/mongoose/compare/@reflet/mongoose@1.0.4...@reflet/mongoose@1.0.5) (2020-04-30)
 
 
