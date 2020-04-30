@@ -11,7 +11,7 @@ const MetaFieldDiscriminatorsArray = Symbol('field-discriminators-array')
  * @public
  */
 export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(
-	field: SchemaTypeOptions<T>
+	field: SchemaTypeOptions<T> | [SchemaTypeOptions<T>]
 ): Decorator.Field
 
 /**
@@ -23,7 +23,7 @@ export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(
 export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(field: T): Decorator.Field
 
 export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(
-	field: T | SchemaTypeOptions<T>
+	field: T | SchemaTypeOptions<T> | [SchemaTypeOptions<T>]
 ): Decorator.Field {
 	return (target, key) => {
 		const fields = getFields(target.constructor)
@@ -104,7 +104,11 @@ export function getDiscriminatorArrayFields(target: object): { [key: string]: Co
  * @public
  */
 type SchemaTypeNested = {
-	[key: string]: SchemaTypeOptions<SchemaType | [SchemaType] | [[SchemaType]]> | SchemaTypeNested | SchemaTypeNested[]
+	[key: string]:
+		| SchemaTypeOptions<SchemaType | [SchemaType] | [[SchemaType]]>
+		| [SchemaTypeOptions<SchemaType | [SchemaType] | [[SchemaType]]>]
+		| SchemaTypeNested
+		| SchemaTypeNested[]
 }
 
 /**
@@ -251,7 +255,7 @@ type SchemaTypeOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]> = R
 		? ArrayOptions<number>
 		: T extends DateConstructor | typeof mongoose.Schema.Types.Date
 		? DateOptions
-		: T extends typeof mongoose.Schema.Types.ObjectId | typeof mongoose.Schema.Types.ObjectId[]
+		: T extends typeof mongoose.Schema.Types.ObjectId
 		? ObjectIdOptions
 		: T extends MapConstructor
 		? MapOptions

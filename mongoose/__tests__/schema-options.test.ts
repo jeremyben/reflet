@@ -1,7 +1,7 @@
 import * as mongoose from 'mongoose'
 import { Field, SchemaOptions, schemaFrom, VersionKey, CreatedAt, UpdatedAt, SchemaCallback, Model } from '../src'
 
-test('simple schema', async () => {
+test('schema with reference', async () => {
 	@SchemaOptions({ _id: false })
 	abstract class SubSchema {
 		@Field({
@@ -9,6 +9,13 @@ test('simple schema', async () => {
 			enum: ['julia', 'arthur'],
 		})
 		names: string[]
+	}
+
+	@Model()
+	@SchemaOptions({ versionKey: false })
+	class SReference extends Model.I {
+		@Field(String)
+		hello: string
 	}
 
 	@Model()
@@ -37,11 +44,13 @@ test('simple schema', async () => {
 		})
 		numbers: number[][]
 
-		@Field({
-			type: [mongoose.Schema.Types.ObjectId],
-			ref: '',
-		})
-		ref: string[]
+		@Field([
+			{
+				type: mongoose.Schema.Types.ObjectId,
+				ref: SReference,
+			},
+		])
+		srefs: SReference[]
 
 		@Field.Nested({
 			lat: { type: Number },
@@ -64,9 +73,19 @@ test('simple schema', async () => {
 		}
 	}
 
-	const s = await S.create({ name: 'Jeremy', numbers: [[1, 2, 3]], sub: { names: ['julia', 'arthur'] } })
+	const srefs = await SReference.create([{ hello: 'hi' }, { hello: 'bonjour' }])
+	await S.create({
+		name: 'Jeremy',
+		numbers: [[1, 2, 3]],
+		srefs: srefs.map((sref) => sref._id),
+		sub: { names: ['julia', 'arthur'] },
+	})
+
+	const s = (await S.findOne({ name: 'Jeremy' }).populate('srefs'))!
 	// console.log(s)
 
+	expect(s.srefs[0]._id).toBeInstanceOf(mongoose.Types.ObjectId)
+	expect(s.srefs[0].hello).toBe('hi')
 	expect(s.name).toBe('jérémie')
 	expect(s.nested).toHaveProperty('lat', undefined)
 })
