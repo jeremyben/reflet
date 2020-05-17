@@ -24,15 +24,15 @@
 	},
 	"engineStrict": true,
 	"peerDependencies": {
-		"@types/mongoose": "^5.7.12",
+		"@types/mongoose": "^5.7.20",
 		"@types/node": ">=8",
 		"mongoose": "^5",
 		"reflect-metadata": "^0.1.13"
 	},
 	"devDependencies": {
 		"@shelf/jest-mongodb": "^1.1.5",
-		"@types/mongoose": "^5.7.12",
-		"mongoose": "^5.9.9"
+		"@types/mongoose": "^5.7.20",
+		"mongoose": "^5.9.14"
 	},
 	"scripts": {
 		"build": "ts-node -T ../build.ts",

@@ -1,10 +1,11 @@
 {
 	"version": "independent",
 	"npmClient": "yarn",
-	"packages": ["express", "express-middlewares", "mongoose"],
+	"useWorkspaces": true,
 	"command": {
 		"version": {
 			"allowBranch": "master",
+			"private": false,
 			"conventionalCommits": true,
 			"push": false,
 			"message": "chore: release"
