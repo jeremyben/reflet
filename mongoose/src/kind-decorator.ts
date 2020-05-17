@@ -1,10 +1,6 @@
 import * as mongoose from 'mongoose'
 import { Decorator } from './interfaces'
 
-/**
- * Used by `@Model.Discriminator` to keep a reference of already defined `@Kind`.
- * @internal
- */
 const MetaKind = Symbol('kind')
 
 /**
@@ -70,7 +66,7 @@ export function assignKindKey({
 	discriminatorModel: mongoose.Model<mongoose.Document>
 }): void {
 	const rootProvidedD11rKey = (rootModel.schema as SchemaFix)._userProvidedOptions.discriminatorKey
-	const alreadyProvidedKindKey = rootModel[(MetaKind as unknown) as keyof mongoose.Model<any>]
+	const alreadyProvidedKindKey: string | undefined = (rootModel as any)[MetaKind]
 	// const otherD11rs = rootModel.discriminators as { [key: string]: mongoose.Model<any> } | undefined
 
 	// Check that sibling discriminators have the same @Kind key.
@@ -92,7 +88,7 @@ export function assignKindKey({
 
 	// Finally assign the key on the root model and keep reference of @Kind key, only once for all discriminators.
 	if (kindKey && !alreadyProvidedKindKey) {
-		rootModel[(MetaKind as unknown) as keyof mongoose.Model<any>] = kindKey
+		;(rootModel as any)[MetaKind] = kindKey
 		rootModel.schema.set('discriminatorKey', kindKey)
 	}
 

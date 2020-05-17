@@ -12,28 +12,6 @@ export abstract class IModel<C extends IModel = any> extends IBase {
 	// @ts-ignore implementation
 	constructor(doc?: Plain.Partial<C>)
 
-	static findById<T extends IModel>(
-		this: new (...a: any[]) => T,
-		id: any | string | number,
-		callback?: (err: any, res: T | null) => void
-	): mongoose.DocumentQuery<T | null, T, {}>
-
-	static findById<T extends IModel>(
-		this: new (...a: any[]) => T,
-		id: any | string | number,
-		projection: any,
-		callback?: (err: any, res: T | null) => void
-	): mongoose.DocumentQuery<T | null, T, {}>
-
-	// @ts-ignore implementation
-	static findById<T extends IModel>(
-		this: new (...a: any[]) => T,
-		id: any | string | number,
-		projection: any,
-		options: any,
-		callback?: (err: any, res: T | null) => void
-	): mongoose.DocumentQuery<T | null, T, {}>
-
 	// @ts-ignore implementation
 	static $where<T extends IModel>(
 		this: new (...a: any[]) => T,
@@ -105,9 +83,31 @@ export abstract class IModel<C extends IModel = any> extends IBase {
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		projection?: any | null,
-		options?: any | null,
+		options?: mongoose.QueryFindOptions,
 		callback?: (err: any, res: T[]) => void
 	): mongoose.DocumentQuery<T[], T & mongoose.Document, {}>
+
+	static findById<T extends IModel>(
+		this: new (...a: any[]) => T,
+		id: any | string | number,
+		callback?: (err: any, res: T | null) => void
+	): mongoose.DocumentQuery<T | null, T, {}>
+
+	static findById<T extends IModel>(
+		this: new (...a: any[]) => T,
+		id: any | string | number,
+		projection: any,
+		callback?: (err: any, res: T | null) => void
+	): mongoose.DocumentQuery<T | null, T, {}>
+
+	// @ts-ignore implementation
+	static findById<T extends IModel>(
+		this: new (...a: any[]) => T,
+		id: any | string | number,
+		projection: any,
+		options: mongoose.QueryFindBaseOptions,
+		callback?: (err: any, res: T | null) => void
+	): mongoose.DocumentQuery<T | null, T, {}>
 
 	static findByIdAndUpdate<T extends IModel>(this: new (...a: any[]) => T): mongoose.DocumentQuery<T | null, T, {}>
 
@@ -397,6 +397,30 @@ export abstract class IModel<C extends IModel = any> extends IBase {
 		options: mongoose.ModelUpdateOptions,
 		callback?: (err: any, raw: any) => void
 	): mongoose.Query<any>
+
+	update(doc: mongoose.UpdateQuery<this>, callback?: (err: any, raw: any) => void): mongoose.Query<any>
+
+	// @ts-ignore implementation
+	update(
+		doc: mongoose.UpdateQuery<this>,
+		options: mongoose.ModelUpdateOptions,
+		callback?: (err: any, raw: any) => void
+	): mongoose.Query<any>
+
+	updateOne(doc: mongoose.UpdateQuery<this>, callback?: (err: any, raw: any) => void): mongoose.Query<any>
+
+	// @ts-ignore implementation
+	updateOne(
+		doc: mongoose.UpdateQuery<this>,
+		options: mongoose.ModelUpdateOptions,
+		callback?: (err: any, raw: any) => void
+	): mongoose.Query<any>
+
+	// @ts-ignore implementation
+	toObject(options?: mongoose.DocumentToObjectOptions): Plain<this>
+
+	// @ts-ignore implementation
+	toJSON(options?: mongoose.DocumentToObjectOptions): Plain<this>
 }
 
 interface QueryReplaceOneOptions {

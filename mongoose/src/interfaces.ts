@@ -157,7 +157,8 @@ export namespace Plain {
 	 * ```
 	 * @public
 	 */
-	export type Without<T, U extends keyof T> = Omit<Plain<T>, U>
+	export type Without<T, U extends keyof Plain<T>> = Omit<Plain<T>, U>
+
 	/**
 	 * Omits Mongoose properties and all methods, and makes remaining properties optional.
 	 *
@@ -167,6 +168,11 @@ export namespace Plain {
 	 */
 	export type Partial<T> = Partial_<Plain<T>>
 }
+
+/**
+ * @public
+ */
+type Partial_<T> = Partial<T>
 
 /**
  * Interface with the right keys but with `any` types, so we can enforce decorated classes to a minimal interface,
@@ -185,11 +191,6 @@ export type ConstructorType<T = any> = Function & { prototype: T }
  * @public
  */
 export type ConstructorInstance<T extends ConstructorType> = T extends Function & { prototype: infer R } ? R : never
-
-/**
- * @public
- */
-type Partial_<T> = Partial<T>
 
 // tslint:disable: no-empty-interface
 declare global {
@@ -214,25 +215,6 @@ declare global {
 
 declare module 'mongoose' {
 	interface MongooseDocument {
-		populate<T extends Document>(path: keyof Plain<T>, callback?: (err: any, res: this) => void): this
-		populate<T extends Document>(
-			path: keyof Plain<T>,
-			names: string,
-			callback?: (err: any, res: this) => void
-		): this
-
 		deleteOne(): Promise<this>
-
-		updateOne(doc: Plain.Partial<this>, callback?: (err: any, raw: any) => void): Query<this>
-
-		updateOne(
-			doc: Plain.Partial<this>,
-			options: ModelUpdateOptions,
-			callback?: (err: any, raw: any) => void
-		): Query<this>
-
-		toObject(options?: DocumentToObjectOptions): Plain<this>
-
-		toJSON(options?: DocumentToObjectOptions): Plain<this>
 	}
 }

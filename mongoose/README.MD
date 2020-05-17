@@ -91,6 +91,7 @@ The **best** decorators for [Mongoose](https://mongoosejs.com/). Have a look at 
 ### The Mongoose way
 
 Connect Mongoose in the way you already know. Models defined with Reflet will simply be attached to the default Mongoose connection.
+This means you can **progressively** decorate your Mongoose models. 😉
 
 ## Schema definition
 
@@ -784,7 +785,14 @@ Some Mongoose methods return plain JS objects instead of Mongoose Documents, whi
 @Model()
 class User extends Model.I {
   @Field(String)
-  name: string
+  firstname: string
+
+  @Field(String)
+  lastname: string
+
+  get fullname() {
+    return `${this.firstname} ${this.lastname}`
+  }
 
   // You can define an even stricter interface on your constructor.
   constructor(user: Plain.Without<User, '_id'>) {
@@ -792,8 +800,8 @@ class User extends Model.I {
   }
 }
 
-const userDocument = new User({ name: 'Jeremy' })
-const userObject = userDocument.toObject() as Plain<User>
+const userDocument = new User({ firstname: 'John', lastname: 'Doe' })
+const userObject = userDocument.toObject() as Plain.Without<User, 'fullname'>
 ```
 
 ## Augmentations
