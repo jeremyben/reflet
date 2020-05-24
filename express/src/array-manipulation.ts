@@ -1,24 +1,6 @@
 /**
- * Mutates the `source` array.
- * @see https://dev.to/uilicious/javascript-array-push-is-945x-faster-than-array-concat-1oki
- * @internal
- */
-export function concatFast<T>(source: T[], added: T[]): T[] {
-	const sourceLength = source.length
-	const addedLength = added.length
-
-	// Preallocate size
-	source.length = sourceLength + addedLength
-
-	for (let i = 0; i < addedLength; i++) {
-		source[sourceLength + i] = added[i]
-	}
-
-	return source
-}
-
-/**
  * Mutates the `added` array.
+ * @see https://dev.to/uilicious/javascript-array-push-is-945x-faster-than-array-concat-1oki
  * @internal
  */
 export function concatPrependFast<T>(source: T[], added: T[]): T[] {

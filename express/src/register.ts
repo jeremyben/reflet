@@ -3,7 +3,6 @@ import { promisifyHandler, promisifyErrorHandler } from './async-wrapper'
 import { globalErrorHandler, makeGlobalErrorHandlerRemovable } from './global-error-handler'
 import { ClassType, ObjectNotFunction } from './interfaces'
 import { isPromise, isReadableStream, isClass } from './type-guards'
-import { concatFast } from './array-manipulation'
 
 // Extractors
 import { extractRouter } from './router-decorator'
@@ -157,14 +156,14 @@ function attach(
 	// Recursively attach children controllers
 	if (routerMeta?.children) {
 		// Keep track of all shared middlewares for dedupe.
-		concatFast(parentSharedMwares, sharedMwares)
+		const parentSharedMwares_ = parentSharedMwares.concat(sharedMwares)
 
 		for (const child of routerMeta.children) {
 			// Undocumented and untyped feature to attach normal express Routers. Will be removed.
 			if (Array.isArray(child) && typeof child[0] === 'string' && typeof child[1] === 'function') {
 				appInstance.use(child[0], child[1])
 			} else {
-				attach(child, appInstance, globalMwares, parentSharedMwares)
+				attach(child, appInstance, globalMwares, parentSharedMwares_)
 			}
 		}
 	}
