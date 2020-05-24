@@ -48,7 +48,7 @@ test('model with custom collection and connection', async () => {
 
 test('model discriminators', async () => {
 	@Model()
-	class User extends Model.Interface {
+	class User extends Model.I<Omit<User, 'fullname'>> {
 		@Field({ type: String, required: true })
 		firstname: string
 
@@ -57,10 +57,6 @@ test('model discriminators', async () => {
 
 		get fullname() {
 			return this.firstname + ' ' + this.lastname
-		}
-
-		constructor(doc?: Plain.Without<User, 'fullname' | '_id'>) {
-			super()
 		}
 	}
 
@@ -72,7 +68,7 @@ test('model discriminators', async () => {
 		@Kind('developer')
 		kind: 'developer'
 
-		constructor(doc?: Plain.Without<Developer, 'fullname' | 'kind' | '_id'>) {
+		constructor(doc?: Plain.Omit<Developer, 'fullname' | 'kind' | '_id'>) {
 			super()
 		}
 	}
@@ -89,7 +85,7 @@ test('model discriminators', async () => {
 			return 'Dr ' + this.firstname + ' ' + this.lastname
 		}
 
-		constructor(doc?: Plain.Without<Doctor, 'fullname' | 'kind' | '_id'>) {
+		constructor(doc?: Plain.Omit<Doctor, 'fullname' | 'kind' | '_id'>) {
 			super()
 		}
 	}

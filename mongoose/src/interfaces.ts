@@ -134,30 +134,16 @@ export type Plain<T> = Pick<
 export namespace Plain {
 	/**
 	 * Omits Mongoose properties, all methods, and custom keys.
-	 *
-	 * Helps with the constructor parameter type of `@Model` decorated classes.
-	 *
-	 * @example
-	 * ```ts
-	 * ＠Model()
-	 * class User extends Model.Interface {
-	 *   ＠Field({ type: String })
-	 *   name: string
-	 *
-	 *   get greet() {
-	 *     return 'hello ' + this.name
-	 *   }
-	 *
-	 *   constructor(doc: Plain.Without<User, '_id' | 'greet'>) {
-	 *     super()
-	 *   }
-	 * }
-	 *
-	 * const user = await new User({ name: 'Jeremy' }).save()
-	 * ```
 	 * @public
 	 */
-	export type Without<T, U extends keyof Plain<T>> = Omit<Plain<T>, U>
+	export type Omit<T, U extends keyof Plain<T>> = Omit_<Plain<T>, U>
+
+	/**
+	 * Omits Mongoose properties, all methods, and custom keys.
+	 * @deprecated use `Plain.Omit`
+	 * @public
+	 */
+	export type Without<T, U extends keyof Plain<T>> = Omit_<Plain<T>, U>
 
 	/**
 	 * Omits Mongoose properties and all methods, and makes remaining properties optional.
@@ -173,6 +159,11 @@ export namespace Plain {
  * @public
  */
 type Partial_<T> = Partial<T>
+
+/**
+ * @public
+ */
+type Omit_<T, K extends string | symbol | number> = Omit<T, K>
 
 /**
  * Interface with the right keys but with `any` types, so we can enforce decorated classes to a minimal interface,

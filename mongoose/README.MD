@@ -635,7 +635,7 @@ class User extends Model.Interface {
 
 ```ts
 @Model()
-class User extends Model.Interface {
+class User extends Model.I<User> {
   @Field(String)
   name: string
 }
@@ -645,15 +645,20 @@ class Worker extends User {
   @Field(String)
   job: string
 
+  // No need to decorate the default discriminatorKey.
   __t: 'Worker'
-  // __t is the default discriminatorKey (no need to decorate).
-  // Value will be the class name.
-  // If you want to customize both the key and the value, check out the following `@Kind` decorator.
+
+  // You can strictly type the constructor of a discriminator model by using the Plain Helper (see below).
+  constructor(worker: Plain.Omit<Worker, '_id' | '__t'>) {
+    super() // required by the compiler.
+  }
 }
 
 const worker = await Worker.create({ name: 'Jeremy', job: 'developer' })
 // { _id: '5d023ae14043262bcfd9b384', __t: 'Worker', name: 'Jeremy', job: 'developer' }
 ```
+
+As you know, `_t` is the default `discriminatorKey`, and its value will be the class name. If you want to customize both the key and the value, check out the following `@Kind` decorator.
 
 ⚠️ `@Model.Discriminator` should always be at the top of your class decorators. _Why? Because decorators are executed bottom to top, so if `@Model.Discriminator` directly compiles your class into a Mongooose Model, other class decorators won't be properly applied._
 
@@ -675,9 +680,7 @@ class User extends Model.Interface {
 @Model.Discriminator(User)
 class Developer extends User {
   @Kind
-  kind: 'Developer'
-  // Value will be the class name by default.
-  // Equivalent to setting `{ discriminatorKey: 'kind' }` on User schema options.
+  kind: 'Developer' // Value will be the class name by default.
 }
 
 @Model.Discriminator(User)
@@ -685,6 +688,8 @@ class Doctor extends User {
   @Kind('doctor') // Customize the discriminator value by passing a string.
   kind: 'doctor'
 }
+
+// This is equivalent to setting `{ discriminatorKey: 'kind' }` on User schema options.
 ```
 
 A mecanism will check and prevent you from defining a different `@Kind` key on sibling discriminators.
@@ -773,17 +778,17 @@ const batch = new Batch({
 
 ## Plain helper
 
-> 🔦 `Plain<class>`, `Plain.Partial<class>`, `Plain.Without<class, properties>`
+> 🔦 `Plain<class>`, `Plain.Partial<class>`, `Plain.Omit<class, keys>`
 
 Some Mongoose methods return plain JS objects instead of Mongoose Documents, while others need plain objects as parameter. Reflet provides generic types to discard Mongoose properties and methods from a Document.
 
 * `Plain<T>` removes inherited Mongoose properties (except _id) and all methods from `T`.
 * `Plain.Partial<T>` does the same as `Plain` and makes remaining properties of `T` optional.
-* `Plain.Without<T, U>` does the same as `Plain` and also omits keys specified in `U`.
+* `Plain.Omit<T, U>` does the same as `Plain` and also omits keys specified in `U`.
 
 ```ts
 @Model()
-class User extends Model.I {
+class User extends Model.I<Omit<User, 'fullname'>> { // Use Plain behind the scenes to type the constructor
   @Field(String)
   firstname: string
 
@@ -793,15 +798,10 @@ class User extends Model.I {
   get fullname() {
     return `${this.firstname} ${this.lastname}`
   }
-
-  // You can define an even stricter interface on your constructor.
-  constructor(user: Plain.Without<User, '_id'>) {
-    super() // required by the compiler.
-  }
 }
 
 const userDocument = new User({ firstname: 'John', lastname: 'Doe' })
-const userObject = userDocument.toObject() as Plain.Without<User, 'fullname'>
+const userObject = userDocument.toObject() as Plain.Omit<User, 'fullname'>
 ```
 
 ## Augmentations
