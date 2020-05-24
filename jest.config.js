@@ -5,7 +5,7 @@ const config = {
 	rootDir: process.cwd(),
 	preset: 'ts-jest',
 	testEnvironment: 'node',
-	testPathIgnorePatterns: ['/node_modules/', '/__tests__/shared/', '/dist/'],
+	testPathIgnorePatterns: ['/node_modules/', '/__tests__/shared/', '/__tests__/fixtures/', '/dist/'],
 	moduleNameMapper: {
 		'^@reflet/(.*)$': join(__dirname, '$1', 'src'),
 	},

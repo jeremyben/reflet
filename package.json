@@ -10,7 +10,9 @@
 		"express-middlewares",
 		"benchmarks",
 		"mongoose",
-		"cron"
+		"cron",
+		"eslint-decorators",
+		"express-tslint"
 	],
 	"engines": {
 		"node": ">=8.10"

@@ -1,0 +1,8 @@
+{
+	// "extends": "../tslint.json",
+	"rulesDirectory": ["./dist"],
+	"rules": {
+		"reflet-handler-parameters": true,
+		"prefer-for-of": false
+	}
+}

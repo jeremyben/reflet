@@ -1,0 +1,40 @@
+{
+	"name": "@reflet/express-tslint",
+	"version": "1.0.0",
+	"author": "Jeremy Bensimon",
+	"license": "MIT",
+	"repository": "https://github.com/jeremyben/reflet/tree/master/express-lint",
+	"description": "Linter for @reflet/express",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"publishConfig": {
+		"access": "public"
+	},
+	"engines": {
+		"node": ">=8.10"
+	},
+	"engineStrict": true,
+	"peerDependencies": {
+		"@reflet/express": "^1.1.0",
+		"@types/express": "^4.16.0",
+		"tslint": ">=6",
+		"typescript": ">=3"
+	},
+	"dependencies": {
+		"path-to-regexp": "^6.1.0",
+		"tsutils": "^3.17.1"
+	},
+	"devDependencies": {
+		"@reflet/express": "1.1.0"
+	},
+	"scripts": {
+		"build": "ts-node -T build.ts",
+		"test": "jest --config ../jest.config.js",
+		"test:watch": "yarn test --watch --verbose false",
+		"test:file": "yarn test --testPathPattern",
+		"prepublishOnly": "yarn run build"
+	}
+}
