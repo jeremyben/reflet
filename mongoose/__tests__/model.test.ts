@@ -9,7 +9,7 @@ test('model with custom collection and connection', async () => {
 	})
 
 	@Model('people', db)
-	class UserOther extends Model.I<UserOther> {
+	class UserOther extends Model.I<Partial<UserOther>> {
 		static col() {
 			return this.collection.collectionName
 		}

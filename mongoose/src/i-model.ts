@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose'
 import * as mongodb from 'mongodb' // tslint:disable-line: no-implicit-dependencies
-import { Plain } from './interfaces'
+import { Plain, IsAny } from './interfaces'
 
 const IBase = class {} as mongoose.Model<mongoose.Document>
 
@@ -8,9 +8,9 @@ const IBase = class {} as mongoose.Model<mongoose.Document>
  * Intermediary abstract class with overloaded static methods to properly infer the child class.
  * @public
  */
-export abstract class IModel<C extends IModel = any> extends IBase {
+export abstract class IModel<C extends object = any> extends IBase {
 	// @ts-ignore implementation
-	constructor(doc?: Plain.Partial<C>)
+	constructor(doc?: IsAny<C> extends true ? Record<string, any> : PlainOptionalId<C>)
 
 	// @ts-ignore implementation
 	static $where<T extends IModel>(
@@ -430,3 +430,20 @@ interface QueryReplaceOneOptions {
 	omitUndefined?: boolean
 	timestamps?: boolean | null
 }
+
+type PlainOptionalId<T extends mongoose.Document> = Pick<Partial<T>, '_id'> &
+	Pick<
+		T,
+		Exclude<
+			{
+				[K in keyof T]: K extends keyof mongoose.Document
+					? never
+					: T[K] extends Function
+					? never
+					: T[K] extends Function | undefined
+					? never
+					: K
+			}[keyof T],
+			undefined
+		>
+	>

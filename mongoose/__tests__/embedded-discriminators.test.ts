@@ -36,7 +36,7 @@ test('single nested discriminators', async () => {
 		},
 	})
 
-	const wrongSquare = new Shape({ shape: { side: 5 } as any })
+	const wrongSquare = new Shape({ shape: { side: 5 } } as any)
 	const wrongSquareObject = wrongSquare.toObject()
 	expect(wrongSquareObject).toStrictEqual({
 		_id: expect.any(mongoose.Types.ObjectId),

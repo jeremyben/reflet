@@ -192,6 +192,11 @@ export type ConstructorType<T = any> = Function & { prototype: T }
  */
 export type ConstructorInstance<T extends ConstructorType> = T extends Function & { prototype: infer R } ? R : never
 
+/**
+ * @public
+ */
+export type IsAny<T> = 0 extends 1 & T ? true : false
+
 // tslint:disable: no-empty-interface
 declare global {
 	/**
