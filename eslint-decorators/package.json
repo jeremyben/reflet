@@ -1,0 +1,43 @@
+{
+	"name": "@reflet/eslint-decorators",
+	"version": "1.0.0",
+	"author": "Jeremy Bensimon",
+	"license": "MIT",
+	"repository": "https://github.com/jeremyben/reflet/tree/master/eslint-decorators",
+	"description": "Well-defined and well-typed eslint-decorators decorators",
+	"keywords": [
+		"eslint-decorators",
+		"decorators",
+		"typescript"
+	],
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"publishConfig": {
+		"access": "public"
+	},
+	"engines": {
+		"node": ">=8.10"
+	},
+	"engineStrict": true,
+	"peerDependencies": {
+		"eslint": "^7.32.0"
+	},
+	"devDependencies": {
+		"@types/node": "14",
+		"@typescript-eslint/eslint-plugin": "^4.29.0",
+		"@typescript-eslint/experimental-utils": "^4.29.0",
+		"@typescript-eslint/parser": "^4.29.0",
+		"eslint": "^7.32.0"
+	},
+	"scripts": {
+		"build": "ts-node -T ../build.ts",
+		"test": "jest --config ../jest.config.js",
+		"test:watch": "yarn test --watch --verbose false",
+		"test:file": "yarn test --testPathPattern",
+		"preversion": "yarn test --coverage && ts-node -T ../testing/summary.ts && git add coverage-summary.json",
+		"prepublishOnly": "yarn run build"
+	}
+}

@@ -16,7 +16,7 @@
 		"no-implicit-dependencies": [
 			true,
 			"dev",
-			["supertest", "reflect-metadata", "express", "express-serve-static-core", "rxjs", "tsc-prog"]
+			["supertest", "reflect-metadata", "express", "express-serve-static-core", "rxjs", "tsc-prog", "typescript"]
 		],
 		"no-submodule-imports": [true, "rxjs"],
 		"interface-over-type-literal": false,

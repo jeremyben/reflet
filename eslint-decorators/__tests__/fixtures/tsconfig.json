@@ -1,0 +1,11 @@
+{
+	"compilerOptions": {
+		"target": "es2017",
+		"module": "commonjs",
+		"strict": true,
+		"lib": ["es2017"],
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true
+	}
+	// "include": ["file.ts", "decorators.ts"]
+}
