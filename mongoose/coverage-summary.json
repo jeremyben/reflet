@@ -13,8 +13,8 @@
 			"pct": 100
 		},
 		"functions": {
-			"total": 43,
-			"covered": 43,
+			"total": 54,
+			"covered": 54,
 			"skipped": 0,
 			"pct": 100
 		},
@@ -111,8 +111,8 @@
 			"pct": 100
 		},
 		"functions": {
-			"total": 0,
-			"covered": 0,
+			"total": 11,
+			"covered": 11,
 			"skipped": 0,
 			"pct": 100
 		},

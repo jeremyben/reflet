@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.0.8](https://github.com/jeremyben/reflet/tree/master/mongoose/compare/@reflet/mongoose@1.0.7...@reflet/mongoose@1.0.8) (2020-05-24)
+
+
+### Bug Fixes
+
+* **mongoose:** constructor is safer by default ([52192a4](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/52192a4))
+* **mongoose:** deprecate Plain.Without, add Plain.Omit ([d2a3ed9](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/d2a3ed9))
+* **mongoose:** improve model interface ([4f4ad31](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/4f4ad31))
+
+
+
+
+
 ## [1.0.7](https://github.com/jeremyben/reflet/tree/master/mongoose/compare/@reflet/mongoose@1.0.6...@reflet/mongoose@1.0.7) (2020-04-30)
 
 

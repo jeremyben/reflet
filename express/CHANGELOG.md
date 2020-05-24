@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.3.2](https://github.com/jeremyben/reflet/tree/master/express/compare/@reflet/express@1.3.1...@reflet/express@1.3.2) (2020-05-24)
+
+
+### Bug Fixes
+
+* **express:** shared middlewares are no longer mutated before being passed to children ([1c35488](https://github.com/jeremyben/reflet/tree/master/express/commit/1c35488))
+* remove esModuleInterop for better typing compatibility ([0987cc8](https://github.com/jeremyben/reflet/tree/master/express/commit/0987cc8))
+
+
+
+
+
 ## [1.3.1](https://github.com/jeremyben/reflet/tree/master/express/compare/@reflet/express@1.3.0...@reflet/express@1.3.1) (2020-04-28)
 
 
