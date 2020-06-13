@@ -34,11 +34,6 @@ function syncOverloadsDoc() {
 	tsdocConfig.addTagDefinitions(
 		[
 			new tsdoc.TSDocTagDefinition({
-				tagName: '@see',
-				syntaxKind: tsdoc.TSDocTagSyntaxKind.BlockTag,
-				allowMultiple: true,
-			}),
-			new tsdoc.TSDocTagDefinition({
 				tagName: '@decorator',
 				syntaxKind: tsdoc.TSDocTagSyntaxKind.ModifierTag,
 			}),
