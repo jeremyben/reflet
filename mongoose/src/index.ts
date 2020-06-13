@@ -8,7 +8,7 @@ export { Field } from './field-decorators'
 
 export { Kind } from './kind-decorator'
 
-export { Pre, Post } from './hooks-decorators'
+export { PreHook, Pre, PostHook, Post } from './hooks-decorators'
 
 export { schemaFrom } from './schema-creation'
 

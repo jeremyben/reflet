@@ -1,4 +1,4 @@
-import { Model, Field, Pre, Post } from '../src'
+import { Model, Field, PreHook, PostHook } from '../src'
 import * as mongoose from 'mongoose'
 
 const consoleSpy = jest.spyOn(console, 'info').mockImplementation()
@@ -8,49 +8,49 @@ afterEach(() => {
 
 test('init, validate, save, findOne, remove', async () => {
 	@Model()
-	@Pre<UserHookIVSFR>('init', (doc) => {
+	@PreHook<UserHookIVSFR>('init', (doc) => {
 		console.info('pre-init', doc)
 	})
-	@Post<UserHookIVSFR>('init', function (doc) {
+	@PostHook<UserHookIVSFR>('init', function (doc) {
 		console.info('post-init', this === doc)
 	})
-	@Pre<UserHookIVSFR>('validate', function (next) {
+	@PreHook<UserHookIVSFR>('validate', function (next) {
 		console.info('pre-validate', this)
 		next()
 	})
-	@Post<UserHookIVSFR>('validate', function (doc, next) {
+	@PostHook<UserHookIVSFR>('validate', function (doc, next) {
 		console.info('post-validate', this === doc)
 		next()
 	})
-	@Post<UserHookIVSFR, Error>('validate', function (error, doc, next) {
+	@PostHook<UserHookIVSFR, Error>('validate', function (error, doc, next) {
 		console.info('post-validate-error', error, doc)
 		next()
 	})
-	@Pre<UserHookIVSFR>('save', function (next) {
+	@PreHook<UserHookIVSFR>('save', function (next) {
 		console.info('pre-save', this)
 		next()
 	})
-	@Post<UserHookIVSFR>('save', function (doc, next) {
+	@PostHook<UserHookIVSFR>('save', function (doc, next) {
 		console.info('post-save', this === doc)
 		next()
 	})
-	// @Post<UserHookIVSFR, Error>('save', function (error, doc, next) {
+	// @PostHook<UserHookIVSFR, Error>('save', function (error, doc, next) {
 	// 	console.log('post-save-error', error, doc)
 	// 	next()
 	// })
-	@Pre<UserHookIVSFR>('findOne', function (next) {
+	@PreHook<UserHookIVSFR>('findOne', function (next) {
 		console.info('pre-findOne', this.constructor.name)
 		next()
 	})
-	@Post<UserHookIVSFR>('findOne', function (doc, next) {
+	@PostHook<UserHookIVSFR>('findOne', function (doc, next) {
 		console.info('post-findOne', doc)
 		next()
 	})
-	@Pre<UserHookIVSFR>('remove', { query: true }, function (next) {
+	@PreHook<UserHookIVSFR>('remove', { query: true }, function (next) {
 		console.info('pre-remove', this.constructor.name)
 		next()
 	})
-	@Post<UserHookIVSFR>('remove', { query: true, document: false }, function (result, next) {
+	@PostHook<UserHookIVSFR>('remove', { query: true, document: false }, function (result, next) {
 		console.info('post-remove', result.deletedCount)
 		next()
 	})
@@ -83,19 +83,19 @@ test('init, validate, save, findOne, remove', async () => {
 
 test('updateOne, deleteOne', async () => {
 	@Model()
-	@Pre<UserHookUD>('updateOne', { document: true, query: false }, function (next) {
+	@PreHook<UserHookUD>('updateOne', { document: true, query: false }, function (next) {
 		console.info('pre-updateOne', this)
 		next()
 	})
-	@Post<UserHookUD>('updateOne', function (result, next) {
+	@PostHook<UserHookUD>('updateOne', function (result, next) {
 		console.info('post-updateOne', this.constructor.name, result.nModified)
 		next()
 	})
-	@Pre<UserHookUD>('deleteOne', function (next) {
+	@PreHook<UserHookUD>('deleteOne', function (next) {
 		console.info('pre-deleteOne', this.constructor.name)
 		next()
 	})
-	@Post<UserHookUD>('deleteOne', function (result, next) {
+	@PostHook<UserHookUD>('deleteOne', function (result, next) {
 		console.info('post-deleteOne', result.deletedCount)
 		next()
 	})
@@ -116,39 +116,39 @@ test('updateOne, deleteOne', async () => {
 
 test('insertMany, find, update, updateMany, count, deleteMany', async () => {
 	@Model()
-	@Pre<UserHookIFUUCD>('insertMany', function (next) {
+	@PreHook<UserHookIFUUCD>('insertMany', function (next) {
 		console.info('pre-insertMany', this.modelName)
 		next()
 	})
-	@Post<UserHookIFUUCD>('insertMany', (docs, next) => {
+	@PostHook<UserHookIFUUCD>('insertMany', (docs, next) => {
 		console.info('post-insertMany', docs[0])
 		next()
 	})
-	@Post<UserHookIFUUCD>('find', (docs, next) => {
+	@PostHook<UserHookIFUUCD>('find', (docs, next) => {
 		console.info('post-find', docs.length)
 		next()
 	})
-	@Post<UserHookIFUUCD, Error>('find', (error, docs, next) => {
+	@PostHook<UserHookIFUUCD, Error>('find', (error, docs, next) => {
 		console.info('post-find-error', error, docs)
 		next()
 	})
-	@Post<UserHookIFUUCD>('update', (result, next) => {
+	@PostHook<UserHookIFUUCD>('update', (result, next) => {
 		console.info('post-update', result.ok)
 		next()
 	})
-	@Post<UserHookIFUUCD>('updateMany', (result, next) => {
+	@PostHook<UserHookIFUUCD>('updateMany', (result, next) => {
 		console.info('post-updateMany', result)
 		next()
 	})
-	@Post<UserHookIFUUCD>('count', (result, next) => {
+	@PostHook<UserHookIFUUCD>('count', (result, next) => {
 		console.info('post-count', result)
 		next()
 	})
-	@Post<UserHookIFUUCD>('deleteMany', (result, next) => {
+	@PostHook<UserHookIFUUCD>('deleteMany', (result, next) => {
 		console.info('post-deleteMany', result)
 		next()
 	})
-	@Post<UserHookIFUUCD, Error>('deleteMany', (error, result, next) => {
+	@PostHook<UserHookIFUUCD, Error>('deleteMany', (error, result, next) => {
 		console.info('post-deleteMany-error', error, result)
 		next()
 	})
@@ -185,14 +185,14 @@ test('insertMany, find, update, updateMany, count, deleteMany', async () => {
 
 test('aggregate', async () => {
 	@Model()
-	@Pre<UserHookA>('aggregate', function (next) {
+	@PreHook<UserHookA>('aggregate', function (next) {
 		this.project('name -_id')
 		next()
 	})
-	@Post<UserHookA>('aggregate', function (docs, next) {
+	@PostHook<UserHookA>('aggregate', function (docs, next) {
 		next()
 	})
-	@Post<UserHookA, Error>('aggregate', function (error, docs, next) {
+	@PostHook<UserHookA, Error>('aggregate', function (error, docs, next) {
 		console.info('post-aggregate-error', error, docs)
 
 		next()
@@ -215,7 +215,7 @@ test('aggregate', async () => {
 
 test('mixed hooks', async () => {
 	@Model()
-	@Pre<UserHookX>(['aggregate', 'find', 'save'], function (this: any, next) {
+	@PreHook<UserHookX>(['aggregate', 'find', 'save'], function (this: any, next) {
 		console.info(this.constructor.name)
 		next()
 	})

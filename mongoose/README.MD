@@ -426,7 +426,7 @@ const Animal = mongoose.model<AnimalDocument>('Animal', userSchema)
 <tbody>
 </table>
 
-_Beware of defining hooks in the callback if your schema has embedded discriminators. Mongoose documentation recommends declaring hooks **before** embedded discriminators, the callback is applied **after** them. You should use the dedicated hooks decorators `@Pre` and `@Post`._
+_Beware of defining hooks in the callback if your schema has embedded discriminators. Mongoose documentation recommends declaring hooks **before** embedded discriminators, the callback is applied **after** them. You should use the dedicated hooks decorators `@PreHook` and `@PostHook`._
 
 ## Schema retrieval
 
@@ -501,9 +501,9 @@ const City = mongoose.model<CityDocument>('City', citySchema)
 
 ## Hooks
 
-### Pre middleware
+### Pre hook
 
-> 🔦 `@Pre(method, callback)`<br>
+> 🔦 `@PreHook(method, callback)`<br>
 > 💫 Related Mongoose method: [`schema.pre`](https://mongoosejs.com/docs/middleware#pre)
 
 <table>
@@ -519,7 +519,7 @@ const City = mongoose.model<CityDocument>('City', citySchema)
 
 ```ts
 @Model()
-@Pre<User>('save', function(next) {
+@PreHook<User>('save', function(next) {
   next()
 })
 class User extends Model.Interface {     
@@ -553,11 +553,11 @@ const User = mongoose.model<UserDocument>('User', userSchema)
 <tbody>
 </table>
 
-The `@Pre` API is a direct wrapper of Mongoose [Schema.pre method](https://mongoosejs.com/docs/api/schema#schema_Schema-pre), you can put in there everything that you used to.
+The `@PreHook` API is a direct wrapper of Mongoose [Schema.pre method](https://mongoosejs.com/docs/api/schema#schema_Schema-pre), you can put in there everything that you used to.
 
-### Post middleware
+### Post hook
 
-> 🔦 `@Post(method, callback)`<br>
+> 🔦 `@PostHook(method, callback)`<br>
 > 💫 Related Mongoose method: [`schema.post`](https://mongoosejs.com/docs/middleware#post)
 
 <table>
@@ -573,7 +573,7 @@ The `@Pre` API is a direct wrapper of Mongoose [Schema.pre method](https://mongo
 
 ```ts
 @Model()
-@Post<User>('find', function(result) {
+@PostHook<User>('find', function(result) {
   console.log(result)
 })
 class User extends Model.Interface {     
@@ -607,15 +607,15 @@ const User = mongoose.model<UserDocument>('User', userSchema)
 <tbody>
 </table>
 
-The `@Post` API is a direct wrapper of Mongoose [Schema.post method](https://mongoosejs.com/docs/api/schema#schema_Schema-post), you can put in there everything that you used to.
+The `@PostHook` API is a direct wrapper of Mongoose [Schema.post method](https://mongoosejs.com/docs/api/schema#schema_Schema-post), you can put in there everything that you used to.
 
 #### Post error handling middleware
 
-To help the compiler accurately infer the [error handling middleware](https://mongoosejs.com/docs/middleware#error-handling-middleware) signature, pass a second type argument to `@Post`:
+To help the compiler accurately infer the [error handling middleware](https://mongoosejs.com/docs/middleware#error-handling-middleware) signature, pass a second type argument to `@PostHook`:
 
 ```ts
 @Model()
-@Post<User, Error>('save', function(error, doc, next) {
+@PostHook<User, Error>('save', function(error, doc, next) {
   if (error.name === 'MongoError' && error.code === 11000) {
     next(new Error('There was a duplicate key error'))
   } else {

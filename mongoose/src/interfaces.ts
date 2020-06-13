@@ -43,21 +43,21 @@ export namespace Decorator {
 	}
 
 	/**
-	 * Used for `@Pre` decorator.
+	 * Used for `@PreHook` decorator.
 	 * Equivalent to `ClassDecorator`.
 	 * @public
 	 */
-	export type Pre = ClassDecorator & {
-		__mongoosePre?: never
+	export type PreHook = ClassDecorator & {
+		__mongoosePreHook?: never
 	}
 
 	/**
-	 * Used for `@Post` decorator.
+	 * Used for `@PostHook` decorator.
 	 * Equivalent to `ClassDecorator`.
 	 * @public
 	 */
-	export type Post = ClassDecorator & {
-		__mongoosePost?: never
+	export type PostHook = ClassDecorator & {
+		__mongoosePostHook?: never
 	}
 
 	/**
