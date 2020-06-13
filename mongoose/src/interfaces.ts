@@ -107,17 +107,10 @@ export namespace Decorator {
 }
 
 /**
- * Omits Mongoose properties and all methods.
- *
- * Helps with the return type of `toObject()` and `toJson()`.
- *
- * @example
- * ```ts
- * const userObject = userDocument.toObject() as Plain<User>
- * ```
+ * Shallow generic.
  * @public
  */
-export type Plain<T> = Pick<
+type Plain_<T> = Pick<
 	T,
 	Exclude<
 		{
@@ -130,6 +123,25 @@ export type Plain<T> = Pick<
 		undefined
 	>
 >
+
+/**
+ * Omits Mongoose properties and all methods.
+ *
+ * Helps with the return type of `toObject()` and `toJson()`.
+ *
+ * @example
+ * ```ts
+ * const userObject = userDocument.toObject() as Plain<User>
+ * ```
+ * @public
+ */
+export type Plain<T> = {
+	[K in keyof Plain_<T>]: T[K] extends mongoose.Document
+		? Plain<T[K]>
+		: T[K] extends (infer U & mongoose.Document)[] // Must also constraint to mongoose.document to avoid problems with regular arrays
+		? Plain<U>[]
+		: T[K]
+}
 
 export namespace Plain {
 	/**
@@ -153,6 +165,34 @@ export namespace Plain {
 	 * @public
 	 */
 	export type Partial<T> = Partial_<Plain<T>>
+}
+
+/**
+ * Shallow generic.
+ * @public
+ */
+type PlainOptionalId_<T extends mongoose.Document> = Pick<Partial<T>, '_id'> &
+	Pick<
+		T,
+		Exclude<
+			{
+				[K in keyof T]: K extends keyof mongoose.Document ? never : T[K] extends Function ? never : K
+			}[keyof T],
+			undefined
+		>
+	>
+
+/**
+ * @public
+ */
+export type PlainOptionalId<T extends mongoose.Document> = {
+	[K in keyof PlainOptionalId_<T>]: T[K] extends mongoose.Document
+		? PlainOptionalId<T[K]>
+		: T[K] extends (infer U & mongoose.Document)[] // Must also constraint to mongoose.document to avoid problems with regular arrays
+		? U extends mongoose.Document
+			? PlainOptionalId<U>[]
+			: U[]
+		: T[K]
 }
 
 /**

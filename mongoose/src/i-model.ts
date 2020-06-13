@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose'
 import * as mongodb from 'mongodb' // tslint:disable-line: no-implicit-dependencies
-import { Plain, IsAny } from './interfaces'
+import { Plain, PlainOptionalId, IsAny } from './interfaces'
 
 const IBase = class {} as mongoose.Model<mongoose.Document>
 
@@ -39,19 +39,32 @@ export abstract class IModel<C extends object = any> extends IBase {
 
 	static create<T extends IModel>(
 		this: new (...a: any[]) => T,
-		docs: Plain.Partial<T>[],
+		doc: Partial<PlainOptionalId<T>>,
+		options?: mongoose.SaveOptions
+	): Promise<T>
+
+	static create<T extends IModel>(
+		this: new (...a: any[]) => T,
+		doc: Partial<PlainOptionalId<T>>,
+		// tslint:disable-next-line: unified-signatures
+		callback?: (err: any, res: T[]) => void
+	): Promise<T>
+
+	static create<T extends IModel>(
+		this: new (...a: any[]) => T,
+		docs: Partial<PlainOptionalId<T>>[],
 		callback?: (err: any, res: T[]) => void
 	): Promise<T[]>
 
 	static create<T extends IModel>(
 		this: new (...a: any[]) => T,
-		docs: Plain.Partial<T>[],
+		docs: Partial<PlainOptionalId<T>>[],
 		options?: mongoose.SaveOptions,
 		callback?: (err: any, res: T[]) => void
 	): Promise<T[]>
 
 	// @ts-ignore implementation
-	static create<T extends IModel>(this: new (...a: any[]) => T, ...docs: Plain.Partial<T>[]): Promise<T>
+	static create<T extends IModel>(this: new (...a: any[]) => T, ...docs: Partial<PlainOptionalId<T>>[]): Promise<T>
 
 	// @ts-ignore implementation
 	static exists<T extends IModel>(
@@ -430,20 +443,3 @@ interface QueryReplaceOneOptions {
 	omitUndefined?: boolean
 	timestamps?: boolean | null
 }
-
-type PlainOptionalId<T extends mongoose.Document> = Pick<Partial<T>, '_id'> &
-	Pick<
-		T,
-		Exclude<
-			{
-				[K in keyof T]: K extends keyof mongoose.Document
-					? never
-					: T[K] extends Function
-					? never
-					: T[K] extends Function | undefined
-					? never
-					: K
-			}[keyof T],
-			undefined
-		>
-	>
