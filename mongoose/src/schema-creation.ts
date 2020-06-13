@@ -4,6 +4,7 @@ import { mergeSchemaOptionsAndKeys } from './schema-options-decorators'
 import { getPreHooks, getPostHooks } from './hooks-decorators'
 import { getKind } from './kind-decorator'
 import { getSchemaCallback } from './schema-callback-decorator'
+import { getPopulateVirtuals } from './virtual-populate-decorator'
 import { ConstructorType, ConstructorInstance } from './interfaces'
 
 /**
@@ -50,8 +51,16 @@ export function createSchema<T extends ConstructorType>(Class: T) {
 	const preHooks = getPreHooks(Class)
 	const postHooks = getPostHooks(Class)
 	const schemaCallback = getSchemaCallback(Class)
+	const populatedVirtuals = getPopulateVirtuals(Class)
 
 	const schema = new mongoose.Schema<ConstructorInstance<T>>(fields, options)
+
+	for (const virtualKey in populatedVirtuals) {
+		if (!populatedVirtuals.hasOwnProperty(virtualKey)) continue
+
+		const virtualOptions = populatedVirtuals[virtualKey]
+		schema.virtual(virtualKey, virtualOptions)
+	}
 
 	loadClassMethods(schema, Class)
 

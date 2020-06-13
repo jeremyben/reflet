@@ -8,6 +8,8 @@ export { Field } from './field-decorators'
 
 export { Kind } from './kind-decorator'
 
+export { PopulateVirtual } from './virtual-populate-decorator'
+
 export { PreHook, Pre, PostHook, Post } from './hooks-decorators'
 
 export { schemaFrom } from './schema-creation'

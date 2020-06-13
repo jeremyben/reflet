@@ -15,6 +15,7 @@ The **best** decorators for [Mongoose](https://mongoosejs.com/). Have a look at 
 * [Hooks](#hooks)
 * [Model discriminators](#model-discriminators)
 * [Embedded discriminators](#embedded-discriminators)
+* [Populate virtuals](#populate-virtuals)
 * [Plain helper](#plain-helper)
 * [Augmentations](#augmentations)
 
@@ -774,6 +775,41 @@ const batch = new Batch({
     { kind: 'Purchased', product: 'action-figure', message: 'world' },
   ]
 })
+```
+
+## Populate virtuals
+
+> 🔦 `@PopulateVirtual(options)`<br>
+> 💫 Related Mongoose method: [`schema.virtual`](https://mongoosejs.com/docs/populate#populate-virtuals)
+
+```ts
+@Model()
+class Person extends Model.I {
+  @Field(String)
+  name: string
+
+  @Field(String)
+  band: string
+}
+
+@Model()
+@SchemaOptions({
+  toObject: { virtuals: true },
+  toJson: { virtuals: true }
+})
+class Band extends Model.I {
+  @Field(String)
+  name: string
+
+  @PopulateVirtual<Person, Band>({
+    ref: 'Person',
+    foreignField: 'band',
+    localField: 'name'
+  })
+  readonly members: string[]
+}
+
+const bands = await Band.find({}).populate('members')
 ```
 
 ## Plain helper

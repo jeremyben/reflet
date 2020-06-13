@@ -104,6 +104,15 @@ export namespace Decorator {
 	export type Kind = PropertyDecorator & {
 		__mongooseKind?: never
 	}
+
+	/**
+	 * Used for `@Virtual` decorator.
+	 * Equivalent to `PropertyDecorator`.
+	 * @public
+	 */
+	export type Virtual = PropertyDecorator & {
+		__mongooseVirtual?: never
+	}
 }
 
 /**
