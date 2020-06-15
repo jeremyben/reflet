@@ -180,7 +180,7 @@ export namespace Plain {
  * Shallow generic.
  * @public
  */
-type PlainOptionalId_<T extends mongoose.Document> = Pick<Partial<T>, '_id'> &
+type PlainOptionalId_<T extends { [key: string]: any }> = Pick<Partial<T>, '_id'> &
 	Pick<
 		T,
 		Exclude<
@@ -194,13 +194,11 @@ type PlainOptionalId_<T extends mongoose.Document> = Pick<Partial<T>, '_id'> &
 /**
  * @public
  */
-export type PlainOptionalId<T extends mongoose.Document> = {
+export type PlainOptionalId<T extends { [key: string]: any }> = {
 	[K in keyof PlainOptionalId_<T>]: T[K] extends mongoose.Document
 		? PlainOptionalId<T[K]>
 		: T[K] extends (infer U & mongoose.Document)[] // Must also constraint to mongoose.document to avoid problems with regular arrays
-		? U extends mongoose.Document
-			? PlainOptionalId<U>[]
-			: U[]
+		? PlainOptionalId<U>[]
 		: T[K]
 }
 
