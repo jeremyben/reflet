@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.1.0](https://github.com/jeremyben/reflet/tree/master/mongoose/compare/@reflet/mongoose@1.0.9...@reflet/mongoose@1.1.0) (2020-06-15)
+
+
+### Bug Fixes
+
+* **mongoose:** generic constraint for IModel constructor ([422f4b6](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/422f4b6))
+
+
+### Features
+
+* **mongoose:** populate virtual decorator ([124014e](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/124014e))
+
+
+
+
+
 ## [1.0.9](https://github.com/jeremyben/reflet/tree/master/mongoose/compare/@reflet/mongoose@1.0.8...@reflet/mongoose@1.0.9) (2020-06-13)
 
 
