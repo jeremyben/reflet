@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose'
-import { Field, PopulateVirtual, Model, SchemaOptions, SchemaCallback } from '../src'
+import { Field, PopulateVirtual, Model, SchemaOptions } from '../src'
 
 test('virtual populate', async () => {
 	@Model()
@@ -17,9 +17,6 @@ test('virtual populate', async () => {
 	@Model()
 	@SchemaOptions({
 		toObject: { virtuals: true },
-	})
-	@SchemaCallback((s) => {
-		console.log(s.virtualpath('band'))
 	})
 	class Album extends Model.I<Omit<Album, 'band' | 'tracks'>> {
 		@Field([mongoose.Schema.Types.ObjectId])
@@ -44,6 +41,9 @@ test('virtual populate', async () => {
 		})
 		readonly band?: Band
 	}
+
+	const virtualType = Album.schema.virtualpath('band')
+	expect(virtualType).toBeInstanceOf(mongoose.VirtualType)
 
 	const tracks = await Track.create([{ title: 'Yolo' }, { title: 'Yala' }])
 	const band = await Band.create({ lead: 'Jeremy' })
