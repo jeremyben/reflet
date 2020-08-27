@@ -65,6 +65,12 @@ export function assignKindKey({
 	rootModel: mongoose.Model<mongoose.Document>
 	discriminatorModel: mongoose.Model<mongoose.Document>
 }): void {
+	if (!rootModel.prototype.$isMongooseModelPrototype) {
+		throw Error(
+			`Discriminator "${discriminatorModel.name}" must have its root model "${rootModel.name}" decorated with @Model.`
+		)
+	}
+
 	const rootProvidedD11rKey = (rootModel.schema as SchemaFix)._userProvidedOptions.discriminatorKey
 	const alreadyProvidedKindKey: string | undefined = (rootModel as any)[MetaKind]
 	// const otherD11rs = rootModel.discriminators as { [key: string]: mongoose.Model<any> } | undefined
@@ -82,7 +88,7 @@ export function assignKindKey({
 	// Then check overwriting of the discriminatorKey provided by the user on the root model.
 	if (rootProvidedD11rKey && kindKey && rootProvidedD11rKey !== kindKey) {
 		throw Error(
-			`Discriminator "${discriminatorModel.name}" Cannot overwrite discriminatorKey "${rootProvidedD11rKey}" of root model "${rootModel.modelName}" with @Kind named "${kindKey}".`
+			`Discriminator "${discriminatorModel.name}" cannot overwrite discriminatorKey "${rootProvidedD11rKey}" of root model "${rootModel.modelName}" with @Kind named "${kindKey}".`
 		)
 	}
 

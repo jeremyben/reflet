@@ -104,7 +104,22 @@ test('model discriminators', async () => {
 	expect(doctor.kind).toBe('doctor')
 })
 
-describe('model discriminators kind key coercion', () => {
+describe('model discriminators coercion', () => {
+	test('root model must be decorated', async () => {
+		class RootNotDecorated extends Model.I {
+			@Field(String)
+			name: string
+		}
+
+		expect(() => {
+			@Model.Discriminator(RootNotDecorated)
+			class ChildWithError extends RootNotDecorated {
+				@Field(Number)
+				age: number
+			}
+		}).toThrowError(/decorated/)
+	})
+
 	test('siblings should have same kind key', async () => {
 		@Model()
 		class A extends Model.Interface {
