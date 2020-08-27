@@ -205,18 +205,6 @@ const user = await User.create({
 
 Your class needs to inherit a special empty class, **`Model.Interface`** or **`Model.I`**, to have Mongoose document properties and methods.
 
-By using your class as the type argument of `Model.Interface`, you can quickly type the constructor:
-
-```ts
-@Model()
-class User extends Model.I<User> {
-  @Field({ type: String, required: true })
-  email: string
-}
-
-const user = new User({ email: 'jeremy@example.com' })
-```
-
 ⚠️ `@Model` should always be at the top of your class decorators. _Why? Because decorators are executed bottom to top, so if `@Model` directly compiles your class into a Mongooose Model, other class decorators won't be properly applied._
 
 #### Custom collection name
@@ -636,7 +624,7 @@ class User extends Model.Interface {
 
 ```ts
 @Model()
-class User extends Model.I<User> {
+class User extends Model.I {
   @Field(String)
   name: string
 }
@@ -722,7 +710,7 @@ abstract class Square {
 }
 
 @Model()
-class Shape extends Model.I<Shape> {
+class Shape extends Model.I {
   @Field.Union(Circle, Square)
   shape: Circle | Square
 }
@@ -824,7 +812,7 @@ Some Mongoose methods return plain JS objects instead of Mongoose Documents, whi
 
 ```ts
 @Model()
-class User extends Model.I<Omit<User, 'fullname'>> { // Use Plain behind the scenes to type the constructor
+class User extends Model.I {
   @Field(String)
   firstname: string
 
@@ -833,6 +821,10 @@ class User extends Model.I<Omit<User, 'fullname'>> { // Use Plain behind the sce
 
   get fullname() {
     return `${this.firstname} ${this.lastname}`
+  }
+
+  constructor(user: Plain.Omit<User, 'fullname'>) {
+    super() // required by the compiler.
   }
 }
 
