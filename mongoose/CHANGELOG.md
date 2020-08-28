@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.2.0](https://github.com/jeremyben/reflet/tree/master/mongoose/compare/@reflet/mongoose@1.1.0...@reflet/mongoose@1.2.0) (2020-08-28)
+
+
+### Bug Fixes
+
+* **mongoose:** throw explicit error when root model is not decorated ([494c1ff](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/494c1ff))
+
+
+### Features
+
+* **mongoose:** options for Plain, remove confusing generic from Model.Interface ([5dad855](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/5dad855))
+
+
+
+
+
 # [1.1.0](https://github.com/jeremyben/reflet/tree/master/mongoose/compare/@reflet/mongoose@1.0.9...@reflet/mongoose@1.1.0) (2020-06-15)
 
 
