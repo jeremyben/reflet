@@ -213,7 +213,7 @@ By default, Mongoose automatically creates a collection named as the plural, low
 
 ```ts
 @Model('people')
-class User extends Model.Interface {
+class User extends Model.I {
   @Field({ type: String, required: true })
   email: string
 }
@@ -227,7 +227,7 @@ You can use a different database by creating a Mongoose connection and passing i
 const otherDb = mongoose.createConnection('mongodb://localhost/other', { useNewUrlParser: true })
 
 @Model(undefined, otherDb)
-class User extends Model.Interface {
+class User extends Model.I {
   @Field({ type: String, required: true })
   email: string
 }
@@ -255,7 +255,7 @@ class User extends Model.Interface {
   autoIndex: false,
   strict: 'throw'
 })
-class User extends Model.Interface {    
+class User extends Model.I {           
   @Field(String)
   name: string
 }
@@ -310,7 +310,7 @@ The `@SchemaOptions` API is a direct wrapper of Mongoose [schema options](https:
 ```ts
 @Model()
 @SchemaOptions({ minimize: false })
-class User extends Model.Interface {     
+class User extends Model.I {             
   @Field(String)
   name: string
 
@@ -380,7 +380,7 @@ If you need more advanced schema manipulation before `@Model` compiles it, you c
 @SchemaCallback((schema) => {
   schema.index({ name: 1, type: -1 })
 })
-class Animal extends Model.Interface {
+class Animal extends Model.I {          
   @Field(String)
   name: string
 
@@ -445,7 +445,7 @@ abstract class Location {
 }
 
 @Model()
-class City extends Model.Interface {     
+class City extends Model.I {            
   @Field(String)
   name: string
 
@@ -511,7 +511,7 @@ const City = mongoose.model<CityDocument>('City', citySchema)
 @PreHook<User>('save', function(next) {
   next()
 })
-class User extends Model.Interface {     
+class User extends Model.I {     
   @Field(String)
   name: string
 }
@@ -565,7 +565,7 @@ The `@PreHook` API is a direct wrapper of Mongoose [Schema.pre method](https://m
 @PostHook<User>('find', function(result) {
   console.log(result)
 })
-class User extends Model.Interface {     
+class User extends Model.I {     
   @Field(String)
   name: string
 }
@@ -611,7 +611,7 @@ To help the compiler accurately infer the [error handling middleware](https://mo
     next()
   }
 })
-class User extends Model.Interface {
+class User extends Model.I {
   @Field(String)
   name: string
 }
@@ -661,7 +661,7 @@ Mongoose `discriminatorKey` is usually defined in the parent model options, and 
 
 ```ts
 @Model()
-class User extends Model.Interface {
+class User extends Model.I {
   @Field(String)
   name: string
 }
@@ -752,7 +752,7 @@ abstract class Purchased {
 }
 
 @Model()
-class Batch extends Model.Interface {
+class Batch extends Model.I {
   @Field.ArrayOfUnion(Clicked, Purchased)
   events: (Clicked | Purchased)[]
 }
@@ -862,7 +862,7 @@ Now you have access to `autopopulate` option in your schemas:
 
 ```ts
 @Model()
-class User extends Model.Interface {
+class User extends Model.I {
   @Field({
     type: mongoose.Schema.Types.ObjectId,
     ref: Company,
@@ -884,7 +884,7 @@ By augmenting the global interface `Ref`, you can:
 ```ts
 // company.model.ts
 @Model()
-class Company extends Model.Interface {
+class Company extends Model.I {
   @Field(String)
   name: string
 }
@@ -902,7 +902,7 @@ declare global {
 ```ts
 // user.model.ts
 @Model()
-class User extends Model.Interface {
+class User extends Model.I {
   @Field({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Company',
