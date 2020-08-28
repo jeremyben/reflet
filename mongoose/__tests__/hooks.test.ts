@@ -99,7 +99,7 @@ test('updateOne, deleteOne', async () => {
 		console.info('post-deleteOne', result.deletedCount)
 		next()
 	})
-	class UserHookUD extends Model.I<UserHookUD> {
+	class UserHookUD extends Model.I {
 		@Field(String)
 		name: string
 	}

@@ -1,24 +1,36 @@
 import * as mongoose from 'mongoose'
-import { Field, PopulateVirtual, Model, SchemaOptions } from '../src'
+import { Field, PopulateVirtual, Model, SchemaOptions, Plain } from '../src'
 
 test('virtual populate', async () => {
-	@Model()
-	class Track extends Model.I<Track> {
-		@Field(String)
-		title: string
-	}
+	type NewTrack = Plain<Track, { Optional: '_id' }>
 
 	@Model()
-	class Band extends Model.I<Band> {
+	class Track extends Model.I {
+		@Field(String)
+		title: string
+
+		constructor(doc?: NewTrack) {
+			super()
+		}
+	}
+
+	type NewBand = Plain<Band, { Optional: '_id' }>
+
+	@Model()
+	class Band extends Model.I {
 		@Field(String)
 		lead: string
+
+		constructor(doc?: NewBand) {
+			super()
+		}
 	}
 
 	@Model()
 	@SchemaOptions({
 		toObject: { virtuals: true },
 	})
-	class Album extends Model.I<Omit<Album, 'band' | 'tracks'>> {
+	class Album extends Model.I {
 		@Field([mongoose.Schema.Types.ObjectId])
 		trackIds: mongoose.Types.ObjectId[]
 
@@ -40,6 +52,10 @@ test('virtual populate', async () => {
 			options: { lean: true },
 		})
 		readonly band?: Band
+
+		constructor(doc?: Plain<Album, { Omit: 'tracks' | 'band'; Optional: '_id' }>) {
+			super()
+		}
 	}
 
 	const virtualType = Album.schema.virtualpath('band')

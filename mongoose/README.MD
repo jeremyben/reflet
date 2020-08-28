@@ -802,13 +802,20 @@ const bands = await Band.find({}).populate('members')
 
 ## Plain helper
 
-> 🔦 `Plain<class>`, `Plain.Partial<class>`, `Plain.Omit<class, keys>`
+> 🔦 `Plain<class, options?>`
 
-Some Mongoose methods return plain JS objects instead of Mongoose Documents, while others need plain objects as parameter. Reflet provides generic types to discard Mongoose properties and methods from a Document.
+Reflet provides a generic type to discard Mongoose properties and methods from a Document.
 
-* `Plain<T>` removes inherited Mongoose properties (except _id) and all methods from `T`.
+* `Plain<T>` removes inherited Mongoose properties (except `_id`) and all methods from `T`.
 * `Plain.Partial<T>` does the same as `Plain` and makes remaining properties of `T` optional.
-* `Plain.Omit<T, U>` does the same as `Plain` and also omits keys specified in `U`.
+
+`Plain` also has a second type argument to omit other properties and/or make them optional:
+
+* `Plain<T, { Omit: keyof T; Optional: keyof T } >`
+
+_These options exist as standalone generics as well: `Plain.Omit<T, keyof T>` and `Plain.Optional<T, keyof T>`._
+
+This will help with the constructor parameter type, or the return type of `toObject()` and `toJson()`:
 
 ```ts
 @Model()
@@ -823,7 +830,7 @@ class User extends Model.I {
     return `${this.firstname} ${this.lastname}`
   }
 
-  constructor(user: Plain.Omit<User, 'fullname'>) {
+  constructor(user: Plain<User, { Omit: 'fullname'; Optional: '_id' }>) {
     super() // required by the compiler.
   }
 }

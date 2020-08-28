@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose'
 import * as mongodb from 'mongodb' // tslint:disable-line: no-implicit-dependencies
-import { Plain, PlainOptionalId, IsAny } from './interfaces'
+import { Plain } from './interfaces'
 
 const IBase = class {} as mongoose.Model<mongoose.Document>
 
@@ -8,9 +8,12 @@ const IBase = class {} as mongoose.Model<mongoose.Document>
  * Intermediary abstract class with overloaded static methods to properly infer the child class.
  * @public
  */
-export abstract class IModel<C extends object = any> extends IBase {
+export abstract class IModel extends IBase {
 	// @ts-ignore implementation
-	constructor(doc?: IsAny<C> extends true ? Record<string, any> : PlainOptionalId<C>)
+	constructor(
+		doc?: { _id?: mongoose.Document['_id']; [field: string]: any },
+		strict?: mongoose.SchemaOptions['strict']
+	)
 
 	// @ts-ignore implementation
 	static $where<T extends IModel>(
@@ -39,32 +42,32 @@ export abstract class IModel<C extends object = any> extends IBase {
 
 	static create<T extends IModel>(
 		this: new (...a: any[]) => T,
-		doc: Partial<PlainOptionalId<T>>,
+		doc: Plain.Partial<T>,
 		options?: mongoose.SaveOptions
 	): Promise<T>
 
 	static create<T extends IModel>(
 		this: new (...a: any[]) => T,
-		doc: Partial<PlainOptionalId<T>>,
+		doc: Plain.Partial<T>,
 		// tslint:disable-next-line: unified-signatures
 		callback?: (err: any, res: T[]) => void
 	): Promise<T>
 
 	static create<T extends IModel>(
 		this: new (...a: any[]) => T,
-		docs: Partial<PlainOptionalId<T>>[],
+		docs: Plain.Partial<T>[],
 		callback?: (err: any, res: T[]) => void
 	): Promise<T[]>
 
 	static create<T extends IModel>(
 		this: new (...a: any[]) => T,
-		docs: Partial<PlainOptionalId<T>>[],
+		docs: Plain.Partial<T>[],
 		options?: mongoose.SaveOptions,
 		callback?: (err: any, res: T[]) => void
 	): Promise<T[]>
 
 	// @ts-ignore implementation
-	static create<T extends IModel>(this: new (...a: any[]) => T, ...docs: Partial<PlainOptionalId<T>>[]): Promise<T>
+	static create<T extends IModel>(this: new (...a: any[]) => T, ...docs: Plain.Partial<T>[]): Promise<T>
 
 	// @ts-ignore implementation
 	static exists<T extends IModel>(

@@ -9,7 +9,7 @@ test('model with custom collection and connection', async () => {
 	})
 
 	@Model('people', db)
-	class UserOther extends Model.I<Partial<UserOther>> {
+	class UserOther extends Model.I {
 		static col() {
 			return this.collection.collectionName
 		}
@@ -33,6 +33,10 @@ test('model with custom collection and connection', async () => {
 		version() {
 			return this.__v
 		}
+
+		constructor(doc?: Plain.Partial<UserOther>) {
+			super()
+		}
 	}
 
 	const userOtherSchema = schemaFrom(UserOther)
@@ -48,7 +52,7 @@ test('model with custom collection and connection', async () => {
 
 test('model discriminators', async () => {
 	@Model()
-	class User extends Model.I<Omit<User, 'fullname'>> {
+	class User extends Model.I {
 		@Field({ type: String, required: true })
 		firstname: string
 
@@ -57,6 +61,10 @@ test('model discriminators', async () => {
 
 		get fullname() {
 			return this.firstname + ' ' + this.lastname
+		}
+
+		constructor(doc?: Plain<User, { Omit: 'fullname'; Optional: '_id' }>) {
+			super()
 		}
 	}
 
@@ -68,7 +76,7 @@ test('model discriminators', async () => {
 		@Kind('developer')
 		kind: 'developer'
 
-		constructor(doc?: Plain.Omit<Developer, 'fullname' | 'kind' | '_id'>) {
+		constructor(doc?: Plain<Developer, { Omit: 'fullname' | 'kind'; Optional: '_id' }>) {
 			super()
 		}
 	}
@@ -85,7 +93,7 @@ test('model discriminators', async () => {
 			return 'Dr ' + this.firstname + ' ' + this.lastname
 		}
 
-		constructor(doc?: Plain.Omit<Doctor, 'fullname' | 'kind' | '_id'>) {
+		constructor(doc?: Plain<Doctor, { Omit: 'fullname' | 'kind'; Optional: '_id' }>) {
 			super()
 		}
 	}

@@ -106,7 +106,7 @@ export namespace Decorator {
 	}
 
 	/**
-	 * Used for `@Virtual` decorator.
+	 * Used for `@PopulateVirtual` decorator.
 	 * Equivalent to `PropertyDecorator`.
 	 * @public
 	 */
@@ -116,101 +116,95 @@ export namespace Decorator {
 }
 
 /**
- * Shallow generic.
  * @public
  */
-type Plain_<T> = Pick<
-	T,
-	Exclude<
-		{
-			[K in keyof T]: K extends Exclude<keyof mongoose.Document, '_id'>
-				? never
-				: T[K] extends Function
-				? never
-				: K
-		}[keyof T],
-		undefined
-	>
->
+type PlainKeys<T> = {
+	[K in keyof T]: K extends Exclude<keyof mongoose.Document, '_id'> ? never : T[K] extends Function ? never : K
+}[keyof T]
+
+/**
+ * Recursive.
+ * @public
+ */
+type Plain_<T> = {
+	[K in PlainKeys<T>]: T[K] extends mongoose.Document
+		? Plain_<T[K]>
+		: T[K] extends (infer U & mongoose.Document)[] // Must also constraint to mongoose.document to avoid problems with regular arrays
+		? Plain_<U>[]
+		: T[K]
+}
 
 /**
  * Omits Mongoose properties and all methods.
  *
- * Helps with the return type of `toObject()` and `toJson()`.
+ * @template T - mongoose document.
+ * @template O - options to omit and/or make optional other keys.
  *
  * @example
  * ```ts
- * const userObject = userDocument.toObject() as Plain<User>
+ * ＠Model()
+ * class User extends Model.I {
+ *   ＠Field(String)
+ *   name: string
+ *
+ *   get greet() {
+ *     return 'hello ' + this.name
+ *   }
+ *
+ *   constructor(doc: Plain<User, { Omit: 'greet', Optional: '_id' }>) {
+ *     super()
+ *   }
+ * }
+ *
+ * const user = await new User({ name: 'Jeremy' }).save()
+ *
+ * const userObject = user.toObject() as Plain<User, { Omit: 'greet' }>
  * ```
+ * ---
  * @public
  */
-export type Plain<T> = {
-	[K in keyof Plain_<T>]: T[K] extends mongoose.Document
-		? Plain<T[K]>
-		: T[K] extends (infer U & mongoose.Document)[] // Must also constraint to mongoose.document to avoid problems with regular arrays
-		? Plain<U>[]
-		: T[K]
-}
+export type Plain<T, O extends { Omit?: PlainKeys<T>; Optional?: PlainKeys<T> } = {}> = Omit<
+	Plain_<T>,
+	(O['Omit'] extends string ? O['Omit'] : never) | (O['Optional'] extends string ? O['Optional'] : never)
+> &
+	Pick<Partial<T>, O['Optional'] extends string ? O['Optional'] : never>
 
 export namespace Plain {
 	/**
 	 * Omits Mongoose properties, all methods, and custom keys.
+	 * @template T - mongoose document.
+	 * @template K - other keys to omit.
 	 * @public
 	 */
-	export type Omit<T, U extends keyof Plain<T>> = Omit_<Plain<T>, U>
+	export type Omit<T, K extends PlainKeys<T>> = Plain<T, { Omit: K }>
 
 	/**
 	 * Omits Mongoose properties, all methods, and custom keys.
 	 * @deprecated use `Plain.Omit`
 	 * @public
 	 */
-	export type Without<T, U extends keyof Plain<T>> = Omit_<Plain<T>, U>
+	export type Without<T, K extends PlainKeys<T>> = Plain<T, { Omit: K }>
 
 	/**
-	 * Omits Mongoose properties and all methods, and makes remaining properties optional.
-	 *
-	 * Helps with the constructor parameter type of `@Model` decorated classes.
-	 *
+	 * Omits Mongoose properties, all methods, and makes custom keys optional.
+	 * @template T - mongoose document.
+	 * @template K - other keys to make optional.
 	 * @public
 	 */
-	export type Partial<T> = Partial_<Plain<T>>
-}
+	export type Optional<T, K extends PlainKeys<T>> = Plain<T, { Optional: K }>
 
-/**
- * Shallow generic.
- * @public
- */
-type PlainOptionalId_<T extends { [key: string]: any }> = Pick<Partial<T>, '_id'> &
-	Pick<
-		T,
-		Exclude<
-			{
-				[K in keyof T]: K extends keyof mongoose.Document ? never : T[K] extends Function ? never : K
-			}[keyof T],
-			undefined
-		>
-	>
-
-/**
- * @public
- */
-export type PlainOptionalId<T extends { [key: string]: any }> = {
-	[K in keyof PlainOptionalId_<T>]: T[K] extends mongoose.Document
-		? PlainOptionalId<T[K]>
-		: T[K] extends (infer U & mongoose.Document)[] // Must also constraint to mongoose.document to avoid problems with regular arrays
-		? PlainOptionalId<U>[]
-		: T[K]
+	/**
+	 * Omits Mongoose properties and all methods, and makes remaining keys optional.
+	 * @template T - mongoose document.
+	 * @public
+	 */
+	export type Partial<T> = Partial_<Plain_<T>>
 }
 
 /**
  * @public
  */
 type Partial_<T> = Partial<T>
-
-/**
- * @public
- */
-type Omit_<T, K extends string | symbol | number> = Omit<T, K>
 
 /**
  * Interface with the right keys but with `any` types, so we can enforce decorated classes to a minimal interface,
@@ -229,11 +223,6 @@ export type ConstructorType<T = any> = Function & { prototype: T }
  * @public
  */
 export type ConstructorInstance<T extends ConstructorType> = T extends Function & { prototype: infer R } ? R : never
-
-/**
- * @public
- */
-export type IsAny<T> = 0 extends 1 & T ? true : false
 
 // tslint:disable: no-empty-interface
 declare global {
@@ -256,8 +245,4 @@ declare global {
 	}
 }
 
-declare module 'mongoose' {
-	interface MongooseDocument {
-		deleteOne(): Promise<this>
-	}
-}
+declare module 'mongoose' {} // keep it for now (issue in declaration bundling)
