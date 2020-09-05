@@ -24,8 +24,12 @@ const MetaSchemaCallback = Symbol('schema-callback')
  * @public
  */
 export function SchemaCallback<T>(callback: (schema: mongoose.Schema<T>) => void): Decorator.SchemaCallback {
-	return (target) => {
-		Reflect.defineMetadata(MetaSchemaCallback, callback, target)
+	return (Class) => {
+		if (Class.prototype.$isMongooseModelPrototype) {
+			throw Error(`You must put @Model at the top of "${(Class as any).modelName}" decorators`)
+		}
+
+		Reflect.defineMetadata(MetaSchemaCallback, callback, Class)
 	}
 }
 

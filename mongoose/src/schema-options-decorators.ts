@@ -20,6 +20,10 @@ const MetaSchemaOptionsKeys = Symbol('schema-options-keys')
  */
 export function SchemaOptions(options: mongoose.SchemaOptions): Decorator.SchemaOptions {
 	return (Class) => {
+		if (Class.prototype.$isMongooseModelPrototype) {
+			throw Error(`You must put @Model at the top of "${(Class as any).modelName}" decorators`)
+		}
+
 		Reflect.defineMetadata(MetaSchemaOptions, options, Class)
 	}
 }

@@ -199,6 +199,10 @@ export function PreHook(
 	callbackIfOptions?: Function
 ): Decorator.PreHook {
 	return (Class) => {
+		if (Class.prototype.$isMongooseModelPrototype) {
+			throw Error(`You must put @Model at the top of "${(Class as any).modelName}" decorators`)
+		}
+
 		const preHooks = getPreHooks(Class)
 		preHooks.push({ method, callbackOrOptions, callbackIfOptions })
 		Reflect.defineMetadata(MetaPreHook, preHooks, Class)
@@ -565,6 +569,10 @@ export function PostHook(
 	callbackIfOptions?: Function
 ): Decorator.PostHook {
 	return (Class) => {
+		if (Class.prototype.$isMongooseModelPrototype) {
+			throw Error(`You must put @Model at the top of "${(Class as any).modelName}" decorators`)
+		}
+
 		const postHooks = getPostHooks(Class)
 		postHooks.push({ method, callbackOrOptions, callbackIfOptions })
 		Reflect.defineMetadata(MetaPostHook, postHooks, Class)

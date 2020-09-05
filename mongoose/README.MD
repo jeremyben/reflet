@@ -205,7 +205,7 @@ const user = await User.create({
 
 Your class needs to inherit a special empty class, **`Model.Interface`** or **`Model.I`**, to have Mongoose document properties and methods.
 
-⚠️ `@Model` should always be at the top of your class decorators. _Why? Because decorators are executed bottom to top, so if `@Model` directly compiles your class into a Mongooose Model, other class decorators won't be properly applied._
+⚠️ `@Model` should always be at the top of your class decorators. _Why? Because decorators are executed bottom to top, so if `@Model` directly compiles your class into a Mongooose Model, other class decorators won't be properly applied. Reflet will warn you with its own decorators._
 
 #### Custom collection name
 
@@ -649,7 +649,7 @@ const worker = await Worker.create({ name: 'Jeremy', job: 'developer' })
 
 As you know, `_t` is the default `discriminatorKey`, and its value will be the class name. If you want to customize both the key and the value, check out the following `@Kind` decorator.
 
-⚠️ `@Model.Discriminator` should always be at the top of your class decorators. _Why? Because decorators are executed bottom to top, so if `@Model.Discriminator` directly compiles your class into a Mongooose Model, other class decorators won't be properly applied._
+⚠️ `@Model.Discriminator` should always be at the top of your class decorators. _Why? Because decorators are executed bottom to top, so if `@Model.Discriminator` directly compiles your class into a Mongooose Model, other class decorators won't be properly applied. Reflet will warn you with its own decorators._
 
 ### Kind
 
