@@ -815,28 +815,61 @@ Reflet provides a generic type to discard Mongoose properties and methods from a
 
 _These options exist as standalone generics as well: `Plain.Omit<T, keyof T>` and `Plain.Optional<T, keyof T>`._
 
-This will help with the constructor parameter type, or the return type of `toObject()` and `toJson()`:
+### One document, multiple shapes
+
+In each of your models, some fields might be present when you read the document from the database, but optional or even absent when you create it. 😕
+
+Given the following model:
 
 ```ts
 @Model()
 class User extends Model.I {
-  @Field(String)
+  @Field({ type: String, required: true })
   firstname: string
 
-  @Field(String)
+  @Field({ type: String, required: true })
   lastname: string
+
+  @Field({ type: Boolean, default: () => false })
+  activated: boolean
+
+  @CreatedAt
+  createdAt: Date
 
   get fullname() {
     return `${this.firstname} ${this.lastname}`
   }
+}
+```
 
-  constructor(user: Plain<User, { Omit: 'fullname'; Optional: '_id' }>) {
-    super() // required by the compiler.
-  }
+This is how you can type `constructor` and `create` parameters:
+
+```ts
+type NewUser = Plain<User, { Omit: 'fullname' | 'createdAt'; Optional: '_id' | 'activated' }>
+
+@Model()
+class User extends Model.I  {
+  // ...
+
+  // @ts-ignore implementation
+  constructor(user: NewUser)
+  
+  static create(doc: NewUser): Promise<User>
+	// @ts-ignore implementation
+  static create(docs: NewUser[]): Promise<User[]>
 }
 
-const userDocument = new User({ firstname: 'John', lastname: 'Doe' })
-const userObject = userDocument.toObject() as Plain.Omit<User, 'fullname'>
+const user = new User({ firstname: 'John', lastname: 'Doe' })
+await user.save()
+await User.create({ firstname: 'Jeremy', lastname: 'Doe', activated: true })
+```
+
+_You can safely use ts-ignore to avoid a useless wrapper of `create` or even the `constructor`, the compiler will still check `NewUser` as we need._
+
+You can also narrow the return type of `toObject()` and `toJson()`:
+
+```ts
+const userPlain = user.toObject({ getters: false }) as Plain.Omit<User, 'fullname'>
 ```
 
 ## Augmentations
