@@ -39,3 +39,6 @@ Thumbs.db
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+# @shelf/jest-mongodb
+mongoose/globalConfig.json
