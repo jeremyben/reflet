@@ -119,7 +119,7 @@ export namespace Decorator {
  * @public
  */
 type PlainKeys<T> = {
-	[K in keyof T]: K extends Exclude<keyof mongoose.Document, '_id'> ? never : T[K] extends Function ? never : K
+	[K in keyof T]: K extends '_id' ? K : K extends keyof mongoose.Document ? never : T[K] extends Function ? never : K
 }[keyof T]
 
 /**
@@ -135,7 +135,7 @@ type Plain_<T> = {
 }
 
 /**
- * Omits Mongoose properties and all methods.
+ * Omits Mongoose properties (except `_id`) and all methods.
  *
  * @template T - mongoose document.
  * @template O - options to omit and/or make optional other keys.
@@ -163,11 +163,15 @@ type Plain_<T> = {
  * ---
  * @public
  */
-export type Plain<T, O extends { Omit?: PlainKeys<T>; Optional?: PlainKeys<T> } = {}> = Omit<
-	Plain_<T>,
-	(O['Omit'] extends string ? O['Omit'] : never) | (O['Optional'] extends string ? O['Optional'] : never)
-> &
-	Pick<Partial<T>, O['Optional'] extends string ? O['Optional'] : never>
+export type Plain<T, O extends { Omit?: PlainKeys<T>; Optional?: PlainKeys<T> } | void = void> = O extends {
+	[key: string]: any
+}
+	? Omit<
+			Plain_<T>,
+			(O['Omit'] extends string ? O['Omit'] : never) | (O['Optional'] extends string ? O['Optional'] : never)
+	  > &
+			Pick<Partial<T>, O['Optional'] extends string ? O['Optional'] : never>
+	: Plain_<T>
 
 export namespace Plain {
 	/**
@@ -198,13 +202,8 @@ export namespace Plain {
 	 * @template T - mongoose document.
 	 * @public
 	 */
-	export type Partial<T> = Partial_<Plain_<T>>
+	export type Partial<T> = globalThis.Partial<Plain_<T>>
 }
-
-/**
- * @public
- */
-type Partial_<T> = Partial<T>
 
 /**
  * Interface with the right keys but with `any` types, so we can enforce decorated classes to a minimal interface,

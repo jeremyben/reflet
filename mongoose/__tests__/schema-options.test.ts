@@ -83,6 +83,7 @@ test('schema with reference', async () => {
 
 	const s = (await S.findOne({ name: 'Jeremy' }).populate('srefs'))!
 	// console.log(s)
+	// const plain = s.toObject()
 
 	expect(s.srefs[0]._id).toBeInstanceOf(mongoose.Types.ObjectId)
 	expect(s.srefs[0].hello).toBe('hi')
