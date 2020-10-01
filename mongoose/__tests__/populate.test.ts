@@ -6,6 +6,10 @@ test('virtual populate', async () => {
 
 	@Model()
 	class Track extends Model.I {
+		static create(doc: NewTrack, options?: mongoose.SaveOptions): Promise<Track>
+		// @ts-ignore implementation
+		static create(docs: NewTrack[]): Promise<Track[]>
+
 		@Field(String)
 		title: string
 
@@ -18,6 +22,10 @@ test('virtual populate', async () => {
 
 	@Model()
 	class Band extends Model.I {
+		static create(doc: NewBand, options?: mongoose.SaveOptions): Promise<Band>
+		// @ts-ignore implementation
+		static create(docs: NewBand[]): Promise<Band[]>
+
 		@Field(String)
 		lead: string
 
