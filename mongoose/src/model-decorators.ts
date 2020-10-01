@@ -68,6 +68,12 @@ export namespace Model {
 	 */
 	export function Discriminator<T extends ModelAny>(rootModel: T): Decorator.ModelDiscriminator<T> {
 		return (Class) => {
+			if (!rootModel.prototype.$isMongooseModelPrototype) {
+				throw Error(
+					`Discriminator "${Class.name}" must have its root model "${rootModel.name}" decorated with @Model.`
+				)
+			}
+
 			const [kindKey, kindValue] = getKind(Class)
 			assignKindKey({ kindKey, rootModel, discriminatorModel: Class })
 

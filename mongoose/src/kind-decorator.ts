@@ -65,12 +65,6 @@ export function assignKindKey({
 	rootModel: mongoose.Model<mongoose.Document>
 	discriminatorModel: mongoose.Model<mongoose.Document>
 }): void {
-	if (!rootModel.prototype.$isMongooseModelPrototype) {
-		throw Error(
-			`Discriminator "${discriminatorModel.name}" must have its root model "${rootModel.name}" decorated with @Model.`
-		)
-	}
-
 	const rootProvidedD11rKey = (rootModel.schema as SchemaFix)._userProvidedOptions.discriminatorKey
 	const alreadyProvidedKindKey: string | undefined = (rootModel as any)[MetaKind]
 	// const otherD11rs = rootModel.discriminators as { [key: string]: mongoose.Model<any> } | undefined
