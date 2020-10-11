@@ -61,7 +61,20 @@ export const CreatedAt: PropertyDecorator = (target, key) => {
 }
 
 /**
- * {@inheritDoc (CreatedAt:1)}
+ * Defines timestamp key directly in the model.
+ * @see https://mongoosejs.com/docs/guide#timestamps
+ * @example
+ * ```ts
+ * ＠Model()
+ * class User extends Model.Interface {
+ *   ＠CreatedAt
+ *   createdAt: Date
+ *
+ *   ＠UpdatedAt
+ *   updatedAt: Date
+ * }
+ * ```
+ * ---
  * @public
  */
 export const UpdatedAt: PropertyDecorator = (target, key) => {

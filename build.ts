@@ -54,7 +54,10 @@ function syncOverloadsDoc() {
 	// todo: use emitter with transformer instead of naive replace
 	// https://stackoverflow.com/questions/43829884
 	let dtsTextFinal = dtsText
-	docMap.forEach((refDoc, inheritDoc) => (dtsTextFinal = dtsTextFinal.replace(inheritDoc, refDoc)))
+	docMap.forEach((refDoc, inheritDoc) => {
+		const inheritDocRe = new RegExp(escapeRegExp(inheritDoc), 'g')
+		dtsTextFinal = dtsTextFinal.replace(inheritDocRe, refDoc)
+	})
 	writeFileSync(dtsPath, dtsTextFinal, 'utf8')
 
 	function visitInheritedDoc(node: ts.Node): ts.VisitResult<ts.Node> {
@@ -111,6 +114,11 @@ function syncOverloadsDoc() {
 			}
 			return node.forEachChild(getDeclarations)
 		}
+	}
+
+	// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
+	function escapeRegExp(value: string) {
+		return value.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&') // $& means the whole matched string
 	}
 }
 
