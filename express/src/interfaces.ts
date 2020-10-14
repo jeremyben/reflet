@@ -16,7 +16,7 @@ export namespace Decorator {
 	 * Equivalent to `MethodDecorator`.
 	 * @public
 	 */
-	export type Route = MethodDecorator & { __expressRoute?: never }
+	export type Route<T extends RoutingMethod> = MethodDecorator & { __expressRoute?: T }
 
 	/**
 	 * Used for `createParamDecorator`.

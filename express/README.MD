@@ -259,23 +259,27 @@ Apply multipe route decorators on the same method to share the logic:
 update(req, res, next) {}
 ```
 
-### Create your own route decorator 🔧
+### Other route decorators
 
 > 🔦 `@Method(method, path)`<br>
 > 💫 Related Express methods: [`app.METHOD`](https://expressjs.com/en/4x/api.html#app.METHOD), [`app.all`](https://expressjs.com/en/4x/api.html#app.all)
 
-Common route decorators are all created from `Method`, a decorator in itself, that can (and should) be used to create a new route decorator for any other [routing method](https://expressjs.com/en/4x/api.html#routing-methods) supported by Express (plus the [`all` method](https://expressjs.com/en/4x/api.html#app.all)).
+Common route decorators are created from `Method`, a decorator in itself, that can be used to create a route decorator for any other [routing method](https://expressjs.com/en/4x/api.html#routing-methods) supported by Express (plus the [`all` method](https://expressjs.com/en/4x/api.html#app.all)).
+
+As a convenience, `Method` is also a namespace that gives access to all route decorators as its properties.
 
 ```ts
 const Options = (path: string | RegExp) => Method('options', path)
-const All = (path: string | RegExp) => Method('all', path)
 
 class Controller {
   @Options('/things')
   opts(req: Request, res: Response, next: NextFunction) {}
 
-  @All('/things')
+  @Method.All('/things')
   all(req: Request, res: Response, next: NextFunction) {}
+
+  @Method.Get('/things')
+  get(req: Request, res: Response, next: NextFunction) {}
 }
 ```
 

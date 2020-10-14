@@ -46,7 +46,7 @@ describe('basic routing', () => {
 			res.send([{ id: this.prop }])
 		}
 
-		@Get('/message/:id')
+		@Method.Get('/message/:id')
 		get(@Res res: express.Response, @Req req: express.Request) {
 			const id = Number.parseInt(req.params.id, 10)
 			res.send({ id })
