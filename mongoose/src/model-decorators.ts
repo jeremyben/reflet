@@ -1,5 +1,6 @@
 import * as mongoose from 'mongoose'
 import { createSchema } from './schema-creation'
+import { registerModelDecorator } from './check-decorator-order'
 import { getKind, assignKindKey } from './kind-decorator'
 import { IModel } from './i-model'
 import { Decorator, ModelAny } from './interfaces'
@@ -31,7 +32,11 @@ export function Model<T extends ModelAny>(collection?: string, connection?: mong
 		const schema = createSchema(Class)
 
 		if (connection) return connection.model(Class.name, schema, collection)
-		return mongoose.model(Class.name, schema, collection)
+		const model = mongoose.model(Class.name, schema, collection)
+
+		registerModelDecorator(model, 'Model')
+
+		return model
 	}
 }
 
@@ -83,7 +88,11 @@ export namespace Model {
 			// which does not have any Reflet metadata.
 
 			const schema = createSchema(Class)
-			return rootModel.discriminator(Class.name, schema, kindValue)
+			const modelDiscriminator = rootModel.discriminator(Class.name, schema, kindValue)
+
+			registerModelDecorator(modelDiscriminator, 'Model.Discriminator')
+
+			return modelDiscriminator
 		}
 	}
 

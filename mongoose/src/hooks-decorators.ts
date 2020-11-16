@@ -1,4 +1,5 @@
 import * as mongoose from 'mongoose'
+import { checkDecoratorsOrder } from './check-decorator-order'
 import { ConstructorType, Decorator, Plain } from './interfaces'
 
 //
@@ -199,10 +200,7 @@ export function PreHook(
 	callbackIfOptions?: Function
 ): Decorator.PreHook {
 	return (Class) => {
-		if (Class.prototype.$isMongooseModelPrototype) {
-			throw Error(`You must put @Model at the top of "${(Class as any).modelName}" decorators`)
-		}
-
+		checkDecoratorsOrder(Class)
 		const preHooks = getPreHooks(Class)
 		preHooks.push({ method, callbackOrOptions, callbackIfOptions })
 		Reflect.defineMetadata(MetaPreHook, preHooks, Class)
@@ -569,10 +567,7 @@ export function PostHook(
 	callbackIfOptions?: Function
 ): Decorator.PostHook {
 	return (Class) => {
-		if (Class.prototype.$isMongooseModelPrototype) {
-			throw Error(`You must put @Model at the top of "${(Class as any).modelName}" decorators`)
-		}
-
+		checkDecoratorsOrder(Class)
 		const postHooks = getPostHooks(Class)
 		postHooks.push({ method, callbackOrOptions, callbackIfOptions })
 		Reflect.defineMetadata(MetaPostHook, postHooks, Class)

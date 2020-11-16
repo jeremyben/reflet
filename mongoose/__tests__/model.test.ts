@@ -114,22 +114,13 @@ test('model discriminators', async () => {
 
 test('model decorator must be at the top', () => {
 	expect(() => {
-		@SchemaOptions({})
-		@Model()
-		class WrongSchemaOptionsOrder extends Model.I {
-			@Field(String)
-			name: string
-		}
-	}).toThrowError(/@Model/)
-
-	expect(() => {
 		@SchemaCallback(() => null)
 		@Model()
 		class WrongSchemaCallbackOrder extends Model.I {
 			@Field(String)
 			name: string
 		}
-	}).toThrowError(/@Model/)
+	}).toThrowError(/@Model.*WrongSchemaCallbackOrder/)
 
 	expect(() => {
 		@PreHook('init', () => undefined)
@@ -138,7 +129,7 @@ test('model decorator must be at the top', () => {
 			@Field(String)
 			name: string
 		}
-	}).toThrowError(/@Model/)
+	}).toThrowError(/@Model.*WrongPreHookOrder/)
 
 	expect(() => {
 		@PostHook('init', () => undefined)
@@ -147,7 +138,39 @@ test('model decorator must be at the top', () => {
 			@Field(String)
 			name: string
 		}
-	}).toThrowError(/@Model/)
+	}).toThrowError(/@Model.*WrongPostHookOrder/)
+
+	expect(() => {
+		@Model()
+		@SchemaOptions({})
+		class WrongOrderRoot extends Model.I {
+			@Field(String)
+			name: string
+		}
+
+		@SchemaOptions({})
+		@Model.Discriminator(WrongOrderRoot)
+		class WrongSchemaOptionsOrder extends WrongOrderRoot {
+			@Field(String)
+			name: string
+		}
+	}).toThrowError(/@Model\.Discriminator.*WrongSchemaOptionsOrder/)
+
+	expect(() => {
+		@Model()
+		@SchemaOptions({})
+		class RightOrderRoot extends Model.I {
+			@Field(String)
+			name: string
+		}
+
+		@Model.Discriminator(RightOrderRoot)
+		@SchemaOptions({})
+		class RightOrderDiscriminator extends RightOrderRoot {
+			@Field(String)
+			name: string
+		}
+	}).not.toThrowError()
 })
 
 describe('model discriminators coercion', () => {

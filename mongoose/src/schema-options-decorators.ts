@@ -1,4 +1,5 @@
 import * as mongoose from 'mongoose'
+import { checkDecoratorsOrder } from './check-decorator-order'
 import { ConstructorType, Decorator } from './interfaces'
 
 const MetaSchemaOptions = Symbol('schema-options')
@@ -20,10 +21,7 @@ const MetaSchemaOptionsKeys = Symbol('schema-options-keys')
  */
 export function SchemaOptions(options: mongoose.SchemaOptions): Decorator.SchemaOptions {
 	return (Class) => {
-		if (Class.prototype.$isMongooseModelPrototype) {
-			throw Error(`You must put @Model at the top of "${(Class as any).modelName}" decorators`)
-		}
-
+		checkDecoratorsOrder(Class)
 		Reflect.defineMetadata(MetaSchemaOptions, options, Class)
 	}
 }

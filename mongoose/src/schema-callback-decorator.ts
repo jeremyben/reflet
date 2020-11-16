@@ -1,4 +1,5 @@
 import * as mongoose from 'mongoose'
+import { checkDecoratorsOrder } from './check-decorator-order'
 import { ConstructorType, Decorator } from './interfaces'
 
 const MetaSchemaCallback = Symbol('schema-callback')
@@ -25,10 +26,7 @@ const MetaSchemaCallback = Symbol('schema-callback')
  */
 export function SchemaCallback<T>(callback: (schema: mongoose.Schema<T>) => void): Decorator.SchemaCallback {
 	return (Class) => {
-		if (Class.prototype.$isMongooseModelPrototype) {
-			throw Error(`You must put @Model at the top of "${(Class as any).modelName}" decorators`)
-		}
-
+		checkDecoratorsOrder(Class)
 		Reflect.defineMetadata(MetaSchemaCallback, callback, Class)
 	}
 }
