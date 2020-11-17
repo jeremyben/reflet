@@ -138,6 +138,7 @@ function loadDiscriminatorsFields<T>(schema: mongoose.Schema<T>, Class: Construc
 			if (!d11rFields.hasOwnProperty(key)) continue
 			const nestedSchemaClasses = d11rFields[key]
 
+			// We must remove _id from the base schema or `{ _id: false }` won't do anything on the discriminator schema (_id is still there by default).
 			const baseSchemaForD11rs = new mongoose.Schema({}, { _id: false })
 			schema.add({ [key]: asArray ? [baseSchemaForD11rs] : baseSchemaForD11rs })
 

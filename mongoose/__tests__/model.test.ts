@@ -56,7 +56,18 @@ test('model discriminators', async () => {
 		@Field({ type: String, required: true })
 		firstname: string
 
-		@Field({ type: String, required: true })
+		@Field({
+			type: String,
+			required: true,
+			validate: {
+				validator(value) {
+					return value.length > 1
+				},
+				message({ path, value }) {
+					return `${path} must have more than one caracter (got: ${value})`
+				},
+			},
+		})
 		lastname: string
 
 		get fullname() {
@@ -98,16 +109,16 @@ test('model discriminators', async () => {
 		}
 	}
 
-	const user = await new User({ firstname: 'Jeremy', lastname: 'B' }).save()
-	expect(user.fullname).toBe('Jeremy B')
+	const user = await new User({ firstname: 'Jeremy', lastname: 'Ben' }).save()
+	expect(user.fullname).toBe('Jeremy Ben')
 	expect((user as any).kind).toBeUndefined()
 
-	const developer = await new Developer({ firstname: 'Jeremy', lastname: 'B', languages: ['JS', 'GO'] }).save()
-	expect(developer.fullname).toBe('Jeremy B')
+	const developer = await new Developer({ firstname: 'Jeremy', lastname: 'Ben', languages: ['JS', 'GO'] }).save()
+	expect(developer.fullname).toBe('Jeremy Ben')
 	expect(developer.kind).toBe('developer')
 
-	const doctor = await new Doctor({ firstname: 'Jeremy', lastname: 'B', specialty: 'surgery' }).save()
-	expect(doctor.fullname).toBe('Dr Jeremy B')
+	const doctor = await new Doctor({ firstname: 'Jeremy', lastname: 'Ben', specialty: 'surgery' }).save()
+	expect(doctor.fullname).toBe('Dr Jeremy Ben')
 	expect(doctor.specialty).toBe('surgery')
 	expect(doctor.kind).toBe('doctor')
 })

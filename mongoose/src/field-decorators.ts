@@ -441,9 +441,24 @@ type Infer<T> = T extends NumberConstructor | typeof mongoose.Schema.Types.Numbe
 /**
  * @public
  */
+type ValidateObj<T> = {
+	validator: ValidateFn<T>
+	msg?: string | ValidateMessageFn<T>
+	message?: string | ValidateMessageFn<T>
+}
+
+/**
+ * @public
+ */
 type ValidateFn<T> = (value: T) => boolean | Promise<boolean>
 
 /**
  * @public
  */
-type ValidateObj<T> = { validator: ValidateFn<T>; msg: string }
+type ValidateMessageFn<T> = (props: {
+	validator: ValidateFn<T>
+	message: ValidateMessageFn<T>
+	type: string
+	path: string
+	value: T
+}) => string
