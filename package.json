@@ -9,7 +9,8 @@
 		"express",
 		"express-middlewares",
 		"benchmarks",
-		"mongoose"
+		"mongoose",
+		"cron"
 	],
 	"engines": {
 		"node": ">=8.10"

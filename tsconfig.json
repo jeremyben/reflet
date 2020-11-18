@@ -42,7 +42,7 @@
 		// "paths": {},
 		// "rootDirs": [],
 		// "typeRoots": ["node_modules/@types"],
-		"types": ["reflect-metadata", "@types/jest"],
+		"types": ["reflect-metadata", "@types/jest", "@types/node"],
 		// "allowSyntheticDefaultImports": false,
 		// "esModuleInterop": false,
 		// "preserveSymlinks": true,

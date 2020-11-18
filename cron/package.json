@@ -1,0 +1,43 @@
+{
+	"name": "@reflet/cron",
+	"version": "1.0.0",
+	"author": "Jeremy Bensimon",
+	"license": "MIT",
+	"repository": "https://github.com/jeremyben/reflet/tree/master/cron",
+	"description": "Well-defined and well-typed cron decorators",
+	"keywords": [
+		"cron",
+		"decorators",
+		"typescript"
+	],
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"publishConfig": {
+		"access": "public"
+	},
+	"engines": {
+		"node": ">=8.10"
+	},
+	"engineStrict": true,
+	"peerDependencies": {
+		"@types/cron": "^1.7.2",
+		"@types/node": ">=8",
+		"cron": "^1.8.2",
+		"reflect-metadata": "^0.1.13"
+	},
+	"devDependencies": {
+		"@types/cron": "^1.7.2",
+		"cron": "^1.8.2"
+	},
+	"scripts": {
+		"build": "ts-node -T ../build.ts",
+		"test": "jest --config ../jest.config.js",
+		"test:watch": "yarn test --watch --verbose false",
+		"test:file": "yarn test --testPathPattern",
+		"preversion": "yarn test --coverage && ts-node -T ../testing/summary.ts && git add coverage-summary.json",
+		"prepublishOnly": "yarn run build"
+	}
+}
