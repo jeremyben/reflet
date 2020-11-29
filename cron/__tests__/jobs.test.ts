@@ -1,14 +1,15 @@
-import { Cron, initCronJobs, Expression } from '../src'
+import { Cron, initCronJobs, Expression, Container } from '../src'
 
 test('cron jobs', async () => {
 	@Cron.Catch((e) => console.warn(e))
-	class Jobs extends Cron.Container<Jobs> {
+	class Jobs extends Container<Jobs> {
 		@Cron(Expression.EVERY_5_SECONDS)
-		@Cron.RunOnInit()
+		@Cron.RunOnInit
 		@Cron.OnComplete(async () => console.info('onComplete'))
 		async logLastDate(onComplete: () => void) {
 			this.yolo()
-			console.log(this.get('logLastDate').lastDate())
+
+			console.log(this.container.get('logLastDate').lastDate())
 			onComplete()
 		}
 
@@ -18,7 +19,7 @@ test('cron jobs', async () => {
 		}
 
 		@Cron(Expression.EVERY_5_SECONDS)
-		@Cron.RunOnInit()
+		@Cron.Start
 		async logOne() {
 			this.yolo()
 			console.log(this.container)

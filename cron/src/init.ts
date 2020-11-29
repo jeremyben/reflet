@@ -1,5 +1,5 @@
 import { CronJob } from 'cron'
-import { CronJobMap } from './cron-job-map'
+import { JobMap, Container } from './job-map'
 import {
 	extractCatch,
 	extractCronTime,
@@ -10,10 +10,9 @@ import {
 	extractTimeZone,
 	extractUnrefTimeout,
 	extractUtcOffset,
-	Cron,
 } from './cron-decorators'
-import { isOverlapping, setOverlapping } from './overlap'
-import { ClassType, MethodKeys } from './interfaces'
+import { isFiring, setFiring } from './firing'
+import { ClassType, Job, MethodKeys } from './interfaces'
 
 /**
  * @public
@@ -24,7 +23,7 @@ export function initCronJobs<T extends object>(target: T) {
 	const targetInstance: object = isClass(target) ? new target() : target
 	const targetClass = isClass(target) ? target : (targetInstance.constructor as ClassType)
 
-	const cronJobMap = new CronJobMap<MethodKey>()
+	const jobMap = new JobMap<MethodKey>()
 
 	const methodkeys = Object.getOwnPropertyNames(targetClass.prototype)
 
@@ -37,30 +36,30 @@ export function initCronJobs<T extends object>(target: T) {
 		if (!cronTime) continue
 
 		const onComplete = extractOnComplete(targetClass, methodKey) || extractOnComplete(targetClass)
-		const start = extractStart(targetClass, methodKey) || extractStart(targetClass)
+		const start = extractStart(targetClass, methodKey) ?? extractStart(targetClass)
 		const timeZone = extractTimeZone(targetClass, methodKey) || extractTimeZone(targetClass)
-		const utcOffset = extractUtcOffset(targetClass, methodKey) || extractUtcOffset(targetClass)
-		const unrefTimeout = extractUnrefTimeout(targetClass, methodKey) || extractUnrefTimeout(targetClass)
+		const utcOffset = extractUtcOffset(targetClass, methodKey) ?? extractUtcOffset(targetClass)
+		const unrefTimeout = extractUnrefTimeout(targetClass, methodKey) ?? extractUnrefTimeout(targetClass)
 		const handleError = extractCatch(targetClass, methodKey) || extractCatch(targetClass)
-		const preventOverlap = extractPreventOverlap(targetClass, methodKey) || extractPreventOverlap(targetClass)
+		const preventOverlap = extractPreventOverlap(targetClass, methodKey) ?? extractPreventOverlap(targetClass)
+		// const retryOptions = extractRetry(targetClass, methodKey) || extractRetry(targetClass)
 
 		const methodDescriptor = Object.getOwnPropertyDescriptor(targetClass.prototype, methodKey)!
 		const method = methodDescriptor.value as (...args: any[]) => void | Promise<void>
 
-		const onTick = async function (this: object, ...args: any[]) {
+		const onTick = async function (this: any /** targetInstance */, ...args: any[]) {
+
+			if (preventOverlap && isFiring(targetClass, methodKey)) return
+
+			setFiring(true, targetClass, methodKey)
+
 			try {
-				if (preventOverlap) {
-					if (isOverlapping(targetClass, methodKey)) return
-					setOverlapping(true, targetClass, methodKey)
-				}
 				await method.apply(this, args)
 			} catch (error) {
 				if (handleError) handleError(error)
 				else console.error(error)
 			} finally {
-				if (preventOverlap) {
-					setOverlapping(false, targetClass, methodKey)
-				}
+				setFiring(false, targetClass, methodKey)
 			}
 		}
 
@@ -73,28 +72,31 @@ export function initCronJobs<T extends object>(target: T) {
 			timeZone,
 			utcOffset,
 			unrefTimeout,
+		}) as Job
+
+		Object.defineProperty(job, 'firing', {
+			enumerable: true,
+			get() {
+				return isFiring(targetClass, methodKey)
+			},
 		})
 
-		const runOnInit = extractRunOnInit(targetClass, methodKey) || extractRunOnInit(targetClass)
-		if (runOnInit) {
-			runOnInitJobs.push(job)
-		}
+		const runOnInit = extractRunOnInit(targetClass, methodKey) ?? extractRunOnInit(targetClass)
+		if (runOnInit) runOnInitJobs.push(job)
 
-		cronJobMap.set(<MethodKey>methodKey, job)
+		jobMap.set(<MethodKey>methodKey, job)
 	}
 
-	if (targetInstance instanceof Cron.Container) {
-		Object.defineProperty(targetInstance, 'container', { value: cronJobMap })
-	}
+	if (targetInstance instanceof Container) Object.defineProperty(targetInstance, 'container', { value: jobMap })
 
-	// launch runOnInit here instead of relying on library, to be able to get all context.
+	// launch runOnInit here instead of relying on library, to be able to get all context, like `container`.
 	// https://github.com/kelektiv/node-cron/blob/v1.8.2/lib/cron.js#L570
 	for (const runOnInitJob of runOnInitJobs) {
 		;(runOnInitJob as any).lastExecution = new Date()
 		runOnInitJob.fireOnTick()
 	}
 
-	return cronJobMap
+	return jobMap
 }
 
 /**

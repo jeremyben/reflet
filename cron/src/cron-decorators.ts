@@ -1,6 +1,4 @@
-import { CronJob } from 'cron'
-import { CronJobMap } from './cron-job-map'
-import { ClassOrMethodDecorator, ClassType, MethodKeys } from './interfaces'
+import { ClassOrMethodDecorator, ClassType } from './interfaces'
 
 const META_TIME = Symbol('cron-time')
 const META_ONCOMPLETE = Symbol('cron-oncomplete')
@@ -39,10 +37,41 @@ export namespace Cron {
 	 * This will immediately fire your `onTick` function as soon as the requisit initialization has happened.
 	 * @public
 	 */
-	export function RunOnInit(run: boolean = true): ClassOrMethodDecorator {
-		return (target, key, descriptor) => {
-			if (key) Reflect.defineMetadata(META_RUNONINIT, run, target, key)
-			else Reflect.defineMetadata(META_RUNONINIT, run, target)
+	export function RunOnInit(...args: Parameters<ClassOrMethodDecorator>): void
+	export function RunOnInit(): ClassOrMethodDecorator
+	export function RunOnInit(target?: object, key?: string | symbol): ClassOrMethodDecorator | void {
+		if (arguments.length && (typeof target === 'function' || typeof target === 'object')) {
+			if (key) Reflect.defineMetadata(META_RUNONINIT, true, target, key)
+			else Reflect.defineMetadata(META_RUNONINIT, true, target)
+		} else {
+			// tslint:disable-next-line: no-shadowed-variable
+			return (target, key, descriptor) => {
+				if (key) Reflect.defineMetadata(META_RUNONINIT, true, target, key)
+				else Reflect.defineMetadata(META_RUNONINIT, true, target)
+			}
+		}
+	}
+
+	export namespace RunOnInit {
+		/**
+		 * Override and remove class-defined `Cron.RunOnInit` behavior on a specific method.
+		 * @public
+		 */
+		export function Dont(target: object, key: string | symbol, descriptor: TypedPropertyDescriptor<any>): void
+		export function Dont(): MethodDecorator
+		export function Dont(
+			target?: object,
+			key?: string | symbol,
+			descriptor?: TypedPropertyDescriptor<any>
+		): void | MethodDecorator {
+			if (arguments.length === 3 && typeof target === 'object') {
+				Reflect.defineMetadata(META_RUNONINIT, false, target, key!)
+			} else {
+				// tslint:disable-next-line: no-shadowed-variable
+				return (target, key, descriptor) => {
+					Reflect.defineMetadata(META_RUNONINIT, false, target, key)
+				}
+			}
 		}
 	}
 
@@ -52,18 +81,52 @@ export namespace Cron {
 	 * This does not immediately fire your `onTick` function, it just gives you more control over the behavior of your jobs.
 	 * @public
 	 */
-	export function Start(start: boolean = true): ClassOrMethodDecorator {
-		return (target, key, descriptor) => {
-			if (key) Reflect.defineMetadata(META_START, start, target, key)
-			else Reflect.defineMetadata(META_START, start, target)
+	export function Start(...args: Parameters<ClassOrMethodDecorator>): void
+	export function Start(): ClassOrMethodDecorator
+	export function Start(target?: object, key?: string | symbol): ClassOrMethodDecorator | void {
+		if (arguments.length && (typeof target === 'function' || typeof target === 'object')) {
+			if (key) Reflect.defineMetadata(META_START, true, target, key)
+			else Reflect.defineMetadata(META_START, true, target)
+		} else {
+			// tslint:disable-next-line: no-shadowed-variable
+			return (target, key, descriptor) => {
+				if (key) Reflect.defineMetadata(META_START, true, target, key)
+				else Reflect.defineMetadata(META_START, true, target)
+			}
+		}
+	}
+
+	export namespace Start {
+		/**
+		 * Override and remove class-defined `Cron.Start` behavior on a specific method.
+		 * @public
+		 */
+		export function Dont(target: object, key: string | symbol, descriptor: TypedPropertyDescriptor<any>): void
+		export function Dont(): MethodDecorator
+		export function Dont(
+			target?: object,
+			key?: string | symbol,
+			descriptor?: TypedPropertyDescriptor<any>
+		): void | MethodDecorator {
+			if (arguments.length === 3 && typeof target === 'object') {
+				Reflect.defineMetadata(META_START, false, target, key!)
+			} else {
+				// tslint:disable-next-line: no-shadowed-variable
+				return (target, key, descriptor) => {
+					Reflect.defineMetadata(META_START, false, target, key)
+				}
+			}
 		}
 	}
 
 	/**
 	 * Specify the timezone for the execution. This will modify the actual time relative to your timezone.
 	 * If the timezone is invalid, an error is thrown.
+	 *
 	 * You can check all timezones available at [Moment Timezone Website](http://momentjs.com/timezone/).
-	 * Probably don't use both `timeZone` and `utcOffset` together or weird things may happen.
+	 *
+	 * _Probably don't use both `timeZone` and `utcOffset` together or weird things may happen._
+	 *
 	 * @public
 	 */
 	export function TimeZone(timezone: string): ClassOrMethodDecorator {
@@ -75,7 +138,10 @@ export namespace Cron {
 
 	/**
 	 * This allows you to specify the offset of your timezone rather than using the `timeZone` param.
-	 * Probably don't use both `timeZone` and `utcOffset` together or weird things may happen.
+	 *
+	 * _Probably don't use both `timeZone` and `utcOffset` together or weird things may happen._
+	 *
+	 * @see https://momentjs.com/docs/#/manipulating/utc-offset/
 	 * @public
 	 */
 	export function UtcOffset(offset: string | number): ClassOrMethodDecorator {
@@ -92,10 +158,41 @@ export namespace Cron {
 	 * For more information take a look at [timers#timers_timeout_unref](https://nodejs.org/api/timers.html#timers_timeout_unref) from the NodeJS docs.
 	 * @public
 	 */
-	export function UnrefTimeout(unref: boolean): ClassOrMethodDecorator {
-		return (target, key, descriptor) => {
-			if (key) Reflect.defineMetadata(META_UNREFTIMEOUT, unref, target, key)
-			else Reflect.defineMetadata(META_UNREFTIMEOUT, unref, target)
+	export function UnrefTimeout(...args: Parameters<ClassOrMethodDecorator>): void
+	export function UnrefTimeout(): ClassOrMethodDecorator
+	export function UnrefTimeout(target?: object, key?: string | symbol): ClassOrMethodDecorator | void {
+		if (arguments.length && (typeof target === 'function' || typeof target === 'object')) {
+			if (key) Reflect.defineMetadata(META_UNREFTIMEOUT, true, target, key)
+			else Reflect.defineMetadata(META_UNREFTIMEOUT, true, target)
+		} else {
+			// tslint:disable-next-line: no-shadowed-variable
+			return (target, key, descriptor) => {
+				if (key) Reflect.defineMetadata(META_UNREFTIMEOUT, true, target, key)
+				else Reflect.defineMetadata(META_UNREFTIMEOUT, true, target)
+			}
+		}
+	}
+
+	export namespace UnrefTimeout {
+		/**
+		 * Override and remove class-defined `Cron.UnrefTimeout` behavior on a specific method.
+		 * @public
+		 */
+		export function Dont(target: object, key: string | symbol, descriptor: TypedPropertyDescriptor<any>): void
+		export function Dont(): MethodDecorator
+		export function Dont(
+			target?: object,
+			key?: string | symbol,
+			descriptor?: TypedPropertyDescriptor<any>
+		): void | MethodDecorator {
+			if (arguments.length === 3 && typeof target === 'object') {
+				Reflect.defineMetadata(META_UNREFTIMEOUT, false, target, key!)
+			} else {
+				// tslint:disable-next-line: no-shadowed-variable
+				return (target, key, descriptor) => {
+					Reflect.defineMetadata(META_UNREFTIMEOUT, false, target, key)
+				}
+			}
 		}
 	}
 
@@ -112,21 +209,41 @@ export namespace Cron {
 	/**
 	 * @public
 	 */
-	export function PreventOverlap(prevent: boolean = true): ClassOrMethodDecorator {
-		return (target, key, descriptor) => {
-			if (key) Reflect.defineMetadata(META_PREVENTOVERLAP, prevent, target, key)
-			else Reflect.defineMetadata(META_PREVENTOVERLAP, prevent, target)
+	export function PreventOverlap(...args: Parameters<ClassOrMethodDecorator>): void
+	export function PreventOverlap(): ClassOrMethodDecorator
+	export function PreventOverlap(target?: object, key?: string | symbol): ClassOrMethodDecorator | void {
+		if (arguments.length && (typeof target === 'function' || typeof target === 'object')) {
+			if (key) Reflect.defineMetadata(META_PREVENTOVERLAP, true, target, key)
+			else Reflect.defineMetadata(META_PREVENTOVERLAP, true, target)
+		} else {
+			// tslint:disable-next-line: no-shadowed-variable
+			return (target, key, descriptor) => {
+				if (key) Reflect.defineMetadata(META_PREVENTOVERLAP, true, target, key)
+				else Reflect.defineMetadata(META_PREVENTOVERLAP, true, target)
+			}
 		}
 	}
 
-	/**
-	 * @public
-	 */
-	export class Container<T extends object> {
-		container!: CronJobMap<MethodKeys<Omit<T, 'container' | 'get'>>>
-
-		get(key: MethodKeys<Omit<T, 'container' | 'get'>>): CronJob {
-			return this.container.get(key)
+	export namespace PreventOverlap {
+		/**
+		 * Override and remove class-defined `Cron.PreventOverlap` behavior on a specific method.
+		 * @public
+		 */
+		export function Dont(target: object, key: string | symbol, descriptor: TypedPropertyDescriptor<any>): void
+		export function Dont(): MethodDecorator
+		export function Dont(
+			target?: object,
+			key?: string | symbol,
+			descriptor?: TypedPropertyDescriptor<any>
+		): void | MethodDecorator {
+			if (arguments.length === 3 && typeof target === 'object') {
+				Reflect.defineMetadata(META_PREVENTOVERLAP, false, target, key!)
+			} else {
+				// tslint:disable-next-line: no-shadowed-variable
+				return (target, key, descriptor) => {
+					Reflect.defineMetadata(META_PREVENTOVERLAP, false, target, key)
+				}
+			}
 		}
 	}
 }
