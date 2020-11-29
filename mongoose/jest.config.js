@@ -1,14 +1,14 @@
 const { join } = require('path')
 
 // https://kulshekhar.github.io/ts-jest/user/config/#advanced
-const tsPreset = require('ts-jest/presets').defaults
+const tsjestPreset = require('ts-jest/presets').defaults
 
 /** @type {Partial<import('@jest/types').Config.DefaultOptions> & {rootDir: string, preset: string, transform: any}} */
 const config = {
 	rootDir: process.cwd(),
 	// https://github.com/shelfio/jest-mongodb
 	preset: '@shelf/jest-mongodb',
-	transform: { ...tsPreset.transform },
+	transform: { ...tsjestPreset.transform },
 	testPathIgnorePatterns: ['/node_modules/', '/__tests__/shared/', '/dist/'],
 	moduleNameMapper: {
 		'^@reflet/(.*)$': join(__dirname, '..', '$1', 'src'),
