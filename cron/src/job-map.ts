@@ -1,9 +1,13 @@
-import { Job } from './interfaces'
+import { CronJob } from 'cron'
+import { Job, JobParameters } from './interfaces'
 
 /**
  * @public
  */
 export class JobMap<K> extends Map<K, Job> {
+	private firing = new Set<string>()
+	private instance: any
+
 	startAll() {
 		this.forEach((job) => job.start())
 	}
@@ -12,9 +16,65 @@ export class JobMap<K> extends Map<K, Job> {
 		this.forEach((job) => job.stop())
 	}
 
+	// @ts-ignore override parameters
+	set(key: any, parameters: JobParameters) {
+		const {
+			cronTime,
+			context,
+			onComplete,
+			start,
+			timeZone,
+			utcOffset,
+			onTick,
+			unrefTimeout,
+			runOnInit,
+			preventOverlap,
+			errorHandler,
+		} = parameters
+
+		if (!this.instance) {
+			this.instance = context
+		}
+
+		const onTickExtended = async (...args: any[]) => {
+			if (preventOverlap && this.firing.has(key)) return
+
+			this.firing.add(key)
+				try {
+					await onTick.apply(context || this.instance, args)
+				} catch (error) {
+					if (errorHandler) errorHandler(error)
+					else console.error(error)
+				} finally {
+					this.firing.delete(key)
+				}
+		}
+
+		const job = new CronJob({
+			cronTime,
+			onTick: onTickExtended,
+			context: context || this.instance,
+			onComplete,
+			start,
+			runOnInit,
+			timeZone,
+			utcOffset,
+			unrefTimeout,
+		})
+
+		Object.defineProperty(job, 'firing', {
+			enumerable: true,
+			get: () => this.firing.has(key),
+		})
+
+		super.set(key, job as Job)
+
+		return this
+	}
+
 	// Only way to remove undefined from the union
 	// @ts-ignore implementation
-	get(key: K): Job
+	get<P extends K>(key: P): P extends K ? Job : Job | undefined
 }
 
 /**

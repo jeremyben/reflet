@@ -1,4 +1,4 @@
-import { CronJob } from 'cron'
+import { CronJob, CronJobParameters } from 'cron'
 
 /**
  * @public
@@ -29,6 +29,16 @@ export interface Job extends CronJob {
 	 * _The original `running` property defines whether the job has been started or stopped._
 	 */
 	readonly firing: boolean
+}
+
+/**
+ * @public
+ */
+export interface JobParameters extends CronJobParameters {
+	onTick: (...args: any[]) => void | Promise<void>
+	onComplete?: () => void
+	errorHandler?: (error: unknown) => void
+	preventOverlap?: boolean
 }
 
 /**
