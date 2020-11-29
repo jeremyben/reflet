@@ -1,15 +1,16 @@
 import { Cron, initCronJobs, Expression, Container } from '../src'
 
 test('cron jobs', async () => {
+	@Cron.TimeZone('Europe/Paris')
 	@Cron.Catch((e) => console.warn(e))
 	class Jobs extends Container<Jobs> {
-		@Cron(Expression.EVERY_5_SECONDS)
+		@Cron(Expression.EVERY_SECOND)
 		@Cron.RunOnInit
 		@Cron.OnComplete(async () => console.info('onComplete'))
 		async logLastDate(onComplete: () => void) {
 			this.yolo()
 
-			console.log(this.container.get('logLastDate').lastDate())
+			console.log(this.container.get('logLastDate'))
 			onComplete()
 		}
 
@@ -18,7 +19,7 @@ test('cron jobs', async () => {
 			throw Error('1')
 		}
 
-		@Cron(Expression.EVERY_5_SECONDS)
+		@Cron(Expression.MONDAY_TO_FRIDAY_AT_9PM)
 		@Cron.Start
 		async logOne() {
 			this.yolo()
@@ -35,5 +36,5 @@ test('cron jobs', async () => {
 	const jobs = initCronJobs(Jobs)
 	jobs.get('jobContext')
 
-	await new Promise((r) => setTimeout(r, 1000))
+	await new Promise((r) => setTimeout(r, 2000))
 })

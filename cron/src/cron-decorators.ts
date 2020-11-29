@@ -1,4 +1,4 @@
-import { ClassOrMethodDecorator, ClassType } from './interfaces'
+import { ClassOrMethodDecorator, ClassType, Offset, Zone } from './interfaces'
 
 const META_TIME = Symbol('cron-time')
 const META_ONCOMPLETE = Symbol('cron-oncomplete')
@@ -129,7 +129,7 @@ export namespace Cron {
 	 *
 	 * @public
 	 */
-	export function TimeZone(timezone: string): ClassOrMethodDecorator {
+	export function TimeZone(timezone: Zone): ClassOrMethodDecorator {
 		return (target, key, descriptor) => {
 			if (key) Reflect.defineMetadata(META_TIMEZONE, timezone, target, key)
 			else Reflect.defineMetadata(META_TIMEZONE, timezone, target)
@@ -144,7 +144,7 @@ export namespace Cron {
 	 * @see https://momentjs.com/docs/#/manipulating/utc-offset/
 	 * @public
 	 */
-	export function UtcOffset(offset: string | number): ClassOrMethodDecorator {
+	export function UtcOffset(offset: Offset | number): ClassOrMethodDecorator {
 		return (target, key, descriptor) => {
 			if (key) Reflect.defineMetadata(META_UTCOFFSET, offset, target, key)
 			else Reflect.defineMetadata(META_UTCOFFSET, offset, target)
