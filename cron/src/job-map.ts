@@ -30,6 +30,7 @@ export class JobMap<K> extends Map<K, Job> {
 			runOnInit,
 			preventOverlap,
 			errorHandler,
+			retryOptions,
 		} = parameters
 
 		if (!this.instance) {
@@ -40,6 +41,42 @@ export class JobMap<K> extends Map<K, Job> {
 			if (preventOverlap && this.firing.has(key)) return
 
 			this.firing.add(key)
+
+			if (retryOptions) {
+				// Clone to avoid mutation of original decorator options
+				let retries = retryOptions.maxRetries
+				let delay = retryOptions.delay || 0
+				const { delayFactor, delayMax, condition } = retryOptions
+
+				do {
+					try {
+						await onTick.apply(context || this.instance, args)
+						this.firing.delete(key)
+						break
+					} catch (error) {
+						if (--retries < 0 || (condition && !condition(error))) {
+							if (errorHandler) errorHandler(error)
+							else console.error(error)
+							break
+						}
+
+						if (delay) {
+							await new Promise((resolve) => setTimeout(resolve, delay))
+
+							if (delayFactor) {
+								delay = delay * delayFactor
+							}
+
+							if (delayMax && delay > delayMax) {
+								delay = delayMax
+							}
+						}
+					}
+				} while (true)
+			}
+
+			// Without retry
+			else {
 				try {
 					await onTick.apply(context || this.instance, args)
 				} catch (error) {
@@ -48,6 +85,7 @@ export class JobMap<K> extends Map<K, Job> {
 				} finally {
 					this.firing.delete(key)
 				}
+			}
 		}
 
 		const job = new CronJob({

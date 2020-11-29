@@ -39,6 +39,27 @@ export interface JobParameters extends CronJobParameters {
 	onComplete?: () => void
 	errorHandler?: (error: unknown) => void
 	preventOverlap?: boolean
+	retryOptions?: RetryOptions
+}
+
+/**
+ * @public
+ */
+export interface RetryOptions {
+	/** Max number of retry attempts. */
+	maxRetries: number
+
+	/** Delay before retries in milliseconds. */
+	delay?: number
+
+	/** Increases each time the previous delay by a multiplicative factor. */
+	delayFactor?: number
+
+	/** Caps the maximum delay in milliseconds. */
+	delayMax?: number
+
+	/** Filter function with the error as parameter. */
+	condition?: (error: unknown) => boolean
 }
 
 /**

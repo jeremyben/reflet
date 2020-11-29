@@ -4,6 +4,7 @@ import {
 	extractCronTime,
 	extractOnComplete,
 	extractPreventOverlap,
+	extractRetry,
 	extractRunOnInit,
 	extractStart,
 	extractTimeZone,
@@ -40,7 +41,7 @@ export function initCronJobs<T extends object>(target: T) {
 		const unrefTimeout = extractUnrefTimeout(targetClass, methodKey) ?? extractUnrefTimeout(targetClass)
 		const errorHandler = extractCatch(targetClass, methodKey) || extractCatch(targetClass)
 		const preventOverlap = extractPreventOverlap(targetClass, methodKey) ?? extractPreventOverlap(targetClass)
-		// const retryOptions = extractRetry(targetClass, methodKey) || extractRetry(targetClass)
+		const retryOptions = extractRetry(targetClass, methodKey) || extractRetry(targetClass)
 
 		const methodDescriptor = Object.getOwnPropertyDescriptor(targetClass.prototype, methodKey)!
 		const method = methodDescriptor.value as (...args: any[]) => void | Promise<void>

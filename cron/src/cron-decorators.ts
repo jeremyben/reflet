@@ -1,4 +1,4 @@
-import { ClassOrMethodDecorator, ClassType, Offset, Zone } from './interfaces'
+import { ClassOrMethodDecorator, ClassType, Offset, RetryOptions, Zone } from './interfaces'
 
 const META_TIME = Symbol('cron-time')
 const META_ONCOMPLETE = Symbol('cron-oncomplete')
@@ -9,6 +9,7 @@ const META_UTCOFFSET = Symbol('cron-utcoffset')
 const META_UNREFTIMEOUT = Symbol('cron-unreftimeout')
 const META_CATCH = Symbol('cron-catch')
 const META_PREVENTOVERLAP = Symbol('cron-preventoverlap')
+const META_RETRY = Symbol('cron-retry')
 
 /**
  * The time to fire off your job.
@@ -246,6 +247,16 @@ export namespace Cron {
 			}
 		}
 	}
+
+	/**
+	 * @public
+	 */
+	export function Retry(options: RetryOptions): ClassOrMethodDecorator {
+		return (target, key, descriptor) => {
+			if (key) Reflect.defineMetadata(META_RETRY, options, target, key)
+			else Reflect.defineMetadata(META_RETRY, options, target)
+		}
+	}
 }
 
 /**
@@ -317,4 +328,12 @@ export function extractCatch(target: ClassType, methodKey?: string): ((error: un
 export function extractPreventOverlap(target: ClassType, methodKey?: string): boolean | undefined {
 	if (methodKey) return Reflect.getOwnMetadata(META_PREVENTOVERLAP, target.prototype, methodKey)
 	return Reflect.getOwnMetadata(META_PREVENTOVERLAP, target)
+}
+
+/**
+ * @internal
+ */
+export function extractRetry(target: ClassType, methodKey?: string): RetryOptions | undefined {
+	if (methodKey) return Reflect.getOwnMetadata(META_RETRY, target.prototype, methodKey)
+	return Reflect.getOwnMetadata(META_RETRY, target)
 }
