@@ -1,16 +1,5 @@
 import { JobMap, Container } from './job-map'
-import {
-	extractCatch,
-	extractCronTime,
-	extractOnComplete,
-	extractPreventOverlap,
-	extractRetry,
-	extractRunOnInit,
-	extractStart,
-	extractTimeZone,
-	extractUnrefTimeout,
-	extractUtcOffset,
-} from './cron-decorators'
+import { extract } from './cron-decorators'
 import { ClassType, Job, MethodKeys } from './interfaces'
 
 /**
@@ -31,17 +20,19 @@ export function initCronJobs<T extends object>(target: T) {
 	for (const methodKey of methodkeys) {
 		if (/^(constructor)$/.test(methodKey)) continue
 
-		const cronTime = extractCronTime(targetClass, methodKey)
+		const cronTime = extract('cronTime', targetClass, methodKey)
 		if (!cronTime) continue
 
-		const onComplete = extractOnComplete(targetClass, methodKey) || extractOnComplete(targetClass)
-		const start = extractStart(targetClass, methodKey) ?? extractStart(targetClass)
-		const timeZone = extractTimeZone(targetClass, methodKey) || extractTimeZone(targetClass)
-		const utcOffset = extractUtcOffset(targetClass, methodKey) ?? extractUtcOffset(targetClass)
-		const unrefTimeout = extractUnrefTimeout(targetClass, methodKey) ?? extractUnrefTimeout(targetClass)
-		const errorHandler = extractCatch(targetClass, methodKey) || extractCatch(targetClass)
-		const preventOverlap = extractPreventOverlap(targetClass, methodKey) ?? extractPreventOverlap(targetClass)
-		const retryOptions = extractRetry(targetClass, methodKey) || extractRetry(targetClass)
+		const onComplete =
+			extract('onComplete', targetClass, methodKey) || extract('onComplete', targetClass, methodKey)
+		const start = extract('start', targetClass, methodKey) ?? extract('start', targetClass)
+		const timeZone = extract('timeZone', targetClass, methodKey) || extract('timeZone', targetClass)
+		const utcOffset = extract('utcOffset', targetClass, methodKey) ?? extract('utcOffset', targetClass)
+		const unrefTimeout = extract('unrefTimeout', targetClass, methodKey) ?? extract('unrefTimeout', targetClass)
+		const errorHandler = extract('errorHandler', targetClass, methodKey) || extract('errorHandler', targetClass)
+		const retryOptions = extract('retryOptions', targetClass, methodKey) || extract('retryOptions', targetClass)
+		const preventOverlap =
+			extract('preventOverlap', targetClass, methodKey) ?? extract('preventOverlap', targetClass)
 
 		const methodDescriptor = Object.getOwnPropertyDescriptor(targetClass.prototype, methodKey)!
 		const method = methodDescriptor.value as (...args: any[]) => void | Promise<void>
@@ -62,7 +53,7 @@ export function initCronJobs<T extends object>(target: T) {
 		// Don't pass runOnInit:
 		// launch later instead of relying on library, to be able to get all context, like `container`.
 		// https://github.com/kelektiv/node-cron/blob/v1.8.2/lib/cron.js#L570
-		const runOnInit = extractRunOnInit(targetClass, methodKey) ?? extractRunOnInit(targetClass)
+		const runOnInit = extract('runOnInit', targetClass, methodKey) ?? extract('runOnInit', targetClass)
 		if (runOnInit) {
 			runOnInitJobs.push(jobMap.get<any>(methodKey)!)
 		}
