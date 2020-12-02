@@ -29,14 +29,22 @@ export interface Job extends CronJob {
 	 * _The original `running` property defines whether the job has been started or stopped._
 	 */
 	readonly firing: boolean
+
+	/**
+	 * Job's name in the following format: `class.method`.
+	 */
+	name: string
 }
 
 /**
  * @public
  */
-export interface JobParameters extends CronJobParameters {
+export interface JobParameters extends Omit<CronJobParameters, 'context'> {
+	cronTime: string | Date
 	onTick: (...args: any[]) => void | Promise<void>
 	onComplete?: () => void
+	timeZone?: Zone
+	utcOffset?: Offset | number
 	errorHandler?: (error: unknown) => void
 	preventOverlap?: boolean
 	retryOptions?: RetryOptions

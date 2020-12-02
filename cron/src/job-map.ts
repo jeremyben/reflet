@@ -6,21 +6,31 @@ import { Job, JobParameters } from './interfaces'
  */
 export class JobMap<K> extends Map<K, Job> {
 	private firing = new Set<string>()
-	private instance: any
+	private context: object
 
+	constructor(context: object) {
+		super()
+		this.context = context
+	}
+
+	/**
+	 * Starts all cron jobs.
+	 */
 	startAll() {
 		this.forEach((job) => job.start())
 	}
 
+	/**
+	 * Stops all cron jobs.
+	 */
 	stopAll() {
 		this.forEach((job) => job.stop())
 	}
 
 	// @ts-ignore override parameters
-	set(key: any, parameters: JobParameters) {
+	set(key: string, parameters: JobParameters) {
 		const {
 			cronTime,
-			context,
 			onComplete,
 			start,
 			timeZone,
@@ -32,10 +42,6 @@ export class JobMap<K> extends Map<K, Job> {
 			errorHandler,
 			retryOptions,
 		} = parameters
-
-		if (!this.instance) {
-			this.instance = context
-		}
 
 		const onTickExtended = async (...args: any[]) => {
 			if (preventOverlap && this.firing.has(key)) return
@@ -50,8 +56,7 @@ export class JobMap<K> extends Map<K, Job> {
 
 				do {
 					try {
-						await onTick.apply(context || this.instance, args)
-						this.firing.delete(key)
+						await onTick.apply(this.context, args)
 						break
 					} catch (error) {
 						if (--retries < 0 || (condition && !condition(error))) {
@@ -78,23 +83,25 @@ export class JobMap<K> extends Map<K, Job> {
 			// Without retry
 			else {
 				try {
-					await onTick.apply(context || this.instance, args)
+					await onTick.apply(this.context, args)
 				} catch (error) {
 					if (errorHandler) errorHandler(error)
 					else console.error(error)
-				} finally {
-					this.firing.delete(key)
 				}
 			}
+
+			this.firing.delete(key)
 		}
+
+		// Rename to the name of the instance method, for a better error stack.
+		Object.defineProperty(onTickExtended, 'name', { value: key })
 
 		const job = new CronJob({
 			cronTime,
 			onTick: onTickExtended,
-			context: context || this.instance,
+			context: this.context,
 			onComplete,
 			start,
-			runOnInit,
 			timeZone,
 			utcOffset,
 			unrefTimeout,
@@ -105,12 +112,22 @@ export class JobMap<K> extends Map<K, Job> {
 			get: () => this.firing.has(key),
 		})
 
-		super.set(key, job as Job)
+		Object.defineProperty(job, 'name', {
+			enumerable: true,
+			value: `${this.context.constructor.name}.${key}`,
+		})
+
+		super.set(<any>key, <Job>job)
+
+		// Launch runOnInit of the dynamic job after setting the job to have all context.
+		if (runOnInit) {
+			;(<any>job).lastExecution = new Date()
+			job.fireOnTick()
+		}
 
 		return this
 	}
 
-	// Only way to remove undefined from the union
 	// @ts-ignore implementation
 	get<P extends K>(key: P): P extends K ? Job : Job | undefined
 }

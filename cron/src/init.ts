@@ -22,7 +22,7 @@ export function initCronJobs<T extends object>(target: T) {
 	const targetInstance: object = isClass(target) ? new target() : target
 	const targetClass = isClass(target) ? target : (targetInstance.constructor as ClassType)
 
-	const jobMap = new JobMap<MethodKey>()
+	const jobMap = new JobMap<MethodKey>(targetInstance)
 
 	const methodkeys = Object.getOwnPropertyNames(targetClass.prototype)
 
@@ -49,7 +49,6 @@ export function initCronJobs<T extends object>(target: T) {
 		jobMap.set(methodKey, {
 			cronTime,
 			onTick: method,
-			context: targetInstance,
 			onComplete,
 			start,
 			timeZone,
@@ -60,7 +59,8 @@ export function initCronJobs<T extends object>(target: T) {
 			retryOptions,
 		})
 
-		// launch runOnInit later instead of relying on library, to be able to get all context, like `container`.
+		// Don't pass runOnInit:
+		// launch later instead of relying on library, to be able to get all context, like `container`.
 		// https://github.com/kelektiv/node-cron/blob/v1.8.2/lib/cron.js#L570
 		const runOnInit = extractRunOnInit(targetClass, methodKey) ?? extractRunOnInit(targetClass)
 		if (runOnInit) {
