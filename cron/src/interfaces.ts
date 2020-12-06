@@ -39,9 +39,9 @@ export interface Job extends CronJob {
 /**
  * @public
  */
-export interface JobParameters extends Omit<CronJobParameters, 'context'> {
+export interface JobParameters<T extends object = object> extends Omit<CronJobParameters, 'context'> {
 	cronTime: string | Date
-	onTick: (...args: any[]) => void | Promise<void>
+	onTick: (this: T, ...args: any[]) => void | Promise<void>
 	onComplete?: () => void
 	timeZone?: Zone
 	utcOffset?: Offset | number

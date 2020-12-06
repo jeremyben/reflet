@@ -1,14 +1,23 @@
 import { CronJob } from 'cron'
-import { Job, JobParameters } from './interfaces'
+import { extract } from './cron-decorators'
+import { ClassType, Job, JobParameters, MethodKeys } from './interfaces'
+
+export const initialized = Symbol('initialized')
 
 /**
  * @public
  */
-export class JobMap<K> extends Map<K, Job> {
+export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
+	/** List of job's keys being fired */
 	private firing = new Set<string>()
-	private context: object
 
-	constructor(context: object) {
+	/** Reference to the decorated instance */
+	private context: T
+
+	/** Switch turned `true` when all the static jobs have been initialized. Helps with runOnInit logic. */
+	private [initialized] = false
+
+	constructor(context: T) {
 		super()
 		this.context = context
 	}
@@ -27,21 +36,23 @@ export class JobMap<K> extends Map<K, Job> {
 		this.forEach((job) => job.stop())
 	}
 
+	/**
+	 * Adds a dynamic job.
+	 */
 	// @ts-ignore override parameters
-	set(key: string, parameters: JobParameters) {
-		const {
-			cronTime,
-			onComplete,
-			start,
-			timeZone,
-			utcOffset,
-			onTick,
-			unrefTimeout,
-			runOnInit,
-			preventOverlap,
-			errorHandler,
-			retryOptions,
-		} = parameters
+	set(key: string, parameters: JobParameters<T>) {
+		const contextClass = this.context.constructor as ClassType
+
+		const cronTime = parameters.cronTime
+		const onTick = parameters.onTick
+		const onComplete = parameters.onComplete || extract('onComplete', contextClass)
+		const start = parameters.start ?? extract('start', contextClass)
+		const timeZone = parameters.timeZone || extract('timeZone', contextClass)
+		const utcOffset = parameters.utcOffset ?? extract('utcOffset', contextClass)
+		const unrefTimeout = parameters.unrefTimeout ?? extract('unrefTimeout', contextClass)
+		const errorHandler = parameters.errorHandler || extract('errorHandler', contextClass)
+		const retryOptions = parameters.retryOptions || extract('retryOptions', contextClass)
+		const preventOverlap = parameters.preventOverlap || extract('preventOverlap', contextClass)
 
 		const onTickExtended = async (...args: any[]) => {
 			if (preventOverlap && this.firing.has(key)) return
@@ -114,22 +125,25 @@ export class JobMap<K> extends Map<K, Job> {
 
 		Object.defineProperty(job, 'name', {
 			enumerable: true,
-			value: `${this.context.constructor.name}.${key}`,
+			value: `${contextClass.name}.${key}`,
 		})
 
 		super.set(<any>key, <Job>job)
 
-		// Launch runOnInit of the dynamic job after setting the job to have all context.
-		if (runOnInit) {
-			;(<any>job).lastExecution = new Date()
-			job.fireOnTick()
+		// runOnInit logic for dynamic jobs
+		if (this[initialized]) {
+			const runOnInit = parameters.runOnInit ?? extract('runOnInit', contextClass)
+			if (runOnInit) {
+				;(<any>job).lastExecution = new Date()
+				job.fireOnTick()
+			}
 		}
 
 		return this
 	}
 
 	// @ts-ignore implementation
-	get<P extends K>(key: P): P extends K ? Job : Job | undefined
+	get(key: MethodKeys<T>): Job
 }
 
 /**
@@ -149,6 +163,5 @@ export class JobMap<K> extends Map<K, Job> {
  * @public
  */
 export class Container<T extends object> {
-	// Dont use Omit and MethodKeys together to avoid a weird type signature on inference.
-	container!: JobMap<{ [P in keyof T]: P extends 'container' ? never : T[P] extends Function ? P : never }[keyof T]>
+	container!: JobMap<T>
 }
