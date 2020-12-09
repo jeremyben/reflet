@@ -11,6 +11,7 @@ const META: Partial<Record<keyof JobParameters, symbol>> = {
 	errorHandler: Symbol('cron-catch'),
 	preventOverlap: Symbol('cron-preventoverlap'),
 	retryOptions: Symbol('cron-retry'),
+	passCurrentJob: Symbol('current-job'),
 }
 
 /**
@@ -257,6 +258,22 @@ export namespace Cron {
 		return (target, key, descriptor) => {
 			if (key) Reflect.defineMetadata(META.retryOptions, options, target, key)
 			else Reflect.defineMetadata(META.retryOptions, options, target)
+		}
+	}
+}
+
+/**
+ * @public
+ */
+export function CurrentJob(...args: Parameters<ParameterDecorator>): void
+export function CurrentJob(): ParameterDecorator
+export function CurrentJob(target?: object, key?: string | symbol, index?: number): ParameterDecorator | void {
+	if (arguments.length && typeof index === 'number') {
+		Reflect.defineMetadata(META.passCurrentJob, true, target!, key!)
+	} else {
+		// tslint:disable-next-line: no-shadowed-variable
+		return (target, key, index) => {
+			Reflect.defineMetadata(META.passCurrentJob, true, target, key)
 		}
 	}
 }

@@ -40,11 +40,11 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 	 * Adds a dynamic job.
 	 */
 	// @ts-ignore override parameters
-	set(key: string, parameters: JobParameters<T>) {
+	set<PassJob extends boolean = false>(key: string, parameters: JobParameters<T, PassJob>) {
 		const contextClass = this.context.constructor as ClassType
 
 		const cronTime = parameters.cronTime
-		const onTick = parameters.onTick
+		const onTick = parameters.onTick as Function
 		const onComplete = parameters.onComplete || extract('onComplete', contextClass)
 		const start = parameters.start ?? extract('start', contextClass)
 		const timeZone = parameters.timeZone || extract('timeZone', contextClass)
@@ -53,9 +53,12 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 		const errorHandler = parameters.errorHandler || extract('errorHandler', contextClass)
 		const retryOptions = parameters.retryOptions || extract('retryOptions', contextClass)
 		const preventOverlap = parameters.preventOverlap || extract('preventOverlap', contextClass)
+		const passCurrentJob = parameters.passCurrentJob
 
-		const onTickExtended = async (...args: any[]) => {
+		const onTickExtended = async (onCompleteArg?: () => void) => {
 			if (preventOverlap && this.firing.has(key)) return
+
+			let currentJob: Job | undefined
 
 			this.firing.add(key)
 
@@ -67,7 +70,12 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 
 				do {
 					try {
-						await onTick.apply(this.context, args)
+						if (passCurrentJob) {
+							if (!currentJob) currentJob = this.get(<any>key)
+							await onTick.call(this.context, currentJob)
+						} else {
+							await onTick.call(this.context, onCompleteArg)
+						}
 						break
 					} catch (error) {
 						if (--retries < 0 || (condition && !condition(error))) {
@@ -94,7 +102,12 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 			// Without retry
 			else {
 				try {
-					await onTick.apply(this.context, args)
+					if (passCurrentJob) {
+						if (!currentJob) currentJob = this.get(<any>key)
+						await onTick.call(this.context, currentJob)
+					} else {
+						await onTick.call(this.context, onCompleteArg)
+					}
 				} catch (error) {
 					if (errorHandler) errorHandler(error)
 					else console.error(error)

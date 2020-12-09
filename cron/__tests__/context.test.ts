@@ -1,4 +1,4 @@
-import { Container, Cron, Expression, initCronJobs } from '../src'
+import { Container, Cron, CurrentJob, Expression, initCronJobs, Job } from '../src'
 
 const consoleSpy = jest.spyOn(console, 'info').mockImplementation()
 afterEach(() => consoleSpy.mockClear())
@@ -36,4 +36,32 @@ test('dynamic jobs can access class context and inherit class decorator behavior
 	expect(consoleSpy).toBeCalledWith('foo')
 	expect(consoleSpy).toBeCalledWith('Jobs.bar')
 	expect(consoleSpy).toBeCalledWith('baz')
+})
+
+test('pass current job', async () => {
+	@Cron.RunOnInit
+	@Cron.Start
+	class Jobs {
+		@Cron(Expression.EVERY_10_MINUTES)
+		foo(@CurrentJob job: Job) {
+			console.info(job.name)
+			job.stop()
+		}
+	}
+
+	const jobs = initCronJobs(Jobs)
+
+	jobs.set('bar', {
+		cronTime: Expression.EVERY_10_MINUTES,
+		passCurrentJob: true,
+		async onTick(job) {
+			console.info(job.name)
+			job.stop()
+		},
+	})
+
+	await new Promise((r) => setTimeout(r, 50))
+
+	expect(consoleSpy).toBeCalledWith('Jobs.foo')
+	expect(consoleSpy).toBeCalledWith('Jobs.bar')
 })

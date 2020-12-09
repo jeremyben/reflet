@@ -34,14 +34,25 @@ export interface Job extends CronJob {
 	 * Job's name in the following format: `class.method`.
 	 */
 	name: string
+
+	/**
+	 * A function that will fire when the job is stopped with `job.stop()`,
+	 * and may also be called by `onTick` at the end of each run.
+	 */
+	onComplete: (() => void) | undefined
 }
 
 /**
  * @public
  */
-export interface JobParameters<T extends object = object> extends Omit<CronJobParameters, 'context'> {
+export interface JobParameters<T extends object = object, PassJob extends boolean = false>
+	extends Omit<CronJobParameters, 'context' | 'onTick'> {
 	cronTime: string | Date
-	onTick: (this: T, ...args: any[]) => void | Promise<void>
+	/** The function to fire at the specified time. */
+	onTick: PassJob extends true
+		? (this: T, currentJob: Job) => void | Promise<void>
+		: (this: T, onComplete?: () => void) => void | Promise<void>
+	passCurrentJob?: PassJob
 	onComplete?: () => void
 	timeZone?: Zone
 	utcOffset?: Offset | number
