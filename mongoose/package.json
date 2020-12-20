@@ -26,13 +26,13 @@
 	"peerDependencies": {
 		"@types/mongoose": "^5.7.20",
 		"@types/node": ">=8",
-		"mongoose": "^5",
+		"mongoose": ">=5.0 <5.11",
 		"reflect-metadata": "^0.1.13"
 	},
 	"devDependencies": {
 		"@shelf/jest-mongodb": "^1.2.3",
-		"@types/mongoose": "^5.10.0",
-		"mongoose": "^5.10.14"
+		"@types/mongoose": "^5.10.3",
+		"mongoose": "5.10.19"
 	},
 	"scripts": {
 		"build": "ts-node -T ../build.ts",
