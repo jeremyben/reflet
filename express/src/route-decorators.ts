@@ -107,6 +107,7 @@ export function Method<T extends RoutingMethod>(method: T, path: string | RegExp
 	}
 }
 
+/* istanbul ignore next */
 // tslint:disable: no-shadowed-variable
 export namespace Method {
 	export const Get = (path: string | RegExp = '') => Method('get', path)
