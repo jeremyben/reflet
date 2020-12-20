@@ -3,6 +3,25 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.3.0](https://github.com/jeremyben/reflet/tree/master/mongoose/compare/@reflet/mongoose@1.2.1...@reflet/mongoose@1.3.0) (2020-12-20)
+
+
+### Bug Fixes
+
+* **mongoose:** decorator order on inherited class like discriminator model ([10e13d3](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/10e13d3))
+* **mongoose:** mongoose peer dependency is narrowed to less than 5.11 because of type definitions breaking changes ([ac1a6eb](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/ac1a6eb))
+* **mongoose:** validator message typings ([deea0e6](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/deea0e6))
+
+
+### Features
+
+* **mongoose:** kind decorator aliased as discriminatorkey ([f7ca7ec](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/f7ca7ec))
+* **mongoose:** union fields options: required and strict ([c591d61](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/c591d61))
+
+
+
+
+
 ## [1.2.1](https://github.com/jeremyben/reflet/tree/master/mongoose/compare/@reflet/mongoose@1.2.0...@reflet/mongoose@1.2.1) (2020-10-11)
 
 
