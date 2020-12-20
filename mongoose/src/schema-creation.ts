@@ -56,6 +56,7 @@ export function createSchema<T extends ConstructorType>(Class: T) {
 	const schema = new mongoose.Schema<ConstructorInstance<T>>(fields, options)
 
 	for (const virtualKey in populatedVirtuals) {
+		/* istanbul ignore if - routine check */
 		if (!populatedVirtuals.hasOwnProperty(virtualKey)) continue
 
 		const virtualOptions = populatedVirtuals[virtualKey]
@@ -125,61 +126,76 @@ function loadClassMethods<T>(schema: mongoose.Schema<T>, Class: ConstructorType)
  */
 function loadDiscriminatorsFields<T>(schema: mongoose.Schema<T>, Class: ConstructorType) {
 	// https://mongoosejs.com/docs/discriminators#single-nested-discriminators
-	const singleFields = getDiscriminatorFields(Class)
-	attachToSchema(singleFields)
+	attachToSchema(getDiscriminatorFields(Class))
 
 	// https://mongoosejs.com/docs/discriminators#embedded-discriminators-in-arrays
-	const arrayFields = getDiscriminatorArrayFields(Class)
-	attachToSchema(arrayFields, { asArray: true })
+	attachToSchema(getDiscriminatorArrayFields(Class), { asArray: true })
 
-	function attachToSchema(d11rFields: { [key: string]: ConstructorType[] }, { asArray = false } = {}) {
-		for (const key in d11rFields) {
+	function attachToSchema(discriminatorFields: ReturnType<typeof getDiscriminatorFields>, { asArray = false } = {}) {
+		for (const key in discriminatorFields) {
 			/* istanbul ignore if - routine check */
-			if (!d11rFields.hasOwnProperty(key)) continue
-			const nestedSchemaClasses = d11rFields[key]
+			if (!discriminatorFields.hasOwnProperty(key)) continue
+
+			const subClasses = discriminatorFields[key].classes
+			const options = discriminatorFields[key].options
 
 			// We must remove _id from the base schema or `{ _id: false }` won't do anything on the discriminator schema (_id is still there by default).
-			const baseSchemaForD11rs = new mongoose.Schema({}, { _id: false })
-			schema.add({ [key]: asArray ? [baseSchemaForD11rs] : baseSchemaForD11rs })
+			const baseSubSchema = new mongoose.Schema({}, { _id: false })
+			schema.add({ [key]: asArray ? [baseSubSchema] : baseSubSchema })
 
-			const nestedPath = schema.path(key) as NestedPath
+			const baseSubSchemaPath = schema.path(key) as NestedPath
 
-			let alreadyProvidedKindKey: string | undefined
+			if (options?.required) {
+				baseSubSchemaPath.required(true)
+			}
+
+			let discriminatorKey: string | undefined
 
 			// First go through all the discriminators to set the discriminatorKey
 			// and make sure on the next loop that everyone of them has the same.
-			for (const nestedSchemaClass of nestedSchemaClasses) {
-				const [kindKey] = getKind(nestedSchemaClass)
+			for (const subClass of subClasses) {
+				const [kindKey] = getKind(subClass)
 
 				// Assign the key on the nested path and keep reference of @Kind key, only once.
-				if (kindKey && !alreadyProvidedKindKey) {
-					alreadyProvidedKindKey = kindKey
-					nestedPath.schema.set('discriminatorKey', kindKey)
+				if (kindKey && !discriminatorKey) {
+					discriminatorKey = kindKey
+					baseSubSchemaPath.schema.add({ [kindKey]: { type: String, required: options?.strict } })
+					baseSubSchemaPath.schema.set('discriminatorKey', kindKey)
 				}
 			}
 
-			for (const nestedSchemaClass of nestedSchemaClasses) {
-				const [kindKey, kindValue] = getKind(nestedSchemaClass)
+			// If none of the siblings has a @Kind key, the discriminatorKey is the default one.
+			if (!discriminatorKey) {
+				discriminatorKey = '__t'
+				baseSubSchemaPath.schema.add({ __t: { type: String, required: options?.strict } })
+			}
+
+			for (const subClass of subClasses) {
+				const [kindKey, kindValue] = getKind(subClass)
 
 				// Checks that sibling discriminators have the same @Kind key.
-				if (
-					(alreadyProvidedKindKey && !kindKey) ||
-					(alreadyProvidedKindKey && kindKey && alreadyProvidedKindKey !== kindKey)
-				) {
+				if (kindKey && discriminatorKey !== kindKey) {
 					throw Error(
-						`Embedded discriminator "${Class.name}" must have @Kind named "${alreadyProvidedKindKey}", like its sibling embedded discriminator(s).`
+						`Embedded discriminator "${Class.name}" must have @Kind named "${discriminatorKey}", like its sibling embedded discriminator(s).`
 					)
 				}
 
+				if (options?.strict) {
+					const discriminatorKeyPath = baseSubSchemaPath.schema.path(discriminatorKey) as NestedPath
+					discriminatorKeyPath.enum(kindValue || subClass.name)
+				}
+
 				// User might have decorated the subSchema with `@Model`, so we use `schemaFrom` in order to avoid errors.
-				const nestedSchema = schemaFrom(nestedSchemaClass)
-				nestedPath.discriminator(nestedSchemaClass.name, nestedSchema, kindValue)
+				const subSchema = schemaFrom(subClass)
+				baseSubSchemaPath.discriminator(subClass.name, subSchema, kindValue)
 			}
 		}
 	}
 
 	type NestedPath = mongoose.SchemaType & {
 		discriminator(name: string, schema: mongoose.Schema, value?: string): void
+		enum(value: string | number): void
+		enumValues: string[] | number[]
 		schema: mongoose.Schema & {
 			discriminators?: {
 				[key: string]: mongoose.Schema & {

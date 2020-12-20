@@ -117,3 +117,101 @@ test('nested discriminators kind key coercion', async () => {
 		}
 	}).toThrowError(/sibling/)
 })
+
+describe('union options', () => {
+	@SchemaOptions({ _id: false })
+	abstract class R1 {
+		@Field({ type: Number, required: true })
+		radius: number
+
+		__t: 'R1'
+	}
+
+	@SchemaOptions({ _id: false })
+	abstract class R2 {
+		@Field({ type: Number, required: true })
+		side: number
+
+		__t: 'R2'
+	}
+
+	test('required field', async () => {
+		@Model()
+		class RequiredField extends Model.I {
+			@Field(String)
+			name: string
+
+			@Field.Union([R1, R2], { required: true })
+			shape: R1 | R2
+		}
+
+		const doc = new RequiredField({ name: 'test' })
+		const validationError = doc.validateSync()
+		expect(validationError).toBeInstanceOf(mongoose.Error.ValidationError)
+		expect(validationError!.errors.shape).toHaveProperty('kind', 'required')
+	})
+
+	test('required discriminatorKey', async () => {
+		@Model()
+		@SchemaOptions({ versionKey: false })
+		class RequiredKindAndField extends Model.I {
+			@Field(String)
+			name: string
+
+			@Field.ArrayOfUnion([R1, R2], { required: true, strict: true })
+			shapes: (R1 | R2)[]
+		}
+
+		const a = new RequiredKindAndField({ name: 'test' })
+		expect(a.validateSync()).toBeUndefined()
+		expect(a).toHaveProperty('_id')
+		expect(a).toHaveProperty('name')
+		expect(a.toObject().shapes).toEqual([])
+
+		const b = new RequiredKindAndField({
+			name: 'test',
+			shapes: [
+				{ __t: 'R1', radius: 1 },
+				{ __t: 'R2', side: 1 },
+			],
+		})
+		expect(b.validateSync()).toBeUndefined()
+		expect(b.toObject().shapes).toStrictEqual([
+			{ __t: 'R1', radius: 1 },
+			{ __t: 'R2', side: 1 },
+		])
+
+		const c = new RequiredKindAndField({ name: 'test', shapes: [{}] })
+		const validationError = c.validateSync()
+		expect(validationError).toBeInstanceOf(mongoose.Error.ValidationError)
+		expect(validationError!.errors['shapes.0.__t']).toHaveProperty('kind', 'required')
+	})
+
+	test('required discriminatorKey but not field', async () => {
+		@Model()
+		class RequiredKind extends Model.I {
+			@Field(String)
+			name: string
+
+			@Field.Union([R1, R2], { strict: true })
+			shape: R1 | R2
+		}
+
+		const a = new RequiredKind({ name: 'test' })
+		expect(a.validateSync()).toBeUndefined()
+		expect(a).toHaveProperty('_id')
+		expect(a).toHaveProperty('name')
+		expect(a.shape).toBeUndefined()
+
+		const b = new RequiredKind({ name: 'test', shape: { __t: 'R2', side: 2 } })
+		expect(b.validateSync()).toBeUndefined()
+		expect(b).toHaveProperty('_id')
+		expect(b).toHaveProperty('name')
+		expect(b.toObject().shape).toStrictEqual({ __t: 'R2', side: 2 })
+
+		const c = new RequiredKind({ name: 'test', shape: {} })
+		const validationError = c.validateSync()
+		expect(validationError).toBeInstanceOf(mongoose.Error.ValidationError)
+		expect(validationError!.errors['shape.__t']).toHaveProperty('kind', 'required')
+	})
+})

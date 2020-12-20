@@ -67,29 +67,26 @@ export function assignKindKey({
 	rootModel: mongoose.Model<mongoose.Document>
 	discriminatorModel: mongoose.Model<mongoose.Document>
 }): void {
-	const rootProvidedD11rKey = (rootModel.schema as SchemaFix)._userProvidedOptions.discriminatorKey
-	const alreadyProvidedKindKey: string | undefined = (rootModel as any)[MetaKind]
+	const providedDiscriminatorKey = (rootModel.schema as SchemaFix)._userProvidedOptions.discriminatorKey
+	const providedKindKey: string | undefined = (rootModel as any)[MetaKind]
 	// const otherD11rs = rootModel.discriminators as { [key: string]: mongoose.Model<any> } | undefined
 
 	// Check that sibling discriminators have the same @Kind key.
-	if (
-		(alreadyProvidedKindKey && !kindKey) ||
-		(alreadyProvidedKindKey && kindKey && alreadyProvidedKindKey !== kindKey)
-	) {
+	if ((providedKindKey && !kindKey) || (providedKindKey && kindKey && providedKindKey !== kindKey)) {
 		throw Error(
-			`Discriminator "${discriminatorModel.name}" must have @Kind named "${alreadyProvidedKindKey}", like its sibling discriminator(s).`
+			`Discriminator "${discriminatorModel.name}" must have @Kind named "${providedKindKey}", like its sibling discriminator(s).`
 		)
 	}
 
 	// Then check overwriting of the discriminatorKey provided by the user on the root model.
-	if (rootProvidedD11rKey && kindKey && rootProvidedD11rKey !== kindKey) {
+	if (providedDiscriminatorKey && kindKey && providedDiscriminatorKey !== kindKey) {
 		throw Error(
-			`Discriminator "${discriminatorModel.name}" cannot overwrite discriminatorKey "${rootProvidedD11rKey}" of root model "${rootModel.modelName}" with @Kind named "${kindKey}".`
+			`Discriminator "${discriminatorModel.name}" cannot overwrite discriminatorKey "${providedDiscriminatorKey}" of root model "${rootModel.modelName}" with @Kind named "${kindKey}".`
 		)
 	}
 
 	// Finally assign the key on the root model and keep reference of @Kind key, only once for all discriminators.
-	if (kindKey && !alreadyProvidedKindKey) {
+	if (kindKey && !providedKindKey) {
 		;(rootModel as any)[MetaKind] = kindKey
 		rootModel.schema.set('discriminatorKey', kindKey)
 	}

@@ -54,11 +54,28 @@ export namespace Field {
 	 * @see https://mongoosejs.com/docs/discriminators#single-nested-discriminators
 	 * @public
 	 */
-	export function Union(...classes: ConstructorType[]): Decorator.FieldUnion {
-		return (target, key) => {
-			const d11rFields = getDiscriminatorFields(target.constructor)
-			d11rFields[<string>key] = classes
-			Reflect.defineMetadata(MetaFieldDiscriminators, d11rFields, target.constructor)
+	export function Union(classes: ConstructorType[], options?: UnionOptions): Decorator.FieldUnion
+	export function Union(...classes: ConstructorType[]): Decorator.FieldUnion
+	export function Union(
+		...args: ConstructorType[] | (ConstructorType[] | UnionOptions | undefined)[]
+	): Decorator.FieldUnion {
+		if (Array.isArray(args[0])) {
+			return (target, key) => {
+				const discriminatorFields = getDiscriminatorFields(target.constructor)
+				discriminatorFields[<string>key] = {
+					classes: args[0] as ConstructorType[],
+					options: args[1] as UnionOptions | undefined,
+				}
+				Reflect.defineMetadata(MetaFieldDiscriminators, discriminatorFields, target.constructor)
+			}
+		} else {
+			return (target, key) => {
+				const discriminatorFields = getDiscriminatorFields(target.constructor)
+				discriminatorFields[<string>key] = {
+					classes: args as ConstructorType[],
+				}
+				Reflect.defineMetadata(MetaFieldDiscriminators, discriminatorFields, target.constructor)
+			}
 		}
 	}
 
@@ -67,11 +84,28 @@ export namespace Field {
 	 * @see https://mongoosejs.com/docs/discriminators#embedded-discriminators-in-arrays
 	 * @public
 	 */
-	export function ArrayOfUnion(...classes: ConstructorType[]): Decorator.FieldArrayOfUnion {
-		return (target, key) => {
-			const d11rArrayFields = getDiscriminatorArrayFields(target.constructor)
-			d11rArrayFields[<string>key] = classes
-			Reflect.defineMetadata(MetaFieldDiscriminatorsArray, d11rArrayFields, target.constructor)
+	export function ArrayOfUnion(classes: ConstructorType[], options?: UnionOptions): Decorator.FieldArrayOfUnion
+	export function ArrayOfUnion(...classes: ConstructorType[]): Decorator.FieldArrayOfUnion
+	export function ArrayOfUnion(
+		...args: ConstructorType[] | (ConstructorType[] | UnionOptions | undefined)[]
+	): Decorator.FieldArrayOfUnion {
+		if (Array.isArray(args[0])) {
+			return (target, key) => {
+				const discriminatorArrayFields = getDiscriminatorArrayFields(target.constructor)
+				discriminatorArrayFields[<string>key] = {
+					classes: args[0] as ConstructorType[],
+					options: args[1] as UnionOptions | undefined,
+				}
+				Reflect.defineMetadata(MetaFieldDiscriminatorsArray, discriminatorArrayFields, target.constructor)
+			}
+		} else {
+			return (target, key) => {
+				const discriminatorArrayFields = getDiscriminatorArrayFields(target.constructor)
+				discriminatorArrayFields[<string>key] = {
+					classes: args as ConstructorType[],
+				}
+				Reflect.defineMetadata(MetaFieldDiscriminatorsArray, discriminatorArrayFields, target.constructor)
+			}
 		}
 	}
 }
@@ -87,7 +121,9 @@ export function getFields(target: object): { [key: string]: any } {
 /**
  * @internal
  */
-export function getDiscriminatorFields(target: object): { [key: string]: ConstructorType[] } {
+export function getDiscriminatorFields(
+	target: object
+): { [key: string]: { classes: ConstructorType[]; options?: UnionOptions } } {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
 	return Object.assign({}, Reflect.getMetadata(MetaFieldDiscriminators, target))
 }
@@ -95,7 +131,9 @@ export function getDiscriminatorFields(target: object): { [key: string]: Constru
 /**
  * @internal
  */
-export function getDiscriminatorArrayFields(target: object): { [key: string]: ConstructorType[] } {
+export function getDiscriminatorArrayFields(
+	target: object
+): { [key: string]: { classes: ConstructorType[]; options?: UnionOptions } } {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
 	return Object.assign({}, Reflect.getMetadata(MetaFieldDiscriminatorsArray, target))
 }
@@ -462,3 +500,14 @@ type ValidateMessageFn<T> = (props: {
 	path: string
 	value: T
 }) => string
+
+/**
+ * @public
+ */
+type UnionOptions = {
+	/** If `true`, the field itself is required. */
+	required?: boolean
+
+	/** If `true`, the discriminator key in nested schemas is always required and narrowed to its possible values. */
+	strict?: boolean
+}

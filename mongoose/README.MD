@@ -687,7 +687,7 @@ A mecanism will check and prevent you from defining a different `@Kind` key on s
 
 ### Single nested discriminators
 
-> 🔦 `@Field.Union(...classes)`<br>
+> 🔦 `@Field.Union([classes], options?)`<br>
 > 💫 Related Mongoose method: [`SingleNestedPath.discriminator`](https://mongoosejs.com/docs/discriminators#single-nested-discriminators)
 
 `@Field.Union` allows you to embed discriminators on an single property.
@@ -711,7 +711,10 @@ abstract class Square {
 
 @Model()
 class Shape extends Model.I {
-  @Field.Union(Circle, Square)
+  @Field.Union([Circle, Square], { 
+    required: true, // Make the field itself `shape` required.
+    strict: true // Make the discriminator key `__t` required and narrowed to its possible values.
+  })
   shape: Circle | Square
 }
 
@@ -721,7 +724,7 @@ const square = new Shape({ shape: { __t: 'Square', side: 4 } })
 
 ### Embedded discriminators in arrays
 
-> 🔦 `@Field.ArrayOfUnion(...classes)`<br>
+> 🔦 `@Field.ArrayOfUnion([classes], options?)`<br>
 > 💫 Related Mongoose method: [`DocumentArrayPath.discriminator`](https://mongoosejs.com/docs/discriminators#embedded-discriminators-in-arrays)
 
 `@Field.ArrayOfUnion` allows you to embed discriminators in an array.
@@ -753,7 +756,9 @@ abstract class Purchased {
 
 @Model()
 class Batch extends Model.I {
-  @Field.ArrayOfUnion(Clicked, Purchased)
+  @Field.ArrayOfUnion([Clicked, Purchased], { 
+    strict: true  // Make the discriminator key `kind` required and narrowed to its possible values.
+  })
   events: (Clicked | Purchased)[]
 }
 
