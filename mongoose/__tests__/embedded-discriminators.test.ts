@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose'
-import { SchemaOptions, Field, Kind, Model, Plain } from '../src'
+import { SchemaOptions, Field, Kind, DiscriminatorKey, Model, Plain } from '../src'
 
 /**
  * https://mongoosejs.com/docs/discriminators#single-nested-discriminators
@@ -97,7 +97,7 @@ test('nested discriminators kind key coercion', async () => {
 		@Field(Number)
 		radius: number
 
-		@Kind
+		@DiscriminatorKey
 		kind: 'N1'
 	}
 
@@ -105,7 +105,7 @@ test('nested discriminators kind key coercion', async () => {
 		@Field(Number)
 		side: number
 
-		@Kind('n2')
+		@DiscriminatorKey('n2')
 		type: 'n2'
 	}
 

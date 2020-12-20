@@ -45,6 +45,8 @@ export function Kind(valueOrTarget?: string | Object, key?: string | symbol) {
 	}
 }
 
+export { Kind as DiscriminatorKey }
+
 /**
  * @internal
  */

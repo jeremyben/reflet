@@ -651,13 +651,13 @@ As you know, `_t` is the default `discriminatorKey`, and its value will be the c
 
 ⚠️ `@Model.Discriminator` should always be at the top of your class decorators. _Why? Because decorators are executed bottom to top, so if `@Model.Discriminator` directly compiles your class into a Mongooose Model, other class decorators won't be properly applied. Reflet will warn you with its own decorators._
 
-### Kind
+### Kind / DiscriminatorKey
 
-> 🔦 `@Kind(value?)`<br>
+> 🔦 `@Kind(value?)` alias `@DiscriminatorKey`<br>
 > 💫 Related Mongoose option property: [`discriminatorKey`](https://mongoosejs.com/docs/discriminators#the-model-discriminator-function)
 
 Mongoose `discriminatorKey` is usually defined in the parent model options, and appears in the children model documents.
-`@Kind` exists to define `discriminatorKey` **directly** on the children class instead of the parent model.
+`@Kind` (or its alias `@DiscriminatorKey`) exists to define `discriminatorKey` **directly** on the children class instead of the parent model.
 
 ```ts
 @Model()

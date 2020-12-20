@@ -6,7 +6,7 @@ export { Model } from './model-decorators'
 
 export { Field } from './field-decorators'
 
-export { Kind } from './kind-decorator'
+export { Kind, DiscriminatorKey } from './kind-decorator'
 
 export { PopulateVirtual } from './virtual-populate-decorator'
 
