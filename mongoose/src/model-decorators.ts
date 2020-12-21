@@ -2,7 +2,7 @@ import * as mongoose from 'mongoose'
 import { createSchema } from './schema-creation'
 import { registerModelDecorator } from './check-decorator-order'
 import { getKind, assignKindKey } from './kind-decorator'
-import { IModel } from './i-model'
+import { MongooseModel } from './model-interface'
 import { Decorator, ModelAny } from './interfaces'
 
 /**
@@ -101,14 +101,14 @@ export namespace Model {
 	 * @abstract
 	 * @public
 	 */
-	export const Interface = IModel
-	export type Interface = IModel
+	export const Interface = MongooseModel
+	export type Interface = MongooseModel
 
 	/**
 	 * Dummy class to extend from, to get all the (narrowed) types from mongoose Model and Document.
 	 * @abstract
 	 * @public
 	 */
-	export const I = IModel
-	export type I = IModel
+	export const I = MongooseModel
+	export type I = MongooseModel
 }

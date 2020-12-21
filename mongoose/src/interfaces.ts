@@ -231,10 +231,25 @@ declare global {
 	 */
 	namespace RefletMongoose {
 		/**
-		 * Open interface to extend `@Field` SchemaType options. Useful for plugins.
+		 * Open interface to extend `@Field` SchemaType options.
+		 * Useful for global plugins.
 		 * @public
 		 */
 		interface SchemaTypeOptions {}
+
+		/**
+		 * Open class to extend every document.
+		 * Useful for global plugins.
+		 * @public
+		 */
+		interface Document extends mongoose.Document {}
+
+		/**
+		 * Open interface to extend every model with static properties and methods.
+		 * Useful for gobal plugins.
+		 * @public
+		 */
+		interface Model extends mongoose.Model<RefletMongoose.Document> {}
 
 		/**
 		 * Open interface to enforce an union of model names in `ref` SchemaType option.

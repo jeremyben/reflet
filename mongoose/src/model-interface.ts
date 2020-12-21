@@ -2,13 +2,11 @@ import * as mongoose from 'mongoose'
 import * as mongodb from 'mongodb' // tslint:disable-line: no-implicit-dependencies
 import { Plain } from './interfaces'
 
-const IBase = class {} as mongoose.Model<mongoose.Document>
-
 /**
  * Intermediary abstract class with overloaded static methods to properly infer the child class.
  * @public
  */
-export abstract class IModel extends IBase {
+export abstract class MongooseModel extends (class {} as RefletMongoose.Model) {
 	// @ts-ignore implementation
 	constructor(
 		doc?: { _id?: mongoose.Document['_id']; [field: string]: any },
@@ -16,50 +14,50 @@ export abstract class IModel extends IBase {
 	)
 
 	// @ts-ignore implementation
-	static $where<T extends IModel>(
+	static $where<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		argument: string | Function
 	): mongoose.DocumentQuery<T, T, {}>
 
 	// @ts-ignore implementation
-	static count<T extends IModel>(
+	static count<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		callback?: (err: any, count: number) => void
 	): mongoose.Query<number>
 
-	static countDocuments<T extends IModel>(
+	static countDocuments<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		callback?: (err: any, count: number) => void
 	): mongoose.Query<number>
 
 	// @ts-ignore implementation
-	static countDocuments<T extends IModel>(
+	static countDocuments<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		criteria: mongoose.FilterQuery<T>,
 		callback?: (err: any, count: number) => void
 	): mongoose.Query<number>
 
-	static create<T extends IModel>(
+	static create<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		doc: Plain.Partial<T>,
 		options?: mongoose.SaveOptions
 	): Promise<T>
 
-	static create<T extends IModel>(
+	static create<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		doc: Plain.Partial<T>,
 		// tslint:disable-next-line: unified-signatures
 		callback?: (err: any, res: T[]) => void
 	): Promise<T>
 
-	static create<T extends IModel>(
+	static create<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		docs: Plain.Partial<T>[],
 		callback?: (err: any, res: T[]) => void
 	): Promise<T[]>
 
-	static create<T extends IModel>(
+	static create<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		docs: Plain.Partial<T>[],
 		options?: mongoose.SaveOptions,
@@ -67,27 +65,27 @@ export abstract class IModel extends IBase {
 	): Promise<T[]>
 
 	// @ts-ignore implementation
-	static create<T extends IModel>(this: new (...a: any[]) => T, ...docs: Plain.Partial<T>[]): Promise<T>
+	static create<T extends MongooseModel>(this: new (...a: any[]) => T, ...docs: Plain.Partial<T>[]): Promise<T>
 
 	// @ts-ignore implementation
-	static exists<T extends IModel>(
+	static exists<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		filter: mongoose.FilterQuery<T>,
 		callback?: (err: any, res: boolean) => void
 	): Promise<boolean>
 
-	static find<T extends IModel>(
+	static find<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		callback?: (err: any, res: T[]) => void
 	): mongoose.DocumentQuery<T[], T & mongoose.Document, {}>
 
-	static find<T extends IModel>(
+	static find<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		callback?: (err: any, res: T[]) => void
 	): mongoose.DocumentQuery<T[], T & mongoose.Document, {}>
 
-	static find<T extends IModel>(
+	static find<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		projection?: any | null,
@@ -95,7 +93,7 @@ export abstract class IModel extends IBase {
 	): mongoose.DocumentQuery<T[], T & mongoose.Document, {}>
 
 	// @ts-ignore implementation
-	static find<T extends IModel>(
+	static find<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		projection?: any | null,
@@ -103,13 +101,13 @@ export abstract class IModel extends IBase {
 		callback?: (err: any, res: T[]) => void
 	): mongoose.DocumentQuery<T[], T & mongoose.Document, {}>
 
-	static findById<T extends IModel>(
+	static findById<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		id: any | string | number,
 		callback?: (err: any, res: T | null) => void
 	): mongoose.DocumentQuery<T | null, T, {}>
 
-	static findById<T extends IModel>(
+	static findById<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		id: any | string | number,
 		projection: any,
@@ -117,7 +115,7 @@ export abstract class IModel extends IBase {
 	): mongoose.DocumentQuery<T | null, T, {}>
 
 	// @ts-ignore implementation
-	static findById<T extends IModel>(
+	static findById<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		id: any | string | number,
 		projection: any,
@@ -125,16 +123,18 @@ export abstract class IModel extends IBase {
 		callback?: (err: any, res: T | null) => void
 	): mongoose.DocumentQuery<T | null, T, {}>
 
-	static findByIdAndUpdate<T extends IModel>(this: new (...a: any[]) => T): mongoose.DocumentQuery<T | null, T, {}>
+	static findByIdAndUpdate<T extends MongooseModel>(
+		this: new (...a: any[]) => T
+	): mongoose.DocumentQuery<T | null, T, {}>
 
-	static findByIdAndUpdate<T extends IModel>(
+	static findByIdAndUpdate<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		id: any | number | string,
 		update: mongoose.UpdateQuery<T>,
 		callback?: (err: any, res: T | null) => void
 	): mongoose.DocumentQuery<T | null, T, {}>
 
-	static findByIdAndUpdate<T extends IModel>(
+	static findByIdAndUpdate<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		id: any | number | string,
 		update: mongoose.UpdateQuery<T>,
@@ -142,7 +142,7 @@ export abstract class IModel extends IBase {
 		callback?: (err: any, res: T) => void
 	): mongoose.DocumentQuery<T, T, {}>
 
-	static findByIdAndUpdate<T extends IModel>(
+	static findByIdAndUpdate<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		id: any | number | string,
 		update: mongoose.UpdateQuery<T>,
@@ -150,7 +150,7 @@ export abstract class IModel extends IBase {
 		callback?: (err: any, res: mongodb.FindAndModifyWriteOpResultObject<T>) => void
 	): mongoose.Query<mongodb.FindAndModifyWriteOpResultObject<T>>
 
-	static findByIdAndUpdate<T extends IModel>(
+	static findByIdAndUpdate<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		id: any | number | string,
 		update: mongoose.UpdateQuery<T>,
@@ -159,7 +159,7 @@ export abstract class IModel extends IBase {
 	): mongoose.Query<mongodb.FindAndModifyWriteOpResultObject<T | null>>
 
 	// @ts-ignore implementation
-	static findByIdAndUpdate<T extends IModel>(
+	static findByIdAndUpdate<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		id: any | number | string,
 		update: mongoose.UpdateQuery<T>,
@@ -167,13 +167,13 @@ export abstract class IModel extends IBase {
 		callback?: (err: any, res: T | null) => void
 	): mongoose.DocumentQuery<T | null, T, {}>
 
-	static findOne<T extends IModel>(
+	static findOne<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions?: mongoose.FilterQuery<T>,
 		callback?: (err: any, res: T | null) => void
 	): mongoose.DocumentQuery<T | null, T, {}>
 
-	static findOne<T extends IModel>(
+	static findOne<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		projection: any,
@@ -181,7 +181,7 @@ export abstract class IModel extends IBase {
 	): mongoose.DocumentQuery<T | null, T, {}>
 
 	// @ts-ignore implementation
-	static findOne<T extends IModel>(
+	static findOne<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		projection: any,
@@ -189,16 +189,18 @@ export abstract class IModel extends IBase {
 		callback?: (err: any, res: T | null) => void
 	): mongoose.DocumentQuery<T | null, T, {}>
 
-	static findOneAndDelete<T extends IModel>(this: new (...a: any[]) => T): mongoose.DocumentQuery<T | null, T, {}>
+	static findOneAndDelete<T extends MongooseModel>(
+		this: new (...a: any[]) => T
+	): mongoose.DocumentQuery<T | null, T, {}>
 
-	static findOneAndDelete<T extends IModel>(
+	static findOneAndDelete<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		// tslint:disable-next-line: unified-signatures
 		callback?: (err: any, res: T | null) => void
 	): mongoose.DocumentQuery<T | null, T, {}>
 
-	static findOneAndDelete<T extends IModel>(
+	static findOneAndDelete<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		options: { rawResult: true } & mongoose.QueryFindOneAndRemoveOptions,
@@ -206,23 +208,25 @@ export abstract class IModel extends IBase {
 	): mongoose.Query<mongodb.FindAndModifyWriteOpResultObject<T | null>>
 
 	// @ts-ignore implementation
-	static findOneAndDelete<T extends IModel>(
+	static findOneAndDelete<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		options: mongoose.QueryFindOneAndRemoveOptions,
 		callback?: (err: any, res: T | null) => void
 	): mongoose.DocumentQuery<T | null, T, {}>
 
-	static findOneAndRemove<T extends IModel>(this: new (...a: any[]) => T): mongoose.DocumentQuery<T | null, T, {}>
+	static findOneAndRemove<T extends MongooseModel>(
+		this: new (...a: any[]) => T
+	): mongoose.DocumentQuery<T | null, T, {}>
 
-	static findOneAndRemove<T extends IModel>(
+	static findOneAndRemove<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		// tslint:disable-next-line: unified-signatures
 		callback?: (err: any, res: T | null) => void
 	): mongoose.DocumentQuery<T | null, T, {}>
 
-	static findOneAndRemove<T extends IModel>(
+	static findOneAndRemove<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		options: { rawResult: true } & mongoose.QueryFindOneAndRemoveOptions,
@@ -230,23 +234,25 @@ export abstract class IModel extends IBase {
 	): mongoose.Query<mongodb.FindAndModifyWriteOpResultObject<T | null>>
 
 	// @ts-ignore implementation
-	static findOneAndRemove<T extends IModel>(
+	static findOneAndRemove<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		options: mongoose.QueryFindOneAndRemoveOptions,
 		callback?: (err: any, res: T | null) => void
 	): mongoose.DocumentQuery<T | null, T, {}>
 
-	static findOneAndUpdate<T extends IModel>(this: new (...a: any[]) => T): mongoose.DocumentQuery<T | null, T, {}>
+	static findOneAndUpdate<T extends MongooseModel>(
+		this: new (...a: any[]) => T
+	): mongoose.DocumentQuery<T | null, T, {}>
 
-	static findOneAndUpdate<T extends IModel>(
+	static findOneAndUpdate<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		update: mongoose.UpdateQuery<T>,
 		callback?: (err: any, doc: T | null, res: any) => void
 	): mongoose.DocumentQuery<T | null, T, {}>
 
-	static findOneAndUpdate<T extends IModel>(
+	static findOneAndUpdate<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		update: mongoose.UpdateQuery<T>,
@@ -254,7 +260,7 @@ export abstract class IModel extends IBase {
 		callback?: (err: any, doc: mongodb.FindAndModifyWriteOpResultObject<T>, res: any) => void
 	): mongoose.Query<mongodb.FindAndModifyWriteOpResultObject<T>>
 
-	static findOneAndUpdate<T extends IModel>(
+	static findOneAndUpdate<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		update: mongoose.UpdateQuery<T>,
@@ -262,7 +268,7 @@ export abstract class IModel extends IBase {
 		callback?: (err: any, doc: T, res: any) => void
 	): mongoose.DocumentQuery<T, T, {}>
 
-	static findOneAndUpdate<T extends IModel>(
+	static findOneAndUpdate<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		update: mongoose.UpdateQuery<T>,
@@ -271,7 +277,7 @@ export abstract class IModel extends IBase {
 	): mongoose.Query<mongodb.FindAndModifyWriteOpResultObject<T | null>>
 
 	// @ts-ignore implementation
-	static findOneAndUpdate<T extends IModel>(
+	static findOneAndUpdate<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		update: mongoose.UpdateQuery<T>,
@@ -279,27 +285,27 @@ export abstract class IModel extends IBase {
 		callback?: (err: any, doc: T | null, res: any) => void
 	): mongoose.DocumentQuery<T | null, T, {}>
 
-	static insertMany<T extends IModel>(
+	static insertMany<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		docs: Plain.Partial<T>[],
 		callback?: (error: any, docs: T[]) => void
 	): Promise<T[]>
 
-	static insertMany<T extends IModel>(
+	static insertMany<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		docs: Plain.Partial<T>[],
 		options?: { ordered?: boolean; rawResult?: boolean } & mongoose.ModelOptions,
 		callback?: (error: any, docs: T[]) => void
 	): Promise<T[]>
 
-	static insertMany<T extends IModel>(
+	static insertMany<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		doc: Plain.Partial<T>,
 		callback?: (error: any, doc: T) => void
 	): Promise<T>
 
 	// @ts-ignore implementation
-	static insertMany<T extends IModel>(
+	static insertMany<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		doc: Plain.Partial<T>,
 		options?: { ordered?: boolean; rawResult?: boolean } & mongoose.ModelOptions,
@@ -307,7 +313,7 @@ export abstract class IModel extends IBase {
 	): Promise<T>
 
 	// @ts-ignore implementation
-	static populate<T extends IModel>(
+	static populate<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		docs: Plain.Partial<T> | Plain.Partial<T>[],
 		options: mongoose.ModelPopulateOptions | mongoose.ModelPopulateOptions[],
@@ -315,42 +321,42 @@ export abstract class IModel extends IBase {
 	): Promise<T[]>
 
 	// @ts-ignore implementation
-	static remove<T extends IModel>(
+	static remove<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		callback?: (err: any) => void
 	): mongoose.Query<mongodb.DeleteWriteOpResultObject['result'] & { deletedCount?: number }>
 
 	// @ts-ignore implementation
-	static deleteOne<T extends IModel>(
+	static deleteOne<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		callback?: (err: any) => void
 	): mongoose.Query<mongodb.DeleteWriteOpResultObject['result'] & { deletedCount?: number }>
 
 	// @ts-ignore implementation
-	static deleteOne<T extends IModel>(
+	static deleteOne<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		options: mongoose.ModelOptions,
 		callback?: (err: any) => void
 	): mongoose.Query<mongodb.DeleteWriteOpResultObject['result'] & { deletedCount?: number }>
 
-	static deleteMany<T extends IModel>(
+	static deleteMany<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		callback?: (err: any) => void
 	): mongoose.Query<mongodb.DeleteWriteOpResultObject['result'] & { deletedCount?: number }>
 
 	// @ts-ignore implementation
-	static deleteMany<T extends IModel>(
+	static deleteMany<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		options: mongoose.ModelOptions,
 		callback?: (err: any) => void
 	): mongoose.Query<mongodb.DeleteWriteOpResultObject['result'] & { deletedCount?: number }>
 
-	static replaceOne<T extends IModel>(
+	static replaceOne<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		replacement: Plain<T>,
@@ -358,7 +364,7 @@ export abstract class IModel extends IBase {
 	): mongoose.Query<any>
 
 	// @ts-ignore implementation
-	static replaceOne<T extends IModel>(
+	static replaceOne<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		replacement: Plain<T>,
@@ -366,7 +372,7 @@ export abstract class IModel extends IBase {
 		callback?: (err: any, raw: any) => void
 	): mongoose.Query<any>
 
-	static update<T extends IModel>(
+	static update<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		doc: mongoose.UpdateQuery<T>,
@@ -374,7 +380,7 @@ export abstract class IModel extends IBase {
 	): mongoose.Query<any>
 
 	// @ts-ignore implementation
-	static update<T extends IModel>(
+	static update<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		doc: mongoose.UpdateQuery<T>,
@@ -382,7 +388,7 @@ export abstract class IModel extends IBase {
 		callback?: (err: any, raw: any) => void
 	): mongoose.Query<any>
 
-	static updateOne<T extends IModel>(
+	static updateOne<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		doc: mongoose.UpdateQuery<T>,
@@ -390,7 +396,7 @@ export abstract class IModel extends IBase {
 	): mongoose.Query<any>
 
 	// @ts-ignore implementation
-	static updateOne<T extends IModel>(
+	static updateOne<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		doc: mongoose.UpdateQuery<T>,
@@ -398,7 +404,7 @@ export abstract class IModel extends IBase {
 		callback?: (err: any, raw: any) => void
 	): mongoose.Query<any>
 
-	static updateMany<T extends IModel>(
+	static updateMany<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		doc: mongoose.UpdateQuery<T>,
@@ -406,7 +412,7 @@ export abstract class IModel extends IBase {
 	): mongoose.Query<any>
 
 	// @ts-ignore implementation
-	static updateMany<T extends IModel>(
+	static updateMany<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		conditions: mongoose.FilterQuery<T>,
 		doc: mongoose.UpdateQuery<T>,

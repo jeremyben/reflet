@@ -910,6 +910,22 @@ class User extends Model.I {
 }
 ```
 
+### Model and Document augmentation
+
+You can augment `Model` and `Document` interfaces with the dedicated global interfaces.
+Here is an example with the [@casl/mongoose](https://github.com/stalniy/casl/tree/master/packages/casl-mongoose) plugin:
+
+```ts
+declare global {
+  namespace RefletMongoose {
+    interface Model {
+      accessibleBy<T extends mongoose.Document>(ability: AnyMongoAbility, action?: string): mongoose.DocumentQuery<T[], T>
+    }
+    interface Document {}
+  }
+}
+```
+
 ### References narrowing
 
 [SchemaType `ref` option](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-ref) can be either a Model or a model name. With Reflet, by default, any class can be passed as a Model and any string can be passed as a model name.
