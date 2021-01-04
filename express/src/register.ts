@@ -65,12 +65,12 @@ function attach(
 
 	const routes = extractRoutes(controllerClass)
 
-	const sharedMwares = extractMiddlewares(controllerClass)
-	const sharedErrHandlers = extractErrorHandlers(controllerClass)
-
 	if (!routes.length && !routerMeta) {
 		console.warn(`"${controllerClass.name}" doesn't have any route or router to register.`)
 	}
+
+	const sharedMwares = extractMiddlewares(controllerClass)
+	const sharedErrHandlers = extractErrorHandlers(controllerClass)
 
 	// Apply shared middlewares to the router instance
 	// or to each of the routes if the class is attached on the base app.
@@ -87,49 +87,8 @@ function attach(
 			sharedMwares,
 			routeMwares,
 		])
-		const toSend = extractSend(controllerClass, key)
 
-		const handler = promisifyHandler((req, res, next) => {
-			const args = extractParams(controllerClass, key, { req, res, next })
-			const result = controllerInstance[key].apply(controllerInstance, args)
-
-			// Handle or bypass sending the method's result according to @Send decorator,
-			// if the response has already been sent to the client, we also bypass.
-			if (!toSend || res.headersSent) return result
-
-			const { json, status, nullStatus, undefinedStatus } = toSend
-
-			if (isPromise(result)) return result.then((value) => send(value))
-			else return send(result)
-
-			function send(value: any): Response {
-				// Default status
-				if (status) res.status(status)
-
-				// Undefined and null status
-				if (value === undefined && undefinedStatus) {
-					res.status(undefinedStatus)
-				} else if (value === null && nullStatus) {
-					res.status(nullStatus)
-				}
-
-				// Readable stream
-				if (isReadableStream(value)) return value.pipe(res)
-
-				// Response object itself
-				if (value === res) {
-					// A stream is piping to the response so we let it go
-					if (res.listenerCount('unpipe') > 0) return res
-
-					// The response will try to send itself, which will cause a cryptic error
-					// ('TypeError: Converting circular structure to JSON')
-					throw Error('Cannot send the whole Response object')
-				}
-
-				if (json) return res.json(value)
-				else return res.send(value)
-			}
-		})
+		const handler = createHandler(controllerClass, controllerInstance, key)
 
 		if (routerMeta) {
 			appInstance[method](
@@ -177,6 +136,56 @@ function attach(
 }
 
 /**
+ * @internal
+ */
+function createHandler(controllerClass: ClassType, controllerInstance: any, key: string | symbol) {
+	const toSend = extractSend(controllerClass, key)
+
+	return promisifyHandler((req, res, next) => {
+		const args = extractParams(controllerClass, key, { req, res, next })
+		const result = controllerInstance[key].apply(controllerInstance, args)
+
+		// Handle or bypass sending the method's result according to @Send decorator,
+		// if the response has already been sent to the client, we also bypass.
+		if (!toSend || res.headersSent) return result
+
+		const { json, status, nullStatus, undefinedStatus } = toSend
+
+		if (isPromise(result)) return result.then((value) => send(value))
+		else return send(result)
+
+		function send(value: any): Response {
+			// Default status
+			if (status) res.status(status)
+
+			// Undefined and null status
+			if (value === undefined && undefinedStatus) {
+				res.status(undefinedStatus)
+			} else if (value === null && nullStatus) {
+				res.status(nullStatus)
+			}
+
+			// Readable stream
+			if (isReadableStream(value)) return value.pipe(res)
+
+			// Response object itself
+			if (value === res) {
+				// A stream is piping to the response so we let it go
+				if (res.listenerCount('unpipe') > 0) return res
+
+				// The response will try to send itself, which will cause a cryptic error
+				// ('TypeError: Converting circular structure to JSON')
+				throw Error('Cannot send the whole Response object')
+			}
+
+			if (json) return res.json(value)
+			else return res.send(value)
+		}
+	})
+}
+
+/**
+ * Exported for tests only.
  * @internal
  */
 export function getGlobalMiddlewares(app: Application): RequestHandler[] {
