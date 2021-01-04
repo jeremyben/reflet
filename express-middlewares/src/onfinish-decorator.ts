@@ -33,10 +33,6 @@ export function UseOnFinish<ResBody = any>(
 	exposeBody: true
 ): Decorator.Use
 
-/**
- * {@inheritDoc (UseOnFinish:1)}
- * @public
- */
 export function UseOnFinish(effect: (req: Request, res: ResponseSent) => void | Promise<void>): Decorator.Use
 
 export function UseOnFinish<ResBody = any>(
@@ -104,11 +100,7 @@ export function UseOnFinish<ResBody = any>(
 
 				if (data) {
 					// Concatenate chunks if multiple write calls.
-					res.body = concatChunks(
-						data,
-						res.body as any,
-						encodingOrCallback as BufferEncoding
-					) as any
+					res.body = concatChunks(data, res.body as any, encodingOrCallback as BufferEncoding) as any
 				}
 
 				return write0.apply(res, (arguments as unknown) as Parameters<Response['write']>)

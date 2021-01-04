@@ -20,10 +20,6 @@ export function UseSet<T extends string = ResponseHeaderName>(
 	value: string
 ): Decorator.Use
 
-/**
- * {@inheritDoc (UseSet:1)}
- * @public
- */
 export function UseSet<T extends string = ResponseHeaderName>(headers: ResponseHeaders<T>): Decorator.Use
 
 export function UseSet(field: string | ResponseHeaders, value?: string) {

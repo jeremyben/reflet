@@ -32,10 +32,6 @@ type ParamMeta = {
  */
 export function Req(): Decorator.Req
 
-/**
- * {@inheritDoc (Req:1)}
- * @public
- */
 export function Req(...args: Parameters<Decorator.Req>): void
 
 export function Req() {
@@ -64,10 +60,6 @@ export function Req() {
  */
 export function Res(): Decorator.Res
 
-/**
- * {@inheritDoc (Res:1)}
- * @public
- */
 export function Res(...args: Parameters<Decorator.Res>): void
 
 export function Res() {
@@ -98,10 +90,6 @@ export function Res() {
  */
 export function Next(): Decorator.Next
 
-/**
- * {@inheritDoc (Next:1)}
- * @public
- */
 export function Next(...args: Parameters<Decorator.Next>): void
 
 export function Next() {
@@ -141,10 +129,6 @@ const bodyParsers = [json(), urlencoded({ extended: true })]
 export function Body<T extends object>(key?: keyof T): Decorator.Body
 // todo: https://codewithstyle.info/Deep-property-access-in-TypeScript/
 
-/**
- * {@inheritDoc (Body:1)}
- * @public
- */
 export function Body(...args: Parameters<Decorator.Body>): void
 
 export function Body<T extends object>(
@@ -184,10 +168,6 @@ export function Body<T extends object>(
  */
 export function Params(name?: string): Decorator.Params
 
-/**
- * {@inheritDoc (Params:1)}
- * @public
- */
 export function Params(...args: Parameters<Decorator.Params>): void
 
 export function Params(nameOrTarget?: string | object, propertyKey?: string | symbol, parameterIndex?: number) {
@@ -223,10 +203,6 @@ export function Params(nameOrTarget?: string | object, propertyKey?: string | sy
  */
 export function Query(field?: string): Decorator.Query
 
-/**
- * {@inheritDoc (Query:1)}
- * @public
- */
 export function Query(...args: Parameters<Decorator.Query>): void
 
 export function Query(fieldOrTarget?: string | object, propertyKey?: string | symbol, parameterIndex?: number) {
@@ -264,10 +240,6 @@ export function Headers<T extends string = RequestHeaderName>(
 	name?: T extends RequestHeaderName ? RequestHeaderName : string
 ): Decorator.Headers
 
-/**
- * {@inheritDoc (Headers:1)}
- * @public
- */
 export function Headers(...args: Parameters<Decorator.Headers>): void
 
 export function Headers(nameOrTarget?: string | object, propertyKey?: string | symbol, parameterIndex?: number) {
