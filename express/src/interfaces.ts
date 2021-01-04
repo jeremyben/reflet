@@ -139,7 +139,27 @@ export type ClassType<T = any> = new (...args: any[]) => T
 /**
  * @public
  */
-export type ObjectNotFunction = object & { bind?: never }
+export type ObjectInstance = object & {
+	[Symbol.hasInstance]?(value: any): never // not a function
+	[Symbol.iterator]?(): never // not an array
+}
+
+/**
+ * @example
+ * ```ts
+ * const controllers: Controllers = [
+ *   { path: '/foo', router: Foo },
+ *   { path: '/bar', router: Bar },
+ *   { path: '/baz', router: Baz },
+ * ]
+ * register(app, controllers)
+ * ```
+ * ------
+ * @public
+ */
+export type Controllers =
+	| ((new () => any) | ObjectInstance)[]
+	| { path: string | RegExp; router: (new () => any) | ObjectInstance }[]
 
 /**
  * Request headers union.

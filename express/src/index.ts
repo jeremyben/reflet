@@ -12,4 +12,4 @@ export { Req, Res, Next, Body, Params, Query, Headers, createParamDecorator } fr
 
 export { Send, DontSend } from './send-decorator'
 
-export { Decorator } from './interfaces'
+export { Controllers, Decorator } from './interfaces'

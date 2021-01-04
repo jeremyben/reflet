@@ -113,8 +113,10 @@ describe('children controllers', () => {
 		})
 		@Router('/module')
 		class Module {
+			private barPath = '/bar'
+
 			constructor() {
-				Router.register(this, [Controller, ['/bar', barRouter] as any])
+				Router.register(this, [Controller, [this.barPath, barRouter] as any])
 			}
 		}
 
@@ -215,3 +217,92 @@ describe('children controllers', () => {
 		expect(() => register(app, [Foo])).toThrowError(/@Router/)
 	})
 })
+
+// tslint:disable: no-empty
+describe('constrain with path-router objects', () => {
+	test('happy path', () => {
+		@Router('/foo')
+		class Foo {
+			constructor() {
+				Router.register(this, [{ path: '/bar', router: Bar }])
+			}
+
+			@Get()
+			get() {}
+		}
+
+		@Router('/bar')
+		class Bar {
+			@Get()
+			get() {}
+		}
+
+		expect(() => register(express(), [{ path: '/foo', router: new Foo() }])).not.toThrow()
+	})
+
+	test('missing decorator', () => {
+		class Foo {
+			@Get()
+			get() {}
+		}
+
+		expect(() => register(express(), [{ path: 'foo', router: Foo }])).toThrow(/constrained.*"foo".*decorated/)
+	})
+
+	test('wrong string', () => {
+		@Router('f')
+		class Foo {
+			@Get()
+			get() {}
+		}
+
+		expect(() => register(express(), [{ path: 'foo', router: Foo }])).toThrow(/expects "foo"/)
+	})
+
+	test('wrong regex', () => {
+		@Router(/f/)
+		class Foo {
+			@Get()
+			get() {}
+		}
+
+		expect(() => register(express(), [{ path: /foo/, router: Foo }])).toThrow(/expects "\/foo\/"/)
+	})
+
+	test('wrong type', () => {
+		@Router(/bar/)
+		class Bar {
+			@Get()
+			get() {}
+		}
+
+		expect(() => register(express(), [{ path: 'bar', router: Bar }])).toThrow(/expects string/)
+
+		@Router('/baz')
+		class Baz {
+			@Get()
+			get() {}
+		}
+
+		expect(() => register(express(), [{ path: /baz/, router: Baz }])).toThrow(/expects regex/)
+	})
+
+	test('wrong type', () => {
+		@Router(/bar/)
+		class Bar {
+			@Get()
+			get() {}
+		}
+
+		expect(() => register(express(), [{ path: 'bar', router: Bar }])).toThrow(/expects string/)
+
+		@Router('/baz')
+		class Baz {
+			@Get()
+			get() {}
+		}
+
+		expect(() => register(express(), [{ path: /baz/, router: Baz }])).toThrow(/expects regex/)
+	})
+})
+// tslint:enable: no-empty

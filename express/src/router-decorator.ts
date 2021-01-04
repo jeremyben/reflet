@@ -1,5 +1,5 @@
 import { RouterOptions } from 'express'
-import { ClassType, Decorator, ObjectNotFunction } from './interfaces'
+import { ClassType, Controllers, Decorator, ObjectInstance } from './interfaces'
 
 const MetaKey = Symbol('router')
 
@@ -62,7 +62,7 @@ export namespace Router {
 	 * ------
 	 * @public
 	 */
-	export function register(router: ObjectNotFunction, children: (new () => any)[] | ObjectNotFunction[]) {
+	export function register(router: ObjectInstance, children: Controllers) {
 		const routerMeta = extractRouter(router.constructor as ClassType)
 
 		if (!routerMeta) {

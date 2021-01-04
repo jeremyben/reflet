@@ -1,7 +1,7 @@
 import { Router, Application, RequestHandler, Response } from 'express'
 import { promisifyHandler, promisifyErrorHandler } from './async-wrapper'
 import { globalErrorHandler, makeGlobalErrorHandlerRemovable } from './global-error-handler'
-import { ClassType, ObjectNotFunction } from './interfaces'
+import { ClassType, Controllers, ObjectInstance } from './interfaces'
 import { isPromise, isReadableStream, isClass } from './type-guards'
 
 // Extractors
@@ -34,7 +34,7 @@ import { extractSend } from './send-decorator'
  * ------
  * @public
  */
-export function register(app: Application, controllers: (new () => any)[] | ObjectNotFunction[]): Application {
+export function register(app: Application, controllers: Controllers): Application {
 	const globalMwares = getGlobalMiddlewares(app)
 
 	for (const controller of controllers) {
@@ -51,16 +51,25 @@ export function register(app: Application, controllers: (new () => any)[] | Obje
  * @internal
  */
 function attach(
-	controller: object,
+	controller: Controllers[number],
 	app: Router,
 	globalMwares: RequestHandler[],
 	parentSharedMwares: RequestHandler[] = []
 ) {
-	const controllerInstance = isClass(controller) ? new controller() : controller
-	const controllerClass = isClass(controller) ? controller : (controllerInstance.constructor as ClassType)
+	const { path: constrainedPath, router: actualController } = isPathRouterObject(controller)
+		? controller
+		: { path: undefined, router: controller }
+
+	const controllerInstance = isClass(actualController) ? new actualController() : actualController
+	const controllerClass = isClass(actualController) ? actualController : (controllerInstance.constructor as ClassType)
+
+	const routerMeta = extractRouter(controllerClass)
+
+	if (constrainedPath) {
+		checkRouterPathConstraint(constrainedPath, routerMeta, controllerClass)
+	}
 
 	// Either attach middlewares/handlers to an intermediary router or directly to the app.
-	const routerMeta = extractRouter(controllerClass)
 	const appInstance = routerMeta ? Router(routerMeta.options) : app
 
 	const routes = extractRoutes(controllerClass)
@@ -132,6 +141,71 @@ function attach(
 
 		// Finally attach the router to the app
 		app.use(routerMeta.root, appInstance)
+	}
+}
+
+/**
+ * @internal
+ */
+function isPathRouterObject(controller: Record<string, any>): controller is { path: string | RegExp; router: object } {
+	return (
+		controller.hasOwnProperty('path') &&
+		controller.hasOwnProperty('router') &&
+		(typeof controller.path === 'string' || controller.path instanceof RegExp) &&
+		(typeof controller.router === 'function' || typeof controller.router === 'object')
+	)
+}
+
+/**
+ * @internal
+ */
+function checkRouterPathConstraint(
+	constrainedPath: string | RegExp,
+	routerMeta: ReturnType<typeof extractRouter>,
+	controllerClass: ClassType
+) {
+	if (routerMeta) {
+		const notSameString =
+			typeof routerMeta.root === 'string' &&
+			typeof constrainedPath === 'string' &&
+			routerMeta.root !== constrainedPath
+
+		if (notSameString) {
+			throw Error(
+				`"${controllerClass.name}" expects "${constrainedPath}" as root path. Actual: "${routerMeta.root}".`
+			)
+		}
+
+		const notSameRegex =
+			routerMeta.root instanceof RegExp &&
+			constrainedPath instanceof RegExp &&
+			routerMeta.root.source !== constrainedPath.source
+
+		if (notSameRegex) {
+			throw Error(
+				`"${controllerClass.name}" expects "${constrainedPath}" as root path. Actual: "${routerMeta.root}".`
+			)
+		}
+
+		const shouldBeString = routerMeta.root instanceof RegExp && typeof constrainedPath === 'string'
+
+		if (shouldBeString) {
+			throw Error(
+				`"${controllerClass.name}" expects string "${constrainedPath}" as root path. Actual: "${routerMeta.root}" (regex).`
+			)
+		}
+
+		const shouldBeRegex = typeof routerMeta.root === 'string' && constrainedPath instanceof RegExp
+
+		if (shouldBeRegex) {
+			throw Error(
+				`"${controllerClass.name}" expects regex "${constrainedPath}" as root path. Actual: "${routerMeta.root}" (string).`
+			)
+		}
+	} else {
+		throw Error(
+			`"${controllerClass.name}" is constrained to the specific path "${constrainedPath}" and must be decorated with @Router.`
+		)
 	}
 }
 

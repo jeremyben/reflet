@@ -333,6 +333,24 @@ class AlbumController {
 class TrackController {}
 ```
 
+#### Paths centralization and constraint
+
+You might want the root paths of your controllers to be centralized as well, so you can have a glance at all of them.
+
+You can register all your controllers with a path constraint (Reflet will enforce those paths):
+
+```ts
+@Router('/things')
+class Controller {
+  @Get()
+  list(req: Request, res: Response, next: NextFunction) {}
+}
+
+register(app, [{ path: '/things', router: Controller }])
+```
+
+_This is also possible with `Router.register` function._
+
 ### Handler parameters injection
 
 > 🔦 `@Req`, `@Res`, `@Next`<br>
@@ -994,7 +1012,7 @@ app.listen(3000)
 
 ## Pure dependency injection
 
-If you need to go full OOP, you can pass instances (along with their dependencies) instead of classes, to the `register` function which acts as a _[Composition Root](https://blog.ploeh.dk/2011/07/28/CompositionRoot/)_.
+If you want to go full OOP and your controllers have constructor dependencies, Reflet will enforce passing them as instances (along with their dependencies) instead of classes, to the `register` function which then acts as a _[Composition Root](https://blog.ploeh.dk/2011/07/28/CompositionRoot/)_.
 
 ```ts
 interface IUserService {
@@ -1022,9 +1040,7 @@ register(app, [
 ])
 ```
 
-No DI Container magic, no cumbersome `@Inject` decorator 😵...<br>Only _**[pure DI](https://blog.ploeh.dk/2014/06/10/pure-di/)**_, which is the simplest and the most strongly typed DI.
-
-Reflet makes sure that your controllers are all passed either as classes or instances, so you can enforce DI all the way.
+No DI Container magic, no cumbersome `@Inject` decorator 😵... Only _**[pure DI](https://blog.ploeh.dk/2014/06/10/pure-di/)**_, which is the simplest and the most strongly typed DI.
 
 You can even pass dependencies down your nested controllers:
 
