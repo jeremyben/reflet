@@ -69,7 +69,7 @@ export namespace Router {
 			throw Error(`"${router.constructor.name}" must be decorated with @Router.`)
 		}
 
-		routerMeta.children = children
+		routerMeta.children = routerMeta.children ? routerMeta.children.concat(children) : children
 		Reflect.defineMetadata(MetaKey, routerMeta, router.constructor)
 	}
 }
