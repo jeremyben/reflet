@@ -103,20 +103,14 @@ describe('basic routing', () => {
 
 describe('children controllers', () => {
 	test('simple registration', async () => {
-		const barRouter = express.Router().get('', (req, res, next) => {
-			res.send({})
-		})
-
 		@Use((req, res, next) => {
 			res.status(201)
 			next()
 		})
 		@Router('/module')
 		class Module {
-			private barPath = '/bar'
-
 			constructor() {
-				Router.register(this, [Controller, [this.barPath, barRouter] as any])
+				Router.register(this, [Controller])
 			}
 		}
 
@@ -133,9 +127,6 @@ describe('children controllers', () => {
 
 		const fooGet = await rq.get('/module/foo')
 		expect(fooGet.status).toBe(201)
-
-		const barGet = await rq.get('/module/bar')
-		expect(barGet.status).toBe(201)
 	})
 
 	test('passing down dependencies, shared params, jsonParser deduplication', async () => {
@@ -303,6 +294,35 @@ describe('constrain with path-router objects', () => {
 		}
 
 		expect(() => register(express(), [{ path: /baz/, router: Baz }])).toThrow(/expects regex/)
+	})
+
+	test('attach plain express routers', async () => {
+		const plainRouter = express.Router().get('', (req, res, next) => {
+			res.send({})
+		})
+
+		@Use((req, res, next) => {
+			res.status(201)
+			next()
+		})
+		@Router('/foo')
+		class Foo {
+			constructor() {
+				Router.register(this, [{ path: '/child1', router: plainRouter }])
+				Router.register(this, [['/child2', plainRouter] as object])
+			}
+		}
+
+		const app = register(express(), [
+			{ path: '/foo', router: Foo },
+			{ path: '/bar', router: plainRouter },
+		])
+
+		const rq = supertest(app)
+
+		expect((await rq.get('/foo/child1')).status).toBe(201)
+		expect((await rq.get('/foo/child2')).status).toBe(201)
+		expect((await rq.get('/bar')).status).toBe(200)
 	})
 })
 // tslint:enable: no-empty

@@ -56,17 +56,23 @@ function attach(
 	globalMwares: RequestHandler[],
 	parentSharedMwares: RequestHandler[] = []
 ) {
-	const { path: constrainedPath, router: actualController } = isPathRouterObject(controller)
+	const { path: rootPath, router } = isPathRouterObject(controller)
 		? controller
 		: { path: undefined, router: controller }
 
-	const controllerInstance = isClass(actualController) ? new actualController() : actualController
-	const controllerClass = isClass(actualController) ? actualController : (controllerInstance.constructor as ClassType)
+	// Attach plain express routers.
+	if (rootPath && Object.getPrototypeOf(router) === Router) {
+		app.use(rootPath, router as Router)
+		return
+	}
+
+	const controllerInstance = isClass(router) ? new router() : router
+	const controllerClass = isClass(router) ? router : (controllerInstance.constructor as ClassType)
 
 	const routerMeta = extractRouter(controllerClass)
 
-	if (constrainedPath) {
-		checkRouterPathConstraint(constrainedPath, routerMeta, controllerClass)
+	if (rootPath) {
+		checkRouterPathConstraint(rootPath, routerMeta, controllerClass)
 	}
 
 	// Either attach middlewares/handlers to an intermediary router or directly to the app.

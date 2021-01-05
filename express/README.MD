@@ -335,21 +335,40 @@ class TrackController {}
 
 #### Paths centralization and constraint
 
-You might want the root paths of your controllers to be centralized as well, so you can have a glance at all of them.
-
-You can register all your controllers with a path constraint (Reflet will enforce those paths):
+You might want the root paths of your controllers to be centralized as well, so you can have a glance at all of them. 👀<br>You can register all your controllers with a path constraint (Reflet will enforce those paths):
 
 ```ts
-@Router('/things')
-class Controller {
+@Router('/foo')
+class Foo {
   @Get()
   list(req: Request, res: Response, next: NextFunction) {}
 }
 
-register(app, [{ path: '/things', router: Controller }])
+register(app, [{ path: '/foo', router: Foo }])
 ```
 
-_This is also possible with `Router.register` function._
+_Also possible with child routers and `Router.register` function._
+
+##### Plain express routers
+
+To be able to progressively switch to Reflet, you can still register your plain express routers, with the help of the previous `path` property:
+
+```ts
+@Router('/decorated')
+class Decorated {
+  @Get()
+  list(req: Request, res: Response, next: NextFunction) {}
+}
+
+const plain = express.Router().get('', (req, res, next) => {})
+
+register(app, [
+  { path: '/decorated', router: Decorated },
+  { path: '/plain', router: plain }
+])
+```
+
+_Also possible with child routers and `Router.register` function._
 
 ### Handler parameters injection
 

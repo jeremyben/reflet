@@ -1,3 +1,5 @@
+import { Router } from 'express'
+
 /**
  * Exported decorators interfaces.
  * Branded as distinct symbols for the dedicated linter and the compiler API.
@@ -159,7 +161,7 @@ export type ObjectInstance = object & {
  */
 export type Controllers =
 	| ((new () => any) | ObjectInstance)[]
-	| { path: string | RegExp; router: (new () => any) | ObjectInstance }[]
+	| { path: string | RegExp; router: (new () => any) | ObjectInstance | Router }[]
 
 /**
  * Request headers union.
