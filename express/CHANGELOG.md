@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.5.0](https://github.com/jeremyben/reflet/tree/master/express/compare/@reflet/express@1.4.0...@reflet/express@1.5.0) (2021-01-05)
+
+
+### Bug Fixes
+
+* **express:** could not call Router.register multiple times ([0eb8e34](https://github.com/jeremyben/reflet/tree/master/express/commit/0eb8e34))
+
+
+### Features
+
+* **express:** compatibility with plain express routers in register functions ([2218ddd](https://github.com/jeremyben/reflet/tree/master/express/commit/2218ddd))
+* **express:** paths centralization and contraint ([e6a11ee](https://github.com/jeremyben/reflet/tree/master/express/commit/e6a11ee))
+
+
+
+
+
 # [1.4.0](https://github.com/jeremyben/reflet/tree/master/express/compare/@reflet/express@1.3.2...@reflet/express@1.4.0) (2020-12-20)
 
 
