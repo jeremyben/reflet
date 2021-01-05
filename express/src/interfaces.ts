@@ -1,4 +1,4 @@
-import { Router } from 'express'
+import { IRouter } from 'express'
 
 /**
  * Exported decorators interfaces.
@@ -161,7 +161,7 @@ export type ObjectInstance = object & {
  */
 export type Controllers =
 	| ((new () => any) | ObjectInstance)[]
-	| { path: string | RegExp; router: (new () => any) | ObjectInstance | Router }[]
+	| { path: string | RegExp; router: (new () => any) | ObjectInstance | IRouter }[]
 
 /**
  * Request headers union.
