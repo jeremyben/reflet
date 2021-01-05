@@ -4,6 +4,10 @@ import { register, Get, Post, Put, Patch, Catch, Send, Delete } from '@reflet/ex
 import { UseInterceptor } from '../src'
 import { log } from '../../testing/tools'
 
+const consoleSpy = jest.spyOn(console, 'info').mockImplementation()
+afterEach(() => consoleSpy.mockClear())
+afterAll(() => consoleSpy.mockRestore())
+
 describe('intercept responses', () => {
 	class Controller {
 		@UseInterceptor<{ foo: number; bar: number }>(async (data, { req, res }) => {
@@ -102,7 +106,6 @@ describe("don't intercept", () => {
 	const rq = supertest(register(express(), [Controller]))
 
 	test('Error instance thrown', async () => {
-		const consoleSpy = jest.spyOn(console, 'info')
 		const res = await rq.get('')
 		// status should be inferred by our global error handler
 		expect(res.status).toBe(400)
@@ -110,7 +113,6 @@ describe("don't intercept", () => {
 	})
 
 	test('status code thrown', async () => {
-		const consoleSpy = jest.spyOn(console, 'info')
 		const res = await rq.put('')
 		// status should be inferred by our global error handler
 		expect(res.status).toBe(418)
@@ -118,21 +120,18 @@ describe("don't intercept", () => {
 	})
 
 	test('response with status code >= 400', async () => {
-		const consoleSpy = jest.spyOn(console, 'info')
 		const res = await rq.post('')
 		expect(res.status).toBe(422)
 		expect(consoleSpy).not.toBeCalledWith('intercepted')
 	})
 
 	test('write method', async () => {
-		const consoleSpy = jest.spyOn(console, 'info')
 		const res = await rq.patch('')
 		expect(res.text).toBe('nope!')
 		expect(consoleSpy).not.toBeCalledWith('intercepted')
 	})
 
 	test('empty end method', async () => {
-		const consoleSpy = jest.spyOn(console, 'info')
 		const res = await rq.delete('')
 		expect(res.text).toBe('')
 		expect(consoleSpy).not.toBeCalledWith('intercepted')
