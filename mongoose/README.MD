@@ -813,6 +813,7 @@ Reflet provides a generic type to discard Mongoose properties and methods from a
 
 * `Plain<T>` removes inherited Mongoose properties (except `_id`) and all methods from `T`.
 * `Plain.Partial<T>` does the same as `Plain` and makes remaining properties of `T` optional.
+* `Plain.PartialDeep<T>` does the same as `Plain.Partial` recursively.
 
 `Plain` also has a second type argument to omit other properties and/or make them optional:
 

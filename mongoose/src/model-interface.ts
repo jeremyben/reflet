@@ -40,32 +40,32 @@ export abstract class MongooseModel extends (class {} as RefletMongoose.Model) {
 
 	static create<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
-		doc: Plain.Partial<T>,
+		doc: Plain.PartialDeep<T>,
 		options?: mongoose.SaveOptions
 	): Promise<T>
 
 	static create<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
-		doc: Plain.Partial<T>,
+		doc: Plain.PartialDeep<T>,
 		// tslint:disable-next-line: unified-signatures
 		callback?: (err: any, res: T[]) => void
 	): Promise<T>
 
 	static create<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
-		docs: Plain.Partial<T>[],
+		docs: Plain.PartialDeep<T>[],
 		callback?: (err: any, res: T[]) => void
 	): Promise<T[]>
 
 	static create<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
-		docs: Plain.Partial<T>[],
+		docs: Plain.PartialDeep<T>[],
 		options?: mongoose.SaveOptions,
 		callback?: (err: any, res: T[]) => void
 	): Promise<T[]>
 
 	// @ts-ignore implementation
-	static create<T extends MongooseModel>(this: new (...a: any[]) => T, ...docs: Plain.Partial<T>[]): Promise<T>
+	static create<T extends MongooseModel>(this: new (...a: any[]) => T, ...docs: Plain.PartialDeep<T>[]): Promise<T>
 
 	// @ts-ignore implementation
 	static exists<T extends MongooseModel>(

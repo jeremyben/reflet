@@ -121,6 +121,37 @@ export namespace Decorator {
 /**
  * @public
  */
+type PrimitiveOrBuiltIn =
+	| number
+	| boolean
+	| string
+	| symbol
+	| null
+	| bigint
+	| Date
+	| Buffer
+	| mongoose.Types.Decimal128
+	| mongodb.Binary
+
+/**
+ * @public
+ */
+// https://stackoverflow.com/a/49936686/4776628
+type _PartialDeep<T> = {
+	[P in keyof T]?: T[P] extends PrimitiveOrBuiltIn[] | PrimitiveOrBuiltIn[][]
+		? T[P]
+		: T[P] extends (infer U)[]
+		? _PartialDeep<U>[]
+		: T[P] extends Map<infer K, infer V>
+		? Map<K, _PartialDeep<V>>
+		: T[P] extends PrimitiveOrBuiltIn
+		? T[P]
+		: _PartialDeep<T[P]>
+}
+
+/**
+ * @public
+ */
 type PlainKeys<T> = {
 	[K in keyof T]: K extends '_id' ? K : K extends keyof mongoose.Document ? never : T[K] extends Function ? never : K
 }[keyof T]
@@ -217,6 +248,13 @@ export namespace Plain {
 	 * @public
 	 */
 	export type Partial<T> = globalThis.Partial<_Plain<T>>
+
+	/**
+	 * Omits Mongoose properties and all methods, and makes remaining keys optional, recursively.
+	 * @template T - mongoose document.
+	 * @public
+	 */
+	export type PartialDeep<T> = _PartialDeep<_Plain<T>>
 }
 
 // tslint:enable: no-shadowed-variable
