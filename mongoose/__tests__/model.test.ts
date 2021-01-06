@@ -82,7 +82,7 @@ test('model discriminators', async () => {
 	@Model.Discriminator(User)
 	class Developer extends User {
 		@Field([String])
-		languages: string[]
+		languages: mongoose.Types.Array<string>
 
 		@Kind('developer')
 		kind: 'developer'

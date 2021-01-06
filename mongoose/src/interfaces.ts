@@ -1,4 +1,5 @@
 import * as mongoose from 'mongoose'
+import * as mongodb from 'mongodb'
 
 /**
  * Exported decorators interfaces.
@@ -115,6 +116,8 @@ export namespace Decorator {
 	}
 }
 
+// tslint:disable: no-shadowed-variable
+
 /**
  * @public
  */
@@ -126,11 +129,22 @@ type PlainKeys<T> = {
  * Recursive.
  * @public
  */
-type Plain_<T> = {
-	[K in PlainKeys<T>]: T[K] extends mongoose.Document
-		? Plain_<T[K]>
+type _Plain<T> = {
+	[K in Exclude<PlainKeys<T>, undefined>]: T[K] extends
+		| mongoose.Document
+		| mongoose.Types.Subdocument
+		| mongoose.Types.Embedded
+		? _Plain<T[K]>
+		: T[K] extends mongoose.Types.DocumentArray<infer U>
+		? _Plain<U>[]
+		: T[K] extends mongoose.Types.Array<infer U>
+		? U[]
 		: T[K] extends (infer U & mongoose.Document)[] // Must also constraint to mongoose.document to avoid problems with regular arrays
-		? Plain_<U>[]
+		? _Plain<U>[]
+		: T[K] extends mongoose.Types.Map<infer V>
+		? Map<string, V>
+		: T[K] extends mongoose.Types.Buffer
+		? mongodb.Binary
 		: T[K]
 }
 
@@ -167,11 +181,11 @@ export type Plain<T, O extends { Omit?: PlainKeys<T>; Optional?: PlainKeys<T> } 
 	[key: string]: any
 }
 	? Omit<
-			Plain_<T>,
+			_Plain<T>,
 			(O['Omit'] extends string ? O['Omit'] : never) | (O['Optional'] extends string ? O['Optional'] : never)
 	  > &
 			Pick<Partial<T>, O['Optional'] extends string ? O['Optional'] : never>
-	: Plain_<T>
+	: _Plain<T>
 
 export namespace Plain {
 	/**
@@ -202,8 +216,10 @@ export namespace Plain {
 	 * @template T - mongoose document.
 	 * @public
 	 */
-	export type Partial<T> = globalThis.Partial<Plain_<T>>
+	export type Partial<T> = globalThis.Partial<_Plain<T>>
 }
+
+// tslint:enable: no-shadowed-variable
 
 /**
  * Interface with the right keys but with `any` types, so we can enforce decorated classes to a minimal interface,

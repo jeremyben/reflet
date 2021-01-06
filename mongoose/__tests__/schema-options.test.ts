@@ -50,7 +50,7 @@ test('schema with reference', async () => {
 				ref: SReference,
 			},
 		])
-		srefs: SReference[]
+		srefs: mongoose.Types.DocumentArray<SReference>
 
 		@Field.Nested({
 			lat: { type: Number },
@@ -66,7 +66,13 @@ test('schema with reference', async () => {
 		}
 
 		@Field(schemaFrom(SubSchema))
-		sub: SubSchema
+		sub: SubSchema & mongoose.Types.Subdocument
+
+		@Field(mongoose.Schema.Types.Buffer)
+		buf: mongoose.Types.Buffer
+
+		@Field(mongoose.Schema.Types.Decimal128)
+		dec: mongoose.Types.Decimal128
 
 		hello() {
 			return 'hello'
@@ -79,11 +85,13 @@ test('schema with reference', async () => {
 		numbers: [[1, 2, 3]],
 		srefs: srefs.map((sref) => sref._id),
 		sub: { names: ['julia', 'arthur'] },
+		buf: Buffer.from('yolo') as any,
+		dec: mongoose.Types.Decimal128.fromString('13'),
 	})
 
 	const s = (await S.findOne({ name: 'Jeremy' }).populate('srefs'))!
 	// console.log(s)
-	// const plain = s.toObject()
+	// console.log('object', s.toObject())
 
 	expect(s.srefs[0]._id).toBeInstanceOf(mongoose.Types.ObjectId)
 	expect(s.srefs[0].hello).toBe('hi')
