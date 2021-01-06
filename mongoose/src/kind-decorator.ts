@@ -26,10 +26,6 @@ const MetaKind = Symbol('kind')
  */
 export function Kind(value?: string): Decorator.Kind
 
-/**
- * {@inheritDoc (Kind:1)}
- * @public
- */
 export function Kind(...args: Parameters<Decorator.Kind>): void
 
 export function Kind(valueOrTarget?: string | Object, key?: string | symbol) {
