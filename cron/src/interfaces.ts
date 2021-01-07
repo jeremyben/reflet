@@ -56,9 +56,9 @@ export interface JobParameters<T extends object = object, PassJob extends boolea
 	onComplete?: () => void
 	timeZone?: Zone
 	utcOffset?: Offset | number
-	errorHandler?: (error: unknown) => void
+	catchError?: (error: unknown) => void
 	preventOverlap?: boolean
-	retryOptions?: RetryOptions
+	retry?: RetryOptions
 }
 
 /**

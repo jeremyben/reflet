@@ -25,8 +25,8 @@ export function initCronJobs<T extends object>(target: T) {
 		const timeZone = extract('timeZone', targetClass, key)
 		const utcOffset = extract('utcOffset', targetClass, key)
 		const unrefTimeout = extract('unrefTimeout', targetClass, key)
-		const errorHandler = extract('errorHandler', targetClass, key)
-		const retryOptions = extract('retryOptions', targetClass, key)
+		const catchError = extract('catchError', targetClass, key)
+		const retry = extract('retry', targetClass, key)
 		const preventOverlap = extract('preventOverlap', targetClass, key)
 		const passCurrentJob = extract('passCurrentJob', targetClass, key)
 
@@ -41,9 +41,9 @@ export function initCronJobs<T extends object>(target: T) {
 			timeZone,
 			utcOffset,
 			unrefTimeout,
-			errorHandler,
+			catchError,
 			preventOverlap,
-			retryOptions,
+			retry,
 			passCurrentJob,
 		})
 

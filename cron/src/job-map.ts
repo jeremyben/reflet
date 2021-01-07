@@ -55,8 +55,8 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 		const timeZone = parameters.timeZone || extract('timeZone', contextClass)
 		const utcOffset = parameters.utcOffset ?? extract('utcOffset', contextClass)
 		const unrefTimeout = parameters.unrefTimeout ?? extract('unrefTimeout', contextClass)
-		const errorHandler = parameters.errorHandler || extract('errorHandler', contextClass)
-		const retryOptions = parameters.retryOptions || extract('retryOptions', contextClass)
+		const catchError = parameters.catchError || extract('catchError', contextClass)
+		const retry = parameters.retry || extract('retry', contextClass)
 		const preventOverlap = parameters.preventOverlap || extract('preventOverlap', contextClass)
 		const passCurrentJob = parameters.passCurrentJob
 
@@ -67,11 +67,11 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 
 			this.firing.add(key)
 
-			if (retryOptions) {
+			if (retry) {
 				// Clone to avoid mutation of original decorator options
-				let retries = retryOptions.maxRetries
-				let delay = retryOptions.delay || 0
-				const { delayFactor, delayMax, condition } = retryOptions
+				let retries = retry.maxRetries
+				let delay = retry.delay || 0
+				const { delayFactor, delayMax, condition } = retry
 
 				do {
 					try {
@@ -84,7 +84,7 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 						break
 					} catch (error) {
 						if (--retries < 0 || (condition && !condition(error))) {
-							if (errorHandler) errorHandler(error)
+							if (catchError) catchError(error)
 							else console.error(error)
 							break
 						}
@@ -114,7 +114,7 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 						await onTick.call(this.context, onCompleteArg)
 					}
 				} catch (error) {
-					if (errorHandler) errorHandler(error)
+					if (catchError) catchError(error)
 					else console.error(error)
 				}
 			}

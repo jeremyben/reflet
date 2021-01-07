@@ -8,9 +8,9 @@ const META: Partial<Record<keyof JobParameters, symbol>> = {
 	timeZone: Symbol('cron-timezone'),
 	utcOffset: Symbol('cron-utcoffset'),
 	unrefTimeout: Symbol('cron-unreftimeout'),
-	errorHandler: Symbol('cron-catch'),
+	catchError: Symbol('cron-catch'),
 	preventOverlap: Symbol('cron-preventoverlap'),
-	retryOptions: Symbol('cron-retry'),
+	retry: Symbol('cron-retry'),
 	passCurrentJob: Symbol('current-job'),
 }
 
@@ -205,8 +205,18 @@ export namespace Cron {
 	 */
 	export function Catch(errorHandler: (error: unknown) => void): ClassOrMethodDecorator {
 		return (target, key, descriptor) => {
-			if (key) Reflect.defineMetadata(META.errorHandler, errorHandler, target, key)
-			else Reflect.defineMetadata(META.errorHandler, errorHandler, target)
+			if (key) Reflect.defineMetadata(META.catchError, errorHandler, target, key)
+			else Reflect.defineMetadata(META.catchError, errorHandler, target)
+		}
+	}
+
+	/**
+	 * @public
+	 */
+	export function Retry(options: RetryOptions): ClassOrMethodDecorator {
+		return (target, key, descriptor) => {
+			if (key) Reflect.defineMetadata(META.retry, options, target, key)
+			else Reflect.defineMetadata(META.retry, options, target)
 		}
 	}
 
@@ -248,16 +258,6 @@ export namespace Cron {
 					Reflect.defineMetadata(META.preventOverlap, false, target, key)
 				}
 			}
-		}
-	}
-
-	/**
-	 * @public
-	 */
-	export function Retry(options: RetryOptions): ClassOrMethodDecorator {
-		return (target, key, descriptor) => {
-			if (key) Reflect.defineMetadata(META.retryOptions, options, target, key)
-			else Reflect.defineMetadata(META.retryOptions, options, target)
 		}
 	}
 }
