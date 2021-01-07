@@ -1,4 +1,4 @@
-import { JobMap, Container, initialized } from './job-map'
+import { JobMap, initialized } from './job-map'
 import { extract } from './cron-decorators'
 import { ClassType, Job } from './interfaces'
 
@@ -49,17 +49,12 @@ export function initCronJobs<T extends object>(target: T) {
 		})
 
 		// Don't pass runOnInit to the parameters.
-		// launch later instead of relying on library, to be able to get all context,
-		// like private methods and `container`.
+		// launch later instead of relying on library, to be able to get all context, like private methods.
 		// https://github.com/kelektiv/node-cron/blob/v1.8.2/lib/cron.js#L570
 		const runOnInit = extract('runOnInit', targetClass, key) ?? extract('runOnInit', targetClass)
 		if (runOnInit) {
 			runOnInitJobs.push(jobMap.get(<any>key))
 		}
-	}
-
-	if (targetInstance instanceof Container) {
-		Object.defineProperty(targetInstance, 'container', { value: jobMap })
 	}
 
 	for (const runOnInitJob of runOnInitJobs) {

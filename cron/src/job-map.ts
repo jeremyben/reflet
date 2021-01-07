@@ -158,23 +158,3 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 	// @ts-ignore implementation
 	get(key: MethodKeys<T>): Job
 }
-
-/**
- * Creates a `container` property, to allow retrieving actual cron job context from instance methods.
- *
- * @example
- * ```ts
- * class Jobs extends Container<Jobs> {
- *   ＠Cron('* * * * * *')
- *   logMessage() {
- *     console.log('message')
- *     this.container.get('logMessage').stop()
- *   }
- * }
- * ```
- * ---
- * @public
- */
-export class Container<T extends object> {
-	container!: JobMap<T>
-}
