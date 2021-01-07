@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.4.1](https://github.com/jeremyben/reflet/tree/master/mongoose/compare/@reflet/mongoose@1.4.0...@reflet/mongoose@1.4.1) (2021-01-07)
+
+
+### Bug Fixes
+
+* **mongoose:** improve Plain on different mongoose types ([1b95b79](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/1b95b79))
+* **mongoose:** Plain.PartialDeep, applied by default to create signature ([9050721](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/9050721))
+
+
+
+
+
 # [1.4.0](https://github.com/jeremyben/reflet/tree/master/mongoose/compare/@reflet/mongoose@1.3.0...@reflet/mongoose@1.4.0) (2020-12-21)
 
 
