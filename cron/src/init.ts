@@ -10,10 +10,9 @@ export function initCronJobs<T extends object>(target: T) {
 	const targetClass = isClass(target) ? target : (targetInstance.constructor as ClassType)
 
 	const jobMap = new JobMap<T extends ClassType ? InstanceType<T> : T>(targetInstance)
+	const runOnInitJobs: Job[] = []
 
 	const keys = Object.getOwnPropertyNames(targetClass.prototype)
-
-	const runOnInitJobs: Job[] = []
 
 	for (const key of keys) {
 		if (/^(constructor)$/.test(key)) continue
@@ -34,7 +33,7 @@ export function initCronJobs<T extends object>(target: T) {
 		const methodDescriptor = Object.getOwnPropertyDescriptor(targetClass.prototype, key)!
 		const method = methodDescriptor.value as (...args: any[]) => void | Promise<void>
 
-		jobMap.set(key, {
+		jobMap.set(<any>key, {
 			cronTime,
 			onTick: method,
 			onComplete,
