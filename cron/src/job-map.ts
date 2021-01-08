@@ -8,9 +8,6 @@ export const initialized = Symbol('initialized')
  * @public
  */
 export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
-	/** List of job's keys being fired */
-	private firing = new Set<string>()
-
 	/** Reference to the decorated instance */
 	private context: T
 
@@ -61,11 +58,13 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 		const passCurrentJob = parameters.passCurrentJob
 
 		const onTickExtended = async (onCompleteArg?: () => void) => {
-			if (preventOverlap && this.firing.has(key)) return
+			const currentJob = this.get(<any>key)
 
-			let currentJob: Job | undefined
+			if (preventOverlap && currentJob.firing) {
+				return
+			}
 
-			this.firing.add(key)
+			;(currentJob as any).firing = true
 
 			if (retry) {
 				// Clone to avoid mutation of original decorator options
@@ -76,7 +75,6 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 				do {
 					try {
 						if (passCurrentJob) {
-							if (!currentJob) currentJob = this.get(<any>key)
 							await onTick.call(this.context, currentJob)
 						} else {
 							await onTick.call(this.context, onCompleteArg)
@@ -108,7 +106,6 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 			else {
 				try {
 					if (passCurrentJob) {
-						if (!currentJob) currentJob = this.get(<any>key)
 						await onTick.call(this.context, currentJob)
 					} else {
 						await onTick.call(this.context, onCompleteArg)
@@ -119,7 +116,7 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 				}
 			}
 
-			this.firing.delete(key)
+			;(currentJob as any).firing = false
 		}
 
 		// Rename to the name of the instance method, for a better error stack.
@@ -138,7 +135,8 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 
 		Object.defineProperty(job, 'firing', {
 			enumerable: true,
-			get: () => this.firing.has(key),
+			writable: true,
+			value: false,
 		})
 
 		Object.defineProperty(job, 'name', {

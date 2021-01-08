@@ -31,11 +31,10 @@ export function initCronJobs<T extends object>(target: T) {
 		const passCurrentJob = extract('passCurrentJob', targetClass, key)
 
 		const methodDescriptor = Object.getOwnPropertyDescriptor(targetClass.prototype, key)!
-		const method = methodDescriptor.value as (...args: any[]) => void | Promise<void>
 
 		jobMap.set(<any>key, {
 			cronTime,
-			onTick: method,
+			onTick: methodDescriptor.value,
 			onComplete,
 			start,
 			timeZone,
