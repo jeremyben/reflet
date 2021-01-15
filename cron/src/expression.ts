@@ -3,6 +3,16 @@
 // https://github.com/nestjs/schedule/blob/master/lib/enums/cron-expression.enum.ts
 
 /**
+ * Predefined cron expressions.
+ *
+ * @example
+ * ```ts
+ * class Jobs {
+ *   ＠Cron(Expression.EVERY_SECOND)
+ *   doSomething() {}
+ * }
+ * ```
+ * ---
  * @public
  */
 export enum Expression {

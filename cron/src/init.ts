@@ -3,6 +3,22 @@ import { extract } from './cron-decorators'
 import { ClassType, Job } from './interfaces'
 
 /**
+ * Initializes cron jobs from a decorated class.
+ *
+ * @example
+ * ```ts
+ * class Jobs {
+ *   ＠Cron(Expression.EVERY_SECOND)
+ *   doSomething() {}
+ *
+ *   ＠Cron(Expression.EVERY_DAY_AT_MIDNIGHT)
+ *   doSomethingElse() {}
+ * }
+ *
+ * const jobs = initCronJobs(Jobs)
+ * jobs.startAll()
+ * ```
+ * ---
  * @public
  */
 export function initCronJobs<T extends object>(target: T) {

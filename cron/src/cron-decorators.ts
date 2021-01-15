@@ -17,6 +17,21 @@ const META: Partial<Record<keyof JobParameters, symbol>> = {
 /**
  * The time to fire off your job.
  * This can be in the form of cron syntax or a JS `Date` object.
+ *
+ * @remarks
+ * To help with cron syntax:
+ * - use `Expression` enum
+ * - [crontab guru](https://crontab.guru)
+ *
+ * ---
+ * @example
+ * ```ts
+ * class Jobs {
+ *   ＠Cron('* * * * * *')
+ *   doSomething() {}
+ * }
+ * ```
+ * ---
  * @public
  */
 export function Cron(cronTime: string | Date): MethodDecorator {
@@ -27,7 +42,8 @@ export function Cron(cronTime: string | Date): MethodDecorator {
 
 export namespace Cron {
 	/**
-	 * A function that will fire when the job is stopped with `job.stop()`, and may also be called by onTick at the end of each run.
+	 * A function that will fire when the job is stopped with `job.stop()`,
+	 * and may also be called by onTick at the end of each run.
 	 * @public
 	 */
 	export function OnComplete(onComplete: () => void): ClassOrMethodDecorator {
@@ -38,7 +54,20 @@ export namespace Cron {
 	}
 
 	/**
-	 * This will immediately fire your `onTick` function as soon as the requisit initialization has happened.
+	 * This will immediately fire your `onTick` function as soon as the requisit initialization has happened (with `initCronJobs`).
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Cron.RunOnInit
+	 * class Jobs {
+	 *   ＠Cron(Expression.EVERY_HOUR)
+	 *   doSomething() {}
+	 * }
+	 *
+	 * const jobs = initCronJobs(Jobs) // Will run the jobs once without starting them
+	 * jobs.startAll() // Will start the jobs (run every hour)
+	 * ```
+	 * ---
 	 * @public
 	 */
 	export function RunOnInit(...args: Parameters<ClassOrMethodDecorator>): void
@@ -81,8 +110,21 @@ export namespace Cron {
 
 	/**
 	 * Specifies whether to start the job just before exiting the constructor. By default this is set to false.
-	 * If left at default you will need to call `job.start()` in order to start the job.
+	 * If left at default you will need to call `start()` or `startAll()` in order to start the job.
+	 *
 	 * This does not immediately fire your `onTick` function, it just gives you more control over the behavior of your jobs.
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Cron.Start
+	 * class Jobs {
+	 *   ＠Cron(Expression.EVERY_SECOND)
+	 *   doSomething() {}
+	 * }
+	 *
+	 * const jobs = initCronJobs(Jobs) // Will start the jobs, no need to call `startAll()`
+	 * ```
+	 * ---
 	 * @public
 	 */
 	export function Start(...args: Parameters<ClassOrMethodDecorator>): void
@@ -127,10 +169,17 @@ export namespace Cron {
 	 * Specify the timezone for the execution. This will modify the actual time relative to your timezone.
 	 * If the timezone is invalid, an error is thrown.
 	 *
-	 * You can check all timezones available at [Moment Timezone Website](http://momentjs.com/timezone/).
-	 *
 	 * _Probably don't use both `timeZone` and `utcOffset` together or weird things may happen._
 	 *
+	 * @example
+	 * ```ts
+	 * ＠Cron.TimeZone('Europe/Paris')
+	 * class Jobs {
+	 *   ＠Cron(Expression.EVERY_SECOND)
+	 *   doSomething() {}
+	 * }
+	 * ```
+	 * ---
 	 * @public
 	 */
 	export function TimeZone(timezone: Zone): ClassOrMethodDecorator {
@@ -145,6 +194,15 @@ export namespace Cron {
 	 *
 	 * _Probably don't use both `timeZone` and `utcOffset` together or weird things may happen._
 	 *
+	 * @example
+	 * ```ts
+	 * ＠Cron.UtcOffset('+01:00')
+	 * class Jobs {
+	 *   ＠Cron(Expression.EVERY_SECOND)
+	 *   doSomething() {}
+	 * }
+	 * ```
+	 * ---
 	 * @see https://momentjs.com/docs/#/manipulating/utc-offset/
 	 * @public
 	 */
@@ -156,10 +214,21 @@ export namespace Cron {
 	}
 
 	/**
-	 * If you have code that keeps the event loop running and want to stop the node process when that finishes regardless of the state of your cronjob,
-	 * you can do so making use of this parameter.
+	 * If you have code that keeps the event loop running and want to stop the node process when that finishes
+	 * regardless of the state of your cronjob, you can do so making use of this parameter.
+	 *
 	 * This is off by default and cron will run as if it needs to control the event loop.
-	 * For more information take a look at [timers#timers_timeout_unref](https://nodejs.org/api/timers.html#timers_timeout_unref) from the NodeJS docs.
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Cron.UnrefTimeout
+	 * class Jobs {
+	 *   ＠Cron(Expression.EVERY_SECOND)
+	 *   doSomething() {}
+	 * }
+	 * ```
+	 * ---
+	 * @see https://nodejs.org/api/timers.html#timers_timeout_unref
 	 * @public
 	 */
 	export function UnrefTimeout(...args: Parameters<ClassOrMethodDecorator>): void
@@ -201,6 +270,21 @@ export namespace Cron {
 	}
 
 	/**
+	 * Handles job errors. By default, errors are caught and logged to `stderr`.
+	 * This decorator allows you to do something else with your errors.
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Cron.Catch(async (err) => {
+	 *   console.error(err)
+	 *   await db.insert(err)
+	 * })
+	 * class Jobs {
+	 *   ＠Cron(Expression.EVERY_SECOND)
+	 *   doSomething() {}
+	 * }
+	 * ```
+	 * ---
 	 * @public
 	 */
 	export function Catch(errorHandler: (error: unknown) => void): ClassOrMethodDecorator {
@@ -211,6 +295,16 @@ export namespace Cron {
 	}
 
 	/**
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Cron.Retry({ maxRetries: 3, delay: 100, delayFactor: 2, delayMax: 1000 })
+	 * class Jobs {
+	 *   ＠Cron(Expression.EVERY_HOUR)
+	 *   doSomething() {}
+	 * }
+	 * ```
+	 * ---
 	 * @public
 	 */
 	export function Retry(options: RetryOptions): ClassOrMethodDecorator {
@@ -221,6 +315,18 @@ export namespace Cron {
 	}
 
 	/**
+	 * Prevents the job from being fired if the previous occurence is not finished.
+	 * Useful for potentially long jobs firing every second.
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Cron.PreventOverlap
+	 * class Jobs {
+	 *   ＠Cron(Expression.EVERY_SECOND)
+	 *   doSomething() {}
+	 * }
+	 * ```
+	 * ---
 	 * @public
 	 */
 	export function PreventOverlap(...args: Parameters<ClassOrMethodDecorator>): void
@@ -263,6 +369,18 @@ export namespace Cron {
 }
 
 /**
+ * Access current job from its own `onTick` function.
+ *
+ * @example
+ * ```ts
+ * class Jobs {
+ *   ＠Cron(Expression.EVERY_SECOND)
+ *   doSomething(＠CurrentJob job: Job) {
+ *     job.stop()
+ *   }
+ * }
+ * ```
+ * ---
  * @public
  */
 export function CurrentJob(...args: Parameters<ParameterDecorator>): void
