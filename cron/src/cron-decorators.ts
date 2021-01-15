@@ -289,7 +289,7 @@ export namespace Cron {
 	 * ---
 	 * @public
 	 */
-	export function Catch(errorHandler: (error: unknown) => void): ClassOrMethodDecorator {
+	export function Catch<T = unknown>(errorHandler: (error: T) => void): ClassOrMethodDecorator {
 		return (target, key, descriptor) => {
 			if (key) Reflect.defineMetadata(META.catchError, errorHandler, target, key)
 			else Reflect.defineMetadata(META.catchError, errorHandler, target)

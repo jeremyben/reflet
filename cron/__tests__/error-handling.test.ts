@@ -1,20 +1,16 @@
 import { Cron, Expression, initCronJobs } from '../src'
 
-test('retry once and succeed', async () => {
-	let thrown = false
-	let success = 0
+const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation()
+afterEach(() => consoleErrorSpy.mockClear())
+afterAll(() => consoleErrorSpy.mockRestore())
 
+test('catch', async () => {
+	@Cron.Catch((err: Error) => console.error('oops'))
 	@Cron.RunOnInit
-	@Cron.Retry({ maxRetries: 1 })
 	class Jobs {
 		@Cron(Expression.EVERY_SECOND)
 		async throwSome() {
-			if (!thrown) {
-				thrown = true
-				throw Error()
-			}
-
-			success++
+			throw Error()
 		}
 	}
 
@@ -22,6 +18,39 @@ test('retry once and succeed', async () => {
 	await new Promise((r) => setTimeout(r, 50))
 	jobs.stopAll()
 
+	expect(consoleErrorSpy).toBeCalledWith('oops')
+	expect(consoleErrorSpy).not.toBeCalledWith(expect.any(Error))
+})
+
+test('retry once on specific error and succeed', async () => {
+	let thrown = false
+	let success = 0
+
+	@Cron.RunOnInit
+	@Cron.Retry({ maxRetries: 1, condition: (err: Error) => err.name === 'TypeError' })
+	class Jobs {
+		@Cron(Expression.EVERY_SECOND)
+		async throwSome() {
+			if (!thrown) {
+				thrown = true
+				throw TypeError()
+			}
+
+			success++
+		}
+
+		@Cron(Expression.EVERY_SECOND)
+		async throwSomeOther() {
+			throw ReferenceError()
+		}
+	}
+
+	const jobs = initCronJobs(Jobs)
+	await new Promise((r) => setTimeout(r, 50))
+	jobs.stopAll()
+
+	expect(consoleErrorSpy).toBeCalledWith(expect.any(ReferenceError))
+	expect(consoleErrorSpy).not.toBeCalledWith(expect.any(TypeError))
 	expect(success).toBe(1)
 })
 

@@ -78,7 +78,7 @@ export interface RetryOptions {
 	delayMax?: number
 
 	/** Filter function with the error as parameter. */
-	condition?: (error: unknown) => boolean
+	condition?: (error: any) => boolean
 }
 
 /**
