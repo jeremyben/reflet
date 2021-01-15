@@ -1,6 +1,7 @@
 // Copied from @nestjs/schedule.
 // Credit goes to the NestJs team.
 // https://github.com/nestjs/schedule/blob/master/lib/enums/cron-expression.enum.ts
+/* istanbul ignore file */
 
 /**
  * Predefined cron expressions.

@@ -5,13 +5,19 @@ afterEach(() => consoleSpy.mockClear())
 afterAll(() => consoleSpy.mockRestore())
 
 test('dynamic jobs can access class context and inherit class decorator behavior', async () => {
+	class Service {
+		user = 'Jeremy'
+	}
+
 	@Cron.TimeZone('Europe/Paris')
 	@Cron.RunOnInit
 	@Cron.Start
 	class Jobs {
+		constructor(private service: Service) {}
+
 		@Cron(Expression.EVERY_10_MINUTES)
 		foo() {
-			console.info('foo')
+			console.info(this.service.user)
 		}
 
 		get baz() {
@@ -19,7 +25,7 @@ test('dynamic jobs can access class context and inherit class decorator behavior
 		}
 	}
 
-	const jobs = initCronJobs(Jobs)
+	const jobs = initCronJobs(new Jobs(new Service()))
 
 	jobs.set('bar', {
 		cronTime: Expression.EVERY_10_MINUTES,
@@ -32,7 +38,7 @@ test('dynamic jobs can access class context and inherit class decorator behavior
 
 	jobs.stopAll()
 
-	expect(consoleSpy).toBeCalledWith('foo')
+	expect(consoleSpy).toBeCalledWith('Jeremy')
 	expect(consoleSpy).toBeCalledWith('baz')
 })
 
@@ -59,6 +65,7 @@ test('pass current job', async () => {
 	})
 
 	await new Promise((r) => setTimeout(r, 50))
+	jobs.stopAll()
 
 	expect(consoleSpy).toBeCalledWith('Jobs.foo')
 	expect(consoleSpy).toBeCalledWith('Jobs.bar')

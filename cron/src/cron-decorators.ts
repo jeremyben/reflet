@@ -1,5 +1,7 @@
 import { ClassOrMethodDecorator, ClassType, JobParameters, Offset, RetryOptions, Zone } from './interfaces'
 
+/* istanbul ignore file - lots of branches with no logic */
+
 const META: Partial<Record<keyof JobParameters, symbol>> = {
 	cronTime: Symbol('cron-time'),
 	onComplete: Symbol('cron-oncomplete'),
