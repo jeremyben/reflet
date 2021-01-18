@@ -8,6 +8,14 @@ export type ClassType<T = any> = new (...args: any[]) => T
 /**
  * @public
  */
+export type ObjectInstance = object & {
+	[Symbol.hasInstance]?(value: any): never // not a function
+	[Symbol.iterator]?(): never // not an array
+}
+
+/**
+ * @public
+ */
 export type ClassOrMethodDecorator = <TFunction extends Function>(
 	target: TFunction | Object,
 	propertyKey?: string | symbol,

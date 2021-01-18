@@ -1,6 +1,6 @@
 import { JobMap, initialized } from './job-map'
 import { extract } from './cron-decorators'
-import { ClassType, Job } from './interfaces'
+import { ClassType, Job, ObjectInstance } from './interfaces'
 
 /**
  * Initializes cron jobs from a decorated class.
@@ -21,7 +21,7 @@ import { ClassType, Job } from './interfaces'
  * ---
  * @public
  */
-export function initCronJobs<T extends object>(target: T) {
+export function initCronJobs<T extends (new () => any) | ObjectInstance>(target: T) {
 	const targetInstance = isClass(target) ? new target() : target
 	const targetClass = isClass(target) ? target : (targetInstance.constructor as ClassType)
 
