@@ -18,6 +18,7 @@
 		"**/test.ts",
 		"**/*.md",
 		"**/*.MD",
-		"**/coverage-summary.json"
+		"**/coverage-summary.json",
+		"**/jest*"
 	]
 }

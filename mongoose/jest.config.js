@@ -3,7 +3,7 @@ const { join } = require('path')
 // https://kulshekhar.github.io/ts-jest/user/config/#advanced
 const tsjestPreset = require('ts-jest/presets').defaults
 
-/** @type {Partial<import('@jest/types').Config.DefaultOptions> & {rootDir: string, preset: string, transform: any}} */
+/** @type {import('@jest/types').Config.InitialOptionsWithRootDir} */
 const config = {
 	rootDir: process.cwd(),
 	// https://github.com/shelfio/jest-mongodb
