@@ -52,6 +52,29 @@ const user = new User({ email: 'jeremy@example.com', name: 'Jeremy' })
 await user.save()
 ```
 
+## [Reflet/cron](./cron)
+
+Handle your cron jobs in a declarative and flexbile way. Here's **[the doc](./cron/README.MD)**.
+
+```ts
+@Cron.TimeZone('Europe/Paris')
+@Cron.Retry({ attempts: 2, delay: 1000 })
+class Jobs {
+  @Cron(Expression.EVERY_SECOND)
+  logMessage() {
+    console.log('This is annoying');
+  }
+
+  @Cron(Expression.EVERY_DAY_AT_MIDNIGHT)
+  async sendEmailToAdmin() {
+    await emailClient.send({ to: 'admin@github.com', content: 'This is fine' })
+  }
+}
+
+const jobs = initCronJobs(Jobs)
+jobs.startAll()
+```
+
 ## Philosophy 📣
 
 Why another decorator framework ? Simply <sub>(and biasedly)</sub> put, a better developer experience.

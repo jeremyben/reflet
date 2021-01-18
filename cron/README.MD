@@ -6,10 +6,11 @@ The **best** decorators for [Cron](https://github.com/kelektiv/node-cron). Have 
 * [Getting started](#getting-started)
 * [Basic Job](#basic-job)
 * [Common options](#common-options)
-* [Error handling](#error-handling)
+* [Errors and retries](#errors-and-retries)
 * [Overlaps](#overlaps)
-* [Access current job](#access-current-job)
+* [Current job access](#current-job-access)
 * [Dynamic jobs](#dynamic-jobs)
+* [Pure dependency injection](#pure-dependency-injection)
 
 ## Getting started
 
@@ -119,7 +120,6 @@ class Jobs {
 > 🔦 `@Cron.Start`, `@Cron.RunOnInit`, `@Cron.OnComplete(fn)`, `@Cron.TimeZone(tz)`, `@Cron.UtcOffset(offset)`, `@Cron.UnrefTimeout`
 > 💫 Related node-cron parameters: [`start, runOnInit, onComplete, timezone, utcOffset, unrefTimeout`](https://github.com/kelektiv/node-cron#api)
 
-
 * `@Cron.Start`: Starts the job after init (does not immediately fire its function). _Can be used with or without invokation._
 * `@Cron.RunOnInit`: Fire the job's function on init. _Can be used with or without invokation._
 * `@Cron.OnComplete(fn)`: A function that will fire when the job is stopped with job.stop().
@@ -166,7 +166,7 @@ class Jobs {
 }
 ```
 
-## Error handling
+## Errors and retries
 
 Errors happening in a cron job are automatically logged to `stderr` instead of crashing the server.
 
@@ -191,6 +191,12 @@ class Jobs {
 
 > 🔦 `@Cron.Retry(options)`
 
+* `attempts`: Number of retry attempts.
+* `delay`: Delay between retry attemps in milliseconds.
+* `delayFactor`: Increases each time the previous delay by a multiplicative factor.
+* `delayMax`: Caps the maximum delay in milliseconds.
+* `condition`: Filter function with the error as parameter.
+
 ```ts
 @Cron.Retry({ maxRetries: 3, delay: 100, delayFactor: 2, delayMax: 1000 })
 class Jobs {
@@ -198,6 +204,8 @@ class Jobs {
   doSomething() {}
 }
 ```
+
+If all the retries failed, then the error is logged (or handled by `Cron.Catch`).
 
 ## Overlaps
 
@@ -213,11 +221,13 @@ class Jobs {
 }
 ```
 
-## Access current job
+## Current job access
 
 > 🔦 `@CurrentJob`
 
-Access current job from its own `onTick` function. _Can be used with or without invokation._
+You might need to access the current job instance from its own `onTick` function, for example to simply stop it.
+ _Can be used with or without invokation._
+
 ```ts
 class Jobs {
   @Cron(Expression.EVERY_SECOND)
@@ -228,6 +238,8 @@ class Jobs {
 ```
 
 ## Dynamic jobs
+
+You can add dynamic cron jobs like so:
 
 ```ts
 @Cron.Start
@@ -249,3 +261,24 @@ jobs.set('doSomethingElse', {
 ```
 
 Dynamic jobs inherit shared class options.
+
+## Pure dependency injection
+
+If you want to go full OOP and your job classes has constructor dependencies, Reflet will enforce passing them as instances (along with their dependencies) instead of classes.
+
+```ts
+class Service {
+  user = 'Jeremy'
+}
+
+class Jobs {
+  constructor(private service: Service) {}
+
+  @Cron(Expression.EVERY_10_MINUTES)
+  doSomething() {
+    console.log(this.service.user)
+  }
+}
+
+const jobs = initCronJobs(new Jobs(new Service()))
+```
