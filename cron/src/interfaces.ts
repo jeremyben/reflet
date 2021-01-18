@@ -74,9 +74,9 @@ export interface JobParameters<T extends object = object, PassJob extends boolea
  */
 export interface RetryOptions {
 	/** Max number of retry attempts. */
-	maxRetries: number
+	attempts: number
 
-	/** Delay before retries in milliseconds. */
+	/** Delay between retry attemps in milliseconds. */
 	delay?: number
 
 	/** Increases each time the previous delay by a multiplicative factor. */

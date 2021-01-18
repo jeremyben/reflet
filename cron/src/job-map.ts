@@ -68,7 +68,7 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 
 			if (retry) {
 				// Clone to avoid mutation of original decorator options
-				let retries = retry.maxRetries
+				let attempts = retry.attempts
 				let delay = retry.delay || 0
 				const { delayFactor, delayMax, condition } = retry
 
@@ -81,7 +81,7 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 						}
 						break
 					} catch (error) {
-						if (--retries < 0 || (condition && !condition(error))) {
+						if (--attempts < 0 || (condition && !condition(error))) {
 							if (catchError) catchError(error)
 							else console.error(error)
 							break
