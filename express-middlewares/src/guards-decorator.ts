@@ -1,5 +1,6 @@
 import { Use } from '@reflet/express'
-import { Request, Response, NextFunction } from 'express'
+import * as express from 'express'
+import { Request } from './interfaces'
 import { isPromise } from './type-guards'
 
 /**
@@ -29,9 +30,11 @@ import { isPromise } from './type-guards'
  * ------
  * @public
  */
-export function UseGuards(...guards: ((req: Request) => boolean | Error | Promise<boolean | Error>)[]) {
+export function UseGuards<Req extends {}>(
+	...guards: ((req: Request<Req>) => boolean | Error | Promise<boolean | Error>)[]
+) {
 	return Use(
-		...guards.map((guard) => (req: Request, res: Response, next: NextFunction) => {
+		...guards.map((guard) => (req: Request<Req>, res: express.Response, next: express.NextFunction) => {
 			const result = guard(req)
 
 			if (isPromise(result)) result.then((value) => authorize(value))

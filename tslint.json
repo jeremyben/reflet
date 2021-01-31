@@ -30,6 +30,7 @@
 		"curly": [true, "ignore-same-line"],
 		"array-type": [true, "array"],
 		"prefer-object-spread": false,
+		"callable-types": false,
 		"ban-types": [
 			true,
 			["Boolean", "Did you mean `boolean`?"],

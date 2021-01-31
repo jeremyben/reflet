@@ -1,4 +1,4 @@
-import { ErrorRequestHandler, Request, Response, NextFunction } from 'express'
+import * as express from 'express'
 import { ClassType, Decorator } from './interfaces'
 
 const MetaKey = Symbol('catch')
@@ -28,18 +28,18 @@ const MetaKey = Symbol('catch')
  * @public
  */
 export function Catch<T = any>(
-	errorHandler: (err: T, req: Request, res: Response, next: NextFunction) => any
+	errorHandler: (err: T, req: express.Request, res: express.Response, next: express.NextFunction) => any
 ): Decorator.Catch {
 	return (target, key, descriptor) => {
 		// Method
 		if (key) {
-			const handlers: ErrorRequestHandler[] = Reflect.getOwnMetadata(MetaKey, target, key) || []
+			const handlers: express.ErrorRequestHandler[] = Reflect.getMetadata(MetaKey, target, key) || []
 			handlers.unshift(errorHandler)
 			Reflect.defineMetadata(MetaKey, handlers, target, key)
 		}
 		// Class
 		else {
-			const handlers: ErrorRequestHandler[] = Reflect.getOwnMetadata(MetaKey, target) || []
+			const handlers: express.ErrorRequestHandler[] = Reflect.getMetadata(MetaKey, target) || []
 			handlers.unshift(errorHandler)
 			Reflect.defineMetadata(MetaKey, handlers, target)
 		}
@@ -49,7 +49,7 @@ export function Catch<T = any>(
 /**
  * @internal
  */
-export function extractErrorHandlers(target: ClassType, key?: string | symbol): ErrorRequestHandler[] {
+export function extractErrorHandlers(target: ClassType, key?: string | symbol): express.ErrorRequestHandler[] {
 	// Method
 	if (key) return Reflect.getOwnMetadata(MetaKey, target.prototype, key) || []
 	// Class

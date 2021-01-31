@@ -1,7 +1,7 @@
 /* istanbul ignore file */
 // https://www.typescriptlang.org/docs/handbook/advanced-types.html#user-defined-type-guards
 
-import { RequestHandler, ErrorRequestHandler } from 'express'
+import * as express from 'express'
 import { Readable, Writable } from 'stream'
 import { ClassType } from './interfaces'
 
@@ -57,7 +57,7 @@ export function isWritableStream(obj: any): obj is Writable {
  * Checks if given object is an express error handler.
  * @internal
  */
-export function isErrorHandler(obj: any): obj is ErrorRequestHandler {
+export function isErrorHandler(obj: any): obj is express.ErrorRequestHandler {
 	return typeof obj === 'function' && (obj as Function).length === 4
 }
 
@@ -65,7 +65,9 @@ export function isErrorHandler(obj: any): obj is ErrorRequestHandler {
  * Checks if given object is an express `app.use` parameter that contains at least one error handler.
  * @internal
  */
-export function isErrorHandlerParams(obj: any): obj is ErrorRequestHandler | (RequestHandler | ErrorRequestHandler)[] {
+export function isErrorHandlerParams(
+	obj: any
+): obj is express.ErrorRequestHandler | (express.RequestHandler | express.ErrorRequestHandler)[] {
 	return isErrorHandler(obj) || (Array.isArray(obj) && obj.some(isErrorHandler))
 }
 

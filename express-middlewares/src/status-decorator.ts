@@ -12,8 +12,8 @@ import { NonErrorStatusCode } from './interfaces'
  * ------
  * @public
  */
-export function UseStatus<T extends number = NonErrorStatusCode>(
-	statusCode: T extends NonErrorStatusCode ? NonErrorStatusCode : number
+export function UseStatus<S extends number = NonErrorStatusCode>(
+	statusCode: S extends NonErrorStatusCode ? NonErrorStatusCode : number
 ) {
 	return Use((req, res, next) => {
 		res.status(statusCode)

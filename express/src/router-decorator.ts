@@ -1,4 +1,4 @@
-import { RouterOptions } from 'express'
+import * as express from 'express'
 import { ClassType, Controllers, Decorator, ObjectInstance } from './interfaces'
 
 const MetaKey = Symbol('router')
@@ -8,7 +8,7 @@ const MetaKey = Symbol('router')
  */
 type RouterMeta = {
 	root: string | RegExp
-	options?: RouterOptions
+	options?: express.RouterOptions
 	children?: object[]
 }
 
@@ -34,7 +34,7 @@ type RouterMeta = {
  *
  * @public
  */
-export function Router(root: string | RegExp, options?: RouterOptions): Decorator.Router {
+export function Router(root: string | RegExp, options?: express.RouterOptions): Decorator.Router {
 	return (target) => {
 		const routerMeta: RouterMeta = { root, options }
 		Reflect.defineMetadata(MetaKey, routerMeta, target)

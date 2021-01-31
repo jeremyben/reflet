@@ -1,7 +1,7 @@
-import { Router, Application, RequestHandler, Response } from 'express'
+import * as express from 'express'
 import { promisifyHandler, promisifyErrorHandler } from './async-wrapper'
 import { globalErrorHandler, makeGlobalErrorHandlerRemovable } from './global-error-handler'
-import { ClassType, Controllers, ObjectInstance } from './interfaces'
+import { ClassType, Controllers } from './interfaces'
 import { isPromise, isReadableStream, isClass } from './type-guards'
 
 // Extractors
@@ -34,7 +34,7 @@ import { extractSend } from './send-decorator'
  * ------
  * @public
  */
-export function register(app: Application, controllers: Controllers): Application {
+export function register(app: express.Application, controllers: Controllers): express.Application {
 	const globalMwares = getGlobalMiddlewares(app)
 
 	for (const controller of controllers) {
@@ -52,17 +52,17 @@ export function register(app: Application, controllers: Controllers): Applicatio
  */
 function attach(
 	controller: Controllers[number],
-	app: Router,
-	globalMwares: RequestHandler[],
-	parentSharedMwares: RequestHandler[] = []
+	app: express.Router,
+	globalMwares: express.RequestHandler[],
+	parentSharedMwares: express.RequestHandler[] = []
 ) {
 	const { path: rootPath, router } = isPathRouterObject(controller)
 		? controller
 		: { path: undefined, router: controller }
 
 	// Attach plain express routers.
-	if (rootPath && Object.getPrototypeOf(router) === Router) {
-		app.use(rootPath, router as Router)
+	if (rootPath && Object.getPrototypeOf(router) === express.Router) {
+		app.use(rootPath, router as express.Router)
 		return
 	}
 
@@ -76,7 +76,7 @@ function attach(
 	}
 
 	// Either attach middlewares/handlers to an intermediary router or directly to the app.
-	const appInstance = routerMeta ? Router(routerMeta.options) : app
+	const appInstance = routerMeta ? express.Router(routerMeta.options) : app
 
 	const routes = extractRoutes(controllerClass)
 
@@ -234,7 +234,7 @@ function createHandler(controllerClass: ClassType, controllerInstance: any, key:
 		if (isPromise(result)) return result.then((value) => send(value))
 		else return send(result)
 
-		function send(value: any): Response {
+		function send(value: any): express.Response {
 			// Default status
 			if (status) res.status(status)
 
@@ -268,8 +268,8 @@ function createHandler(controllerClass: ClassType, controllerInstance: any, key:
  * Exported for tests only.
  * @internal
  */
-export function getGlobalMiddlewares(app: Application): RequestHandler[] {
-	const globalMwares: RequestHandler[] = []
+export function getGlobalMiddlewares(app: express.Application): express.RequestHandler[] {
+	const globalMwares: express.RequestHandler[] = []
 
 	for (const layer of (app._router || []).stack || []) {
 		if (

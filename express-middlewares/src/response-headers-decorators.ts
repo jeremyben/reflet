@@ -15,12 +15,12 @@ import { ResponseHeaderName, CommonType } from './interfaces'
  * ------
  * @public
  */
-export function UseSet<T extends string = ResponseHeaderName>(
-	field: T extends ResponseHeaderName ? ResponseHeaderName : string,
+export function UseSet<H extends string = ResponseHeaderName>(
+	field: H extends ResponseHeaderName ? ResponseHeaderName : string,
 	value: string
 ): Decorator.Use
 
-export function UseSet<T extends string = ResponseHeaderName>(headers: ResponseHeaders<T>): Decorator.Use
+export function UseSet<H extends string = ResponseHeaderName>(headers: ResponseHeaders<H>): Decorator.Use
 
 export function UseSet(field: string | ResponseHeaders, value?: string) {
 	const headers: ResponseHeaders = typeof field === 'string' ? { [field]: value } : field
@@ -59,6 +59,6 @@ export { UseType as UseContentType }
  * @see https://developer.mozilla.org/en-US/docs/Glossary/Response_header
  * @public
  */
-type ResponseHeaders<T extends string = ResponseHeaderName> = T extends ResponseHeaderName
+type ResponseHeaders<H extends string = ResponseHeaderName> = H extends ResponseHeaderName
 	? { [name in ResponseHeaderName]?: string }
 	: { [name: string]: string }

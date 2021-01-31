@@ -1,4 +1,4 @@
-import { json, urlencoded, Request, Response, NextFunction, RequestHandler } from 'express'
+import * as express from 'express'
 import { flatMapFast } from './array-manipulation'
 import { ClassType, RequestHeaderName, Decorator } from './interfaces'
 
@@ -9,8 +9,8 @@ const MetaKey = Symbol('param')
  */
 type ParamMeta = {
 	index: number
-	mapper: (req: Request, res?: Response, next?: NextFunction) => any
-	use?: RequestHandler[]
+	mapper: (req: express.Request, res: express.Response, next?: express.NextFunction) => any
+	use?: express.RequestHandler[]
 	dedupeUse?: boolean
 }
 
@@ -64,11 +64,9 @@ export function Res(...args: Parameters<Decorator.Res>): void
 
 export function Res() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
-		// res is not defined in the public method signature, but is still used later
-		// by the route params extractor so we must pass it as optional for the compiler
-		return (createParamDecorator((req, res?: Response) => res!) as Function)(...arguments)
+		return (createParamDecorator((req, res: express.Response) => res) as Function)(...arguments)
 	} else {
-		return createParamDecorator((req, res?: Response) => res!)
+		return createParamDecorator((req, res: express.Response) => res)
 	}
 }
 
@@ -96,14 +94,14 @@ export function Next() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
 		// next is not defined in the public method signature, but is still used later
 		// by the route params extractor so we must pass it as optional for the compiler
-		return (createParamDecorator((req, res?: Response, next?: NextFunction) => next!) as Function)(...arguments)
+		return (createParamDecorator((req, res, next?: express.NextFunction) => next!) as Function)(...arguments)
 	} else {
-		return createParamDecorator((req, res?: Response, next?: NextFunction) => next!)
+		return createParamDecorator((req, res, next?: express.NextFunction) => next!)
 	}
 }
 
 /** default parser middlewares to apply with @Body decorator */
-const bodyParsers = [json(), urlencoded({ extended: true })]
+const bodyParsers = [express.json(), express.urlencoded({ extended: true })]
 
 /**
  * Injects request body in the method's parameters.
@@ -255,7 +253,7 @@ export function Headers(nameOrTarget?: string | object, propertyKey?: string | s
 /**
  * Creates a parameter decorator, to inject anything we want in decorated routes.
  *
- * @param mapper - function that should return the thing we want to inject. Has access to the Request object.
+ * @param mapper - function that should return the thing we want to inject from the Request object.
  * @param use - adds middlewares to the route if the mapper needs them (_e.g. we need body-parser middlewares to retrieve `req.body`_).
  * @param dedupeUse - marks the middlewares for deduplication based on the function reference and name (_e.g. if 'jsonParser' is already in use locally or globally, it won't be added again_).
  *
@@ -291,8 +289,8 @@ export function Headers(nameOrTarget?: string | object, propertyKey?: string | s
  * @public
  */
 export function createParamDecorator<T = any>(
-	mapper: (req: Request) => T,
-	use?: RequestHandler[],
+	mapper: (req: express.Request, res: express.Response) => T,
+	use?: express.RequestHandler[],
 	dedupeUse?: boolean
 ): Decorator.HandlerParameter {
 	return (target, key, index) => {
@@ -312,7 +310,7 @@ export function createParamDecorator<T = any>(
 export function extractParams(
 	target: ClassType,
 	key: string | symbol,
-	{ req, res, next }: { req: Request; res: Response; next: NextFunction }
+	{ req, res, next }: { req: express.Request; res: express.Response; next: express.NextFunction }
 ): any[] {
 	const params: ParamMeta[] = Reflect.getOwnMetadata(MetaKey, target.prototype, key) || []
 
@@ -343,12 +341,17 @@ export function extractParams(
 export function extractParamsMiddlewares(
 	target: ClassType,
 	key: string | symbol,
-	alreadyMwares: [RequestHandler[], RequestHandler[], RequestHandler[], RequestHandler[]]
-): RequestHandler[] {
+	alreadyMwares: [
+		express.RequestHandler[],
+		express.RequestHandler[],
+		express.RequestHandler[],
+		express.RequestHandler[]
+	]
+): express.RequestHandler[] {
 	const params: ParamMeta[] = Reflect.getOwnMetadata(MetaKey, target.prototype, key) || []
 	if (!params.length) return []
 
-	const paramMwares: RequestHandler[] = []
+	const paramMwares: express.RequestHandler[] = []
 
 	let alreadyNames: string[] = []
 

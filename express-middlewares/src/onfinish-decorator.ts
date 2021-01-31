@@ -1,5 +1,5 @@
 import { Use, Decorator } from '@reflet/express'
-import { Request, Response, NextFunction } from 'express'
+import * as express from 'express'
 import { ResponseReadonly } from './interfaces'
 
 /**
@@ -29,17 +29,17 @@ import { ResponseReadonly } from './interfaces'
  * @public
  */
 export function UseOnFinish<ResBody = any>(
-	effect: (req: Request, res: ResponseSentAndBody<ResBody>) => void | Promise<void>,
+	effect: (req: express.Request, res: ResponseSent & { body: ResBody }) => void | Promise<void>,
 	exposeBody: true
 ): Decorator.Use
 
-export function UseOnFinish(effect: (req: Request, res: ResponseSent) => void | Promise<void>): Decorator.Use
+export function UseOnFinish(effect: (req: express.Request, res: ResponseSent) => void | Promise<void>): Decorator.Use
 
 export function UseOnFinish<ResBody = any>(
-	effect: (req: Request, res: ResponseSentAndBody<ResBody>) => void | Promise<void>,
+	effect: (req: express.Request, res: ResponseSent & { body: ResBody }) => void | Promise<void>,
 	exposeBody?: true
 ) {
-	return Use((req: Request, res: Response & { body?: ResBody }, next: NextFunction) => {
+	return Use((req, res: express.Response & { body?: ResBody }, next) => {
 		if (exposeBody) {
 			const send0 = res.send
 			const json0 = res.json
@@ -103,7 +103,7 @@ export function UseOnFinish<ResBody = any>(
 					res.body = concatChunks(data, res.body as any, encodingOrCallback as BufferEncoding) as any
 				}
 
-				return write0.apply(res, (arguments as unknown) as Parameters<Response['write']>)
+				return write0.apply(res, (arguments as unknown) as Parameters<express.Response['write']>)
 			}
 
 			// https://nodejs.org/api/http.html#http_response_end_data_encoding_callback
@@ -130,14 +130,14 @@ export function UseOnFinish<ResBody = any>(
 					) as any
 				}
 
-				return end0.apply(res, (arguments as unknown) as Parameters<Response['end']>)
+				return end0.apply(res, (arguments as unknown) as Parameters<express.Response['end']>)
 			}
 		}
 
 		// Log errors instead of letting them crash the server.
 		res.on('finish', async () => {
 			try {
-				await effect(req, res as ResponseReadonly & { body: ResBody })
+				await effect(req, res as ResponseSent & { body: ResBody })
 			} catch (error) {
 				console.error(error)
 			}
@@ -198,11 +198,6 @@ function concatChunks(
  * Response object without methods sending the response or modifying its headers, for safety.
  * @public
  */
-type ResponseSent = ResponseReadonly & { wasIntercepted?: number }
-
-/**
- * Response object without methods sending the response or modifying its headers, for safety,
- * and with the the response body attached.
- * @public
- */
-type ResponseSentAndBody<TBody = any> = ResponseReadonly & { body: TBody; wasIntercepted?: number }
+interface ResponseSent extends ResponseReadonly {
+	wasIntercepted?: number
+}

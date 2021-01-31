@@ -1,16 +1,17 @@
-import { RequestHandler, ErrorRequestHandler, Request, Response, NextFunction } from 'express'
+import * as express from 'express'
 
 /**
  * @internal
  */
-export function promisifyHandler(handler: RequestHandler) {
-	return (req: Request, res: Response, next: NextFunction) => Promise.resolve(handler(req, res, next)).catch(next)
+export function promisifyHandler(handler: express.RequestHandler) {
+	return (req: express.Request, res: express.Response, next: express.NextFunction) =>
+		Promise.resolve(handler(req, res, next)).catch(next)
 }
 
 /**
  * @internal
  */
-export function promisifyErrorHandler(handler: ErrorRequestHandler) {
-	return (error: any, req: Request, res: Response, next: NextFunction) =>
+export function promisifyErrorHandler(handler: express.ErrorRequestHandler) {
+	return (error: any, req: express.Request, res: express.Response, next: express.NextFunction) =>
 		Promise.resolve(handler(error, req, res, next)).catch(next)
 }

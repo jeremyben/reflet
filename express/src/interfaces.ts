@@ -1,4 +1,5 @@
-import { IRouter } from 'express'
+import * as express from 'express'
+import * as core from 'express-serve-static-core'
 
 /**
  * Exported decorators interfaces.
@@ -161,7 +162,26 @@ export type ObjectInstance = object & {
  */
 export type Controllers =
 	| ((new () => any) | ObjectInstance)[]
-	| { path: string | RegExp; router: (new () => any) | ObjectInstance | IRouter }[]
+	| { path: string | RegExp; router: (new () => any) | ObjectInstance | express.IRouter }[]
+
+/**
+ * @public
+ */
+export interface Handler<Req extends {} = {}> {
+	(
+		req: keyof Req extends undefined
+			? express.Request
+			: express.Request<
+					Req extends { params: infer P } ? P : core.ParamsDictionary,
+					any,
+					Req extends { body: infer B } ? B : any,
+					Req extends { query: infer Q } ? Q : core.Query
+			  > &
+					Req,
+		res: express.Response,
+		next: express.NextFunction
+	): any
+}
 
 /**
  * Request headers union.

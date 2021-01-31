@@ -1,6 +1,5 @@
-import { RequestHandler } from 'express'
 import { concatPrependFast } from './array-manipulation'
-import { ClassType, Decorator } from './interfaces'
+import { ClassType, Decorator, Handler } from './interfaces'
 
 const MetaKey = Symbol('use')
 
@@ -18,18 +17,18 @@ const MetaKey = Symbol('use')
  * ```ts
  * ＠Use(express.json(), express.urlencoded())
  * class Foo {
- *   ＠Use((req, res, next) => {
+ *   ＠Use<{ bar?: number }>((req, res, next) => {
  *     req.bar = 1
  *     next()
  *   })
  *   ＠Post('/some')
- *   create(req: Request, res: Response, next: NextFunction) {}
+ *   create(req: Request & { bar: number }, res: Response, next: NextFunction) {}
  * }
  * ```
  * ------
  * @public
  */
-export function Use(...middlewares: RequestHandler[]): Decorator.Use {
+export function Use<Req extends {}>(...middlewares: Handler<Req>[]): Decorator.Use {
 	return (target, key, descriptor) => {
 		// Method middleware
 		if (key) {
@@ -47,7 +46,7 @@ export function Use(...middlewares: RequestHandler[]): Decorator.Use {
 /**
  * @internal
  */
-export function extractMiddlewares(target: ClassType, key?: string | symbol): RequestHandler[] {
+export function extractMiddlewares(target: ClassType, key?: string | symbol): Handler[] {
 	// Method middlewares
 	if (key) return Reflect.getOwnMetadata(MetaKey, target.prototype, key) || []
 	// Class middlewares

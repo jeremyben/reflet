@@ -1,5 +1,6 @@
 import { Use } from '@reflet/express'
-import { Request, RequestHandler } from 'express'
+import * as express from 'express'
+import { Request } from './interfaces'
 import { isPromise } from './type-guards'
 
 /**
@@ -14,11 +15,11 @@ import { isPromise } from './type-guards'
  * ------
  * @public
  */
-export function UseIf(
-	condition: (req: Request) => boolean | Promise<boolean>,
-	middlewares: RequestHandler[]
+export function UseIf<Req extends {}>(
+	condition: (req: Request<Req>) => boolean | Promise<boolean>,
+	middlewares: express.RequestHandler[]
 ) {
-	return Use((req, res, next) => {
+	return Use<Req>((req, res, next) => {
 		const ok = condition(req)
 
 		if (isPromise(ok)) ok.then((yes) => apply(yes))

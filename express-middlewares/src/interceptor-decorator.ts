@@ -1,5 +1,5 @@
 import { Use } from '@reflet/express'
-import { Request, Response, NextFunction } from 'express'
+import * as express from 'express'
 import { ResponseSafe } from './interfaces'
 import { isPromise } from './type-guards'
 
@@ -34,13 +34,13 @@ import { isPromise } from './type-guards'
  * ------
  * @public
  */
-export function UseInterceptor<T, U = T>(
+export function UseInterceptor<In, Out = In>(
 	transform: (
-		data: T,
-		context: { req: Request; res: ResponseSafe }
-	) => U extends void ? never : U | Promise<U>
+		data: In,
+		context: { req: express.Request; res: ResponseSafe }
+	) => Out extends void ? never : Out | Promise<Out>
 ) {
-	return Use((req: Request, res: Response & { wasIntercepted?: number }, next: NextFunction) => {
+	return Use((req, res: express.Response & { wasIntercepted?: number }, next) => {
 		res.wasIntercepted = 0
 
 		const send0 = res.send
@@ -54,7 +54,7 @@ export function UseInterceptor<T, U = T>(
 		// That's what express-mung does:
 		// https://github.com/richardschneider/express-mung/blob/v0.5.1/index.js#L72
 
-		res.send = function send(body: T) {
+		res.send = function send(body: In) {
 			res.send = send0
 			res.json = json0
 			res.jsonp = jsonp0
@@ -79,7 +79,7 @@ export function UseInterceptor<T, U = T>(
 		}
 
 		/* istanbul ignore next - same as res.send */
-		res.json = function json(body: T) {
+		res.json = function json(body: In) {
 			res.send = send0
 			res.json = json0
 			res.jsonp = jsonp0
@@ -104,7 +104,7 @@ export function UseInterceptor<T, U = T>(
 		}
 
 		/* istanbul ignore next - same as res.send */
-		res.jsonp = function jsonp(body: T) {
+		res.jsonp = function jsonp(body: In) {
 			res.send = send0
 			res.json = json0
 			res.jsonp = jsonp0
@@ -146,7 +146,7 @@ export function UseInterceptor<T, U = T>(
 				res.statusCode >= 400 ||
 				res.headersSent
 			) {
-				return end0.apply(res, (arguments as unknown) as Parameters<Response['end']>)
+				return end0.apply(res, (arguments as unknown) as Parameters<express.Response['end']>)
 			}
 
 			// Directly modify the data parameter.
@@ -160,10 +160,10 @@ export function UseInterceptor<T, U = T>(
 			if (isPromise(arguments[0])) {
 				return arguments[0].then((value: any) => {
 					arguments[0] = value
-					return end0.apply(res, (arguments as unknown) as Parameters<Response['end']>)
+					return end0.apply(res, (arguments as unknown) as Parameters<express.Response['end']>)
 				})
 			} else {
-				return end0.apply(res, (arguments as unknown) as Parameters<Response['end']>)
+				return end0.apply(res, (arguments as unknown) as Parameters<express.Response['end']>)
 			}
 		}
 

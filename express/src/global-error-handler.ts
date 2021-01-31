@@ -1,6 +1,6 @@
+import * as express from 'express'
+import * as core from 'express-serve-static-core'
 import { isErrorHandlerParams, isPathParams } from './type-guards'
-import { Request, Response, NextFunction, Application } from 'express'
-import { RequestHandlerParams, PathParams } from 'express-serve-static-core'
 
 /**
  * Adds json response detection and status code detection to express default error handler.
@@ -9,7 +9,7 @@ import { RequestHandlerParams, PathParams } from 'express-serve-static-core'
  * @see http://expressjs.com/en/guide/error-handling.html#writing-error-handlers
  * @internal
  */
-export function globalErrorHandler(err: any, req: Request, res: Response, next: NextFunction) {
+export function globalErrorHandler(err: any, req: express.Request, res: express.Response, next: express.NextFunction) {
 	// ─── Status detection ───
 
 	let status = StatusParser.getFromError(err)
@@ -60,11 +60,11 @@ Object.defineProperty(globalErrorHandler, 'name', { value: globalErrorHandlerNam
  * Patch `app.use` to detect new global error handler and remove ours.
  * @internal
  */
-export function makeGlobalErrorHandlerRemovable(app: Application): void {
+export function makeGlobalErrorHandlerRemovable(app: express.Application): void {
 	// https://expressjs.com/en/4x/api.html#middleware-callback-function-examples
 	const use0 = app.use
 
-	app.use = function use(first: RequestHandlerParams | PathParams, ...others: RequestHandlerParams[]) {
+	app.use = function use(first: core.RequestHandlerParams | core.PathParams, ...others: core.RequestHandlerParams[]) {
 		if (isErrorHandlerParams(first) || (!isPathParams(first) && others.some(isErrorHandlerParams))) {
 			// patch back to original implementation
 			app.use = use0
@@ -76,7 +76,7 @@ export function makeGlobalErrorHandlerRemovable(app: Application): void {
 			}
 		}
 
-		return use0.apply(app, (arguments as unknown) as Parameters<Application['use']>)
+		return use0.apply(app, (arguments as unknown) as Parameters<express.Application['use']>)
 	}
 }
 
@@ -84,7 +84,7 @@ export function makeGlobalErrorHandlerRemovable(app: Application): void {
  * For testing purposes.
  * @internal
  */
-export function hasGlobalErrorHandler(app: Application): boolean {
+export function hasGlobalErrorHandler(app: express.Application): boolean {
 	return app._router.stack.some((layer) => layer.name === globalErrorHandlerName)
 }
 
@@ -136,7 +136,7 @@ namespace StatusParser {
 	 * @see https://github.com/pillarjs/finalhandler/blob/v1.1.2/index.js#L236
 	 * @internal
 	 */
-	export function getFromResponse(res: Response): number {
+	export function getFromResponse(res: express.Response): number {
 		if (typeof res.statusCode !== 'number' || res.statusCode < 400 || res.statusCode > 599) {
 			return 500
 		}
