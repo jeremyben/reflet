@@ -8,8 +8,6 @@ import { isPromise } from './type-guards'
  * @param transform - mapper function that takes the intercepted response body and must return the modified response body. _Gives access to Request and Response objects._
  *
  * @remarks
- * Adds a counter `wasIntercepted` on the Response object.
- *
  * **Errors:**
  * It won't intercept errors, whether the body is an `Error` instance or the status is >= 400.
  * Instead you should use a `@Catch` decorator.
@@ -40,9 +38,7 @@ export function UseInterceptor<In, Out = In>(
 		context: { req: express.Request; res: ResponseSafe }
 	) => Out extends void ? never : Out | Promise<Out>
 ) {
-	return Use((req, res: express.Response & { wasIntercepted?: number }, next) => {
-		res.wasIntercepted = 0
-
+	return Use((req, res: express.Response, next) => {
 		const send0 = res.send
 		const json0 = res.json
 		const jsonp0 = res.jsonp
@@ -66,7 +62,6 @@ export function UseInterceptor<In, Out = In>(
 			}
 
 			const result = transform(body, { req, res })
-			res.wasIntercepted!++
 
 			// Response has been sent from the interceptor (bad bad programmer).
 			if (res.finished) return res
@@ -91,7 +86,6 @@ export function UseInterceptor<In, Out = In>(
 			}
 
 			const result = transform(body, { req, res })
-			res.wasIntercepted!++
 
 			// Response has been sent from the interceptor (bad bad programmer).
 			if (res.finished) return res
@@ -116,7 +110,6 @@ export function UseInterceptor<In, Out = In>(
 			}
 
 			const result = transform(body, { req, res })
-			res.wasIntercepted!++
 
 			// Response has been sent from the interceptor (bad bad programmer).
 			if (res.finished) return res
@@ -151,7 +144,6 @@ export function UseInterceptor<In, Out = In>(
 
 			// Directly modify the data parameter.
 			arguments[0] = transform(dataOrCallback as any, { req, res })
-			res.wasIntercepted!++
 
 			// Response has been sent from the interceptor (bad bad programmer).
 			/* istanbul ignore if - covered in res.send */

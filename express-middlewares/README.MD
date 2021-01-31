@@ -91,8 +91,6 @@ class Controller {
 }
 ```
 
-A counter `wasIntercepted` is added on the Response object, to know later if (and how many times) the body was intercepted (_e.g. on the [`finish` side-effect](#response-side-effect)_).
-
 #### About errors
 
 `UseInterceptor` won't intercept errors, whether:

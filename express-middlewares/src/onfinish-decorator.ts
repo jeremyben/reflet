@@ -29,14 +29,16 @@ import { ResponseReadonly } from './interfaces'
  * @public
  */
 export function UseOnFinish<ResBody = any>(
-	effect: (req: express.Request, res: ResponseSent & { body: ResBody }) => void | Promise<void>,
+	effect: (req: express.Request, res: ResponseReadonly & { body: ResBody }) => void | Promise<void>,
 	exposeBody: true
 ): Decorator.Use
 
-export function UseOnFinish(effect: (req: express.Request, res: ResponseSent) => void | Promise<void>): Decorator.Use
+export function UseOnFinish(
+	effect: (req: express.Request, res: ResponseReadonly) => void | Promise<void>
+): Decorator.Use
 
 export function UseOnFinish<ResBody = any>(
-	effect: (req: express.Request, res: ResponseSent & { body: ResBody }) => void | Promise<void>,
+	effect: (req: express.Request, res: ResponseReadonly & { body: ResBody }) => void | Promise<void>,
 	exposeBody?: true
 ) {
 	return Use((req, res: express.Response & { body?: ResBody }, next) => {
@@ -137,7 +139,7 @@ export function UseOnFinish<ResBody = any>(
 		// Log errors instead of letting them crash the server.
 		res.on('finish', async () => {
 			try {
-				await effect(req, res as ResponseSent & { body: ResBody })
+				await effect(req, res as ResponseReadonly & { body: ResBody })
 			} catch (error) {
 				console.error(error)
 			}
@@ -192,12 +194,4 @@ function concatChunks(
 
 		return (body as string) + goodChunk
 	}
-}
-
-/**
- * Response object without methods sending the response or modifying its headers, for safety.
- * @public
- */
-interface ResponseSent extends ResponseReadonly {
-	wasIntercepted?: number
 }

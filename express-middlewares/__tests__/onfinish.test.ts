@@ -17,10 +17,7 @@ describe('response properties on finish event', () => {
 			res.sendStatus(201)
 		}
 
-		@UseOnFinish((req, res) => console.info(res.wasIntercepted, (res as any).body))
-		@UseInterceptor((body) => body)
-		@UseInterceptor((body) => body)
-		@UseInterceptor((body) => body)
+		@UseOnFinish((req, res) => console.info((res as any).body))
 		@Put()
 		put(req: express.Request, res: express.Response, next: express.NextFunction) {
 			res.send('done')
@@ -41,10 +38,10 @@ describe('response properties on finish event', () => {
 		expect(consoleSpy).toBeCalledWith(true, true, 201)
 	})
 
-	test('wasIntercepted is exposed, body is not', async () => {
+	test('body is not exposed', async () => {
 		const res = await rq.put('')
 		expect(res.text).toBe('done')
-		expect(consoleSpy).toBeCalledWith(3, undefined)
+		expect(consoleSpy).toBeCalledWith(undefined)
 	})
 
 	test('catch errors', async () => {
@@ -81,7 +78,7 @@ describe('retrieve body with express methods', () => {
 			throw { status: 400 }
 		}
 
-		@UseOnFinish((req, res) => console.info(res.wasIntercepted, res.body), true)
+		@UseOnFinish((req, res) => console.info(res.body), true)
 		@UseInterceptor<{ foo: string }, { foo: number }>((body) => ({ foo: 3 }))
 		@Delete()
 		delete(req: express.Request, res: express.Response, next: express.NextFunction) {
@@ -126,7 +123,7 @@ describe('retrieve body with express methods', () => {
 	test('with an interceptor', async () => {
 		const res = await rq.delete('')
 		expect(res.body).toEqual({ foo: 3 })
-		expect(consoleSpy).toBeCalledWith(1, { foo: 3 })
+		expect(consoleSpy).toBeCalledWith({ foo: 3 })
 	})
 })
 
