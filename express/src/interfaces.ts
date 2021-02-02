@@ -19,7 +19,7 @@ export namespace Decorator {
 	 * Equivalent to `MethodDecorator`.
 	 * @public
 	 */
-	export type Route<T extends RoutingMethod> = MethodDecorator & { __expressRoute?: T }
+	export type Route<T extends RoutingMethod> = PropertyOrMethodDecorator & { __expressRoute?: T }
 
 	/**
 	 * Used for `createParamDecorator`.
@@ -132,6 +132,15 @@ type ClassOrMethodDecorator<T extends ClassOrMethodUnion = 'class|method'> = T e
 			descriptor?: TypedPropertyDescriptor<any>
 	  ) => any
 	: never
+
+/**
+ * @public
+ */
+type PropertyOrMethodDecorator = (
+	target: Object,
+	propertyKey: string | symbol,
+	descriptor?: TypedPropertyDescriptor<any>
+) => any
 
 /**
  * Defines a class type. Does the opposite of built-in `InstanceType`.

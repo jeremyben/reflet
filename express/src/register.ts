@@ -220,10 +220,15 @@ function checkRouterPathConstraint(
  */
 function createHandler(controllerClass: ClassType, controllerInstance: any, key: string | symbol) {
 	const toSend = extractSend(controllerClass, key)
+	const fn = controllerInstance[key] as Function
+
+	if (typeof fn !== 'function') {
+		throw Error(`"${controllerClass.name}.${key.toString()}" should be a function.`)
+	}
 
 	return promisifyHandler((req, res, next) => {
 		const args = extractParams(controllerClass, key, { req, res, next })
-		const result = controllerInstance[key].apply(controllerInstance, args)
+		const result = fn.apply(controllerInstance, args)
 
 		// Handle or bypass sending the method's result according to @Send decorator,
 		// if the response has already been sent to the client, we also bypass.
@@ -255,7 +260,7 @@ function createHandler(controllerClass: ClassType, controllerInstance: any, key:
 
 				// The response will try to send itself, which will cause a cryptic error
 				// ('TypeError: Converting circular structure to JSON')
-				throw Error('Cannot send the whole Response object')
+				throw Error('Cannot send the whole Response object.')
 			}
 
 			if (json) return res.json(value)

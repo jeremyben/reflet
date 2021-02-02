@@ -42,7 +42,7 @@ describe('basic routing', () => {
 		prop = 1
 
 		@Method('options', '/message')
-		options(req: express.Request, res: express.Response, next: express.NextFunction) {
+		options = (req: express.Request, res: express.Response, next: express.NextFunction) => {
 			res.send([{ id: this.prop }])
 		}
 
@@ -88,7 +88,7 @@ describe('basic routing', () => {
 		await rq.put('/user/ME').expect(404)
 	})
 
-	test('@Get without Router', async () => {
+	test('Options verb without Router, property instead of function', async () => {
 		const res = await rq.options('/message')
 		expect(res.status).toBe(200)
 		expect(res.body).toEqual([{ id: 1 }])
