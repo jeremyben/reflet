@@ -98,11 +98,17 @@ export const Delete = (path: string | RegExp = '') => Method('delete', path)
  * @see https://expressjs.com/en/4x/api.html#app.METHOD
  * @public
  */
-export function Method<T extends RoutingMethod>(method: T, path: string | RegExp): Decorator.Route<T> {
+export function Method<T extends RoutingMethod>(method: T | T[], path: string | RegExp): Decorator.Route<T> {
 	return (target, key, descriptor) => {
 		// Attach routes to class instead of methods to extract and traverse all of them at once
 		const routes: RouteMeta[] = Reflect.getOwnMetadata(MetaKey, target) || []
-		routes.push({ path, method, key })
+
+		if (Array.isArray(method)) {
+			for (const method_ of method) routes.push({ path, method: method_, key })
+		} else {
+			routes.push({ path, method, key })
+		}
+
 		Reflect.defineMetadata(MetaKey, routes, target)
 	}
 }

@@ -4,6 +4,8 @@ import { register, Router, Get, Post, Put, Patch, Method, Res, Req, Use, Params,
 import { log } from '../../testing/tools'
 
 describe('basic routing', () => {
+	const PostAndPut = (path: string | RegExp) => Method(['post', 'put'], path)
+
 	class UserService {
 		private users = [
 			{ id: '1', name: 'Jeremy' },
@@ -30,8 +32,7 @@ describe('basic routing', () => {
 			res.send(user)
 		}
 
-		@Post()
-		@Put('/me')
+		@PostAndPut('/me')
 		async post(req: express.Request, res: express.Response, next: express.NextFunction) {
 			await new Promise((resolve) => setTimeout(resolve, 20))
 			res.send({ id: 3 })
@@ -77,13 +78,10 @@ describe('basic routing', () => {
 		expect(res.body).toEqual({ id: '1', name: 'Jeremy' })
 	})
 
-	test('@Post with Router, async', async () => {
-		const res = await rq.post('/user')
+	test('multipe verbs with Router, async, caseSensitive option', async () => {
+		const res = await rq.post('/user/me')
 		expect(res.status).toBe(200)
 		expect(res.body).toEqual({ id: 3 })
-	})
-
-	test('@Put with Router, caseSensitive option', async () => {
 		await rq.put('/user/me').expect(200)
 		await rq.put('/user/ME').expect(404)
 	})

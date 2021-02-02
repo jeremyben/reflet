@@ -249,17 +249,7 @@ app.delete('/foo', (req, res, next) => {})
 
 Pretty obvious, like any other decorator framework.
 
-##### 💡 Tip
-
-Apply multipe route decorators on the same method to share the logic:
-
-```ts
-@Patch('/things/:id')
-@Put('/things/:id')
-update(req, res, next) {}
-```
-
-### Other route decorators
+#### Other route decorators
 
 > 🔦 `@Method(method, path)`<br>
 > 💫 Related Express methods: [`app.METHOD`](https://expressjs.com/en/4x/api.html#app.METHOD), [`app.all`](https://expressjs.com/en/4x/api.html#app.all)
@@ -280,6 +270,19 @@ class Controller {
 
   @Method.Get('/things')
   get(req: Request, res: Response, next: NextFunction) {}
+}
+```
+
+#### Handler with multiple verbs
+
+You can share the same handler with multiple HTTP verbs, by passing an array to `Method`.
+
+```ts
+const Patch_Put = (path: string | RegExp) => Method(['patch', 'put'], path)
+
+class Controller {
+  @Patch_Put('/things/:id')
+  update(req: Request, res: Response, next: NextFunction) {}
 }
 ```
 
