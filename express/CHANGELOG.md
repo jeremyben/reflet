@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.5.2](https://github.com/jeremyben/reflet/tree/master/express/compare/@reflet/express@1.5.1...@reflet/express@1.5.2) (2021-02-12)
+
+
+### Bug Fixes
+
+* **express:** add generic to middleware decorator to augment request object ([9386992](https://github.com/jeremyben/reflet/tree/master/express/commit/9386992))
+* **express:** allow handler to be property function ([34af031](https://github.com/jeremyben/reflet/tree/master/express/commit/34af031))
+* **express:** can pass multiple http verbs to Method ([fabcf6a](https://github.com/jeremyben/reflet/tree/master/express/commit/fabcf6a))
+
+
+
+
+
 ## [1.5.1](https://github.com/jeremyben/reflet/tree/master/express/compare/@reflet/express@1.5.0...@reflet/express@1.5.1) (2021-01-05)
 
 

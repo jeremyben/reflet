@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.8](https://github.com/jeremyben/reflet/tree/master/express-middlewares/compare/@reflet/express-middlewares@1.1.7...@reflet/express-middlewares@1.1.8) (2021-02-12)
+
+
+### Bug Fixes
+
+* **express:** add generic to middleware decorator to augment request object ([9386992](https://github.com/jeremyben/reflet/tree/master/express-middlewares/commit/9386992))
+* **express-middlewares:** remove useless wasIntercepted property from interceptor decorator ([9988174](https://github.com/jeremyben/reflet/tree/master/express-middlewares/commit/9988174))
+
+
+
+
+
 ## [1.1.7](https://github.com/jeremyben/reflet/tree/master/express-middlewares/compare/@reflet/express-middlewares@1.1.6...@reflet/express-middlewares@1.1.7) (2021-01-05)
 
 **Note:** Version bump only for package @reflet/express-middlewares
