@@ -190,6 +190,7 @@ describe('children controllers', () => {
 				res.sendStatus(200)
 			}
 		}
+
 		class Foo {
 			constructor() {
 				Router.register(this, [Bar])
@@ -324,3 +325,13 @@ describe('constrain with path-router objects', () => {
 	})
 })
 // tslint:enable: no-empty
+
+test('route function constraint', async () => {
+	@Router('/foo')
+	class Foo {
+		@Get()
+		prop = 'foo'
+	}
+
+	expect(() => register(express(), [Foo])).toThrow(/function/)
+})
