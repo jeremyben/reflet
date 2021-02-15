@@ -8,6 +8,7 @@ The **best** decorators for [Cron](https://github.com/kelektiv/node-cron). Have 
 * [Common options](#common-options)
 * [Errors and retries](#errors-and-retries)
 * [Overlaps](#overlaps)
+* [Options flexibility](#options-flexibility)
 * [Current job access](#current-job-access)
 * [Dynamic jobs](#dynamic-jobs)
 * [Pure dependency injection](#pure-dependency-injection)
@@ -80,8 +81,8 @@ The **best** decorators for [Cron](https://github.com/kelektiv/node-cron). Have 
 
 ## Basic Job
 
-> 🔦 `@Cron(time)`
-> 🔦 `initCronJobs(class)`
+> 🔦 `@Cron(time)`<br>
+> 🔦 `initCronJobs(class)`<br>
 > 💫 Related node-cron constructor: [`CronJob`](https://github.com/kelektiv/node-cron#usage-basic-cron-usage)
 
 ```ts
@@ -117,16 +118,16 @@ class Jobs {
 
 ## Common options
 
-> 🔦 `@Cron.Start`, `@Cron.RunOnInit`, `@Cron.OnComplete(fn)`, `@Cron.TimeZone(tz)`, `@Cron.UtcOffset(offset)`, `@Cron.UnrefTimeout`
+> 🔦 `@Cron.Start`, `@Cron.RunOnInit`, `@Cron.OnComplete(fn)`, `@Cron.TimeZone(tz)`, `@Cron.UtcOffset(offset)`, `@Cron.UnrefTimeout`<br>
 > 💫 Related node-cron parameters: [`start, runOnInit, onComplete, timezone, utcOffset, unrefTimeout`](https://github.com/kelektiv/node-cron#api)
 
 * `@Cron.Start`: Starts the job after init (does not immediately fire its function). _Can be used with or without invokation._
 * `@Cron.RunOnInit`: Fire the job's function on init. _Can be used with or without invokation._
-* `@Cron.OnComplete(fn)`: A function that will fire when the job is stopped with job.stop().
+* `@Cron.OnComplete(fn)`: A function that will fire when the job is stopped with `job.stop()`.
 * `@Cron.TimeZone(tz)`: Specify the timezone for the execution. _Type is narrowed to an union of all available timezones._
-* `@Cron.UtcOffset(offset)`: Specify the offset of the timezone instead of the timezone directly. _Type is narrowed to an union of all available offsets (and `number`)._
+* `@Cron.UtcOffset(offset)`: Specify the offset of the timezone instead of the timezone directly. _Type is narrowed to an union of all available offsets (plus `number`)._
 
-Please refer to the [node-cron package](https://github.com/kelektiv/node-cron#api) for more details.
+Please refer to the **[node-cron repository](https://github.com/kelektiv/node-cron#api)** for more details.
 
 ```ts
 class Jobs {
@@ -148,24 +149,6 @@ class Jobs {
 const jobs = initCronJobs(Jobs)
 ```
 
-### Share and override
-
-Attach any option decorator to the class to share it with all jobs. You can override it by reattaching it to the method.
-
-Boolean option decorators (`@Cron.Start`, `@Cron.RunOnInit`, `@Cron.UnrefTimeout`, `@Cron.PreventOverlap`) can be turned to false with their special sub decorator: `@Cron.XXX.Dont` _(can be used with or without invokation)_.
-
-```ts
-@Cron.Start
-class Jobs {
-  @Cron(Expression.EVERY_SECOND)
-  doSomething() {}
-
-  @Cron.Start.Dont
-  @Cron(Expression.EVERY_SECOND)
-  doSomethingElse() {}
-}
-```
-
 ## Errors and retries
 
 Errors happening in a cron job are automatically logged to `stderr` instead of crashing the server.
@@ -177,11 +160,12 @@ Errors happening in a cron job are automatically logged to `stderr` instead of c
 This decorator allows you to do something else than logging with your errors.
 
 ```ts
-@Cron.Catch(async (err) => {
-  console.error(err)
-  await db.insert(err)
-})
+
 class Jobs {
+  @Cron.Catch(async (err) => {
+    console.error(err)
+    await db.insert(err)
+  })
   @Cron(Expression.EVERY_SECOND)
   doSomething() {}
 }
@@ -198,8 +182,8 @@ class Jobs {
 * `condition`: Filter function with the error as parameter.
 
 ```ts
-@Cron.Retry({ maxRetries: 3, delay: 100, delayFactor: 2, delayMax: 1000 })
 class Jobs {
+  @Cron.Retry({ attempts: 3, delay: 100, delayFactor: 2, delayMax: 1000 })
   @Cron(Expression.EVERY_HOUR)
   doSomething() {}
 }
@@ -211,13 +195,57 @@ If all the retries failed, then the error is logged (or handled by `Cron.Catch`)
 
 > 🔦 `@Cron.PreventOverlap`
 
-Prevents the job from being fired if the previous occurence is not finished. Useful for potentially long jobs firing every second. _Can be used with or without invokation._
+Prevents the job from being fired if the previous occurence is not finished. Useful for potentially long jobs firing every second.<br>_Can be used with or without invokation._
 
 ```ts
+class Jobs {
+  @Cron.PreventOverlap
+  @Cron(Expression.EVERY_SECOND)
+  doSomething() {}
+}
+```
+
+## Options flexibility
+
+### Single decorator
+
+> 🔦 `@Cron.Options(allOptions)`
+
+If you prefer, you can use `@Cron.Options` to group all your options in a single decorator:
+
+```ts
+
+class Jobs {
+  @Cron.Options({
+    start: true,
+    runOnInit: true,
+    retry: { attempts: 3, delay: 200 },
+    catchError: async (err) => {
+      await db.insert(err)
+    }
+  })
+  @Cron(Expression.EVERY_SECOND)
+  doSomething() {}
+}
+```
+
+### Share and override
+
+Attach any option decorator to the class to share it with all jobs. You can override it by reattaching it to the method.
+
+Boolean option decorators (`@Cron.Start`, `@Cron.RunOnInit`, `@Cron.UnrefTimeout`, `@Cron.PreventOverlap`) can be turned to false with their special sub decorator: `@Cron.XXX.Dont` _(can be used with or without invokation)_
+
+```ts
+@Cron.Start
 @Cron.PreventOverlap
+@Cron.Retry({ maxRetries: 3, delay: 200 })
 class Jobs {
   @Cron(Expression.EVERY_SECOND)
   doSomething() {}
+
+  @Cron.Start.Dont
+  @Cron(Expression.EVERY_SECOND)
+  doSomethingElse() {}
 }
 ```
 
@@ -225,8 +253,7 @@ class Jobs {
 
 > 🔦 `@CurrentJob`
 
-You might need to access the current job instance from its own `onTick` function, for example to simply stop it.
- _Can be used with or without invokation._
+You might need to access the current job instance from its own `onTick` function, for example to simply stop it.<br>_Can be used with or without invokation._
 
 ```ts
 class Jobs {
@@ -244,19 +271,19 @@ You can add dynamic cron jobs like so:
 ```ts
 @Cron.Start
 class Jobs {
-	@Cron(Expression.EVERY_SECOND)
-	doSomething() {}
+  @Cron(Expression.EVERY_SECOND)
+  doSomething() {}
 }
 
 const jobs = initCronJobs(Jobs)
 
 jobs.set('doSomethingElse', {
-	cronTime: Expression.EVERY_HOUR,
-	onTick() {
-		console.log("I'm a dynamic job")
-	},
-	runOnInit: true,
-	preventOverlap: true
+  cronTime: Expression.EVERY_HOUR,
+  onTick() {
+    console.log("I'm a dynamic job")
+  },
+  runOnInit: true,
+  preventOverlap: true
 })
 ```
 

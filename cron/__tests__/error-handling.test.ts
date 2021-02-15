@@ -64,8 +64,10 @@ test('retry multiple times with delay and succeed', async () => {
 	let counter = 0
 	let success = 0
 
-	@Cron.RunOnInit
-	@Cron.Retry({ attempts: 3, delay: 100 })
+	@Cron.Options({
+		runOnInit: true,
+		retry: { attempts: 3, delay: 100 },
+	})
 	class Jobs {
 		@Cron(Expression.EVERY_SECOND)
 		async throwSome() {

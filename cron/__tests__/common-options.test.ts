@@ -44,3 +44,24 @@ test('timezone and offset', async () => {
 
 	await new Promise((r) => setTimeout(r, 100))
 })
+
+test('options decorator', async () => {
+	@Cron.Options({
+		start: true,
+		runOnInit: true,
+		unrefTimeout: true,
+		onComplete: () => console.info('complete'),
+		timeZone: 'Europe/Paris',
+	})
+	class Jobs {
+		@Cron(Expression.EVERY_MINUTE)
+		yo(onComplete: () => void) {
+			onComplete()
+		}
+	}
+
+	const jobs = initCronJobs(Jobs)
+	await new Promise((r) => setTimeout(r, 100))
+	jobs.stopAll()
+	expect(consoleSpy).toHaveBeenNthCalledWith(2, 'complete')
+})

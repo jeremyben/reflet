@@ -300,7 +300,7 @@ export namespace Cron {
 	 *
 	 * @example
 	 * ```ts
-	 * ＠Cron.Retry({ maxRetries: 3, delay: 100, delayFactor: 2, delayMax: 1000 })
+	 * ＠Cron.Retry({ attempts: 3, delay: 100, delayFactor: 2, delayMax: 1000 })
 	 * class Jobs {
 	 *   ＠Cron(Expression.EVERY_HOUR)
 	 *   doSomething() {}
@@ -365,6 +365,51 @@ export namespace Cron {
 				return (target, key, descriptor) => {
 					Reflect.defineMetadata(META.preventOverlap, false, target, key)
 				}
+			}
+		}
+	}
+
+	/**
+	 * Options grouped in a single decorator.
+	 * @example
+	 * ```ts
+	 * ＠Cron.Options({
+	 *   start: true,
+	 *   retry: { attempts: 2 }
+	 * })
+	 * class Jobs {
+	 *   ＠Cron(Expression.EVERY_SECOND)
+	 *   doSomething() {}
+	 * }
+	 * ```
+	 * ---
+	 * @public
+	 */
+	export function Options(
+		options: Omit<JobParameters, 'onTick' | 'cronTime' | 'passCurrentJob'>
+	): ClassOrMethodDecorator {
+		return (target, key, descriptor) => {
+			if (key) {
+				if (options.onComplete) Reflect.defineMetadata(META.onComplete, options.onComplete, target, key)
+				if (options.start) Reflect.defineMetadata(META.start, options.start, target, key)
+				if (options.runOnInit) Reflect.defineMetadata(META.runOnInit, options.runOnInit, target, key)
+				if (options.timeZone) Reflect.defineMetadata(META.timeZone, options.timeZone, target, key)
+				if (options.utcOffset) Reflect.defineMetadata(META.utcOffset, options.utcOffset, target, key)
+				if (options.unrefTimeout) Reflect.defineMetadata(META.unrefTimeout, options.unrefTimeout, target, key)
+				if (options.retry) Reflect.defineMetadata(META.retry, options.retry, target, key)
+				if (options.preventOverlap)
+					Reflect.defineMetadata(META.preventOverlap, options.preventOverlap, target, key)
+				if (options.catchError) Reflect.defineMetadata(META.catchError, options.catchError, target, key)
+			} else {
+				if (options.onComplete) Reflect.defineMetadata(META.onComplete, options.onComplete, target)
+				if (options.start) Reflect.defineMetadata(META.start, options.start, target)
+				if (options.runOnInit) Reflect.defineMetadata(META.runOnInit, options.runOnInit, target)
+				if (options.timeZone) Reflect.defineMetadata(META.timeZone, options.timeZone, target)
+				if (options.utcOffset) Reflect.defineMetadata(META.utcOffset, options.utcOffset, target)
+				if (options.unrefTimeout) Reflect.defineMetadata(META.unrefTimeout, options.unrefTimeout, target)
+				if (options.retry) Reflect.defineMetadata(META.retry, options.retry, target)
+				if (options.preventOverlap) Reflect.defineMetadata(META.preventOverlap, options.preventOverlap, target)
+				if (options.catchError) Reflect.defineMetadata(META.catchError, options.catchError, target)
 			}
 		}
 	}
