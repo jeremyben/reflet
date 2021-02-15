@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.1.0](https://github.com/jeremyben/reflet/tree/master/cron/compare/@reflet/cron@1.0.0...@reflet/cron@1.1.0) (2021-02-15)
+
+
+### Features
+
+* **cron:** add grouped options decorator ([9c954ed](https://github.com/jeremyben/reflet/tree/master/cron/commit/9c954ed))
+
+
+
+
+
 # 1.0.0 (2021-01-18)
 
 
