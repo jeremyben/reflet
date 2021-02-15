@@ -58,6 +58,11 @@ function syncOverloadsDoc() {
 		const inheritDocRe = new RegExp(escapeRegExp(inheritDoc), 'g')
 		dtsTextFinal = dtsTextFinal.replace(inheritDocRe, refDoc)
 	})
+
+	// Rewrite ts-ignore jsdoc comment into basic comment.
+	const tsIgnoreRe = /\/\*\* ?@ts-ignore(.*) ?\*\//g
+	dtsTextFinal = dtsTextFinal.replace(tsIgnoreRe, '// @ts-ignore$1')
+
 	writeFileSync(dtsPath, dtsTextFinal, 'utf8')
 
 	function visitInheritedDoc(node: ts.Node): ts.VisitResult<ts.Node> {

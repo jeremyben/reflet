@@ -38,7 +38,7 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 	 * @param key - name (typed to prevent overriding decorated jobs).
 	 * @param parameters - cron job parameters.
 	 */
-	// @ts-ignore override parameters
+	/** @ts-ignore override parameters */
 	set<K extends string, PassJob extends boolean = false>(
 		key: K extends MethodKeys<T> ? never : K,
 		parameters: JobParameters<T, PassJob>
