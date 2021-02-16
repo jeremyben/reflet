@@ -1,7 +1,7 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
 import { createReadStream, readFileSync } from 'fs'
-import { register, Router, Get, Put, Post, Patch, Delete, Res, Params, Send, DontSend, Decorator } from '../src'
+import { register, Router, Get, Put, Post, Patch, Delete, Res, Params, Send, Decorator } from '../src'
 import { log } from '../../testing/tools'
 
 describe('handle return value', () => {
@@ -246,7 +246,7 @@ describe('class decorator', () => {
 			return 'bar'
 		}
 
-		@DontSend()
+		@Send.Dont()
 		@Put()
 		async put() {
 			return 'bar'

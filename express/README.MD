@@ -842,9 +842,9 @@ class PeopleController {
 
 #### Make exceptions
 
-> 🔦 `@DontSend()`
+> 🔦 `@Send.Dont()`
 
-You need to take full control back in one of your methods ? Apply `DontSend` to exclude a method from `Send` behavior.
+You need to take full control back in one of your methods ? Apply `Send.Dont` to exclude a method from `Send` behavior.
 
 ```ts
 @Send()
@@ -855,7 +855,7 @@ class Controller {
     return db.collection('things').find({})
   }
 
-  @DontSend()
+  @Send.Dont()
   @Post()
   create(@Res res: Response) {
     res.write('complex')

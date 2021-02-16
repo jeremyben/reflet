@@ -3,23 +3,6 @@ import { ClassType, StatusCode, Decorator } from './interfaces'
 const MetaKey = Symbol('send')
 
 /**
- * @public
- */
-type SendOptions = {
-	/** Forces using express `res.json` method to send response */
-	json?: boolean
-
-	/** Sets default response status */
-	status?: StatusCode
-
-	/** Overrides response status for `undefined` return value */
-	undefinedStatus?: StatusCode
-
-	/** Overrides response status for `null` return value */
-	nullStatus?: StatusCode
-}
-
-/**
  * Tells express to handle the method's return value and send it. Can be applied to a whole class and/or to specific methods.
  *
  * @param options - change the response status or force json response type.
@@ -28,6 +11,7 @@ type SendOptions = {
  *
  * @see https://expressjs.com/en/4x/api.html#res.send
  * @see https://expressjs.com/en/4x/api.html#res.json
+ *
  * @example
  * ```ts
  * ＠Send({ nullStatus: 205, undefinedStatus: 404 })
@@ -54,33 +38,64 @@ type SendOptions = {
  * ------
  * @public
  */
-export function Send(options: SendOptions = {}): Decorator.Send {
+export function Send(options: Send.Options = {}): Decorator.Send {
 	return (target, key, descriptor) => {
 		if (key) Reflect.defineMetadata(MetaKey, options, target, key)
 		else Reflect.defineMetadata(MetaKey, options, target)
 	}
 }
 
+export namespace Send {
+	/**
+	 * Options for `@Send` decorator.
+	 * @public
+	 */
+	export type Options = {
+		/** Forces using express `res.json` method to send response */
+		json?: boolean
+
+		/** Sets default response status */
+		status?: StatusCode
+
+		/** Overrides response status for `undefined` return value */
+		undefinedStatus?: StatusCode
+
+		/** Overrides response status for `null` return value */
+		nullStatus?: StatusCode
+	}
+
+	/**
+	 * Prevents a method from having its return value being sent,
+	 * if a `@Send` decorator is applied to its class.
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Send()
+	 * class Foo {
+	 *   ＠Get('/some')
+	 *   get() {
+	 *     return 'hi'
+	 *   }
+	 *
+	 *   ＠Send.Dont()
+	 *   ＠Put('/some')
+	 *   replace(req: Request, res: Response, next: NextFunction) {
+	 *     res.send('hi')
+	 *   }
+	 * }
+	 * ```
+	 * ------
+	 * @public
+	 */
+	export function Dont(): Decorator.DontSend {
+		return (target, key, descriptor) => {
+			Reflect.defineMetadata(MetaKey, null, target, key)
+		}
+	}
+}
+
 /**
- * Prevents a method from having its return value being sent,
- * if a `@Send` decorator is applied to its class.
- * @example
- * ```ts
- * ＠Send()
- * class Foo {
- *   ＠Get('/some')
- *   get() {
- *     return 'hi'
- *   }
- *
- *   ＠DontSend()
- *   ＠Put('/some')
- *   replace(req: Request, res: Response, next: NextFunction) {
- *     res.send('hi')
- *   }
- * }
- * ```
- * ------
+ * @deprecated use `@Send.Dont()`
  * @public
  */
 export function DontSend(): Decorator.DontSend {
@@ -93,10 +108,10 @@ export function DontSend(): Decorator.DontSend {
  * Retrieve send options from both the method and the class, so method options can extend class options.
  * @internal
  */
-export function extractSend(target: ClassType, key: string | symbol): SendOptions | null {
-	const sendOnClass: SendOptions | null = Reflect.getOwnMetadata(MetaKey, target) || null
+export function extractSend(target: ClassType, key: string | symbol): Send.Options | null {
+	const sendOnClass: Send.Options | null = Reflect.getOwnMetadata(MetaKey, target) || null
 
-	const sendOnMethod: SendOptions | null | undefined = Reflect.getOwnMetadata(MetaKey, target.prototype, key)
+	const sendOnMethod: Send.Options | null | undefined = Reflect.getOwnMetadata(MetaKey, target.prototype, key)
 
 	switch (sendOnMethod) {
 		// none

@@ -105,7 +105,7 @@ export namespace Decorator {
 	}
 
 	/**
-	 * Used for `@DontSend` decorator.
+	 * Used for `@Send.Dont` decorator.
 	 * Equivalent to `MethodDecorator`.
 	 * @public
 	 */
