@@ -54,7 +54,7 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 		const unrefTimeout = parameters.unrefTimeout ?? extract('unrefTimeout', contextClass)
 		const catchError = parameters.catchError || extract('catchError', contextClass)
 		const retry = parameters.retry || extract('retry', contextClass)
-		const preventOverlap = parameters.preventOverlap || extract('preventOverlap', contextClass)
+		const preventOverlap = parameters.preventOverlap ?? extract('preventOverlap', contextClass)
 		const passCurrentJob = parameters.passCurrentJob
 
 		const onTickExtended = async (onCompleteArg?: () => void) => {
