@@ -65,8 +65,8 @@ export interface JobParameters<T extends object = object, PassJob extends boolea
 	timeZone?: Zone
 	utcOffset?: Offset | number
 	catchError?: (error: unknown) => void
-	preventOverlap?: boolean
 	retry?: RetryOptions
+	preventOverlap?: boolean | RedisLockOption
 }
 
 /**
@@ -88,6 +88,20 @@ export interface RetryOptions {
 	/** Filter function with the error as parameter. */
 	condition?: (error: any) => boolean
 }
+
+/**
+ * @public
+ */
+export type RedisLockOption = {
+	type: 'redis'
+	lock: (job: Job) => Promise<RedlockLock>
+}
+
+/**
+ * @public
+ */
+/** @ts-ignore redlock not installed */
+export type RedlockLock = import('redlock').Lock
 
 /**
  * @public

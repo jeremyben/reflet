@@ -42,3 +42,6 @@ Thumbs.db
 
 # @shelf/jest-mongodb
 mongoose/globalConfig.json
+
+# redis
+dump.rdb

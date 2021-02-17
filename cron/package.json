@@ -30,7 +30,11 @@
 	},
 	"devDependencies": {
 		"@types/cron": "^1.7.2",
-		"cron": "^1.8.2"
+		"@types/redis": "^2.8.28",
+		"@types/redlock": "^4.0.1",
+		"cron": "^1.8.2",
+		"redis": "^3.0.2",
+		"redlock": "^4.2.0"
 	},
 	"scripts": {
 		"build": "ts-node -T ../build.ts",

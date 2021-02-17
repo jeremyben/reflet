@@ -1,4 +1,12 @@
-import { ClassOrMethodDecorator, ClassType, JobParameters, Offset, RetryOptions, Zone } from './interfaces'
+import {
+	ClassOrMethodDecorator,
+	ClassType,
+	JobParameters,
+	Offset,
+	Zone,
+	RetryOptions,
+	RedisLockOption,
+} from './interfaces'
 
 /* istanbul ignore file - lots of branches with no logic */
 
@@ -348,6 +356,39 @@ export namespace Cron {
 
 	export namespace PreventOverlap {
 		/**
+		 * Cron lock to prevent distributed cron jobs from overlapping, with the help of Redis.
+		 * _Requires [node-redlock](https://github.com/mike-marcacci/node-redlock)._
+		 *
+		 * @param lock - function that should return the lock promise
+		 * @see [node-redlock#usage-promise-style](https://github.com/mike-marcacci/node-redlock#usage-promise-style)
+		 *
+		 * @example
+		 * ```ts
+		 * ＠Cron.PreventOverlap((job) => {
+		 *   const redlock = new Redlock([redisClient], { retryCount: 0 })
+		 *   return redlock.lock(`lock:${job.name}`, 1000)
+		 * })
+		 * class Jobs {
+		 *   ＠Cron(Expression.EVERY_SECOND)
+		 *   async doSomething() {}
+		 * }
+		 * ```
+		 * ---
+		 * @public
+		 */
+		export function RedisLock(lock: RedisLockOption['lock']): ClassOrMethodDecorator {
+			// Check that redlock module has been installed (throw a MODULE_NOT_FOUND error if not).
+			require.resolve('redlock')
+
+			return (target, key, descriptor) => {
+				const redlocker: RedisLockOption = { type: 'redis', lock }
+
+				if (key) Reflect.defineMetadata(META.preventOverlap, redlocker, target, key)
+				else Reflect.defineMetadata(META.preventOverlap, redlocker, target)
+			}
+		}
+
+		/**
 		 * Override and remove class-defined `Cron.PreventOverlap` behavior on a specific method.
 		 * @public
 		 */
@@ -397,8 +438,9 @@ export namespace Cron {
 				if (options.utcOffset) Reflect.defineMetadata(META.utcOffset, options.utcOffset, target, key)
 				if (options.unrefTimeout) Reflect.defineMetadata(META.unrefTimeout, options.unrefTimeout, target, key)
 				if (options.retry) Reflect.defineMetadata(META.retry, options.retry, target, key)
-				if (options.preventOverlap)
+				if (options.preventOverlap) {
 					Reflect.defineMetadata(META.preventOverlap, options.preventOverlap, target, key)
+				}
 				if (options.catchError) Reflect.defineMetadata(META.catchError, options.catchError, target, key)
 			} else {
 				if (options.onComplete) Reflect.defineMetadata(META.onComplete, options.onComplete, target)
