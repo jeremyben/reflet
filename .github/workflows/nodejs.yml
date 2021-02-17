@@ -4,29 +4,39 @@ on:
   push:
     branches:
       - master
+      - develop
     paths:
       - 'express/**/*.ts'
       - 'express-middlewares/**/*.ts'
       - 'mongoose/**/*.ts'
+      - 'cron/**/*.ts'
 
 jobs:
   test:
-
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-18.04
 
     strategy:
       matrix:
-        node-version: [10.x, 12.x]
+        node-version: [12.x, 14.x]
+        redis-version: [5]
 
     steps:
-    - uses: actions/checkout@v1
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - name: Install and test
-      run: |
-        yarn install
-        yarn test
-      env:
-        CI: true
+      - name: Git checkout
+        uses: actions/checkout@v2
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Start Redis ${{ matrix.redis-version }}
+        uses: supercharge/redis-github-action@1.2.0
+        with:
+          redis-version: ${{ matrix.redis-version }}
+
+      - name: Install and test
+        run: |
+          yarn install
+          yarn test
+        env:
+          CI: true

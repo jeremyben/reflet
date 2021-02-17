@@ -8,5 +8,6 @@
 	"bracketSpacing": true,
 	"arrowParens": "always",
 	"proseWrap": "preserve",
-	"endOfLine": "lf"
+	"endOfLine": "lf",
+	"overrides": [{ "files": "*.yml", "options": { "tabWidth": 2 } }]
 }
