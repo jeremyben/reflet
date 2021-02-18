@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.9](https://github.com/jeremyben/reflet/tree/master/express-middlewares/compare/@reflet/express-middlewares@1.1.8...@reflet/express-middlewares@1.1.9) (2021-02-18)
+
+**Note:** Version bump only for package @reflet/express-middlewares
+
+
+
+
+
 ## [1.1.8](https://github.com/jeremyben/reflet/tree/master/express-middlewares/compare/@reflet/express-middlewares@1.1.7...@reflet/express-middlewares@1.1.8) (2021-02-12)
 
 

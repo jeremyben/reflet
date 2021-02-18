@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.5.3](https://github.com/jeremyben/reflet/tree/master/express/compare/@reflet/express@1.5.2...@reflet/express@1.5.3) (2021-02-18)
+
+
+### Bug Fixes
+
+* **express:** deprecate DontSend, add Send.Dont ([f81e197](https://github.com/jeremyben/reflet/tree/master/express/commit/f81e197))
+* **express:** detect headers in global error handler ([db2309e](https://github.com/jeremyben/reflet/tree/master/express/commit/db2309e))
+
+
+
+
+
 ## [1.5.2](https://github.com/jeremyben/reflet/tree/master/express/compare/@reflet/express@1.5.1...@reflet/express@1.5.2) (2021-02-12)
 
 

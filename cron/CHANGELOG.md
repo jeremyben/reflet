@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.2.0](https://github.com/jeremyben/reflet/tree/master/cron/compare/@reflet/cron@1.1.0...@reflet/cron@1.2.0) (2021-02-18)
+
+
+### Bug Fixes
+
+* **cron:** preventOverlap override ([11257fe](https://github.com/jeremyben/reflet/tree/master/cron/commit/11257fe))
+
+
+### Features
+
+* **cron:** redlock to prevent distributed overlaps ([4500587](https://github.com/jeremyben/reflet/tree/master/cron/commit/4500587))
+
+
+
+
+
 # [1.1.0](https://github.com/jeremyben/reflet/tree/master/cron/compare/@reflet/cron@1.0.0...@reflet/cron@1.1.0) (2021-02-15)
 
 
