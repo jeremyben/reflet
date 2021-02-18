@@ -26,6 +26,7 @@ describe('json detection', () => {
 		post() {
 			const err = Error('wtf') as any
 			err.status = 418
+			err.headers = { 'X-Foo': 'bar' }
 			throw err
 		}
 	}
@@ -53,7 +54,8 @@ describe('json detection', () => {
 		const res = await rq.post('').set('X-Requested-With', 'XMLHttpRequest')
 		expect(res.type).toBe('application/json')
 		expect(res.status).toBe(418)
-		expect(res.body).toEqual({ status: 418, message: 'wtf' })
+		expect(res.header).toMatchObject({ 'x-foo': 'bar' })
+		expect(res.body).toEqual({ status: 418, message: 'wtf', headers: { 'X-Foo': 'bar' } })
 		expect(consoleSpy).not.toBeCalled()
 	})
 
@@ -61,6 +63,7 @@ describe('json detection', () => {
 		const res = await rq.post('')
 		expect(res.type).toBe('text/html')
 		expect(res.status).toBe(418)
+		expect(res.header).toMatchObject({ 'x-foo': 'bar' })
 		expect(consoleSpy).not.toBeCalled()
 	})
 })

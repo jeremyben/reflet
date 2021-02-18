@@ -28,6 +28,12 @@ export function globalErrorHandler(err: any, req: express.Request, res: express.
 
 	res.status(status)
 
+	// ─── Headers ───
+
+	if (!!err && typeof err === 'object' && !!err.headers && typeof err.headers === 'object') {
+		res.set(err.headers)
+	}
+
 	// ─── Json detection ───
 
 	const responseType = res.get('Content-Type')
@@ -40,10 +46,6 @@ export function globalErrorHandler(err: any, req: express.Request, res: express.
 		if (err instanceof Error) {
 			// Make `message` property visible in the response https://stackoverflow.com/questions/18391212
 			Object.defineProperty(err, 'message', { enumerable: true })
-
-			/* istanbul ignore if */
-			// Remove sensitive info in production environment
-			if (process.env.NODE_ENV === 'production') delete err.stack
 		}
 
 		res.json(err)
