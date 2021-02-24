@@ -87,6 +87,8 @@ The **best** decorators for [node-cron](https://github.com/kelektiv/node-cron). 
 > 💫 Related node-cron constructor: [`CronJob`](https://github.com/kelektiv/node-cron#usage-basic-cron-usage)
 
 ```ts
+import { Cron, initCronJobs } from '@reflet/cron'
+
 class Jobs {
   @Cron('*/1 * * * *')
   logFoo() {
@@ -106,15 +108,31 @@ jobs.startAll()
 jobs.stopAll()
 ```
 
-Use `Expression` enum to avoid using cron syntax:
+💡 Use `Expression` enum to avoid using cron syntax:
 
 ```ts
+import { Cron, Expression } from '@reflet/cron'
+
 class Jobs {
   @Cron(Expression.EVERY_MINUTE)
   logFoo() {
     console.log('foo')
   }
 }
+```
+
+💡 You can wrap `initCronJobs` into a static method to encapsulate initialization as well:
+
+```ts
+import { initCronJobs } from '@reflet/cron'
+
+class Jobs {
+  static init(...deps: ConstructorParameters<typeof Jobs>) {
+    return initCronJobs(new Jobs(...deps))
+  }
+}
+
+const jobs = Jobs.init()
 ```
 
 ## Extra properties
@@ -137,10 +155,11 @@ Compared to [node-cron](https://github.com/kelektiv/node-cron), Reflet adds 2 pr
 Please refer to the **[node-cron repository](https://github.com/kelektiv/node-cron#api)** for more details.
 
 ```ts
+import { Cron, Expression } from '@reflet/cron'
+
 class Jobs {
   @Cron.Start 
   @Cron.RunOnInit
-  @Cron.UnrefTimeout
   @Cron.TimeZone('Europe/Paris')
   @Cron(Expression.EVERY_SECOND)
   doSomething() {}
@@ -152,8 +171,6 @@ class Jobs {
   @Cron(Expression.EVERY_SECOND)
   doSomethingElse() {}
 }
-
-const jobs = initCronJobs(Jobs)
 ```
 
 ## Errors and retries
@@ -167,6 +184,7 @@ Errors happening in a cron job are automatically logged to `stderr` instead of c
 This decorator allows you to do something else than logging with your errors.
 
 ```ts
+import { Cron, Expression } from '@reflet/cron'
 
 class Jobs {
   @Cron.Catch(async (err) => {
@@ -182,13 +200,17 @@ class Jobs {
 
 > 🔦 `@Cron.Retry(options)`
 
+If your job throw an error, you can retry it with a specify number of `attempts`, and specify backoff behavior.
+
 * `attempts`: Number of retry attempts.
 * `delay`: Delay between retry attemps in milliseconds.
 * `delayFactor`: Increases each time the previous delay by a multiplicative factor.
 * `delayMax`: Caps the maximum delay in milliseconds.
-* `condition`: Filter function with the error as parameter.
+* `condition`: Filter function with the error as parameter (so you can retry on specific errors only).
 
 ```ts
+import { Cron, Expression } from '@reflet/cron'
+
 class Jobs {
   @Cron.Retry({ attempts: 3, delay: 100, delayFactor: 2, delayMax: 1000 })
   @Cron(Expression.EVERY_HOUR)
@@ -196,15 +218,17 @@ class Jobs {
 }
 ```
 
-If all the retries failed, then the error is logged (or handled by `Cron.Catch`).
+If all the attempts failed, then the error is logged to `stderr` (or handled by `Cron.Catch`).
 
 ## Overlaps
 
 > 🔦 `@Cron.PreventOverlap`
 
-Prevents the job from being fired if the previous occurence is not finished. Useful for potentially long jobs firing every second.<br>_Can be used with or without invokation._
+Prevents the job from firing if the previous occurence is not finished. Useful for potentially long jobs firing every second.<br>_Can be used with or without invokation._
 
 ```ts
+import { Cron, Expression } from '@reflet/cron'
+
 class Jobs {
   @Cron.PreventOverlap
   @Cron(Expression.EVERY_SECOND)
@@ -216,13 +240,14 @@ class Jobs {
 
 > 🔦 `@Cron.PreventOverlap.RedisLock`
 
-If your application hosting your cron jobs is running amongst multiple instances, you want to make sure a single job is firing  once.<br>With the help of Redis and the **[node-redlock](https://github.com/mike-marcacci/node-redlock)** package, you can achieve cron locks easily.
+If your application hosting your cron jobs is running amongst multiple instances, you want to make sure a single job is firing once.<br>With the help of Redis and the **[node-redlock](https://github.com/mike-marcacci/node-redlock)** package, you can achieve cron locks easily.
 
 You obviously need to install a Redis server, a nodejs Redis client, and `node-redlock`.
 
 ```ts
 import * as redis from 'redis'
 import * as Redlock from 'redlock'
+import { Cron, Expression } from '@reflet/cron'
 
 const redisClient = redis.createClient()
 
@@ -258,6 +283,8 @@ Go to [node-redlock documentation](https://github.com/mike-marcacci/node-redlock
 If you prefer, you can use `@Cron.Options` to group all your options in a single decorator:
 
 ```ts
+import { Cron } from '@reflet/cron'
+
 class Jobs {
   @Cron.Options({
     start: true,
@@ -267,7 +294,7 @@ class Jobs {
       await db.insert(err)
     }
   })
-  @Cron(Expression.EVERY_SECOND)
+  @Cron('* * * * *')
   doSomething() {}
 }
 ```
@@ -299,6 +326,8 @@ class Jobs {
 You might need to access the current job instance from its own `onTick` function, for example to simply stop it.<br>_Can be used with or without invokation._
 
 ```ts
+import { Cron, Expression, CurrentJob } from '@reflet/cron'
+
 class Jobs {
   @Cron(Expression.EVERY_SECOND)
   doSomething(@CurrentJob job: Job) {
@@ -312,6 +341,8 @@ class Jobs {
 You can add dynamic cron jobs like so:
 
 ```ts
+import { Cron, Expression, initCronJobs } from '@reflet/cron'
+
 @Cron.Start
 class Jobs {
   @Cron(Expression.EVERY_SECOND)
@@ -337,11 +368,17 @@ Dynamic jobs inherit shared class options.
 If you want to go full OOP and your job classes has constructor dependencies, Reflet will enforce passing them as instances (along with their dependencies) instead of classes.
 
 ```ts
+import { Cron, Expression, initCronJobs } from '@reflet/cron'
+
 class Service {
   user = 'Jeremy'
 }
 
 class Jobs {
+  static init(...deps: ConstructorParameters<typeof Jobs>) {
+    return initCronJobs(new Jobs(...deps))
+  }
+
   constructor(private service: Service) {}
 
   @Cron(Expression.EVERY_10_MINUTES)
@@ -350,5 +387,5 @@ class Jobs {
   }
 }
 
-const jobs = initCronJobs(new Jobs(new Service()))
+const jobs = Jobs.init(new Service())
 ```

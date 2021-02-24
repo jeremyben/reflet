@@ -13,6 +13,10 @@ test('dynamic jobs can access class context and inherit class decorator behavior
 	@Cron.RunOnInit
 	@Cron.Start
 	class Jobs {
+		static init(...deps: ConstructorParameters<typeof Jobs>) {
+			return initCronJobs(new Jobs(...deps))
+		}
+
 		constructor(private service: Service) {}
 
 		@Cron(Expression.EVERY_10_MINUTES)
@@ -25,7 +29,7 @@ test('dynamic jobs can access class context and inherit class decorator behavior
 		}
 	}
 
-	const jobs = initCronJobs(new Jobs(new Service()))
+	const jobs = Jobs.init(new Service())
 
 	jobs.set('bar', {
 		cronTime: Expression.EVERY_10_MINUTES,
