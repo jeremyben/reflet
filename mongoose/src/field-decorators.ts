@@ -1,5 +1,6 @@
 import * as mongoose from 'mongoose'
 import { ConstructorType, Decorator } from './interfaces'
+import { schemaFrom } from './schema-creation'
 
 const MetaField = Symbol('field')
 const MetaFieldDiscriminators = Symbol('field-discriminators')
@@ -45,6 +46,20 @@ export namespace Field {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
 			fields[<string>key] = field
+			Reflect.defineMetadata(MetaField, fields, target.constructor)
+		}
+	}
+
+	/**
+	 * Defines a sub-schema on a property (uses `schemaFrom` internally).
+	 * @public
+	 */
+	export function Schema<T extends ConstructorType | [ConstructorType]>(Class: T): Decorator.FieldSchema {
+		return (target, key) => {
+			const fields = getFields(target.constructor)
+
+			fields[<string>key] = Array.isArray(Class) ? [schemaFrom(Class[0])] : schemaFrom(Class as ConstructorType)
+
 			Reflect.defineMetadata(MetaField, fields, target.constructor)
 		}
 	}

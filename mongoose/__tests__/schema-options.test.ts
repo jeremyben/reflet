@@ -65,7 +65,7 @@ test('schema with reference', async () => {
 			a: { b: { c: string } }[]
 		}
 
-		@Field(schemaFrom(SubSchema))
+		@Field.Schema(SubSchema)
 		sub: SubSchema & mongoose.Types.Subdocument
 
 		@Field(mongoose.Schema.Types.Buffer)

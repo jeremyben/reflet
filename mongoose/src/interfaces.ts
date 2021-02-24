@@ -80,6 +80,15 @@ export namespace Decorator {
 	}
 
 	/**
+	 * Used for `@Field.Schema` decorator.
+	 * Equivalent to `PropertyDecorator`.
+	 * @public
+	 */
+	export type FieldSchema = PropertyDecorator & {
+		__mongooseFieldSchema?: never
+	}
+
+	/**
 	 * Used for `@Field.Union` decorator.
 	 * Equivalent to `PropertyDecorator`.
 	 * @public

@@ -488,6 +488,21 @@ const City = mongoose.model<CityDocument>('City', citySchema)
 
 🗣️ As a good practice, you should make your schema-only classes `abstract`, so you don't instantiate them by mistake.
 
+
+### Sub schemas
+
+> 🔦 `Field.Schema(class)`
+
+As an alternative for the above use of `schemaFrom` inside the `Field` decorator, you can do:
+
+```ts
+@Model()
+class City extends Model.I {            
+  @Field.Schema(Location)
+  location: Location
+}
+```
+
 ## Hooks
 
 ### Pre hook
@@ -687,7 +702,7 @@ A mecanism will check and prevent you from defining a different `@Kind` key on s
 
 ### Single nested discriminators
 
-> 🔦 `@Field.Union([classes], options?)`<br>
+> 🔦 `@Field.Union(classes[], options?)`<br>
 > 💫 Related Mongoose method: [`SingleNestedPath.discriminator`](https://mongoosejs.com/docs/discriminators#single-nested-discriminators)
 
 `@Field.Union` allows you to embed discriminators on an single property.
@@ -724,7 +739,7 @@ const square = new Shape({ shape: { __t: 'Square', side: 4 } })
 
 ### Embedded discriminators in arrays
 
-> 🔦 `@Field.ArrayOfUnion([classes], options?)`<br>
+> 🔦 `@Field.ArrayOfUnion(classes[], options?)`<br>
 > 💫 Related Mongoose method: [`DocumentArrayPath.discriminator`](https://mongoosejs.com/docs/discriminators#embedded-discriminators-in-arrays)
 
 `@Field.ArrayOfUnion` allows you to embed discriminators in an array.
