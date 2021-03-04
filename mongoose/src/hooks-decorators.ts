@@ -216,7 +216,18 @@ export const Pre = PreHook
 /**
  * @internal
  */
-export function getPreHooks(target: ConstructorType): Hook[] {
+export function applyPreHooks(schema: mongoose.Schema, target: ConstructorType): void {
+	const preHooks = getPreHooks(target)
+
+	for (const preHook of preHooks) {
+		;(schema.pre as Function)(preHook.method, preHook.callbackOrOptions, preHook.callbackIfOptions)
+	}
+}
+
+/**
+ * @internal
+ */
+function getPreHooks(target: ConstructorType): Hook[] {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
 	return (Reflect.getMetadata(MetaPreHook, target) || []).slice()
 }
@@ -583,7 +594,18 @@ export const Post = PostHook
 /**
  * @internal
  */
-export function getPostHooks(target: ConstructorType): Hook[] {
+export function applyPostHooks(schema: mongoose.Schema, target: ConstructorType): void {
+	const postHooks = getPostHooks(target)
+
+	for (const postHook of postHooks) {
+		;(schema.post as Function)(postHook.method, postHook.callbackOrOptions, postHook.callbackIfOptions)
+	}
+}
+
+/**
+ * @internal
+ */
+function getPostHooks(target: ConstructorType): Hook[] {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
 	return (Reflect.getMetadata(MetaPostHook, target) || []).slice()
 }

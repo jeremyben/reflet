@@ -1,7 +1,7 @@
 import * as mongoose from 'mongoose'
 import { createSchema } from './schema-creation'
 import { registerModelDecorator } from './check-decorator-order'
-import { getKind, assignKindKey } from './kind-decorator'
+import { getKind, assignModelKindKey } from './kind-decorator'
 import { MongooseModel } from './model-interface'
 import { Decorator, ModelAny } from './interfaces'
 
@@ -80,7 +80,7 @@ export namespace Model {
 			}
 
 			const [kindKey, kindValue] = getKind(Class)
-			assignKindKey({ kindKey, rootModel, discriminatorModel: Class })
+			assignModelKindKey({ kindKey, rootModel, discriminatorModel: Class })
 
 			// If the discriminator class extends the root class, e.g. `class Child extends Root`,
 			// we don't worry about Child inheriting Reflet metadata from Root,

@@ -1,10 +1,10 @@
 import * as mongoose from 'mongoose'
 import { getFields, getDiscriminatorFields, getDiscriminatorArrayFields } from './field-decorators'
 import { mergeSchemaOptionsAndKeys } from './schema-options-decorators'
-import { getPreHooks, getPostHooks } from './hooks-decorators'
+import { applyPreHooks, applyPostHooks } from './hooks-decorators'
 import { getKind } from './kind-decorator'
-import { getSchemaCallback } from './schema-callback-decorator'
-import { getPopulateVirtuals } from './virtual-populate-decorator'
+import { applySchemaCallback } from './schema-callback-decorator'
+import { attachPopulateVirtuals } from './virtual-populate-decorator'
 import { ConstructorType, ConstructorInstance } from './interfaces'
 
 /**
@@ -48,37 +48,18 @@ export function schemaFrom<T extends ConstructorType>(Class: T): mongoose.Schema
 export function createSchema<T extends ConstructorType>(Class: T) {
 	const fields = getFields(Class)
 	const options = mergeSchemaOptionsAndKeys(Class)
-	const preHooks = getPreHooks(Class)
-	const postHooks = getPostHooks(Class)
-	const schemaCallback = getSchemaCallback(Class)
-	const populatedVirtuals = getPopulateVirtuals(Class)
 
 	const schema = new mongoose.Schema<ConstructorInstance<T>>(fields, options)
 
-	for (const virtualKey in populatedVirtuals) {
-		/* istanbul ignore if - routine check */
-		if (!populatedVirtuals.hasOwnProperty(virtualKey)) continue
-
-		const virtualOptions = populatedVirtuals[virtualKey]
-		schema.virtual(virtualKey, virtualOptions)
-	}
-
+	attachPopulateVirtuals(schema, Class)
 	loadClassMethods(schema, Class)
-
-	for (const preHook of preHooks) {
-		;(schema.pre as Function)(preHook.method, preHook.callbackOrOptions, preHook.callbackIfOptions)
-	}
-
-	for (const postHook of postHooks) {
-		;(schema.post as Function)(postHook.method, postHook.callbackOrOptions, postHook.callbackIfOptions)
-	}
+	applyPreHooks(schema, Class)
+	applyPostHooks(schema, Class)
 
 	// Add embedded discriminators after hooks, like the mongoose documentation recommends.
 	loadDiscriminatorsFields(schema, Class)
 
-	if (typeof schemaCallback === 'function') {
-		schemaCallback(schema)
-	}
+	applySchemaCallback(schema, Class)
 
 	// console.log(Class.name, schema)
 

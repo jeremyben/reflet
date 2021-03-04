@@ -57,9 +57,7 @@ export namespace Field {
 	export function Schema<T extends ConstructorType | [ConstructorType]>(Class: T): Decorator.FieldSchema {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
-
 			fields[<string>key] = Array.isArray(Class) ? [schemaFrom(Class[0])] : schemaFrom(Class as ConstructorType)
-
 			Reflect.defineMetadata(MetaField, fields, target.constructor)
 		}
 	}

@@ -52,7 +52,22 @@ export function PopulateVirtual<TForeign extends object, TLocal extends object>(
 /**
  * @internal
  */
-export function getPopulateVirtuals(target: object): Record<string, VirtualOptions<any, any>> {
+export function attachPopulateVirtuals(schema: mongoose.Schema, target: object): void {
+	const populateVirtuals = getPopulateVirtuals(target)
+
+	for (const virtualKey in populateVirtuals) {
+		/* istanbul ignore if - routine check */
+		if (!populateVirtuals.hasOwnProperty(virtualKey)) continue
+
+		const virtualOptions = populateVirtuals[virtualKey]
+		schema.virtual(virtualKey, virtualOptions)
+	}
+}
+
+/**
+ * @internal
+ */
+function getPopulateVirtuals(target: object): Record<string, VirtualOptions<any, any>> {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
 	return Object.assign({}, Reflect.getMetadata(MetaVirtual, target))
 }

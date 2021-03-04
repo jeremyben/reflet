@@ -54,7 +54,7 @@ export function getKind(target: object): [string?, string?] {
  * Set `kindKey` as `discriminatorKey` on the root model.
  * @internal
  */
-export function assignKindKey({
+export function assignModelKindKey({
 	kindKey,
 	rootModel,
 	discriminatorModel,

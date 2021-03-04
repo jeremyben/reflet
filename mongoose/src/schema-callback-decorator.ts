@@ -34,6 +34,10 @@ export function SchemaCallback<T>(callback: (schema: mongoose.Schema<T>) => void
 /**
  * @internal
  */
-export function getSchemaCallback(target: ConstructorType): ((schema: mongoose.Schema) => void) | undefined {
-	return Reflect.getMetadata(MetaSchemaCallback, target)
+export function applySchemaCallback(schema: mongoose.Schema, target: ConstructorType): void {
+	const schemaCallback = Reflect.getMetadata(MetaSchemaCallback, target) as ((s: mongoose.Schema) => void) | undefined
+
+	if (typeof schemaCallback === 'function') {
+		schemaCallback(schema)
+	}
 }
