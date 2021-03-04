@@ -29,7 +29,7 @@ import { Decorator, ModelAny } from './interfaces'
  */
 export function Model<T extends ModelAny>(collection?: string, connection?: mongoose.Connection): Decorator.Model<T> {
 	return (Class) => {
-		const schema = createSchema(Class)
+		const schema = createSchema(Class, { full: true })
 
 		if (connection) return connection.model(Class.name, schema, collection)
 		const model = mongoose.model(Class.name, schema, collection)
@@ -87,7 +87,7 @@ export namespace Model {
 			// because Root has already been transformed into a Mongoose Model
 			// which does not have any Reflet metadata.
 
-			const schema = createSchema(Class)
+			const schema = createSchema(Class, { full: true })
 			const modelDiscriminator = rootModel.discriminator(Class.name, schema, kindValue)
 
 			registerModelDecorator(modelDiscriminator, 'Model.Discriminator')

@@ -92,6 +92,60 @@ test('embedded discriminators in arrays', async () => {
 	expect(batch.toObject()).toStrictEqual({ _id: expect.any(mongoose.Types.ObjectId), events })
 })
 
+/**
+ * https://mongoosejs.com/docs/discriminators.html#recursive-embedded-discriminators-in-arrays
+ */
+test('recursive embedded discriminators in arrays', async () => {
+	SchemaOptions({ _id: false })
+	class SubEvent {
+		@Field(String)
+		message: string
+
+		@Field.ArrayOfUnion([SubEvent])
+		sub_events: SubEvent[]
+
+		@DiscriminatorKey
+		kind: 'SubEvent'
+	}
+
+	@Model()
+	class EventList extends Model.I {
+		@Field.ArrayOfUnion([SubEvent])
+		events: SubEvent[]
+	}
+
+	const list: Plain.Omit<EventList, '_id'> = {
+		events: [
+			{
+				kind: 'SubEvent',
+				sub_events: [{ kind: 'SubEvent', sub_events: [], message: 'test1' }],
+				message: 'hello',
+			},
+			{
+				kind: 'SubEvent',
+				sub_events: [
+					{
+						kind: 'SubEvent',
+						sub_events: [{ kind: 'SubEvent', sub_events: [], message: 'test3' }],
+						message: 'test2',
+					},
+				],
+				message: 'world',
+			},
+		],
+	}
+
+	const doc = await EventList.create(list)
+
+	expect(doc.events).toHaveLength(2)
+
+	expect(doc.events[0].sub_events[0].message).toBe('test1')
+	expect(doc.events[0].message).toBe('hello')
+
+	expect(doc.events[1].sub_events[0].sub_events[0].message).toBe('test3')
+	expect(doc.events[1].message).toBe('world')
+})
+
 test('nested discriminators kind key coercion', async () => {
 	abstract class N1 {
 		@Field(Number)

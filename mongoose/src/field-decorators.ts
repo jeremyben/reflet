@@ -4,7 +4,6 @@ import { schemaFrom } from './schema-creation'
 
 const MetaField = Symbol('field')
 const MetaFieldDiscriminators = Symbol('field-discriminators')
-const MetaFieldDiscriminatorsArray = Symbol('field-discriminators-array')
 
 /**
  * Defines SchemaType options on a property.
@@ -72,23 +71,18 @@ export namespace Field {
 	export function Union(
 		...args: ConstructorType[] | (ConstructorType[] | UnionOptions | undefined)[]
 	): Decorator.FieldUnion {
-		if (Array.isArray(args[0])) {
-			return (target, key) => {
-				const discriminatorFields = getDiscriminatorFields(target.constructor)
-				discriminatorFields[<string>key] = {
-					classes: args[0] as ConstructorType[],
-					options: args[1] as UnionOptions | undefined,
-				}
-				Reflect.defineMetadata(MetaFieldDiscriminators, discriminatorFields, target.constructor)
-			}
-		} else {
-			return (target, key) => {
-				const discriminatorFields = getDiscriminatorFields(target.constructor)
-				discriminatorFields[<string>key] = {
-					classes: args as ConstructorType[],
-				}
-				Reflect.defineMetadata(MetaFieldDiscriminators, discriminatorFields, target.constructor)
-			}
+		return (target, key) => {
+			const fields = getFields(target.constructor)
+			// We must remove _id from the base schema or `{ _id: false }` won't do anything on the discriminator schema (_id is still there by default).
+			fields[<string>key] = new mongoose.Schema({}, { _id: false })
+			Reflect.defineMetadata(MetaField, fields, target.constructor)
+			const discriminatorFields = getDiscriminatorFields(target.constructor)
+
+			discriminatorFields[<string>key] = Array.isArray(args[0])
+				? { classes: args[0] as ConstructorType[], options: args[1] as UnionOptions | undefined }
+				: { classes: args as ConstructorType[] }
+
+			Reflect.defineMetadata(MetaFieldDiscriminators, discriminatorFields, target.constructor)
 		}
 	}
 
@@ -102,23 +96,19 @@ export namespace Field {
 	export function ArrayOfUnion(
 		...args: ConstructorType[] | (ConstructorType[] | UnionOptions | undefined)[]
 	): Decorator.FieldArrayOfUnion {
-		if (Array.isArray(args[0])) {
-			return (target, key) => {
-				const discriminatorArrayFields = getDiscriminatorArrayFields(target.constructor)
-				discriminatorArrayFields[<string>key] = {
-					classes: args[0] as ConstructorType[],
-					options: args[1] as UnionOptions | undefined,
-				}
-				Reflect.defineMetadata(MetaFieldDiscriminatorsArray, discriminatorArrayFields, target.constructor)
-			}
-		} else {
-			return (target, key) => {
-				const discriminatorArrayFields = getDiscriminatorArrayFields(target.constructor)
-				discriminatorArrayFields[<string>key] = {
-					classes: args as ConstructorType[],
-				}
-				Reflect.defineMetadata(MetaFieldDiscriminatorsArray, discriminatorArrayFields, target.constructor)
-			}
+		return (target, key) => {
+			const fields = getFields(target.constructor)
+			// We must remove _id from the base schema or `{ _id: false }` won't do anything on the discriminator schema (_id is still there by default).
+			fields[<string>key] = [new mongoose.Schema({}, { _id: false })]
+			Reflect.defineMetadata(MetaField, fields, target.constructor)
+
+			const discriminatorArrayFields = getDiscriminatorFields(target.constructor)
+
+			discriminatorArrayFields[<string>key] = Array.isArray(args[0])
+				? { classes: args[0] as ConstructorType[], options: args[1] as UnionOptions | undefined }
+				: { classes: args as ConstructorType[] }
+
+			Reflect.defineMetadata(MetaFieldDiscriminators, discriminatorArrayFields, target.constructor)
 		}
 	}
 }
@@ -139,16 +129,6 @@ export function getDiscriminatorFields(
 ): { [key: string]: { classes: ConstructorType[]; options?: UnionOptions } } {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
 	return Object.assign({}, Reflect.getMetadata(MetaFieldDiscriminators, target))
-}
-
-/**
- * @internal
- */
-export function getDiscriminatorArrayFields(
-	target: object
-): { [key: string]: { classes: ConstructorType[]; options?: UnionOptions } } {
-	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
-	return Object.assign({}, Reflect.getMetadata(MetaFieldDiscriminatorsArray, target))
 }
 
 /**
