@@ -6,6 +6,9 @@ test('schema with reference', async () => {
 	abstract class SubSchema {
 		@Field({
 			type: [String],
+			default(this: SubSchema, doc: SubSchema) {
+				return ['julia']
+			},
 			enum: ['julia', 'arthur'],
 		})
 		names: string[]

@@ -207,7 +207,7 @@ type SchemaTypeOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]> = R
 	 *
 	 * [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-default)
 	 */
-	default?: Infer<T> | (() => Infer<T>)
+	default?: Infer<T> | ((this: any, doc: any) => Infer<T>)
 
 	/**
 	 * Whether to include or exclude this path by default when loading documents using find(), findOne(), etc.
@@ -227,7 +227,13 @@ type SchemaTypeOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]> = R
 	 * [Guide reference](https://mongoosejs.com/docs/validation#custom-validators)
 	 * | [Method reference](https://mongoosejs.com/docs/api#schematype_SchemaType-validate)
 	 */
-	validate?: ValidateFn<Infer<T>> | [ValidateFn<Infer<T>>, string] | ValidateObj<Infer<T>> | ValidateObj<Infer<T>>[]
+	validate?:
+		| ((value: Infer<T>) => boolean | Promise<boolean>)
+		| [(value: Infer<T>) => boolean | Promise<boolean>, string]
+		| ValidateObj<Infer<T>>
+		| ValidateObj<Infer<T>>[]
+		| RegExp
+		| [RegExp, string]
 
 	/**
 	 * _All types_
@@ -287,7 +293,7 @@ type SchemaTypeOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]> = R
 	 * [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-immutable)
 	 * | [Method reference](https://mongoosejs.com/docs/api#schematype_SchemaType-immutable)
 	 */
-	immutable?: boolean
+	immutable?: boolean | ((this: any, doc: any) => boolean)
 
 	/**
 	 * Allows overriding casting logic for this individual path.
@@ -346,6 +352,8 @@ type StringOptions = {
 	trim?: boolean
 
 	/**
+	 * Attaches a validator that succeeds if the data string matches the given regular expression, and fails otherwise.
+	 *
 	 * _String type_
 	 *
 	 * [Option reference](https://mongoosejs.com/docs/api#schemastringoptions_SchemaStringOptions-match)
@@ -385,6 +393,8 @@ type StringOptions = {
  */
 type NumberOptions = {
 	/**
+	 * The minimum value allowed.
+	 *
 	 * _Number type_
 	 *
 	 * [Option reference](https://mongoosejs.com/docs/api#schemanumberoptions_SchemaNumberOptions-min)
@@ -392,6 +402,8 @@ type NumberOptions = {
 	min?: number
 
 	/**
+	 * The maximum value allowed.
+	 *
 	 * _Number type_
 	 *
 	 * [Option reference](https://mongoosejs.com/docs/api#schemanumberoptions_SchemaNumberOptions-max)
@@ -399,6 +411,8 @@ type NumberOptions = {
 	max?: number
 
 	/**
+	 * Array of allowed values.
+	 *
 	 * _Number type_
 	 *
 	 * [Option reference](https://mongoosejs.com/docs/api#schemanumberoptions_SchemaNumberOptions-enum)
@@ -423,17 +437,31 @@ type ArrayOptions<T extends string | number> = {
  */
 type DateOptions = {
 	/**
+	 * The minimum date allowed.
+	 *
 	 * _Date type_
 	 *
 	 * [Option reference](https://mongoosejs.com/docs/api#schemadateoptions_SchemaDateOptions-min)
 	 */
 	min?: Date
+
 	/**
+	 * The maximum date allowed.
+	 *
 	 * _Date type_
 	 *
 	 * [Option reference](https://mongoosejs.com/docs/api#schemadateoptions_SchemaDateOptions-max)
 	 */
 	max?: Date
+
+	/**
+	 * Defines a TTL index on this path.
+	 *
+	 * _Date type_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api.html#schemadateoptions_SchemaDateOptions-expires)
+	 */
+	expires?: number | Date
 }
 
 /**
@@ -449,8 +477,14 @@ type ObjectIdOptions = {
 	 * | [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-ref)
 	 */
 	ref?: keyof RefletMongoose.Ref extends undefined
-		? string | ConstructorType
-		: keyof RefletMongoose.Ref | ConstructorType<RefletMongoose.Ref[keyof RefletMongoose.Ref]>
+		? string | mongoose.Model<any> | ((this: any, doc: any) => string | mongoose.Model<any>)
+		:
+				| keyof RefletMongoose.Ref
+				| ConstructorType<RefletMongoose.Ref[keyof RefletMongoose.Ref]>
+				| ((
+						this: any,
+						doc: any
+				  ) => keyof RefletMongoose.Ref | ConstructorType<RefletMongoose.Ref[keyof RefletMongoose.Ref]>)
 
 	/**
 	 * _ObjectId type_
@@ -495,7 +529,7 @@ type Infer<T> = T extends NumberConstructor | typeof mongoose.Schema.Types.Numbe
  * @public
  */
 type ValidateObj<T> = {
-	validator: ValidateFn<T>
+	validator: (value: T) => boolean | Promise<boolean>
 	msg?: string | ValidateMessageFn<T>
 	message?: string | ValidateMessageFn<T>
 }
@@ -503,13 +537,8 @@ type ValidateObj<T> = {
 /**
  * @public
  */
-type ValidateFn<T> = (value: T) => boolean | Promise<boolean>
-
-/**
- * @public
- */
 type ValidateMessageFn<T> = (props: {
-	validator: ValidateFn<T>
+	validator: (value: T) => boolean | Promise<boolean>
 	message: ValidateMessageFn<T>
 	type: string
 	path: string
