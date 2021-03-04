@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.4.2](https://github.com/jeremyben/reflet/tree/master/mongoose/compare/@reflet/mongoose@1.4.1...@reflet/mongoose@1.4.2) (2021-03-04)
+
+
+### Bug Fixes
+
+* **mongoose:** allow recursive embedded discriminators in arrays ([c3b37ff](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/c3b37ff))
+* **mongoose:** alternative decorator for schemaFrom ([fc47f28](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/fc47f28))
+* **mongoose:** better typing of field decorator ([4c0ff60](https://github.com/jeremyben/reflet/tree/master/mongoose/commit/4c0ff60))
+
+
+
+
+
 ## [1.4.1](https://github.com/jeremyben/reflet/tree/master/mongoose/compare/@reflet/mongoose@1.4.0...@reflet/mongoose@1.4.1) (2021-01-07)
 
 
