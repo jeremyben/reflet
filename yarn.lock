@@ -8785,6 +8785,11 @@ ts-node@^9.1.1:
     source-map-support "^0.5.17"
     yn "3.1.1"
 
+ts-toolbelt@^9.5.10:
+  version "9.5.10"
+  resolved "https://registry.yarnpkg.com/ts-toolbelt/-/ts-toolbelt-9.5.10.tgz#4e72459aecf40651f631f821cfff1eb690611d90"
+  integrity sha512-nyfx1+97Bl86XFkHYC3TyM0IP2mP0Yc30KbZod9S6VaUNC9aJl4kcKnjKopBm+GG1TjOFsAtRbhKZZjuji86wQ==
+
 tsc-prog@^2.2.1:
   version "2.2.1"
   resolved "https://registry.yarnpkg.com/tsc-prog/-/tsc-prog-2.2.1.tgz#7ea892e1628f1ef93ae6f4d0a97c8a9518e4b408"

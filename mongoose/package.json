@@ -29,6 +29,9 @@
 		"mongoose": ">=5.0 <5.11",
 		"reflect-metadata": "^0.1.13"
 	},
+	"dependencies": {
+		"ts-toolbelt": "^9.5.10"
+	},
 	"devDependencies": {
 		"@shelf/jest-mongodb": "^1.2.3",
 		"@types/mongoose": "^5.10.3",

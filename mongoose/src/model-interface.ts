@@ -1,6 +1,7 @@
+import { U, Tuple, O, F } from 'ts-toolbelt'
 import * as mongoose from 'mongoose'
 import * as mongodb from 'mongodb' // tslint:disable-line: no-implicit-dependencies
-import { Plain } from './interfaces'
+import { Plain, PlainKeys } from './interfaces'
 
 /**
  * Intermediary abstract class with overloaded static methods to properly infer the child class.
@@ -12,6 +13,15 @@ export abstract class MongooseModel extends (class {} as RefletMongoose.Model) {
 		doc?: { _id?: mongoose.Document['_id']; [field: string]: any },
 		strict?: mongoose.SchemaOptions['strict']
 	)
+
+	static findSafe<T extends MongooseModel>(
+		this: new (...a: any[]) => T,
+		conditions: SafeFilterQuery<Plain<T>>,
+		projection?: PartialRecord<PlainKeys<T>, 1> | PartialRecord<PlainKeys<T>, 0> | null,
+		options?: mongoose.QueryFindOptions
+	): SafeQuery<T, [], [], false, true> {
+		return (this as mongoose.Model<any>).find(conditions, projection, options) as any
+	}
 
 	// @ts-ignore implementation
 	static $where<T extends MongooseModel>(
@@ -451,4 +461,172 @@ interface QueryReplaceOneOptions {
 	writeConcern?: mongoose.WriteConcern | null
 	omitUndefined?: boolean
 	timestamps?: boolean | null
+}
+
+type SafeFilterQuery<T> = {
+	[P in keyof T]?: P extends '_id'
+		? [Extract<T[P], mongodb.ObjectId>] extends [never]
+			? mongodb.Condition<T[P]>
+			: mongodb.Condition<T[P] | string | { _id: mongodb.ObjectId }>
+		: [Extract<T[P], mongodb.ObjectId>] extends [never]
+		? mongodb.Condition<T[P]>
+		: mongodb.Condition<T[P] | string>
+} &
+	RootQuerySelector<T>
+
+type RootQuerySelector<T> = {
+	/** https://docs.mongodb.com/manual/reference/operator/query/and/#op._S_and */
+	$and?: ({ [P in keyof T]?: mongodb.Condition<T[P]> } & RootQuerySelector<T>)[]
+	/** https://docs.mongodb.com/manual/reference/operator/query/nor/#op._S_nor */
+	$nor?: ({ [P in keyof T]?: mongodb.Condition<T[P]> } & RootQuerySelector<T>)[]
+	/** https://docs.mongodb.com/manual/reference/operator/query/or/#op._S_or */
+	$or?: ({ [P in keyof T]?: mongodb.Condition<T[P]> } & RootQuerySelector<T>)[]
+	/** https://docs.mongodb.com/manual/reference/operator/query/text */
+	$text?: {
+		$search: string
+		$language?: string
+		$caseSensitive?: boolean
+		$diacraticSensitive?: boolean
+	}
+	/** https://docs.mongodb.com/manual/reference/operator/query/where/#op._S_where */
+	$where?: string | Function
+	/** https://docs.mongodb.com/manual/reference/operator/query/comment/#op._S_comment */
+	$comment?: string
+}
+
+interface SafeQuery<
+	T extends mongoose.Document,
+	PopulatedKeysTuple extends Tuple.List<RefKeys<T>>,
+	OmittedKeys extends Tuple.List<keyof T>,
+	IsLean extends boolean,
+	AsArray extends boolean
+> {
+	then: AsArray extends false
+		? Tuple.Length<OmittedKeys> extends 0
+			? Promise<SafeResult<T, PopulatedKeysTuple[number], IsLean>>['then']
+			: Promise<Omit<SafeResult<T, PopulatedKeysTuple[number], IsLean>, OmittedKeys[number]>>['then']
+		: Tuple.Length<OmittedKeys> extends 0
+		? Promise<SafeResult<T, PopulatedKeysTuple[number], IsLean>[]>['then']
+		: Promise<Omit<SafeResult<T, PopulatedKeysTuple[number], IsLean>, OmittedKeys[number]>[]>['then']
+
+	populate<
+		TPath extends RefKeys<T>,
+		TSub extends T[TPath] extends any[]
+			? U.Select<T[TPath], mongoose.Document[]>[number]
+			: U.Select<T[TPath], mongoose.Document>,
+		TSubPath extends RefKeys<TSub>,
+		TSubSub extends TSub[TSubPath] extends any[]
+			? U.Select<TSub[TSubPath], mongoose.Document[]>[number]
+			: U.Select<TSub[TSubPath], mongoose.Document>
+	>(
+		options: TPath | SafeQueryPopulateOptions<T, TPath, TSub, TSubPath, TSubSub>
+	): SafeQuery<T, Tuple.Append<PopulatedKeysTuple, TPath>, OmittedKeys, IsLean, AsArray>
+
+	select<TPickedKeys extends keyof T>(
+		arg: PartialRecord<F.AutoPath<PathPlain<T>, string & TPickedKeys>, 1>
+	): SafeQuery<T, PopulatedKeysTuple, Tuple.List<Exclude<Exclude<PlainKeys<T>, '_id'>, TPickedKeys>>, IsLean, AsArray>
+
+	select<TOmittedKeys extends PlainKeys<T>>(
+		arg: PartialRecord<TOmittedKeys, 0>
+	): SafeQuery<T, PopulatedKeysTuple, Tuple.List<TOmittedKeys>, IsLean, AsArray>
+
+	lean(): SafeQuery<T, PopulatedKeysTuple, OmittedKeys, true, AsArray>
+
+	sort<TKey extends PlainKeys<T>>(
+		arg: TKey | PartialRecord<TKey, 'asc' | 'ascending' | 1 | 'desc' | 'descending' | -1>
+	): this
+
+	skip(val: number): this
+
+	limit(val: number): this
+}
+
+type SafeQueryPopulateOptions<T, TPath, TSub, TSubPath, TSubSub extends object> = {
+	path: TPath
+	match?: SafeFilterQuery<TSub> | ((doc: T) => SafeFilterQuery<TSub>)
+	select?: PartialRecord<PlainKeys<TSub>, 0 | 1>
+	sort?: PartialRecord<PlainKeys<TSub>, 'asc' | 'ascending' | 1 | 'desc' | 'descending' | -1>
+	model?: string | mongoose.Model<any>
+	options?: { limit?: number; retainNullValues?: boolean }
+	perDocumentLimit?: number
+	populate?: ArrayOrNot<{
+		path: TSubPath
+		match?: SafeFilterQuery<U.Strict<TSubSub>> | ((doc: TSub) => SafeFilterQuery<U.Strict<TSubSub>>)
+		select?: PartialRecord<PlainKeys<U.Strict<TSubSub>>, 0> | PartialRecord<PlainKeys<U.Strict<TSubSub>>, 1>
+		sort?: PartialRecord<PlainKeys<U.Strict<TSubSub>>, 'asc' | 'ascending' | 1 | 'desc' | 'descending' | -1>
+		model?: string | mongoose.Model<any>
+		options?: { limit?: number; retainNullValues?: boolean }
+		perDocumentLimit?: number
+		populate?: ArrayOrNot<{
+			path: string
+			match?: SafeFilterQuery<{ [key: string]: any }>
+			select?: Record<string, 0> | Record<string, 1>
+			sort?: Record<string, 'asc' | 'ascending' | 1 | 'desc' | 'descending' | -1>
+			model?: string | mongoose.Model<any>
+			options?: { limit?: number; retainNullValues?: boolean }
+			perDocumentLimit?: number
+		}>
+	}>
+}
+
+export type SafeResult<
+	T extends mongoose.Document,
+	PopulatedKeys extends RefKeys<T> = never,
+	IsLean extends boolean = false
+> = (IsLean extends true ? Plain<Unpopulate<T, PopulatedKeys>> : mongoose.Document & Unpopulate<T, PopulatedKeys>) &
+	{
+		[P in PopulatedKeys]: T[P] extends mongoose.Types.ObjectId[] | (infer D)[]
+			? IsLean extends true
+				? Plain<D>[]
+				: D[]
+			: T[P] extends mongoose.Types.ObjectId | infer DD
+			? IsLean extends true
+				? Plain<DD>
+				: DD
+			: T[P]
+	}
+
+/**
+ * Removes Model from `Model | ObjectId` unions.
+ */
+type Unpopulate<T extends mongoose.Document, PopulatedKeys extends RefKeys<T>> = {
+	[P in Exclude<keyof T, PopulatedKeys | Exclude<keyof mongoose.Document, '_id'>>]: IsAny<T[P]> extends true
+		? T[P]
+		: U.Has<T[P], mongoose.Types.ObjectId> extends 1
+		? mongoose.Types.ObjectId
+		: U.Has<T[P], mongoose.Types.ObjectId[]> extends 1
+		? mongoose.Types.ObjectId[]
+		: T[P]
+}
+
+type RefKeys<T extends object> = O.SelectKeys<
+	T,
+	mongoose.Document | mongoose.Document[] | mongoose.Types.ObjectId | mongoose.Types.ObjectId[],
+	'extends->'
+>
+
+type PartialRecord<K extends keyof any, T> = {
+	[P in K]?: T
+}
+
+type ArrayOrNot<T> = T | T[]
+
+type IsAny<T> = 0 extends 1 & T ? true : false
+
+// tslint:disable: no-shadowed-variable
+type PathPlain<T> = {
+	[K in Exclude<PlainKeys<T>, undefined>]: T[K] extends
+		| mongoose.Document
+		| mongoose.Types.Subdocument
+		| mongoose.Types.Embedded
+		? PathPlain<T[K]>
+		: T[K] extends mongoose.Types.DocumentArray<infer U>
+		? PathPlain<U>
+		: T[K] extends mongoose.Types.Array<infer U>
+		? U
+		: T[K] extends (infer U)[] | ((infer U)[] | mongoose.Types.ObjectId[])
+		? PathPlain<U>
+		: U.Has<T[K], mongoose.Types.ObjectId> extends 1
+		? PathPlain<U.Exclude<T[K], mongoose.Types.ObjectId>>
+		: T[K]
 }

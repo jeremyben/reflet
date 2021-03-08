@@ -1,5 +1,6 @@
 import * as mongoose from 'mongoose'
 import { Field, Model, schemaFrom, Kind, Plain, SchemaOptions, SchemaCallback, PostHook, PreHook } from '../src'
+import { SafeResult } from '../src/model-interface'
 
 test('model with custom collection and connection', async () => {
 	const db = mongoose.createConnection(process.env.MONGO_URL!, {
@@ -76,6 +77,10 @@ test('model discriminators', async () => {
 
 		constructor(doc?: Plain<User, { Omit: 'fullname'; Optional: '_id' }>) {
 			super()
+		}
+
+		hello() {
+			return 'hi'
 		}
 	}
 
@@ -247,4 +252,75 @@ describe('model discriminators coercion', () => {
 			}
 		}).toThrowError(/overwrite discriminatorKey/)
 	})
+})
+
+test.only('safe interface', async () => {
+	@Model()
+	class SafeCompany extends Model.I {
+		@Field({ type: String, required: true })
+		logo: string
+
+		@Field({
+			type: mongoose.Schema.Types.ObjectId,
+			ref: SafeCompany,
+		})
+		other: SafeCompany | mongoose.Types.ObjectId
+
+		@Field({
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'SafeUser',
+		})
+		boss: SafeUser | mongoose.Types.ObjectId
+	}
+
+	@Model()
+	class SafeUser extends Model.I {
+		_id: string
+
+		@Field({ type: String, required: true })
+		email: string
+
+		@Field({
+			type: mongoose.Schema.Types.ObjectId,
+			ref: SafeCompany,
+		})
+		company: SafeCompany | mongoose.Types.ObjectId
+
+		@Field({
+			type: mongoose.Schema.Types.ObjectId,
+			ref: SafeUser,
+		})
+		friends: SafeUser[] | mongoose.Types.ObjectId[]
+
+		ow: any
+
+		method() {
+			return 'hello'
+		}
+	}
+
+	@Model.Discriminator(SafeUser)
+	class SafeWorker extends SafeUser {
+		@Field(String)
+		job: string
+	}
+
+	const company = await SafeCompany.create({ logo: 'Corp' })
+	await SafeUser.create({ email: 'jeremy@email.com', company: company._id })
+
+	const users = await SafeUser.findSafe({ email: 'jeremy@email.com' })
+		.populate({
+			path: 'company',
+			select: { other: 1 },
+			match: { logo: '' },
+			populate: { path: 'boss', select: { friends: 1 } },
+		})
+		.limit(100)
+		.populate('friends')
+		.select({ company: 1, friends: 1, 'company.boss': 1, 'friends.email': 1 })
+	// .lean()
+
+	type o = SafeResult<SafeUser>
+	const m: mongoose.Document = users[0]
+	console.log('users', users[0].company)
 })

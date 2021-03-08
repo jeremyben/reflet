@@ -161,7 +161,7 @@ type _PartialDeep<T> = {
 /**
  * @public
  */
-type PlainKeys<T> = {
+export type PlainKeys<T> = {
 	[K in keyof T]: K extends '_id' ? K : K extends keyof mongoose.Document ? never : T[K] extends Function ? never : K
 }[keyof T]
 
