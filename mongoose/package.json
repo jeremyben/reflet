@@ -3,7 +3,12 @@
 	"version": "1.4.2",
 	"author": "Jeremy Bensimon",
 	"license": "MIT",
-	"repository": "https://github.com/jeremyben/reflet/tree/master/mongoose",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/jeremyben/reflet.git",
+		"directory": "mongoose"
+	},
+	"homepage": "https://github.com/jeremyben/reflet/tree/master/mongoose#readme",
 	"description": "Well-defined and well-typed mongoose decorators",
 	"keywords": [
 		"mongoose",
