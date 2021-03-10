@@ -10,7 +10,7 @@ export { Kind, DiscriminatorKey } from './kind-decorator'
 
 export { PopulateVirtual } from './virtual-populate-decorator'
 
-export { PreHook, Pre, PostHook, Post } from './hooks-decorators'
+export { PreHook, PostHook } from './hooks-decorators'
 
 export { schemaFrom } from './schema-creation'
 

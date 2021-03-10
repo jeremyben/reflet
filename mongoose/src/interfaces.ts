@@ -239,13 +239,6 @@ export namespace Plain {
 	export type Omit<T, K extends PlainKeys<T>> = Plain<T, { Omit: K }>
 
 	/**
-	 * Omits Mongoose properties, all methods, and custom keys.
-	 * @deprecated use `Plain.Omit`
-	 * @public
-	 */
-	export type Without<T, K extends PlainKeys<T>> = Plain<T, { Omit: K }>
-
-	/**
 	 * Omits Mongoose properties, all methods, and makes custom keys optional.
 	 * @template T - mongoose document.
 	 * @template K - other keys to make optional.

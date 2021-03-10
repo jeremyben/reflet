@@ -208,12 +208,6 @@ export function PreHook(
 }
 
 /**
- * @deprecated use `PreHook`
- * @public
- */
-export const Pre = PreHook
-
-/**
  * @internal
  */
 export function applyPreHooks(schema: mongoose.Schema, target: ConstructorType): void {
@@ -584,12 +578,6 @@ export function PostHook(
 		Reflect.defineMetadata(MetaPostHook, postHooks, Class)
 	}
 }
-
-/**
- * @deprecated use PostHook
- * @public
- */
-export const Post = PostHook
 
 /**
  * @internal
