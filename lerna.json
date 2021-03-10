@@ -8,7 +8,10 @@
 			"private": false,
 			"conventionalCommits": true,
 			"push": false,
-			"message": "chore: release"
+			"message": "chore(release): latest"
+		},
+		"publish": {
+			"allowBranch": "master"
 		}
 	},
 	"ignoreChanges": [

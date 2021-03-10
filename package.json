@@ -21,8 +21,10 @@
 		"test": "lerna run test --stream",
 		"build": "lerna run build --stream",
 		"create-package": "ts-node -T ./create-package.ts",
-		"release:version": "lerna version",
-		"release:publish": "lerna publish from-package"
+		"release:version": "lerna version --conventional-graduate",
+		"release:publish": "lerna publish from-package",
+		"release:version:next": "lerna version --conventional-prerelease --preid next --allow-branch next --no-changelog --no-git-tag-version --ignore-scripts && git commit -am \"chore(release): next\"",
+		"release:publish:next": "lerna publish from-package --dist-tag next --allow-branch next"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "^12.0.1",
