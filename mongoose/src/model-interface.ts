@@ -287,36 +287,37 @@ export abstract class MongooseModel extends (class {} as RefletMongoose.Model) {
 
 	static insertMany<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
-		docs: Plain.Partial<T>[],
+		docs: Plain.PartialDeep<T>[],
 		callback?: (error: any, docs: T[]) => void
 	): Promise<T[]>
 
 	static insertMany<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
-		docs: Plain.Partial<T>[],
+		docs: Plain.PartialDeep<T>[],
 		options?: { ordered?: boolean; rawResult?: boolean } & mongoose.ModelOptions,
 		callback?: (error: any, docs: T[]) => void
 	): Promise<T[]>
 
 	static insertMany<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
-		doc: Plain.Partial<T>,
+		doc: Plain.PartialDeep<T>,
 		callback?: (error: any, doc: T) => void
 	): Promise<T>
 
 	// @ts-ignore implementation
 	static insertMany<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
-		doc: Plain.Partial<T>,
+		doc: Plain.PartialDeep<T>,
 		options?: { ordered?: boolean; rawResult?: boolean } & mongoose.ModelOptions,
 		callback?: (error: any, doc: T) => void
 	): Promise<T>
 
+	// https://mongoosejs.com/docs/api.html#model_Model.populate
 	// @ts-ignore implementation
 	static populate<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
-		docs: Plain.Partial<T> | Plain.Partial<T>[],
-		options: mongoose.ModelPopulateOptions | mongoose.ModelPopulateOptions[],
+		docs: { [key: string]: any } | { [key: string]: any }[],
+		options: mongoose.ModelPopulateOptions | mongoose.ModelPopulateOptions[] | string,
 		callback?: (err: any, res: T[]) => void
 	): Promise<T[]>
 

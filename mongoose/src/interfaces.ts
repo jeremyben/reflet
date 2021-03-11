@@ -138,7 +138,9 @@ type PrimitiveOrBuiltIn =
 	| null
 	| bigint
 	| Date
+	| RegExp
 	| Buffer
+	| mongoose.Types.ObjectId
 	| mongoose.Types.Decimal128
 	| mongodb.Binary
 
