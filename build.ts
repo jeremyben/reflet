@@ -30,17 +30,6 @@ function syncOverloadsDoc() {
 
 	const tsdocConfig = new tsdoc.TSDocConfiguration()
 	tsdocConfig.setSupportForTags(tsdoc.StandardTags.allDefinitions, true)
-
-	tsdocConfig.addTagDefinitions(
-		[
-			new tsdoc.TSDocTagDefinition({
-				tagName: '@decorator',
-				syntaxKind: tsdoc.TSDocTagSyntaxKind.ModifierTag,
-			}),
-		],
-		true
-	)
-
 	const docParser = new tsdoc.TSDocParser(tsdocConfig)
 
 	const dtsPath = join(basePath, 'dist', dtsEntryPoint)
