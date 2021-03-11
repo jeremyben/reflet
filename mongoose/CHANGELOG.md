@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.4.3](https://github.com/jeremyben/reflet/compare/@reflet/mongoose@1.4.2...@reflet/mongoose@1.4.3) (2021-03-11)
+
+
+### Bug Fixes
+
+* **mongoose:** static method types ([11f3c32](https://github.com/jeremyben/reflet/commit/11f3c3254f41491ecebce602f271a47cc51b29d7))
+
+
+
+
+
 ## [1.4.2](https://github.com/jeremyben/reflet/compare/@reflet/mongoose@1.4.1...@reflet/mongoose@1.4.2) (2021-03-04)
 
 
