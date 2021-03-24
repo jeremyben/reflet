@@ -175,7 +175,7 @@ type _Plain<T> = {
 	[K in Exclude<PlainKeys<T>, undefined>]: T[K] extends
 		| mongoose.Document
 		| mongoose.Types.Subdocument
-		| mongoose.Types.Embedded
+		| mongoose.Types.EmbeddedDocument
 		? _Plain<T[K]>
 		: T[K] extends mongoose.Types.DocumentArray<infer U>
 		? _Plain<U>[]
@@ -265,11 +265,15 @@ export namespace Plain {
 
 /**
  * Interface with the right keys but with `any` types, so we can enforce decorated classes to a minimal interface,
- * and we can overwrite the methods' signatures without worrying about an update of `@types/mongoose` breaking our types.
+ * and we can overwrite the methods' signatures without worrying about an update of mongoose definition file breaking our types.
  * @public
  */
-export type ModelAny = { [K in keyof mongoose.Model<mongoose.Document>]: any } &
-	(new (...args: any[]) => { [K in keyof mongoose.Document]: any })
+export type ModelAny = { [K in keyof mongoose.Model<mongoose.Document>]: any } & (new (...args: any[]) => DocumentAny)
+
+/**
+ * @public
+ */
+export type DocumentAny = { [K in keyof mongoose.Document]: any }
 
 /**
  * @public
@@ -280,6 +284,11 @@ export type ConstructorType<T = any> = Function & { prototype: T }
  * @public
  */
 export type ConstructorInstance<T extends ConstructorType> = T extends Function & { prototype: infer R } ? R : never
+
+/**
+ * @public
+ */
+export type AsDocument<T> = T extends mongoose.Document ? T : T & mongoose.Document
 
 // tslint:disable: no-empty-interface
 declare global {

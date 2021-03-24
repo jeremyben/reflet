@@ -29,15 +29,13 @@
 	},
 	"engineStrict": true,
 	"peerDependencies": {
-		"@types/mongoose": "^5.7.20",
 		"@types/node": ">=8",
-		"mongoose": ">=5.0 <5.11",
+		"mongoose": ">=5.11",
 		"reflect-metadata": "^0.1.13"
 	},
 	"devDependencies": {
 		"@shelf/jest-mongodb": "^1.2.3",
-		"@types/mongoose": "^5.10.3",
-		"mongoose": "5.10.19"
+		"mongoose": "^5.12.13"
 	},
 	"scripts": {
 		"build": "ts-node -T ../build.ts",

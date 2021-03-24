@@ -252,7 +252,7 @@ type SchemaTypeOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]> = R
 	 *
 	 * [Method reference](https://mongoosejs.com/docs/api#schematype_SchemaType-index)
 	 */
-	index?: boolean | string | mongoose.SchemaTypeOpts.IndexOpts
+	index?: boolean | string | mongoose.IndexOptions
 
 	/**
 	 * Build a unique index on this path when the model is compiled. The unique option is not a validator.

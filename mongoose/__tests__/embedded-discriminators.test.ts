@@ -200,9 +200,9 @@ describe('union options', () => {
 		}
 
 		const doc = new RequiredField({ name: 'test' })
-		const validationError = doc.validateSync()
+		const validationError = doc.validateSync()!
 		expect(validationError).toBeInstanceOf(mongoose.Error.ValidationError)
-		expect(validationError!.errors.shape).toHaveProperty('kind', 'required')
+		expect(validationError.errors.shape).toHaveProperty('kind', 'required')
 	})
 
 	test('required discriminatorKey', async () => {
@@ -236,9 +236,9 @@ describe('union options', () => {
 		])
 
 		const c = new RequiredKindAndField({ name: 'test', shapes: [{}] })
-		const validationError = c.validateSync()
+		const validationError = c.validateSync()!
 		expect(validationError).toBeInstanceOf(mongoose.Error.ValidationError)
-		expect(validationError!.errors['shapes.0.__t']).toHaveProperty('kind', 'required')
+		expect(validationError.errors['shapes.0.__t']).toHaveProperty('kind', 'required')
 	})
 
 	test('required discriminatorKey but not field', async () => {
@@ -264,8 +264,8 @@ describe('union options', () => {
 		expect(b.toObject().shape).toStrictEqual({ __t: 'R2', side: 2 })
 
 		const c = new RequiredKind({ name: 'test', shape: {} })
-		const validationError = c.validateSync()
+		const validationError = c.validateSync()!
 		expect(validationError).toBeInstanceOf(mongoose.Error.ValidationError)
-		expect(validationError!.errors['shape.__t']).toHaveProperty('kind', 'required')
+		expect(validationError.errors['shape.__t']).toHaveProperty('kind', 'required')
 	})
 })

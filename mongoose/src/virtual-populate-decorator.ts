@@ -52,7 +52,7 @@ export function PopulateVirtual<TForeign extends object, TLocal extends object>(
 /**
  * @internal
  */
-export function attachPopulateVirtuals(schema: mongoose.Schema, target: object): void {
+export function attachPopulateVirtuals(schema: mongoose.Schema<any>, target: object): void {
 	const populateVirtuals = getPopulateVirtuals(target)
 
 	for (const virtualKey in populateVirtuals) {

@@ -5,7 +5,7 @@ import { applyPreHooks, applyPostHooks } from './hooks-decorators'
 import { getKind } from './kind-decorator'
 import { applySchemaCallback } from './schema-callback-decorator'
 import { attachPopulateVirtuals } from './virtual-populate-decorator'
-import { ConstructorType, ConstructorInstance } from './interfaces'
+import { ConstructorType, ConstructorInstance, AsDocument } from './interfaces'
 
 /**
  * Retrieves the schema from a decorated class.
@@ -33,7 +33,7 @@ import { ConstructorType, ConstructorInstance } from './interfaces'
  * ---
  * @public
  */
-export function schemaFrom<T extends ConstructorType>(Class: T): mongoose.Schema<ConstructorInstance<T>> {
+export function schemaFrom<T extends ConstructorType>(Class: T) {
 	if (Class.prototype.$isMongooseModelPrototype) {
 		return Class.prototype.schema
 	}
@@ -50,7 +50,7 @@ export function createSchema<T extends ConstructorType>(Class: T, { full }: { fu
 	const fields = getFields(Class)
 	const options = mergeSchemaOptionsAndKeys(Class)
 
-	const schema = new mongoose.Schema<ConstructorInstance<T>>(fields, options)
+	const schema = new mongoose.Schema<AsDocument<ConstructorInstance<T>>>(fields, options)
 
 	attachPopulateVirtuals(schema, Class)
 	loadClassMethods(schema, Class)
@@ -77,7 +77,7 @@ export function createSchema<T extends ConstructorType>(Class: T, { full }: { fu
  * @see https://github.com/Automattic/mongoose/blob/5.9/lib/schema.js#L1944-L1986
  * @internal
  */
-function loadClassMethods<T>(schema: mongoose.Schema<T>, Class: ConstructorType): void {
+function loadClassMethods<T extends mongoose.Document>(schema: mongoose.Schema<T>, Class: ConstructorType): void {
 	// If we extend a class decorated by @Model (when we need to use @Model.Discriminator for example),
 	// its protototype is gonna be a mongoose model and have `$isMongooseModelPrototype` property.
 	// If it's the case, we can't attach methods, statics, or virtuals from its parent, because
@@ -103,7 +103,7 @@ function loadClassMethods<T>(schema: mongoose.Schema<T>, Class: ConstructorType)
 
 		const method = Object.getOwnPropertyDescriptor(Class.prototype, methodName)
 
-		if (typeof method?.value === 'function') schema.method(methodName as keyof T, method.value)
+		if (typeof method?.value === 'function') schema.method(methodName, method.value)
 		if (typeof method?.get === 'function') schema.virtual(methodName).get(method.get)
 		if (typeof method?.set === 'function') schema.virtual(methodName).set(method.set)
 	}
@@ -112,7 +112,7 @@ function loadClassMethods<T>(schema: mongoose.Schema<T>, Class: ConstructorType)
 /**
  * @internal
  */
-function attachNestedDiscriminators<T>(
+function attachNestedDiscriminators<T extends mongoose.Document>(
 	parentSchema: mongoose.Schema<T>,
 	parentClass: ConstructorType,
 	nestedDiscriminators: Map<ConstructorType, mongoose.Schema> = new Map()

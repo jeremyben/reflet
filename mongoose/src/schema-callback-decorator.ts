@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose'
 import { checkDecoratorsOrder } from './check-decorator-order'
-import { ConstructorType, Decorator } from './interfaces'
+import { ConstructorType, Decorator, DocumentAny } from './interfaces'
 
 const MetaSchemaCallback = Symbol('schema-callback')
 
@@ -24,7 +24,9 @@ const MetaSchemaCallback = Symbol('schema-callback')
  * ---
  * @public
  */
-export function SchemaCallback<T>(callback: (schema: mongoose.Schema<T>) => void): Decorator.SchemaCallback {
+export function SchemaCallback<T extends DocumentAny>(
+	callback: (schema: mongoose.Schema<T>) => void
+): Decorator.SchemaCallback {
 	return (Class) => {
 		checkDecoratorsOrder(Class)
 		Reflect.defineMetadata(MetaSchemaCallback, callback, Class)
@@ -34,7 +36,7 @@ export function SchemaCallback<T>(callback: (schema: mongoose.Schema<T>) => void
 /**
  * @internal
  */
-export function applySchemaCallback(schema: mongoose.Schema, target: ConstructorType): void {
+export function applySchemaCallback(schema: mongoose.Schema<any>, target: ConstructorType): void {
 	const schemaCallback = Reflect.getMetadata(MetaSchemaCallback, target) as ((s: mongoose.Schema) => void) | undefined
 
 	if (typeof schemaCallback === 'function') {
