@@ -261,20 +261,20 @@ export abstract class MongooseModel extends (class {} as RefletMongoose.Model) {
 	): Promise<T>
 
 	// https://mongoosejs.com/docs/api.html#model_Model.populate
-	static populate<T extends MongooseModel>(
+	static populate<T extends MongooseModel, U extends { [key: string]: any }>(
 		this: new (...a: any[]) => T,
-		docs: { [key: string]: any }[],
+		docs: U[],
 		options: mongoose.PopulateOptions | mongoose.PopulateOptions[] | string,
-		callback?: (err: any, res: T[]) => void
-	): Promise<T[]>
+		callback?: (err: any, res: U[]) => void
+	): Promise<U[]>
 
 	// @ts-ignore implementation
-	static populate<T extends MongooseModel>(
+	static populate<T extends MongooseModel, U extends { [key: string]: any }>(
 		this: new (...a: any[]) => T,
-		docs: { [key: string]: any },
+		docs: U,
 		options: mongoose.PopulateOptions | mongoose.PopulateOptions[] | string,
-		callback?: (err: any, res: T) => void
-	): Promise<T>
+		callback?: (err: any, res: U) => void
+	): Promise<U>
 
 	// @ts-ignore implementation
 	static remove<T extends MongooseModel>(
