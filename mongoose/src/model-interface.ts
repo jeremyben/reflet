@@ -233,6 +233,9 @@ export abstract class MongooseModel extends (class {} as RefletMongoose.Model) {
 		callback?: (err: any, doc: T | null, res: any) => void
 	): mongoose.Query<T | null, T>
 
+	// @ts-ignore implementation
+	static hydrate<T extends MongooseModel>(this: new (...a: any[]) => T, obj: { [key: string]: any }): T
+
 	static insertMany<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		docs: Plain.PartialDeep<T>[],
