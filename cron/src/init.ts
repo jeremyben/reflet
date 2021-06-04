@@ -82,6 +82,30 @@ export function initCronJobs<T extends (new () => any) | ObjectInstance>(target:
 }
 
 /**
+ * Abstract class to extend from, which have static `init` method.
+ *
+ * @example
+ * ```ts
+ * class Jobs extends Initializer<typeof Jobs> {
+ *   ＠Cron(Expression.EVERY_SECOND)
+ *   doSomething() {}
+ * }
+ *
+ * const jobs = Jobs.init()
+ * ```
+ * ---
+ * @public
+ */
+export abstract class Initializer<C extends ClassType> {
+	private $typeof?: C
+
+	// @ts-ignore private
+	static init<T extends Initializer<any>>(this: ClassType<T>, ...deps: ConstructorParameters<T['$typeof']>) {
+		return initCronJobs(new this(...deps))
+	}
+}
+
+/**
  * Simply checks if given object is a function to distinguish between a class and its instance.
  * @internal
  */

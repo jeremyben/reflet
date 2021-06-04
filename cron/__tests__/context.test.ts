@@ -1,4 +1,4 @@
-import { Cron, CurrentJob, Expression, initCronJobs, Job } from '../src'
+import { Cron, CurrentJob, Expression, initCronJobs, Initializer, Job } from '../src'
 
 const consoleSpy = jest.spyOn(console, 'info').mockImplementation()
 afterEach(() => consoleSpy.mockClear())
@@ -12,12 +12,10 @@ test('dynamic jobs can access class context and inherit class decorator behavior
 	@Cron.TimeZone('Europe/Paris')
 	@Cron.RunOnInit
 	@Cron.Start
-	class Jobs {
-		static init(...deps: ConstructorParameters<typeof Jobs>) {
-			return initCronJobs(new Jobs(...deps))
+	class Jobs extends Initializer<typeof Jobs> {
+		constructor(private service: Service) {
+			super()
 		}
-
-		constructor(private service: Service) {}
 
 		@Cron(Expression.EVERY_10_MINUTES)
 		foo() {

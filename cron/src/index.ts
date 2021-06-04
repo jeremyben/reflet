@@ -1,4 +1,4 @@
-export { initCronJobs } from './init'
+export { initCronJobs, Initializer } from './init'
 
 export { Cron, CurrentJob } from './cron-decorators'
 

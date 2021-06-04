@@ -121,14 +121,37 @@ class Jobs {
 }
 ```
 
-💡 You can wrap `initCronJobs` into a static method to encapsulate initialization as well:
+### Init encapsulation
+
+Wrap `initCronJobs` into a static method to encapsulate initialization as well:
 
 ```ts
-import { initCronJobs } from '@reflet/cron'
+import { initCronJobs, Cron } from '@reflet/cron'
 
 class Jobs {
   static init(...deps: ConstructorParameters<typeof Jobs>) {
     return initCronJobs(new Jobs(...deps))
+  }
+
+  @Cron(Expression.EVERY_MINUTE)
+  logFoo() {
+    console.log('foo')
+  }
+}
+
+const jobs = Jobs.init()
+```
+
+💡 As a convenience, you can inherit from the abstract class `Initializer` which already have the `init` static method:
+
+```ts
+import { Initializer } from '@reflet/cron'
+
+// You must pass the child class as type parameter to properly infer its constructor parameters.
+class Jobs extends Initializer<typeof Jobs> {
+  @Cron(Expression.EVERY_MINUTE)
+  logFoo() {
+    console.log('foo')
   }
 }
 
