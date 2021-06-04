@@ -52,6 +52,11 @@ function syncOverloadsDoc() {
 	const tsIgnoreRe = /\/\*\* ?@ts-ignore(.*) ?\*\//g
 	dtsTextFinal = dtsTextFinal.replace(tsIgnoreRe, '// @ts-ignore$1')
 
+	// Hack to fix generic type with private property $typeof.
+	// todo: make it more dynamic
+	const privateTypeofRe = /private \$typeof\?;/g
+	dtsTextFinal = dtsTextFinal.replace(privateTypeofRe, 'private $typeof?: C;')
+
 	writeFileSync(dtsPath, dtsTextFinal, 'utf8')
 
 	function visitInheritedDoc(node: ts.Node): ts.VisitResult<ts.Node> {

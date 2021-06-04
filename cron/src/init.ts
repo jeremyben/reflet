@@ -99,7 +99,10 @@ export function initCronJobs<T extends (new () => any) | ObjectInstance>(target:
 export abstract class Initializer<C extends ClassType> {
 	private $typeof?: C
 
-	// @ts-ignore private
+	/**
+	 * Initializes cron jobs.
+	 */
+	/** @ts-ignore private */
 	static init<T extends Initializer<any>>(this: ClassType<T>, ...deps: ConstructorParameters<T['$typeof']>) {
 		return initCronJobs(new this(...deps))
 	}
