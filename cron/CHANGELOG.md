@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.3.1](https://github.com/jeremyben/reflet/tree/master/cron/compare/@reflet/cron@1.3.0...@reflet/cron@1.3.1) (2021-06-04)
+
+
+### Bug Fixes
+
+* **cron:** initializer type ([3ca0a16](https://github.com/jeremyben/reflet/tree/master/cron/commit/3ca0a169c78dde91f915753bd443a4f6d95094bd))
+
+
+
+
+
 # [1.3.0](https://github.com/jeremyben/reflet/tree/master/cron/compare/@reflet/cron@1.2.0...@reflet/cron@1.3.0) (2021-06-04)
 
 
