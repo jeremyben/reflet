@@ -33,6 +33,9 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 		this.forEach((job) => job.stop())
 	}
 
+	// @ts-ignore implementation
+	get(key: MethodKeys<T>): Job
+
 	/**
 	 * Adds a dynamic cron job.
 	 * @param key - name (typed to prevent overriding decorated jobs).
@@ -46,12 +49,54 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 		const contextClass = this.context.constructor as ClassType
 
 		const cronTime = parameters.cronTime
-		const onTick = parameters.onTick as Function
 		const onComplete = parameters.onComplete || extract('onComplete', contextClass)
 		const start = parameters.start ?? extract('start', contextClass)
 		const timeZone = parameters.timeZone || extract('timeZone', contextClass)
 		const utcOffset = parameters.utcOffset ?? extract('utcOffset', contextClass)
 		const unrefTimeout = parameters.unrefTimeout ?? extract('unrefTimeout', contextClass)
+
+		const onTickExtended = this.extendOnTick(key, parameters)
+
+		const job = new CronJob({
+			cronTime,
+			onTick: onTickExtended,
+			context: this.context,
+			onComplete,
+			start,
+			timeZone,
+			utcOffset,
+			unrefTimeout,
+		})
+
+		Object.defineProperty(job, 'firing', {
+			enumerable: true,
+			value: false,
+			writable: true,
+		})
+
+		Object.defineProperty(job, 'name', {
+			enumerable: true,
+			value: `${contextClass.name}.${key}`,
+		})
+
+		super.set(<any>key, <Job>job)
+
+		// runOnInit logic for dynamic jobs
+		if (this[initialized]) {
+			const runOnInit = parameters.runOnInit ?? extract('runOnInit', contextClass)
+			if (runOnInit) {
+				;(<any>job).lastExecution = new Date()
+				job.fireOnTick()
+			}
+		}
+
+		return this
+	}
+
+	private extendOnTick(key: string, parameters: JobParameters<T, boolean>) {
+		const contextClass = this.context.constructor as ClassType
+
+		const onTick = parameters.onTick as Function
 		const catchError = parameters.catchError || extract('catchError', contextClass)
 		const retry = parameters.retry || extract('retry', contextClass)
 		const preventOverlap = parameters.preventOverlap ?? extract('preventOverlap', contextClass)
@@ -169,42 +214,6 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 		// Rename to the name of the instance method, for a better error stack.
 		Object.defineProperty(onTickExtended, 'name', { value: key })
 
-		const job = new CronJob({
-			cronTime,
-			onTick: onTickExtended,
-			context: this.context,
-			onComplete,
-			start,
-			timeZone,
-			utcOffset,
-			unrefTimeout,
-		})
-
-		Object.defineProperty(job, 'firing', {
-			enumerable: true,
-			writable: true,
-			value: false,
-		})
-
-		Object.defineProperty(job, 'name', {
-			enumerable: true,
-			value: `${contextClass.name}.${key}`,
-		})
-
-		super.set(<any>key, <Job>job)
-
-		// runOnInit logic for dynamic jobs
-		if (this[initialized]) {
-			const runOnInit = parameters.runOnInit ?? extract('runOnInit', contextClass)
-			if (runOnInit) {
-				;(<any>job).lastExecution = new Date()
-				job.fireOnTick()
-			}
-		}
-
-		return this
+		return onTickExtended
 	}
-
-	// @ts-ignore implementation
-	get(key: MethodKeys<T>): Job
 }
