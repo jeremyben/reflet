@@ -33,7 +33,7 @@ import { ConstructorType, ConstructorInstance, AsDocument } from './interfaces'
  * ---
  * @public
  */
-export function schemaFrom<T extends ConstructorType>(Class: T) {
+export function schemaFrom<T extends ConstructorType>(Class: T): mongoose.Schema<AsDocument<ConstructorInstance<T>>> {
 	if (Class.prototype.$isMongooseModelPrototype) {
 		return Class.prototype.schema
 	}
