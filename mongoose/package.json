@@ -1,6 +1,6 @@
 {
 	"name": "@reflet/mongoose",
-	"version": "1.4.3",
+	"version": "2.0.0-next.0",
 	"author": "Jeremy Bensimon",
 	"license": "MIT",
 	"repository": {
