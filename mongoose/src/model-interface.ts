@@ -1,17 +1,31 @@
 import * as mongoose from 'mongoose'
 import * as mongodb from 'mongodb' // tslint:disable-line: no-implicit-dependencies
-import { Plain } from './interfaces'
+import { IsAny, Plain } from './interfaces'
+
+/** @ts-ignore protected */
+type NewDocParameter<T extends MongooseModel> = IsAny<T['$typeof']> extends true
+	? Plain.PartialDeep<T>
+	: // @ts-ignore protected
+	IsAny<ConstructorParameters<T['$typeof']>[0]> extends true
+	? Plain.PartialDeep<T>
+	: // @ts-ignore protected
+	  ConstructorParameters<T['$typeof']>[0]
 
 /**
  * Intermediary abstract class with overloaded static methods to properly infer the child class.
  * @public
  */
-export abstract class MongooseModel extends (class {} as RefletMongoose.Model) {
-	// @ts-ignore implementation
-	constructor(
-		doc?: { _id?: mongoose.Document['_id']; [field: string]: any },
-		strict?: mongoose.SchemaOptions['strict']
-	)
+export class MongooseModel<C extends new (...args: any[]) => any = any> extends (class {} as RefletMongoose.Model) {
+	constructor(doc?: any, strict?: mongoose.SchemaOptions['strict']) {
+		super()
+	}
+
+	/**
+	 * Hack to retrieve the constructor type for static methods: `create`, `insertMany` and `replaceOne`.
+	 *
+	 * ⚠️ **Do not use at runtime.**
+	 */
+	protected $typeof?: C
 
 	// @ts-ignore implementation
 	static $where<T extends MongooseModel>(
@@ -39,35 +53,29 @@ export abstract class MongooseModel extends (class {} as RefletMongoose.Model) {
 		callback?: (err: any, count: number) => void
 	): mongoose.Query<number, T>
 
-	static create<T extends MongooseModel>(this: new (...a: any[]) => T, doc: Plain.PartialDeep<T>): Promise<T>
-
 	static create<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
-		docs: Plain.PartialDeep<T>[],
+		docs: NewDocParameter<T>[],
 		options?: mongoose.SaveOptions
 	): Promise<T[]>
 
 	static create<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
-		docs: Plain.PartialDeep<T>[],
+		docs: NewDocParameter<T>[],
 		callback: (err: mongoose.CallbackError, res: T[]) => void
 	): void
 
-	static create<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		doc: Plain.PartialDeep<T>,
-		callback: (err: mongoose.CallbackError, res: T) => void
-	): void
+	// must be after signature with array
+	static create<T extends MongooseModel>(this: new (...a: any[]) => T, doc: NewDocParameter<T>): Promise<T>
 
-	static create<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		docs: Plain.PartialDeep<T>[],
-		options: mongoose.SaveOptions,
-		callback: (err: mongoose.CallbackError, res: T[]) => void
-	): void
+	static create<T extends MongooseModel>(this: new (...a: any[]) => T, ...docs: NewDocParameter<T>[]): Promise<T[]>
 
 	// @ts-ignore implementation
-	static create<T extends MongooseModel>(this: new (...a: any[]) => T, ...docs: Plain.PartialDeep<T>[]): Promise<T[]>
+	static create<T extends MongooseModel>(
+		this: new (...a: any[]) => T,
+		doc: NewDocParameter<T>,
+		callback: (err: mongoose.CallbackError, res: T) => void
+	): void
 
 	static exists<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
@@ -238,27 +246,27 @@ export abstract class MongooseModel extends (class {} as RefletMongoose.Model) {
 
 	static insertMany<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
-		docs: Plain.PartialDeep<T>[],
+		docs: NewDocParameter<T>[],
 		callback?: (error: any, docs: T[]) => void
 	): Promise<T[]>
 
 	static insertMany<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
-		docs: Plain.PartialDeep<T>[],
+		docs: NewDocParameter<T>[],
 		options?: { ordered?: boolean; rawResult?: boolean } & mongoose.InsertManyOptions,
 		callback?: (error: any, docs: T[]) => void
 	): Promise<T[]>
 
 	static insertMany<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
-		doc: Plain.PartialDeep<T>,
+		doc: NewDocParameter<T>,
 		callback?: (error: any, doc: T) => void
 	): Promise<T>
 
 	// @ts-ignore implementation
 	static insertMany<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
-		doc: Plain.PartialDeep<T>,
+		doc: NewDocParameter<T>,
 		options?: { ordered?: boolean; rawResult?: boolean } & mongoose.InsertManyOptions,
 		callback?: (error: any, doc: T) => void
 	): Promise<T>
@@ -319,7 +327,7 @@ export abstract class MongooseModel extends (class {} as RefletMongoose.Model) {
 	static replaceOne<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		filter?: mongoose.FilterQuery<T>,
-		replacement?: Plain.PartialDeep<T>,
+		replacement?: NewDocParameter<T>,
 		options?: mongoose.QueryOptions | null,
 		callback?: (err: any, res: any) => void
 	): mongoose.Query<any, T>

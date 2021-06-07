@@ -102,7 +102,7 @@ export namespace Model {
 	 * @public
 	 */
 	export const Interface = MongooseModel
-	export type Interface = MongooseModel
+	export type Interface<C extends new (...args: any[]) => any = any> = MongooseModel<C>
 
 	/**
 	 * Dummy class to extend from, to get all the (narrowed) types from mongoose Model and Document.
@@ -110,5 +110,5 @@ export namespace Model {
 	 * @public
 	 */
 	export const I = MongooseModel
-	export type I = MongooseModel
+	export type I<C extends new (...args: any[]) => any = any> = MongooseModel<C>
 }

@@ -52,7 +52,7 @@ test('model with custom collection and connection', async () => {
 
 test('model discriminators', async () => {
 	@Model()
-	class User extends Model.I {
+	class User extends Model.I<typeof User> {
 		@Field({ type: String, required: true })
 		firstname: string
 
@@ -90,6 +90,7 @@ test('model discriminators', async () => {
 		constructor(doc?: Plain<Developer, { Omit: 'fullname' | 'kind'; Optional: '_id' }>) {
 			super()
 		}
+		protected $typeof: typeof Developer
 	}
 
 	@Model.Discriminator(User)
@@ -107,13 +108,14 @@ test('model discriminators', async () => {
 		constructor(doc?: Plain<Doctor, { Omit: 'fullname' | 'kind'; Optional: '_id' }>) {
 			super()
 		}
+		protected $typeof: typeof Doctor
 	}
 
-	const user = await new User({ firstname: 'Jeremy', lastname: 'Ben' }).save()
+	const user = await User.create({ firstname: 'Jeremy', lastname: 'Ben' })
 	expect(user.fullname).toBe('Jeremy Ben')
 	expect((user as any).kind).toBeUndefined()
 
-	const developer = await new Developer({ firstname: 'Jeremy', lastname: 'Ben', languages: ['JS', 'GO'] }).save()
+	const developer = await Developer.create({ firstname: 'Jeremy', lastname: 'Ben', languages: ['JS', 'GO'] })
 	expect(developer.fullname).toBe('Jeremy Ben')
 	expect(developer.kind).toBe('developer')
 

@@ -869,15 +869,9 @@ This is how you can type `constructor` and `create` parameters:
 type NewUser = Plain<User, { Omit: 'fullname' | 'createdAt'; Optional: '_id' | 'activated' }>
 
 @Model()
-class User extends Model.I  {
-  // ...
-
+class User extends Model.I<typeof User>  {
   // @ts-ignore implementation
-  constructor(user: NewUser)
-  
-  static create(doc: NewUser): Promise<User>
-	// @ts-ignore implementation
-  static create(docs: NewUser[]): Promise<User[]>
+  constructor(doc?: NewUser, strict?: boolean | 'throw')
 }
 
 const user = new User({ firstname: 'John', lastname: 'Doe' })
@@ -885,7 +879,9 @@ await user.save()
 await User.create({ firstname: 'Jeremy', lastname: 'Doe', activated: true })
 ```
 
-_You can safely use ts-ignore to avoid a useless wrapper of `create` or even the `constructor`, the compiler will still check `NewUser` as we need._
+By passing `typeof User` to `Model.I`, Reflet is now able to use the constructor signature to type the following static methods: `create`, `insertMany` and `replaceOne`.
+
+_The compiler checks `NewUser` as we need, so you can safely use ts-ignore on the `constructor` to avoid implementing an empty one (remember that `@Model` will replace it with mongoose Model constructor)._
 
 You can also narrow the return type of `toObject()` and `toJson()`:
 

@@ -264,6 +264,11 @@ export namespace Plain {
 // tslint:enable: no-shadowed-variable
 
 /**
+ * @public
+ */
+export type IsAny<T> = 0 extends 1 & T ? true : false
+
+/**
  * Interface with the right keys but with `any` types, so we can enforce decorated classes to a minimal interface,
  * and we can overwrite the methods' signatures without worrying about an update of mongoose definition file breaking our types.
  * @public
