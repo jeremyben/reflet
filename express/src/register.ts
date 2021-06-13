@@ -1,12 +1,12 @@
 import * as express from 'express'
 import { promisifyHandler, promisifyErrorHandler } from './async-wrapper'
 import { globalErrorHandler, makeGlobalErrorHandlerRemovable } from './global-error-handler'
-import { ClassType, Controllers } from './interfaces'
-import { isPromise, isReadableStream, isClass } from './type-guards'
+import { ClassType, Controllers, ObjectInstance } from './interfaces'
+import { isPromise, isReadableStream, isClass, isExpressApp, isExpressRouter } from './type-guards'
 
 // Extractors
-import { extractRouter } from './router-decorator'
-import { extractRoutes } from './route-decorators'
+import { defineChildRouters, extractRouter } from './router-decorator'
+import { extractRoutes, hasRoutes } from './route-decorators'
 import { extractMiddlewares } from './middleware-decorator'
 import { extractErrorHandlers } from './error-handler-decorator'
 import { extractParams, extractParamsMiddlewares } from './param-decorators'
@@ -34,17 +34,56 @@ import { extractSend } from './send-decorator'
  * ------
  * @public
  */
-export function register(app: express.Application, controllers: Controllers): express.Application {
-	const globalMwares = getGlobalMiddlewares(app)
+export function register(app: express.Application, controllers: Controllers): express.Application
 
-	for (const controller of controllers) {
-		attach(controller, app, globalMwares)
+/**
+ * Attaches children controllers to a parent router, to have nested routers.
+ *
+ * To be used in the **constructor** of a `@Router` decorated class.
+ *
+ * @param parent - should simply be `this`.
+ * @param children - classes or instances with decorated routes.
+ *
+ * @example
+ * ```ts
+ * ＠Router('/foo', { mergeParams: true })
+ * class Foo {
+ *   constructor() {
+ *     register(this, [Bar, Baz])
+ *   }
+ * }
+ * ```
+ * ------
+ * @public
+ */
+export function register(parent: ObjectInstance, children: Controllers): void
+
+export function register(app: object, controllers: Controllers): express.Application | void {
+	if (isExpressApp(app)) {
+		const globalMwares = getGlobalMiddlewares(app)
+
+		for (const controller of controllers) {
+			attach(controller, app, globalMwares)
+		}
+
+		app.use(globalErrorHandler)
+		makeGlobalErrorHandlerRemovable(app)
+
+		return app
+	} else {
+		const parentClass = app.constructor as ClassType
+		const routerMeta = extractRouter(parentClass)
+
+		if (!routerMeta) {
+			if (hasRoutes(parentClass)) {
+				throw Error(`"${parentClass.name}" must be decorated with @Router.`)
+			}
+
+			throw Error(`First argument should be an express application or an instance decorated with @Router.`)
+		}
+
+		defineChildRouters(parentClass, routerMeta, controllers)
 	}
-
-	app.use(globalErrorHandler)
-	makeGlobalErrorHandlerRemovable(app)
-
-	return app
 }
 
 /**
@@ -61,7 +100,7 @@ function attach(
 		: { path: undefined, router: controller }
 
 	// Attach plain express routers.
-	if (rootPath && Object.getPrototypeOf(router) === express.Router) {
+	if (rootPath && isExpressRouter(router)) {
 		app.use(rootPath, router as express.Router)
 		return
 	}
@@ -69,6 +108,7 @@ function attach(
 	const controllerInstance = isClass(router) ? new router() : router
 	const controllerClass = isClass(router) ? router : (controllerInstance.constructor as ClassType)
 
+	// Must be after instanciation to properly retrieve child routers from metadata.
 	const routerMeta = extractRouter(controllerClass)
 
 	if (rootPath) {

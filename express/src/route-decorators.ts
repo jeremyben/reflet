@@ -149,3 +149,10 @@ export namespace Method {
 export function extractRoutes(target: ClassType): RouteMeta[] {
 	return Reflect.getOwnMetadata(MetaKey, target.prototype) || []
 }
+
+/**
+ * @internal
+ */
+export function hasRoutes(target: ClassType): boolean {
+	return Reflect.hasOwnMetadata(MetaKey, target.prototype)
+}

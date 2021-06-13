@@ -108,7 +108,7 @@ describe('children controllers', () => {
 		@Router('/module')
 		class Module {
 			constructor() {
-				Router.register(this, [Controller])
+				register(this, [Controller])
 			}
 		}
 
@@ -139,14 +139,14 @@ describe('children controllers', () => {
 		@Router('/module')
 		class Module {
 			constructor(service: UserService) {
-				Router.register(this, [new UserController(service)])
+				register(this, [new UserController(service)])
 			}
 		}
 
 		@Router('/user/:userId?', { mergeParams: true })
 		class UserController {
 			constructor(service: UserService) {
-				Router.register(this, [new UserItemController(service)])
+				register(this, [new UserItemController(service)])
 			}
 
 			@Post()
@@ -193,7 +193,7 @@ describe('children controllers', () => {
 
 		class Foo {
 			constructor() {
-				Router.register(this, [Bar])
+				register(this, [Bar])
 			}
 
 			@Get('/foo')
@@ -214,7 +214,7 @@ describe('constrain with path-router objects', () => {
 		@Router('/foo')
 		class Foo {
 			constructor() {
-				Router.register(this, [{ path: '/bar', router: Bar }])
+				register(this, [{ path: '/bar', router: Bar }])
 			}
 
 			@Get()
@@ -307,8 +307,8 @@ describe('constrain with path-router objects', () => {
 		@Router('/foo')
 		class Foo {
 			constructor() {
-				Router.register(this, [{ path: '/child1', router: plainRouter }])
-				Router.register(this, [['/child2', plainRouter] as object])
+				register(this, [{ path: '/child1', router: plainRouter }])
+				register(this, [['/child2', plainRouter] as object])
 			}
 		}
 

@@ -3,6 +3,7 @@
 
 import * as express from 'express'
 import { Readable, Writable } from 'stream'
+import { IncomingMessage, ServerResponse } from 'http'
 import { ClassType } from './interfaces'
 
 /**
@@ -51,6 +52,20 @@ export function isWritableStream(obj: any): obj is Writable {
 			typeof obj.write === 'function' &&
 			typeof obj._writableState === 'object')
 	)
+}
+
+/**
+ * @internal
+ */
+export function isExpressApp(obj: any): obj is express.Application {
+	return typeof obj === 'function' && obj.request instanceof IncomingMessage && obj.response instanceof ServerResponse
+}
+
+/**
+ * @internal
+ */
+export function isExpressRouter(obj: any): obj is express.Router {
+	return Object.getPrototypeOf(obj) === express.Router
 }
 
 /**

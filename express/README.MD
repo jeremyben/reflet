@@ -319,16 +319,16 @@ Express [Router options](https://expressjs.com/en/4x/api.html#express.router) ca
 
 #### Nested routers
 
-> 🔦 `@Router.register(parent, [controllers])`
+> 🔦 `register(parent, [controllers])`
 
-You can register child routers within the `constructor` of the parent router, using a method similar to the main `register` function.
+You can register child routers within the `constructor` of the parent router, using the same `register` function.
 
 ```ts
 @Router('/album')
 class AlbumController {
   constructor() {
     // ⚠️ Should always be used within the constructor of a `@Router` decorated class.
-    Router.register(this, [TrackController])
+    register(this, [TrackController])
   }
 }
 
@@ -350,7 +350,7 @@ class Foo {
 register(app, [{ path: '/foo', router: Foo }])
 ```
 
-_Also possible with child routers and `Router.register` function._
+_Also possible with child routers._
 
 ##### Plain express routers
 
@@ -371,7 +371,7 @@ register(app, [
 ])
 ```
 
-_Also possible with child routers and `Router.register` function._
+_Also possible with child routers._
 
 ### Handler parameters injection
 
@@ -1070,7 +1070,7 @@ You can even pass dependencies down your nested controllers:
 @Router('/parent')
 class ParentController {
   constructor(private service: Service) {
-    Router.register(this, [new ChildController(service)])
+    register(this, [new ChildController(service)])
   }
 }
 

@@ -44,11 +44,7 @@ export function Router(root: string | RegExp, options?: express.RouterOptions): 
 export namespace Router {
 	/**
 	 * Attaches children controllers to a parent router, to have nested routers.
-	 *
 	 * To be used in the **constructor** of a `@Router` decorated class.
-	 *
-	 * @param router - should simply be `this`.
-	 * @param children - classes or instances with decorated routes.
 	 *
 	 * @example
 	 * ```ts
@@ -60,6 +56,7 @@ export namespace Router {
 	 * }
 	 * ```
 	 * ------
+	 * @deprecated use `register(this, children)`
 	 * @public
 	 */
 	export function register(router: ObjectInstance, children: Controllers) {
@@ -72,6 +69,14 @@ export namespace Router {
 		routerMeta.children = routerMeta.children ? routerMeta.children.concat(children) : children
 		Reflect.defineMetadata(MetaKey, routerMeta, router.constructor)
 	}
+}
+
+/**
+ * @internal
+ */
+export function defineChildRouters(parentClass: ClassType, routerMeta: RouterMeta, children: Controllers) {
+	routerMeta.children = routerMeta.children ? routerMeta.children.concat(children) : children
+	Reflect.defineMetadata(MetaKey, routerMeta, parentClass)
 }
 
 /**
