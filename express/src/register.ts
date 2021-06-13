@@ -90,7 +90,9 @@ function attach(
 	// Apply shared middlewares to the router instance
 	// or to each of the routes if the class is attached on the base app.
 	if (routerMeta) {
-		for (const mware of sharedMwares) appInstance.use(promisifyHandler(mware))
+		for (const mware of sharedMwares) {
+			appInstance.use(promisifyHandler(mware))
+		}
 	}
 
 	for (const { path, method, key } of routes) {
@@ -143,7 +145,9 @@ function attach(
 	}
 
 	if (routerMeta) {
-		for (const errHandler of sharedErrHandlers) appInstance.use(promisifyErrorHandler(errHandler))
+		for (const errHandler of sharedErrHandlers) {
+			appInstance.use(promisifyErrorHandler(errHandler))
+		}
 
 		// Finally attach the router to the app
 		app.use(routerMeta.root, appInstance)
@@ -170,47 +174,47 @@ function checkRouterPathConstraint(
 	routerMeta: ReturnType<typeof extractRouter>,
 	controllerClass: ClassType
 ) {
-	if (routerMeta) {
-		const notSameString =
-			typeof routerMeta.root === 'string' &&
-			typeof constrainedPath === 'string' &&
-			routerMeta.root !== constrainedPath
-
-		if (notSameString) {
-			throw Error(
-				`"${controllerClass.name}" expects "${constrainedPath}" as root path. Actual: "${routerMeta.root}".`
-			)
-		}
-
-		const notSameRegex =
-			routerMeta.root instanceof RegExp &&
-			constrainedPath instanceof RegExp &&
-			routerMeta.root.source !== constrainedPath.source
-
-		if (notSameRegex) {
-			throw Error(
-				`"${controllerClass.name}" expects "${constrainedPath}" as root path. Actual: "${routerMeta.root}".`
-			)
-		}
-
-		const shouldBeString = routerMeta.root instanceof RegExp && typeof constrainedPath === 'string'
-
-		if (shouldBeString) {
-			throw Error(
-				`"${controllerClass.name}" expects string "${constrainedPath}" as root path. Actual: "${routerMeta.root}" (regex).`
-			)
-		}
-
-		const shouldBeRegex = typeof routerMeta.root === 'string' && constrainedPath instanceof RegExp
-
-		if (shouldBeRegex) {
-			throw Error(
-				`"${controllerClass.name}" expects regex "${constrainedPath}" as root path. Actual: "${routerMeta.root}" (string).`
-			)
-		}
-	} else {
+	if (!routerMeta) {
 		throw Error(
 			`"${controllerClass.name}" is constrained to the specific path "${constrainedPath}" and must be decorated with @Router.`
+		)
+	}
+
+	const notSameString =
+		typeof routerMeta.root === 'string' &&
+		typeof constrainedPath === 'string' &&
+		routerMeta.root !== constrainedPath
+
+	if (notSameString) {
+		throw Error(
+			`"${controllerClass.name}" expects "${constrainedPath}" as root path. Actual: "${routerMeta.root}".`
+		)
+	}
+
+	const notSameRegex =
+		routerMeta.root instanceof RegExp &&
+		constrainedPath instanceof RegExp &&
+		routerMeta.root.source !== constrainedPath.source
+
+	if (notSameRegex) {
+		throw Error(
+			`"${controllerClass.name}" expects "${constrainedPath}" as root path. Actual: "${routerMeta.root}".`
+		)
+	}
+
+	const shouldBeString = routerMeta.root instanceof RegExp && typeof constrainedPath === 'string'
+
+	if (shouldBeString) {
+		throw Error(
+			`"${controllerClass.name}" expects string "${constrainedPath}" as root path. Actual: "${routerMeta.root}" (regex).`
+		)
+	}
+
+	const shouldBeRegex = typeof routerMeta.root === 'string' && constrainedPath instanceof RegExp
+
+	if (shouldBeRegex) {
+		throw Error(
+			`"${controllerClass.name}" expects regex "${constrainedPath}" as root path. Actual: "${routerMeta.root}" (string).`
 		)
 	}
 }
