@@ -15,6 +15,15 @@ export function isPromise<T = any>(obj: any): obj is Promise<T> {
 }
 
 /**
+ * @internal
+ */
+export function isAsyncFunction<T extends (...args: any[]) => any>(
+	value: any
+): value is (...args: Parameters<T>) => Promise<ReturnType<T>> {
+	return value[Symbol.toStringTag] === 'AsyncFunction'
+}
+
+/**
  * Simply checks if given object is a function to distinguish between a class and its instance.
  * @internal
  */

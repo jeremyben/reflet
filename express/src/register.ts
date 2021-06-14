@@ -1,8 +1,8 @@
 import * as express from 'express'
-import { promisifyHandler, promisifyErrorHandler } from './async-wrapper'
+import { wrapAsync, wrapAsyncError } from './async-wrapper'
 import { globalErrorHandler, makeGlobalErrorHandlerRemovable } from './global-error-handler'
 import { ClassType, Controllers, ObjectInstance } from './interfaces'
-import { isPromise, isReadableStream, isClass, isExpressApp, isExpressRouter } from './type-guards'
+import { isPromise, isReadableStream, isClass, isExpressApp, isExpressRouter, isAsyncFunction } from './type-guards'
 
 // Extractors
 import { defineChildRouters, extractRouter } from './router-decorator'
@@ -131,7 +131,7 @@ function attach(
 	// or to each of the routes if the class is attached on the base app.
 	if (routerMeta) {
 		for (const mware of sharedMwares) {
-			appInstance.use(promisifyHandler(mware))
+			appInstance.use(wrapAsync(mware))
 		}
 	}
 
@@ -150,21 +150,21 @@ function attach(
 		if (routerMeta) {
 			appInstance[method](
 				path,
-				routeMwares.map(promisifyHandler),
-				paramsMwares.map(promisifyHandler),
+				routeMwares.map(wrapAsync),
+				paramsMwares.map(wrapAsync),
 				handler,
-				routeErrHandlers.map(promisifyErrorHandler)
+				routeErrHandlers.map(wrapAsyncError)
 			)
 		} else {
 			// Have same order of middlewares by surrounding route specific ones by shared ones.
 			appInstance[method](
 				path,
-				sharedMwares.map(promisifyHandler),
-				routeMwares.map(promisifyHandler),
-				paramsMwares.map(promisifyHandler),
+				sharedMwares.map(wrapAsync),
+				routeMwares.map(wrapAsync),
+				paramsMwares.map(wrapAsync),
 				handler,
-				routeErrHandlers.map(promisifyErrorHandler),
-				sharedErrHandlers.map(promisifyErrorHandler)
+				routeErrHandlers.map(wrapAsyncError),
+				sharedErrHandlers.map(wrapAsyncError)
 			)
 		}
 	}
@@ -186,7 +186,7 @@ function attach(
 
 	if (routerMeta) {
 		for (const errHandler of sharedErrHandlers) {
-			appInstance.use(promisifyErrorHandler(errHandler))
+			appInstance.use(wrapAsyncError(errHandler))
 		}
 
 		// Finally attach the router to the app
@@ -270,22 +270,39 @@ function createHandler(controllerClass: ClassType, controllerInstance: any, key:
 		throw Error(`"${controllerClass.name}.${key.toString()}" should be a function.`)
 	}
 
-	return promisifyHandler((req, res, next) => {
+	const isAsync = isAsyncFunction(fn)
+
+	return (req: express.Request, res: express.Response, next: express.NextFunction) => {
 		const args = extractParams(controllerClass, key, { req, res, next })
 		const result = fn.apply(controllerInstance, args)
 
 		// Handle or bypass sending the method's result according to @Send decorator,
 		// if the response has already been sent to the client, we also bypass.
-		if (!toSend || res.headersSent) return result
+		if (!toSend || res.headersSent) {
+			if (isAsync) {
+				return (result as Promise<any>).catch(next)
+			} else {
+				// todo? If the user returns a promise (not with async),
+				// and this promise throw an error, it won't be caught,
+				// but that seems overkill.
+				// if (isPromise(result)) return result.catch(next)
+				return result
+			}
+		}
 
 		const { json, status, nullStatus, undefinedStatus } = toSend
 
-		if (isPromise(result)) return result.then((value) => send(value))
-		else return send(result)
+		if (isPromise(result)) {
+			return result.then((value) => send(value)).catch(next)
+		} else {
+			return send(result)
+		}
 
 		function send(value: any): express.Response {
 			// Default status
-			if (status) res.status(status)
+			if (status) {
+				res.status(status)
+			}
 
 			// Undefined and null status
 			if (value === undefined && undefinedStatus) {
@@ -295,22 +312,29 @@ function createHandler(controllerClass: ClassType, controllerInstance: any, key:
 			}
 
 			// Readable stream
-			if (isReadableStream(value)) return value.pipe(res)
+			if (isReadableStream(value)) {
+				return value.pipe(res)
+			}
 
 			// Response object itself
 			if (value === res) {
 				// A stream is piping to the response so we let it go
-				if (res.listenerCount('unpipe') > 0) return res
+				if (res.listenerCount('unpipe') > 0) {
+					return res
+				}
 
 				// The response will try to send itself, which will cause a cryptic error
 				// ('TypeError: Converting circular structure to JSON')
-				throw Error('Cannot send the whole Response object.')
+				return next(Error('Cannot send the whole Response object.')) as any
 			}
 
-			if (json) return res.json(value)
-			else return res.send(value)
+			if (json) {
+				return res.json(value)
+			} else {
+				return res.send(value)
+			}
 		}
-	})
+	}
 }
 
 /**

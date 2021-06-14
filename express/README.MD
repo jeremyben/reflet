@@ -398,9 +398,9 @@ You can apply them **with or without invokation**, how flexible is that. 😉
 
 Looking for other decorators like `@Body` ? [Request properties injection](#request-properties-injection).
 
-### Async error support
+### Async support
 
-Routes (and middlewares) are **promisified** to properly pass errors on to `next` and to the express error handling system.
+Async functions (routes and middlewares) are properly wrapped to pass errors on to `next` and to the express error handling system.
 
 ```ts
 class Controller {
