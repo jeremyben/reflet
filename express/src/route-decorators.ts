@@ -1,6 +1,6 @@
 import { ClassType, RoutingMethod, Decorator } from './interfaces'
 
-const MetaKey = Symbol('route')
+const META = Symbol('route')
 
 /**
  * @internal
@@ -101,7 +101,7 @@ export const Delete = (path: string | RegExp = '') => Method('delete', path)
 export function Method<T extends RoutingMethod>(method: T | T[], path: string | RegExp): Decorator.Route<T> {
 	return (target, key, descriptor) => {
 		// Attach routes to class instead of methods to extract and traverse all of them at once
-		const routes: RouteMeta[] = Reflect.getOwnMetadata(MetaKey, target) || []
+		const routes: RouteMeta[] = Reflect.getOwnMetadata(META, target) || []
 
 		if (Array.isArray(method)) {
 			for (const method_ of method) routes.push({ path, method: method_, key })
@@ -109,7 +109,7 @@ export function Method<T extends RoutingMethod>(method: T | T[], path: string | 
 			routes.push({ path, method, key })
 		}
 
-		Reflect.defineMetadata(MetaKey, routes, target)
+		Reflect.defineMetadata(META, routes, target)
 	}
 }
 
@@ -147,12 +147,12 @@ export namespace Method {
  * @internal
  */
 export function extractRoutes(target: ClassType): RouteMeta[] {
-	return Reflect.getOwnMetadata(MetaKey, target.prototype) || []
+	return Reflect.getOwnMetadata(META, target.prototype) || []
 }
 
 /**
  * @internal
  */
 export function hasRoutes(target: ClassType): boolean {
-	return Reflect.hasOwnMetadata(MetaKey, target.prototype)
+	return Reflect.hasOwnMetadata(META, target.prototype)
 }

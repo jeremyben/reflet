@@ -1,6 +1,6 @@
 import { ClassType, StatusCode, Decorator } from './interfaces'
 
-const MetaKey = Symbol('send')
+const META = Symbol('send')
 
 /**
  * Tells express to handle the method's return value and send it. Can be applied to a whole class and/or to specific methods.
@@ -40,8 +40,8 @@ const MetaKey = Symbol('send')
  */
 export function Send(options: Send.Options = {}): Decorator.Send {
 	return (target, key, descriptor) => {
-		if (key) Reflect.defineMetadata(MetaKey, options, target, key)
-		else Reflect.defineMetadata(MetaKey, options, target)
+		if (key) Reflect.defineMetadata(META, options, target, key)
+		else Reflect.defineMetadata(META, options, target)
 	}
 }
 
@@ -89,7 +89,7 @@ export namespace Send {
 	 */
 	export function Dont(): Decorator.DontSend {
 		return (target, key, descriptor) => {
-			Reflect.defineMetadata(MetaKey, null, target, key)
+			Reflect.defineMetadata(META, null, target, key)
 		}
 	}
 }
@@ -100,7 +100,7 @@ export namespace Send {
  */
 export function DontSend(): Decorator.DontSend {
 	return (target, key, descriptor) => {
-		Reflect.defineMetadata(MetaKey, null, target, key)
+		Reflect.defineMetadata(META, null, target, key)
 	}
 }
 
@@ -109,9 +109,9 @@ export function DontSend(): Decorator.DontSend {
  * @internal
  */
 export function extractSend(target: ClassType, key: string | symbol): Send.Options | null {
-	const sendOnClass: Send.Options | null = Reflect.getOwnMetadata(MetaKey, target) || null
+	const sendOnClass: Send.Options | null = Reflect.getOwnMetadata(META, target) || null
 
-	const sendOnMethod: Send.Options | null | undefined = Reflect.getOwnMetadata(MetaKey, target.prototype, key)
+	const sendOnMethod: Send.Options | null | undefined = Reflect.getOwnMetadata(META, target.prototype, key)
 
 	switch (sendOnMethod) {
 		// none

@@ -1,7 +1,7 @@
 import * as express from 'express'
 import { ClassType, Controllers, Decorator, ObjectInstance } from './interfaces'
 
-const MetaKey = Symbol('router')
+const META = Symbol('router')
 
 /**
  * @internal
@@ -37,7 +37,7 @@ type RouterMeta = {
 export function Router(root: string | RegExp, options?: express.RouterOptions): Decorator.Router {
 	return (target) => {
 		const routerMeta: RouterMeta = { root, options }
-		Reflect.defineMetadata(MetaKey, routerMeta, target)
+		Reflect.defineMetadata(META, routerMeta, target)
 	}
 }
 
@@ -67,7 +67,7 @@ export namespace Router {
 		}
 
 		routerMeta.children = routerMeta.children ? routerMeta.children.concat(children) : children
-		Reflect.defineMetadata(MetaKey, routerMeta, router.constructor)
+		Reflect.defineMetadata(META, routerMeta, router.constructor)
 	}
 }
 
@@ -76,12 +76,12 @@ export namespace Router {
  */
 export function defineChildRouters(parentClass: ClassType, routerMeta: RouterMeta, children: Controllers) {
 	routerMeta.children = routerMeta.children ? routerMeta.children.concat(children) : children
-	Reflect.defineMetadata(MetaKey, routerMeta, parentClass)
+	Reflect.defineMetadata(META, routerMeta, parentClass)
 }
 
 /**
  * @internal
  */
 export function extractRouter(target: ClassType): RouterMeta | undefined {
-	return Reflect.getOwnMetadata(MetaKey, target)
+	return Reflect.getOwnMetadata(META, target)
 }
