@@ -98,6 +98,7 @@ export namespace Send {
  * @deprecated use `@Send.Dont()`
  * @public
  */
+/* istanbul ignore next - deprecated and replaced by same logic */
 export function DontSend(): Decorator.DontSend {
 	return (target, key, descriptor) => {
 		Reflect.defineMetadata(META, null, target, key)

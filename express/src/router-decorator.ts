@@ -7,8 +7,8 @@ const META = Symbol('router')
  * @internal
  */
 type RouterMeta = {
-	root: string | RegExp
-	options?: express.RouterOptions
+	readonly root: string | RegExp
+	readonly options?: express.RouterOptions
 	children?: object[]
 }
 
@@ -59,6 +59,7 @@ export namespace Router {
 	 * @deprecated use `register(this, children)`
 	 * @public
 	 */
+	/* istanbul ignore next - deprecated and replaced by same logic */
 	export function register(router: ObjectInstance, children: Controllers) {
 		const routerMeta = extractRouter(router.constructor as ClassType)
 
@@ -66,12 +67,12 @@ export namespace Router {
 			throw Error(`"${router.constructor.name}" must be decorated with @Router.`)
 		}
 
-		routerMeta.children = routerMeta.children ? routerMeta.children.concat(children) : children
-		Reflect.defineMetadata(META, routerMeta, router.constructor)
+		defineChildRouters(router.constructor as ClassType, routerMeta, children)
 	}
 }
 
 /**
+ * Attaches children controllers to a parent router metadata, before registering the parent.
  * @internal
  */
 export function defineChildRouters(parentClass: ClassType, routerMeta: RouterMeta, children: Controllers) {

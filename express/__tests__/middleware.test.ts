@@ -3,7 +3,7 @@ import * as express from 'express'
 import { register, Get, Post, Put, Use, Catch, Router, Body } from '../src'
 import { log } from '../../testing/tools'
 
-@Catch((err, req, res, next) => res.status(418).send({ err }))
+@Catch(async (err, req, res, next) => res.status(418).send({ err }))
 @Use(express.json())
 @Router('')
 class FooController {

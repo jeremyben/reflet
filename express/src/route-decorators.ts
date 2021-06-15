@@ -6,9 +6,9 @@ const META = Symbol('route')
  * @internal
  */
 type RouteMeta = {
-	path: string | RegExp
-	method: RoutingMethod
-	key: string | symbol
+	readonly path: string | RegExp
+	readonly method: RoutingMethod
+	readonly key: string | symbol
 }
 
 /**

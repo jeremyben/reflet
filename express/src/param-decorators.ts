@@ -8,10 +8,10 @@ const META = Symbol('param')
  * @internal
  */
 type ParamMeta = {
-	index: number
-	mapper: (req: express.Request, res: express.Response, next?: express.NextFunction) => any
-	use?: express.RequestHandler[]
-	dedupeUse?: boolean
+	readonly index: number
+	readonly mapper: (req: express.Request, res: express.Response, next?: express.NextFunction) => any
+	readonly use?: express.RequestHandler[]
+	readonly dedupeUse?: boolean
 }
 
 /**
