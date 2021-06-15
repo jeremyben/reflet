@@ -341,12 +341,7 @@ export function extractParams(
 export function extractParamsMiddlewares(
 	target: ClassType,
 	key: string | symbol,
-	alreadyMwares: [
-		express.RequestHandler[],
-		express.RequestHandler[],
-		express.RequestHandler[],
-		express.RequestHandler[]
-	]
+	alreadyMwares: express.RequestHandler[][]
 ): express.RequestHandler[] {
 	const params: ParamMeta[] = Reflect.getOwnMetadata(META, target.prototype, key) || []
 	if (!params.length) return []
@@ -370,15 +365,10 @@ export function extractParamsMiddlewares(
 
 			// Dedupe middlewares in upper layers.
 			if (dedupeUse) {
-				const sameRef =
-					alreadyMwares[0].includes(mware) ||
-					alreadyMwares[1].includes(mware) ||
-					alreadyMwares[2].includes(mware) ||
-					alreadyMwares[3].includes(mware)
-
+				const sameRef = alreadyMwares.some((alreadyMware) => alreadyMware.includes(mware))
 				const sameName = !!mware.name && alreadyNames.includes(mware.name)
 
-				// console.log('dedupe:', mware.name, sameRef || sameName)
+				// console.log('dedupe:', mware.name, sameRef, sameName)
 				if (sameRef || sameName) continue
 			}
 

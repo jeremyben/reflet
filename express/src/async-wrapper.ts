@@ -6,6 +6,7 @@ import { isAsyncFunction } from './type-guards'
  */
 export function wrapAsync(handler: express.RequestHandler) {
 	if (isAsyncFunction<express.RequestHandler>(handler)) {
+		// todo? rename the wrapper to the wrapped function name to have better stack.
 		return (req: express.Request, res: express.Response, next: express.NextFunction) => {
 			return handler(req, res, next).catch(next)
 		}

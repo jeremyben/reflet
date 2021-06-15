@@ -112,7 +112,7 @@ describe('param middlewares deduplication', () => {
 
 		const sharedMwares = extractMiddlewares(Foo)
 		const routeMwares = extractMiddlewares(Foo, 'post')
-		const paramMwares = extractParamsMiddlewares(Foo, 'post', [[], [], sharedMwares, routeMwares])
+		const paramMwares = extractParamsMiddlewares(Foo, 'post', [sharedMwares, routeMwares])
 
 		expect(paramMwares).toHaveLength(0)
 	})
@@ -130,7 +130,7 @@ describe('param middlewares deduplication', () => {
 
 		const sharedMwares = extractMiddlewares(Foo)
 		const routeMwares = extractMiddlewares(Foo, 'post')
-		const paramMwares = extractParamsMiddlewares(Foo, 'post', [[], [], sharedMwares, routeMwares])
+		const paramMwares = extractParamsMiddlewares(Foo, 'post', [sharedMwares, routeMwares])
 
 		// Won't dedupe
 		expect(paramMwares).toHaveLength(3)
@@ -159,7 +159,7 @@ describe('param middlewares deduplication', () => {
 		const globalMwares = getGlobalMiddlewares(app)
 		const sharedMwares = extractMiddlewares(Bar)
 		const routeMwares = extractMiddlewares(Bar, 'post')
-		const paramMwares = extractParamsMiddlewares(Bar, 'post', [globalMwares, [], sharedMwares, routeMwares])
+		const paramMwares = extractParamsMiddlewares(Bar, 'post', [globalMwares, sharedMwares, routeMwares])
 
 		expect(sharedMwares.some((m) => globalMwares.includes(m))).toBe(true)
 		expect(paramMwares).toHaveLength(0)
