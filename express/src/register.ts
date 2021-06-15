@@ -11,6 +11,7 @@ import { extractMiddlewares } from './middleware-decorator'
 import { extractErrorHandlers } from './error-handler-decorator'
 import { extractParams, extractParamsMiddlewares } from './param-decorators'
 import { extractSend } from './send-decorator'
+import { ApplicationMeta, extractApplicationClass } from './application-class'
 
 /**
  * Main method to register controllers into an express application.
@@ -60,17 +61,27 @@ export function register(parent: ObjectInstance, children: Controllers): void
 
 export function register(app: object, controllers: Controllers): express.Application | void {
 	if (isExpressApp(app)) {
+		const appMeta = extractApplicationClass(app)
+
+		registerRootHandlers(app, appMeta)
+
 		const globalMwares = getGlobalMiddlewares(app)
 
 		for (const controller of controllers) {
-			attach(controller, app, globalMwares)
+			registerController(controller, app, globalMwares)
 		}
 
-		app.use(globalErrorHandler)
-		makeGlobalErrorHandlerRemovable(app)
+		registerRootErrorHandlers(app, appMeta)
+
+		if (appMeta && !appMeta.registered) {
+			appMeta.registered = true
+		}
 
 		return app
-	} else {
+	}
+
+	// Register call from controller constructor
+	else {
 		const parentClass = app.constructor as ClassType
 		const routerMeta = extractRouter(parentClass)
 
@@ -89,7 +100,7 @@ export function register(app: object, controllers: Controllers): express.Applica
 /**
  * @internal
  */
-function attach(
+function registerController(
 	controller: Controllers[number],
 	app: express.Router,
 	globalMwares: express.RequestHandler[],
@@ -179,7 +190,7 @@ function attach(
 			if (Array.isArray(child) && typeof child[0] === 'string' && typeof child[1] === 'function') {
 				appInstance.use(child[0], child[1])
 			} else {
-				attach(child, appInstance, globalMwares, parentSharedMwares_)
+				registerController(child, appInstance, globalMwares, parentSharedMwares_)
 			}
 		}
 	}
@@ -191,6 +202,92 @@ function attach(
 
 		// Finally attach the router to the app
 		app.use(routerMeta.root, appInstance)
+	}
+}
+
+/**
+ * Retrieves and attaches global middlewares and routes from an inherited `Application` class.
+ * Only executed once, if the user calls `register` multiple times on the same app.
+ * @internal
+ */
+function registerRootHandlers(app: express.Application, appMeta?: ApplicationMeta) {
+	if (!appMeta || appMeta.registered) {
+		return
+	}
+
+	// Probability that the user has already attached middlewares before calling `register`.
+	const existingGlobalMwares = getGlobalMiddlewares(app)
+
+	const newGlobalMwares = extractMiddlewares(appMeta.class)
+
+	for (const globalMware of newGlobalMwares) {
+		app.use(wrapAsync(globalMware))
+	}
+
+	const routes = extractRoutes(appMeta.class)
+
+	for (const { key, method, path } of routes) {
+		const routeMwares = extractMiddlewares(appMeta.class, key)
+		const routeErrHandlers = extractErrorHandlers(appMeta.class, key)
+		const paramsMwares = extractParamsMiddlewares(appMeta.class, key, [
+			existingGlobalMwares,
+			newGlobalMwares,
+			routeMwares,
+		])
+
+		const handler = createHandler(appMeta.class, app, key)
+
+		app[method](
+			path,
+			routeMwares.map(wrapAsync),
+			paramsMwares.map(wrapAsync),
+			handler,
+			routeErrHandlers.map(wrapAsyncError)
+		)
+	}
+}
+
+/**
+ * Retrieves and attaches global error handlers from an inherited `Application` class.
+ * @internal
+ */
+function registerRootErrorHandlers(app: express.Application, appMeta?: ApplicationMeta) {
+	if (!appMeta) {
+		// todo: remove the default one and give user a way to compose its own (decorator or not).
+		app.use(globalErrorHandler)
+		makeGlobalErrorHandlerRemovable(app)
+		return
+	}
+
+	const customGlobalErrorHandlers = extractErrorHandlers(appMeta.class)
+
+	if (!customGlobalErrorHandlers.length) {
+		// We attach the default global error handler even on subsequent register calls,
+		// since it will first removes itself automatically.
+		app.use(globalErrorHandler)
+		makeGlobalErrorHandlerRemovable(app)
+		return
+	}
+
+	// Error handlers added at the end of the stack during the first `register` call,
+	// are moved to the last position for subsequent calls, to keep their behavior global.
+	if (appMeta.registered) {
+		for (const errHandler of customGlobalErrorHandlers) {
+			const layerIndex = app._router?.stack.findIndex((layer) => layer.handle === errHandler)
+
+			// optimisation, not sure about side effects.
+			// if (layerIndex === app._router.stack.length - 1) continue
+
+			/* istanbul ignore else - user has removed error handler before calling register again */
+			if (layerIndex >= 0) {
+				app._router?.stack.splice(layerIndex, 1)
+				app.use(wrapAsyncError(errHandler))
+			}
+		}
+	} else {
+		for (const errHandler of customGlobalErrorHandlers) {
+			app.use(wrapAsyncError(errHandler))
+		}
 	}
 }
 
@@ -264,6 +361,8 @@ function checkRouterPathConstraint(
  */
 function createHandler(controllerClass: ClassType, controllerInstance: any, key: string | symbol) {
 	const toSend = extractSend(controllerClass, key)
+
+	// get from the instance instead of the prototype, so this can be a function property and not only a method.
 	const fn = controllerInstance[key] as Function
 
 	if (typeof fn !== 'function') {
@@ -344,14 +443,15 @@ function createHandler(controllerClass: ClassType, controllerInstance: any, key:
 export function getGlobalMiddlewares(app: express.Application): express.RequestHandler[] {
 	const globalMwares: express.RequestHandler[] = []
 
-	for (const layer of (app._router || []).stack || []) {
+	// `_router` might be undefined before express app is properly initialized.
+	for (const layer of app._router?.stack || []) {
 		if (
 			layer.name !== 'query' &&
 			layer.name !== 'expressInit' &&
 			layer.name !== 'router' &&
 			layer.name !== 'bound dispatch'
 		) {
-			globalMwares.push(layer.handle)
+			globalMwares.push(layer.handle as express.RequestHandler)
 		}
 	}
 

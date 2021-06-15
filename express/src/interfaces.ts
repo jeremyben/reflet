@@ -309,7 +309,10 @@ declare module 'express' {
 
 	type Layer = {
 		// prevent ts4033 or ts2717 errors on build
-		handle: import('express').RequestHandler | (import('express').RequestHandler & _Router)
+		handle:
+			| (import('express').RequestHandler & _Router)
+			| import('express').RequestHandler
+			| import('express').ErrorRequestHandler
 		name: string // '<anonymous>' | 'query' | 'expressInit' | 'bound dispatch' | 'router' | 'serveStatic' | 'jsonParser' | 'urlencodedParser'
 		params: { [key: string]: any } | undefined
 		path: string | undefined

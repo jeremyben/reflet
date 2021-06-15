@@ -12,4 +12,6 @@ export { Req, Res, Next, Body, Params, Query, Headers, createParamDecorator } fr
 
 export { Send, DontSend } from './send-decorator'
 
+export { Application } from './application-class'
+
 export { Controllers, Decorator } from './interfaces'
