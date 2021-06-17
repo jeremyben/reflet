@@ -54,7 +54,7 @@ export function globalErrorHandler(err: any, req: express.Request, res: express.
 	}
 }
 
-// Unique name of global error handler to retrieve it later from `app._router.stack`.
+// Unique name of global error handler.
 const globalErrorHandlerName = '@reflet/express.globalErrorHandler' as string
 Object.defineProperty(globalErrorHandler, 'name', { value: globalErrorHandlerName })
 
@@ -72,22 +72,14 @@ export function makeGlobalErrorHandlerRemovable(app: express.Application): void 
 			app.use = use0
 
 			// remove our default error handler from the stack
-			const index = app._router.stack.findIndex((layer) => layer.name === globalErrorHandlerName)
-			if (index !== -1) {
-				app._router.stack.splice(index, 1)
+			const layerIndex = app._router?.stack.findIndex((layer) => layer.handle === globalErrorHandler)
+			if (layerIndex >= 0) {
+				app._router.stack.splice(layerIndex, 1)
 			}
 		}
 
-		return use0.apply(app, (arguments as unknown) as Parameters<express.Application['use']>)
+		return use0.apply(app, arguments as unknown as Parameters<express.Application['use']>)
 	}
-}
-
-/**
- * For testing purposes.
- * @internal
- */
-export function hasGlobalErrorHandler(app: express.Application): boolean {
-	return app._router.stack.some((layer) => layer.name === globalErrorHandlerName)
 }
 
 /**

@@ -1,7 +1,7 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
 import { register, Use, Get, Post, Put, Patch, Delete, Req, Next } from '../src'
-import { hasGlobalErrorHandler } from '../src/global-error-handler'
+import { globalErrorHandler } from '../src/global-error-handler'
 import { log } from '../../testing/tools'
 
 const consoleSpy = jest.spyOn(console, 'error').mockImplementation()
@@ -216,3 +216,7 @@ describe('removable', () => {
 		expect(res.status).toBe(418)
 	})
 })
+
+function hasGlobalErrorHandler(app: express.Application): boolean {
+	return app._router.stack.some((layer) => layer.handle === globalErrorHandler)
+}
