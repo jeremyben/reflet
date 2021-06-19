@@ -89,7 +89,8 @@ export namespace Send {
 	 */
 	export function Dont(): Decorator.DontSend {
 		return (target, key, descriptor) => {
-			Reflect.defineMetadata(META, null, target, key)
+			if (key) Reflect.defineMetadata(META, null, target, key)
+			else Reflect.defineMetadata(META, null, target)
 		}
 	}
 }
@@ -101,7 +102,8 @@ export namespace Send {
 /* istanbul ignore next - deprecated and replaced by same logic */
 export function DontSend(): Decorator.DontSend {
 	return (target, key, descriptor) => {
-		Reflect.defineMetadata(META, null, target, key)
+		if (key) Reflect.defineMetadata(META, null, target, key)
+		else Reflect.defineMetadata(META, null, target)
 	}
 }
 
@@ -109,23 +111,46 @@ export function DontSend(): Decorator.DontSend {
  * Retrieve send options from both the method and the class, so method options can extend class options.
  * @internal
  */
-export function extractSend(target: ClassType, key: string | symbol): Send.Options | null {
-	const sendOnClass: Send.Options | null = Reflect.getOwnMetadata(META, target) || null
+export function extractSend(
+	target: ClassType,
+	key: string | symbol,
+	appClass?: ClassType
+): Send.Options | null | undefined {
+	const appSend: Send.Options | undefined = appClass ? Reflect.getOwnMetadata(META, appClass) : undefined
 
-	const sendOnMethod: Send.Options | null | undefined = Reflect.getOwnMetadata(META, target.prototype, key)
+	const controllerSend: Send.Options | null | undefined = Reflect.getOwnMetadata(META, target)
 
-	switch (sendOnMethod) {
-		// none
-		case undefined:
-			return sendOnClass
+	const methodSend: Send.Options | null | undefined = Reflect.getOwnMetadata(META, target.prototype, key)
 
-		// @DontSend
-		case null:
-			return sendOnMethod
+	// Send on method
+	if (methodSend) {
+		if (appSend || controllerSend) {
+			return Object.assign({}, appSend, controllerSend, methodSend)
+		} else {
+			return methodSend
+		}
+	} else {
+		// No Send on method
+		if (methodSend === undefined) {
+			// Send on router
+			if (controllerSend) {
+				return Object.assign({}, appSend, controllerSend)
+			} else {
+				// No Send on method or router
+				if (controllerSend === undefined) {
+					return appSend
+				}
 
-		// @Send
-		default:
-			if (sendOnClass) return Object.assign({}, sendOnClass, sendOnMethod)
-			else return sendOnMethod
+				// Send.Dont on router
+				else {
+					return null
+				}
+			}
+		}
+
+		// Send.Dont on method
+		else {
+			return null
+		}
 	}
 }

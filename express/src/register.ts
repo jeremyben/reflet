@@ -68,7 +68,7 @@ export function register(app: object, controllers: Controllers): express.Applica
 		const globalMwares = getGlobalMiddlewares(app)
 
 		for (const controller of controllers) {
-			registerController(controller, app, globalMwares)
+			registerController(controller, app, globalMwares, [], appMeta?.class)
 		}
 
 		registerRootErrorHandlers(app, appMeta)
@@ -104,7 +104,8 @@ function registerController(
 	controller: Controllers[number],
 	app: express.Router,
 	globalMwares: express.RequestHandler[],
-	parentSharedMwares: express.RequestHandler[] = []
+	parentSharedMwares: express.RequestHandler[] = [],
+	appClass?: ClassType
 ) {
 	const { path: rootPath, router } = isPathRouterObject(controller)
 		? controller
@@ -156,7 +157,7 @@ function registerController(
 			routeMwares,
 		])
 
-		const handler = createHandler(controllerClass, controllerInstance, key)
+		const handler = createHandler(controllerClass, controllerInstance, key, appClass)
 
 		if (routerMeta) {
 			appInstance[method](
@@ -190,7 +191,7 @@ function registerController(
 			if (Array.isArray(child) && typeof child[0] === 'string' && typeof child[1] === 'function') {
 				appInstance.use(child[0], child[1])
 			} else {
-				registerController(child, appInstance, globalMwares, parentSharedMwares_)
+				registerController(child, appInstance, globalMwares, parentSharedMwares_, appClass)
 			}
 		}
 	}
@@ -359,8 +360,13 @@ function checkRouterPathConstraint(
 /**
  * @internal
  */
-function createHandler(controllerClass: ClassType, controllerInstance: any, key: string | symbol) {
-	const toSend = extractSend(controllerClass, key)
+function createHandler(
+	controllerClass: ClassType,
+	controllerInstance: any,
+	key: string | symbol,
+	appClass?: ClassType
+) {
+	const toSend = extractSend(controllerClass, key, appClass)
 
 	// get from the instance instead of the prototype, so this can be a function property and not only a method.
 	const fn = controllerInstance[key] as Function

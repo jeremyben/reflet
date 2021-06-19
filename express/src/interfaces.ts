@@ -106,10 +106,12 @@ export namespace Decorator {
 
 	/**
 	 * Used for `@Send.Dont` decorator.
-	 * Equivalent to `MethodDecorator`.
+	 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
 	 * @public
 	 */
-	export type DontSend = MethodDecorator & { __expressDontSend?: never }
+	export type DontSend<T extends ClassOrMethodUnion = 'class|method'> = ClassOrMethodDecorator<T> & {
+		__expressDontSend?: never
+	}
 }
 
 /**

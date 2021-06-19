@@ -1,6 +1,6 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
-import { Application, Catch, Get, Use } from '../src'
+import { Application, Catch, Get, Send, Use } from '../src'
 import { getGlobalMiddlewares } from '../src/register'
 import { log } from '../../testing/tools'
 
@@ -9,6 +9,7 @@ describe('inherit application class', () => {
 		err.message += 'o'
 		next(err)
 	})
+	@Send.Dont()
 	class Foo {
 		@Get('/foo')
 		getOne(req: express.Request, res: express.Response) {
@@ -29,6 +30,7 @@ describe('inherit application class', () => {
 		res.type('text/plain')
 		next()
 	})
+	@Send()
 	class App extends Application {
 		constructor() {
 			super()
@@ -42,7 +44,7 @@ describe('inherit application class', () => {
 		})
 		@Get('/healthcheck')
 		protected healthcheck(req: express.Request, res: express.Response) {
-			res.send(this.text)
+			return this.text
 		}
 
 		private text = 'success'
