@@ -164,16 +164,18 @@ export type ObjectInstance = object & {
  * const controllers: Controllers = [
  *   { path: '/foo', router: Foo },
  *   { path: '/bar', router: Bar },
- *   { path: '/baz', router: Baz },
+ *   Baz,
  * ]
  * register(app, controllers)
  * ```
  * ------
  * @public
  */
-export type Controllers =
-	| ((new () => any) | ObjectInstance)[]
-	| { path: string | RegExp; router: (new () => any) | ObjectInstance | express.IRouter }[]
+export type Controllers = (
+	| (new () => any)
+	| ObjectInstance
+	| { path: string | RegExp; router: (new () => any) | ObjectInstance | express.IRouter }
+)[]
 
 /**
  * @public
