@@ -5,7 +5,7 @@ import { ClassType, Controllers, ObjectInstance } from './interfaces'
 import { isPromise, isReadableStream, isClass, isExpressApp, isExpressRouter, isAsyncFunction } from './type-guards'
 
 // Extractors
-import { defineChildRouters, extractRouter } from './router-decorator'
+import { defineChildRouters, DYNAMIC_PATH, extractRouterMeta } from './router-decorator'
 import { extractRoutes, hasRoutes } from './route-decorators'
 import { extractMiddlewares } from './middleware-decorator'
 import { extractErrorHandlers } from './error-handler-decorator'
@@ -83,7 +83,7 @@ export function register(app: object, controllers: Controllers): express.Applica
 	// Register call from controller constructor
 	else {
 		const parentClass = app.constructor as ClassType
-		const routerMeta = extractRouter(parentClass)
+		const routerMeta = extractRouterMeta(parentClass)
 
 		if (!routerMeta) {
 			if (hasRoutes(parentClass)) {
@@ -107,13 +107,13 @@ function registerController(
 	parentSharedMwares: express.RequestHandler[] = [],
 	appClass?: ClassType
 ) {
-	const { path: rootPath, router } = isPathRouterObject(controller)
+	const { path: constrainedPath, router } = isPathRouterObject(controller)
 		? controller
 		: { path: undefined, router: controller }
 
 	// Attach plain express routers.
-	if (rootPath && isExpressRouter(router)) {
-		app.use(rootPath, router as express.Router)
+	if (constrainedPath && isExpressRouter(router)) {
+		app.use(constrainedPath, router as express.Router)
 		return
 	}
 
@@ -121,11 +121,9 @@ function registerController(
 	const controllerClass = isClass(router) ? router : (controllerInstance.constructor as ClassType)
 
 	// Must be after instanciation to properly retrieve child routers from metadata.
-	const routerMeta = extractRouter(controllerClass)
+	const routerMeta = extractRouterMeta(controllerClass)
 
-	if (rootPath) {
-		checkRouterPathConstraint(rootPath, routerMeta, controllerClass)
-	}
+	checkPathConstraint(constrainedPath, routerMeta, controllerClass)
 
 	// Either attach middlewares/handlers to an intermediary router or directly to the app.
 	const appInstance = routerMeta ? express.Router(routerMeta.options) : app
@@ -201,8 +199,10 @@ function registerController(
 			appInstance.use(wrapAsyncError(errHandler))
 		}
 
+		const routerPath = routerMeta.path === DYNAMIC_PATH ? constrainedPath! : routerMeta.path
+
 		// Finally attach the router to the app
-		app.use(routerMeta.root, appInstance)
+		app.use(routerPath, appInstance)
 	}
 }
 
@@ -295,7 +295,9 @@ function registerRootErrorHandlers(app: express.Application, appMeta?: Applicati
 /**
  * @internal
  */
-function isPathRouterObject(controller: Record<string, any>): controller is { path: string | RegExp; router: object } {
+function isPathRouterObject(
+	controller: Record<string, any>
+): controller is { path: string | RegExp | symbol; router: object } {
 	return (
 		controller.hasOwnProperty('path') &&
 		controller.hasOwnProperty('router') &&
@@ -307,52 +309,58 @@ function isPathRouterObject(controller: Record<string, any>): controller is { pa
 /**
  * @internal
  */
-function checkRouterPathConstraint(
-	constrainedPath: string | RegExp,
-	routerMeta: ReturnType<typeof extractRouter>,
+function checkPathConstraint(
+	constrainedPath: string | RegExp | undefined,
+	router: ReturnType<typeof extractRouterMeta>,
 	controllerClass: ClassType
 ) {
-	if (!routerMeta) {
+	if (!constrainedPath) {
+		if (router?.path === DYNAMIC_PATH) {
+			throw Error(`"${controllerClass.name}" is dynamic and must be registered with a path.`)
+		}
+
+		return
+	}
+
+	if (!router) {
 		throw Error(
 			`"${controllerClass.name}" is constrained to the specific path "${constrainedPath}" and must be decorated with @Router.`
 		)
 	}
 
+	if (router.path === DYNAMIC_PATH) {
+		return
+	}
+
 	const notSameString =
-		typeof routerMeta.root === 'string' &&
-		typeof constrainedPath === 'string' &&
-		routerMeta.root !== constrainedPath
+		typeof router.path === 'string' && typeof constrainedPath === 'string' && router.path !== constrainedPath
 
 	if (notSameString) {
-		throw Error(
-			`"${controllerClass.name}" expects "${constrainedPath}" as root path. Actual: "${routerMeta.root}".`
-		)
+		throw Error(`"${controllerClass.name}" expects "${constrainedPath}" as root path. Actual: "${router.path}".`)
 	}
 
 	const notSameRegex =
-		routerMeta.root instanceof RegExp &&
+		router.path instanceof RegExp &&
 		constrainedPath instanceof RegExp &&
-		routerMeta.root.source !== constrainedPath.source
+		router.path.source !== constrainedPath.source
 
 	if (notSameRegex) {
-		throw Error(
-			`"${controllerClass.name}" expects "${constrainedPath}" as root path. Actual: "${routerMeta.root}".`
-		)
+		throw Error(`"${controllerClass.name}" expects "${constrainedPath}" as root path. Actual: "${router.path}".`)
 	}
 
-	const shouldBeString = routerMeta.root instanceof RegExp && typeof constrainedPath === 'string'
+	const shouldBeString = router.path instanceof RegExp && typeof constrainedPath === 'string'
 
 	if (shouldBeString) {
 		throw Error(
-			`"${controllerClass.name}" expects string "${constrainedPath}" as root path. Actual: "${routerMeta.root}" (regex).`
+			`"${controllerClass.name}" expects string "${constrainedPath}" as root path. Actual: "${router.path}" (regex).`
 		)
 	}
 
-	const shouldBeRegex = typeof routerMeta.root === 'string' && constrainedPath instanceof RegExp
+	const shouldBeRegex = typeof router.path === 'string' && constrainedPath instanceof RegExp
 
 	if (shouldBeRegex) {
 		throw Error(
-			`"${controllerClass.name}" expects regex "${constrainedPath}" as root path. Actual: "${routerMeta.root}" (string).`
+			`"${controllerClass.name}" expects regex "${constrainedPath}" as root path. Actual: "${router.path}" (string).`
 		)
 	}
 }

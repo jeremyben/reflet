@@ -1,6 +1,6 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
-import { register, Router, Get, Post, Put, Patch, Method, Res, Req, Use, Params, Body } from '../src'
+import { register, Router, Get, Post, Patch, Method, Res, Req, Use, Params, Body } from '../src'
 import { log } from '../../testing/tools'
 
 describe('basic routing', () => {
@@ -322,6 +322,63 @@ describe('constrain with path-router objects', () => {
 		expect((await rq.get('/foo/child1')).status).toBe(201)
 		expect((await rq.get('/foo/child2')).status).toBe(201)
 		expect((await rq.get('/bar')).status).toBe(200)
+	})
+
+	test('dynamic router', async () => {
+		@Router('/foo')
+		class Foo {
+			constructor() {
+				register(this, [{ path: '/items', router: Items }])
+			}
+		}
+
+		@Use((req, res, next) => {
+			res.status(201)
+			next()
+		})
+		@Router('/bar')
+		class Bar {
+			constructor() {
+				register(this, [{ path: '/elements', router: Items }])
+			}
+		}
+
+		@Router.Dynamic()
+		class Items {
+			@Get()
+			get(req: express.Request, res: express.Response) {
+				res.send(req.originalUrl)
+			}
+		}
+
+		const rq = supertest(register(express(), [Foo, Bar]))
+
+		const fooRes = await rq.get('/foo/items')
+		expect(fooRes.status).toBe(200)
+		expect(fooRes.text).toBe('/foo/items')
+
+		const barRes = await rq.get('/bar/elements')
+		expect(barRes.status).toBe(201)
+		expect(barRes.text).toBe('/bar/elements')
+	})
+
+	test('dynamic router path not declared', async () => {
+		@Router.Dynamic()
+		class Items {
+			@Get()
+			get(req: express.Request, res: express.Response) {
+				res.send(req.originalUrl)
+			}
+		}
+
+		@Router('/foo')
+		class Foo {
+			constructor() {
+				register(this, [Items])
+			}
+		}
+
+		expect(() => register(express(), [Foo])).toThrow(/dynamic/)
 	})
 })
 // tslint:enable: no-empty

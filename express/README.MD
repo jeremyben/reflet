@@ -373,6 +373,36 @@ register(app, [
 
 _Also possible with child routers._
 
+#### Dynamic nested routers
+
+> 🔦 `Router.Dynamic(options?)`
+
+A dynamic router is a router without a predefined path. Its path is then defined at registration.
+
+Useful if you need to share a child router with multiple parents, and attach it on different paths.
+
+```ts
+@Router.Dynamic()
+class Items {
+  @Get()
+  list(req: Request, res: Response, next: NextFunction) {}
+}
+
+@Router('/foo')
+class Foo {
+  constructor() {
+    register(this, [{ path: '/items', router: Items }])
+  }
+}
+
+@Router('/bar')
+class Bar {
+  constructor() {
+    register(this, [{ path: '/elements', router: Items }])
+  }
+}
+```
+
 ### Handler parameters injection
 
 > 🔦 `@Req`, `@Res`, `@Next`<br>
