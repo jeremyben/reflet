@@ -1,5 +1,5 @@
 import * as express from 'express'
-import { ClassType, Controllers, Decorator, ObjectInstance } from './interfaces'
+import { ClassType, Controllers, Decorator, IsAny, ObjectInstance } from './interfaces'
 
 const META = Symbol('router')
 
@@ -7,9 +7,10 @@ const META = Symbol('router')
  * @internal
  */
 type RouterMeta = {
-	readonly path: string | RegExp | typeof DYNAMIC_PATH
-	readonly options?: express.RouterOptions
-	children?: object[]
+	path: string | RegExp | typeof DYNAMIC_PATH | null
+	options?: express.RouterOptions
+	children?: Controllers | ((...deps: any[]) => Controllers)
+	childrenDeps?: any[]
 }
 
 /**
@@ -38,8 +39,15 @@ type RouterMeta = {
  */
 export function Router(path: string | RegExp, options?: express.RouterOptions): Decorator.Router {
 	return (target) => {
-		const routerMeta: RouterMeta = { path, options }
-		Reflect.defineMetadata(META, routerMeta, target)
+		const existingRouterMeta = extractRouterMeta(target)
+
+		if (existingRouterMeta) {
+			existingRouterMeta.path = path
+			existingRouterMeta.options = options
+		} else {
+			const newRouterMeta: RouterMeta = { path, options }
+			defineRouterMeta(newRouterMeta, target)
+		}
 	}
 }
 
@@ -70,6 +78,47 @@ export namespace Router {
 		}
 
 		defineChildRouters(router.constructor as ClassType, routerMeta, children)
+	}
+
+	/**
+	 * @public
+	 */
+	export function Children<T extends ClassType = any>(
+		// tslint:disable-next-line: no-shadowed-variable
+		register: (...deps: IsAny<T> extends true ? unknown[] : ConstructorParameters<T>) => Controllers
+	): Decorator.RouterChildren {
+		return (target) => {
+			const existingRouterMeta = extractRouterMeta(target)
+
+			if (existingRouterMeta) {
+				existingRouterMeta.children = register as (...deps: any[]) => Controllers
+				existingRouterMeta.childrenDeps = []
+			} else {
+				const newRouterMeta: RouterMeta = {
+					path: null,
+					children: register as (...deps: any[]) => Controllers,
+					childrenDeps: [],
+				}
+
+				defineRouterMeta(newRouterMeta, target)
+			}
+
+			// No need to intercept constructor if no dependency.
+			if (!target.length || !register.length) {
+				return
+			}
+
+			// Intercept the constructor to retrieve dependencies and pass them down to children.
+			// https://stackoverflow.com/questions/34411546/how-to-properly-wrap-constructors-with-decorators-in-typescript
+			return new Proxy(target, {
+				construct(target_, args, newTarget) {
+					const routerMeta = extractRouterMeta(target)!
+					routerMeta.childrenDeps = args
+
+					return new (target as any)(...args)
+				},
+			})
+		}
 	}
 
 	/**
@@ -106,7 +155,7 @@ export namespace Router {
 	export function Dynamic(options?: express.RouterOptions): Decorator.Router {
 		return (target) => {
 			const routerMeta: RouterMeta = { path: DYNAMIC_PATH, options }
-			Reflect.defineMetadata(META, routerMeta, target)
+			defineRouterMeta(routerMeta, target)
 		}
 	}
 }
@@ -121,14 +170,27 @@ export const DYNAMIC_PATH = Symbol('dynamic-path')
  * Attaches children controllers to a parent router metadata, before registering the parent.
  * @internal
  */
-export function defineChildRouters(parentClass: ClassType, routerMeta: RouterMeta, children: Controllers) {
+export function defineChildRouters(parentClass: ClassType, routerMeta: RouterMeta, children: Controllers): void {
+	if (typeof routerMeta.children === 'function') {
+		throw Error('Nested routers are already defined through @Router.Children.')
+	}
+
 	routerMeta.children = routerMeta.children ? routerMeta.children.concat(children) : children
-	Reflect.defineMetadata(META, routerMeta, parentClass)
+
+	defineRouterMeta(routerMeta, parentClass)
 }
 
 /**
  * @internal
  */
-export function extractRouterMeta(target: ClassType): RouterMeta | undefined {
-	return Reflect.getOwnMetadata(META, target)
+export function extractRouterMeta(target: ClassType | Function): RouterMeta | undefined {
+	return Reflect.getOwnMetadata(META, target.prototype)
+}
+
+/**
+ * @internal
+ */
+function defineRouterMeta(routerMeta: RouterMeta, target: ClassType | Function): void {
+	// Attached to the prototype, because the constructor might be replaced with a proxy.
+	Reflect.defineMetadata(META, routerMeta, target.prototype)
 }

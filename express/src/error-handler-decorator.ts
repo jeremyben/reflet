@@ -39,9 +39,10 @@ export function Catch<T = any>(
 		}
 		// Class
 		else {
-			const handlers: express.ErrorRequestHandler[] = Reflect.getMetadata(META, target) || []
+			const handlers: express.ErrorRequestHandler[] =
+				Reflect.getMetadata(META, (target as Function).prototype) || []
 			handlers.unshift(errorHandler)
-			Reflect.defineMetadata(META, handlers, target)
+			Reflect.defineMetadata(META, handlers, (target as Function).prototype)
 		}
 	}
 }
@@ -49,9 +50,12 @@ export function Catch<T = any>(
 /**
  * @internal
  */
-export function extractErrorHandlers(target: ClassType, key?: string | symbol): express.ErrorRequestHandler[] {
+export function extractErrorHandlers(
+	target: ClassType | Function,
+	key?: string | symbol
+): express.ErrorRequestHandler[] {
 	// Method
 	if (key) return Reflect.getOwnMetadata(META, target.prototype, key) || []
 	// Class
-	return Reflect.getOwnMetadata(META, target) || []
+	return Reflect.getOwnMetadata(META, target.prototype) || []
 }

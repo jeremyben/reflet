@@ -15,6 +15,13 @@ export namespace Decorator {
 	export type Router = ClassDecorator & { __expressRouter?: never }
 
 	/**
+	 * Used for `@Router.Children` decorator.
+	 * Equivalent to `ClassDecorator`.
+	 * @public
+	 */
+	export type RouterChildren = ClassDecorator & { __expressRouterChildren?: never }
+
+	/**
 	 * Used for `@Get, @Post, @Put, @Patch, @Delete, @Method` decorators.
 	 * Equivalent to `MethodDecorator`.
 	 * @public
@@ -145,10 +152,20 @@ type PropertyOrMethodDecorator = (
 ) => any
 
 /**
+ * @public
+ */
+type TypedDescriptor<T> = {
+	enumerable?: boolean
+	configurable?: boolean
+	writable?: boolean
+	value?: T
+}
+
+/**
  * Defines a class type. Does the opposite of built-in `InstanceType`.
  * @public
  */
-export type ClassType<T = any> = new (...args: any[]) => T
+export type ClassType = new (...args: any[]) => any
 
 /**
  * @public
@@ -176,6 +193,11 @@ export type Controllers = (
 	| ObjectInstance
 	| { path: string | RegExp; router: (new () => any) | ObjectInstance | express.IRouter }
 )[]
+
+/**
+ * @public
+ */
+export type IsAny<T> = 0 extends 1 & T ? true : false
 
 /**
  * @public

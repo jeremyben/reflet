@@ -37,8 +37,8 @@ export function Use<Req extends {}>(...middlewares: Handler<Req>[]): Decorator.U
 		}
 		// Class middleware
 		else {
-			concatPrependFast(Reflect.getOwnMetadata(META, target) || [], middlewares)
-			Reflect.defineMetadata(META, middlewares, target)
+			concatPrependFast(Reflect.getOwnMetadata(META, (target as Function).prototype) || [], middlewares)
+			Reflect.defineMetadata(META, middlewares, (target as Function).prototype)
 		}
 	}
 }
@@ -46,9 +46,9 @@ export function Use<Req extends {}>(...middlewares: Handler<Req>[]): Decorator.U
 /**
  * @internal
  */
-export function extractMiddlewares(target: ClassType, key?: string | symbol): Handler[] {
+export function extractMiddlewares(target: ClassType | Function, key?: string | symbol): Handler[] {
 	// Method middlewares
 	if (key) return Reflect.getOwnMetadata(META, target.prototype, key) || []
 	// Class middlewares
-	return Reflect.getOwnMetadata(META, target) || []
+	return Reflect.getOwnMetadata(META, target.prototype) || []
 }

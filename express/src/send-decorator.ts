@@ -41,7 +41,7 @@ const META = Symbol('send')
 export function Send(options: Send.Options = {}): Decorator.Send {
 	return (target, key, descriptor) => {
 		if (key) Reflect.defineMetadata(META, options, target, key)
-		else Reflect.defineMetadata(META, options, target)
+		else Reflect.defineMetadata(META, options, (target as Function).prototype)
 	}
 }
 
@@ -90,7 +90,7 @@ export namespace Send {
 	export function Dont(): Decorator.DontSend {
 		return (target, key, descriptor) => {
 			if (key) Reflect.defineMetadata(META, null, target, key)
-			else Reflect.defineMetadata(META, null, target)
+			else Reflect.defineMetadata(META, null, (target as Function).prototype)
 		}
 	}
 }
@@ -103,7 +103,7 @@ export namespace Send {
 export function DontSend(): Decorator.DontSend {
 	return (target, key, descriptor) => {
 		if (key) Reflect.defineMetadata(META, null, target, key)
-		else Reflect.defineMetadata(META, null, target)
+		else Reflect.defineMetadata(META, null, (target as Function).prototype)
 	}
 }
 
@@ -112,13 +112,13 @@ export function DontSend(): Decorator.DontSend {
  * @internal
  */
 export function extractSend(
-	target: ClassType,
+	target: ClassType | Function,
 	key: string | symbol,
 	appClass?: ClassType
 ): Send.Options | null | undefined {
 	const appSend: Send.Options | undefined = appClass ? Reflect.getOwnMetadata(META, appClass) : undefined
 
-	const controllerSend: Send.Options | null | undefined = Reflect.getOwnMetadata(META, target)
+	const controllerSend: Send.Options | null | undefined = Reflect.getOwnMetadata(META, (target as Function).prototype)
 
 	const methodSend: Send.Options | null | undefined = Reflect.getOwnMetadata(META, target.prototype, key)
 

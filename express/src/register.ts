@@ -59,33 +59,33 @@ export function register(app: express.Application, controllers: Controllers): ex
  */
 export function register(parent: ObjectInstance, children: Controllers): void
 
-export function register(app: object, controllers: Controllers): express.Application | void {
-	if (isExpressApp(app)) {
-		const appMeta = extractApplicationClass(app)
+export function register(appInstance: object, controllers: Controllers): express.Application | void {
+	if (isExpressApp(appInstance)) {
+		const appMeta = extractApplicationClass(appInstance)
 
-		registerRootHandlers(app, appMeta)
+		registerRootHandlers(appInstance, appMeta)
 
-		const globalMwares = getGlobalMiddlewares(app)
+		const globalMwares = getGlobalMiddlewares(appInstance)
 
 		for (const controller of controllers) {
-			registerController(controller, app, globalMwares, [], appMeta?.class)
+			registerController(controller, appInstance, globalMwares, [], appMeta?.class)
 		}
 
-		registerRootErrorHandlers(app, appMeta)
+		registerRootErrorHandlers(appInstance, appMeta)
 
 		if (appMeta && !appMeta.registered) {
 			appMeta.registered = true
 		}
 
-		return app
+		return appInstance
 	}
 
 	// Register call from controller constructor
 	else {
-		const parentClass = app.constructor as ClassType
+		const parentClass = appInstance.constructor as ClassType
 		const routerMeta = extractRouterMeta(parentClass)
 
-		if (!routerMeta) {
+		if (routerMeta?.path == null) {
 			if (hasRoutes(parentClass)) {
 				throw Error(`"${parentClass.name}" must be decorated with @Router.`)
 			}
@@ -184,7 +184,12 @@ function registerController(
 		// Keep track of all shared middlewares for dedupe.
 		const parentSharedMwares_ = parentSharedMwares.concat(sharedMwares)
 
-		for (const child of routerMeta.children) {
+		const children =
+			typeof routerMeta.children === 'function'
+				? routerMeta.children(...routerMeta.childrenDeps!)
+				: routerMeta.children
+
+		for (const child of children) {
 			// Undocumented and untyped feature to attach normal express Routers. Will be removed.
 			if (Array.isArray(child) && typeof child[0] === 'string' && typeof child[1] === 'function') {
 				appInstance.use(child[0], child[1])
@@ -194,7 +199,7 @@ function registerController(
 		}
 	}
 
-	if (routerMeta) {
+	if (routerMeta?.path != null) {
 		for (const errHandler of sharedErrHandlers) {
 			appInstance.use(wrapAsyncError(errHandler))
 		}

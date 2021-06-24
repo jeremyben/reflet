@@ -136,17 +136,21 @@ describe('children controllers', () => {
 		}
 
 		@Use(express.json({ strict: false }))
+		@Router.Children<typeof AppModule>((service) => [new UserController(service)])
 		@Router('/module')
-		class Module {
+		class AppModule {
 			constructor(service: UserService) {
-				register(this, [new UserController(service)])
+				// register(this, [new UserController(service)])
 			}
 		}
 
 		@Router('/user/:userId?', { mergeParams: true })
+		@Router.Children<typeof UserController>((service) => [
+			{ path: '/item/:itemId', router: new UserItemController(service) },
+		])
 		class UserController {
 			constructor(service: UserService) {
-				register(this, [new UserItemController(service)])
+				// register(this, [new UserItemController(service)])
 			}
 
 			@Post()
@@ -169,13 +173,14 @@ describe('children controllers', () => {
 
 		const app = express()
 		// app.use(express.json({ strict: false }))
-
-		const rq = supertest(register(app, [new Module(new UserService())]))
+		const appModule = new AppModule(new UserService())
+		const rq = supertest(register(app, [appModule]))
 
 		const resPost = await rq
 			.post('/module/user')
 			.set('Content-Type', 'application/json')
 			.send(null as any)
+		expect(resPost.status).toBe(200)
 		expect(resPost.body).toBe(true)
 
 		const resGet = await rq.get('/module/user/1/item/0')
