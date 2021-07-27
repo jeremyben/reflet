@@ -13,6 +13,7 @@ The **best** decorators for [Express](https://expressjs.com/). Have a look at [R
 * [Request properties injection](#request-properties-injection)
 * [Sending return value](#sending-return-value)
 * [Error handling](#error-handling)
+* [Application class](#application-class)
 * [Pure dependency injection](#pure-dependency-injection)
 
 ## Getting started
@@ -101,7 +102,7 @@ As you can see, the main method `register` simply accepts an Express app and an 
 
 You still apply your global middlewares and start your server in the Express way you already know. This means you can progressively add Reflet to your existing app. 😉
 
-It's up to you to define more complex application bootstrapping, if needed.
+If you have a more complex bootstraping, reflet allows you to inherit the express original application with [Application class](#application-class).
 
 ## Routing
 
@@ -1058,6 +1059,57 @@ const app = register(express(), [Controller])
 
 app.use((err, req, res, next) => res.status(500).send(err))
 // Your error handler has been applied and has removed Reflet's error handler.
+
+app.listen(3000)
+```
+
+## Application class
+
+> 🔦 `Application`
+
+Have you ever tried to turn `express()` into a proper class ? Reflet did. 😁
+
+```ts
+import * as express from 'express'
+import { Application } from '@reflet/express'
+import { UserController } from './user.controller'
+
+const app = new Application()
+
+app.use(express.json(), express.urlencoded())
+app.register([UserController]) // register is now a method !
+
+app.listen(3000)
+```
+
+Not much for now, but you can extend this class and use all the decorators, as if they were global :
+Routes will be attached at the root, and middlewares, error handlers, and `Send` options, will be shared globally !
+
+```ts
+import * as express from 'express'
+import { Application, Controllers } from '@reflet/express'
+import { UserController } from './user.controller'
+
+@Send({ json: true })
+@Catch((err, req, res, next) => {
+  console.error(err)
+  res.status(err.status || 500)
+  res.json(err)
+})
+@Use(express.json(), express.urlencoded())
+class MyApp extends Application {
+  constructor(controllers: Controllers) {
+    super()
+    this.register(controllers)
+  }
+
+  @Get('/healthcheck')
+  healthcheck() {
+    return { success: true }
+  }
+}
+
+const app = new MyApp([UserController])
 
 app.listen(3000)
 ```

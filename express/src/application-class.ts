@@ -13,6 +13,38 @@ export type ApplicationMeta = {
 const META = Symbol('application')
 
 export interface Application extends express.Application {}
+
+/**
+ * Express application class to extend, to apply the decorators with a global behavior.
+ *
+ * _Constructor simply returns an express application, augmented with `register` method._
+ *
+ * @example
+ * ```ts
+ * ＠Send({ json: true })
+ * ＠Use(express.json())
+ * class App extends Application {
+ *   ＠Get('/healthcheck')
+ *   healthcheck() {
+ *     return { success: true }
+ *   }
+ * }
+ *
+ * ＠Router('/foo')
+ * class FooController {
+ *   ＠Get()
+ *   list() {
+ *     return db.collection('foo').find({})
+ *   }
+ * }
+ *
+ * const app = new App()
+ * app.register([FooController])
+ * app.listen(3000)
+ * ```
+ * ------
+ * @public
+ */
 export class Application {
 	constructor() {
 		// Because the constructor returns an express app instead,
