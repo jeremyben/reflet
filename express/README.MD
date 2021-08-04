@@ -1032,12 +1032,6 @@ The following will set the response status to `400`:
 ```ts
 throw { status: 400, message: 'Please stop' } // no error stack
 
-throw 400 // no error stack
-// will be normalized 👉 { status: 400, message: '' }
-
-throw Error('400: Please stop') // using Number.parseInt
-// will be normalized 👉 Error { status: 400, message: 'Please stop' }
-
 const err = Error('Please stop')
 err.status = 400
 throw err // the Express way
