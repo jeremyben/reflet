@@ -3,15 +3,16 @@ import { ClassType, StatusCode, Decorator } from './interfaces'
 const META = Symbol('send')
 
 /**
- * Tells express to handle the method's return value and send it. Can be applied to a whole class and/or to specific methods.
+ * Tells express to handle the method's return value and send it.
  *
- * @param options - change the response status or force json response type.
- * The return value will be sent with [`res.send`](https://expressjs.com/en/4x/api.html#res.send) by default, switch `json` option to `true` to send it with [`res.json`](https://expressjs.com/en/4x/api.html#res.json).
+ * @param options - Change the response status or force json response type.
+ *
+ * - Return value will be sent with [`res.send`](https://expressjs.com/en/4x/api.html#res.send) by default
+ * - Switch `json` option to `true` to send it with [`res.json`](https://expressjs.com/en/4x/api.html#res.json)
+ *
  * _Method's options will extend class' options._
  *
- * @see https://expressjs.com/en/4x/api.html#res.send
- * @see https://expressjs.com/en/4x/api.html#res.json
- *
+ * ------
  * @example
  * ```ts
  * ＠Send({ nullStatus: 205, undefinedStatus: 404 })

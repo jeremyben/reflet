@@ -65,6 +65,7 @@ export function register(appInstance: object, controllers: Controllers): express
 
 		registerRootHandlers(appInstance, appMeta)
 
+		// Retrieve all global middlewares from plain `use` and from application class decorators if any.
 		const globalMwares = getGlobalMiddlewares(appInstance)
 
 		for (const controller of controllers) {
@@ -190,8 +191,8 @@ function registerController(
 				: routerMeta.children
 
 		for (const child of children) {
-			// Undocumented and untyped feature to attach normal express Routers. Will be removed.
-			if (Array.isArray(child) && typeof child[0] === 'string' && typeof child[1] === 'function') {
+			// Undocumented and untyped feature to attach plain express Routers with a tuple. Will be removed.
+			if (Array.isArray(child) && typeof child[0] === 'string' && isExpressRouter(child[1])) {
 				appInstance.use(child[0], child[1])
 			} else {
 				registerController(child, appInstance, globalMwares, parentSharedMwares_, appClass)
@@ -222,7 +223,7 @@ function registerRootHandlers(app: express.Application, appMeta?: ApplicationMet
 	}
 
 	// Probability that the user has already attached middlewares before calling `register`.
-	const existingGlobalMwares = getGlobalMiddlewares(app)
+	const preexistingGlobalMwares = getGlobalMiddlewares(app)
 
 	const newGlobalMwares = extractMiddlewares(appMeta.class)
 
@@ -236,7 +237,7 @@ function registerRootHandlers(app: express.Application, appMeta?: ApplicationMet
 		const routeMwares = extractMiddlewares(appMeta.class, key)
 		const routeErrHandlers = extractErrorHandlers(appMeta.class, key)
 		const paramsMwares = extractParamsMiddlewares(appMeta.class, key, [
-			existingGlobalMwares,
+			preexistingGlobalMwares,
 			newGlobalMwares,
 			routeMwares,
 		])
@@ -374,7 +375,7 @@ function checkPathConstraint(
  * @internal
  */
 function createHandler(
-	controllerClass: ClassType,
+	controllerClass: ClassType, // different from `controllerInstance.constructor` in case of decorated Application class.
 	controllerInstance: any,
 	key: string | symbol,
 	appClass?: ClassType

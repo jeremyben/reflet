@@ -181,7 +181,7 @@ export type ObjectInstance = object & {
  * const controllers: Controllers = [
  *   { path: '/foo', router: Foo },
  *   { path: '/bar', router: Bar },
- *   Baz,
+ *   new Baz(),
  * ]
  * register(app, controllers)
  * ```
