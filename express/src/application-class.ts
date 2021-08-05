@@ -47,20 +47,16 @@ export interface Application extends express.Application {}
  */
 export class Application {
 	constructor() {
-		// Because the constructor returns an express app instead,
-		// We keep the original class reference to be able
+		const app = express()
+		mixinApplication(app, this.constructor)
+
+		// As the constructor returns an express app, we must keep the class reference
 		// to retrieve metadata attached to its children.
 		const metadata: ApplicationMeta = {
 			class: this.constructor as ClassType,
 			registered: false,
 		}
-
-		Reflect.defineMetadata(META, metadata, this)
-
-		const app = express()
-
-		// This keeps methods from this class and its children on the express app.
-		Object.setPrototypeOf(app, this)
+		Reflect.defineMetadata(META, metadata, app)
 
 		return app as unknown as this
 	}
@@ -69,6 +65,32 @@ export class Application {
 		register(this, controllers)
 
 		return this
+	}
+}
+
+/**
+ * @internal
+ */
+function mixinApplication(target: express.Application, source: Function) {
+	// Build the prototype chain with the top parent as first item, to apply inheritance in the right order.
+	const protoChain = []
+	let protoChainLink = source
+
+	do {
+		protoChain.unshift(protoChainLink)
+		protoChainLink = Object.getPrototypeOf(protoChainLink)
+	} while (protoChainLink !== Function.prototype && protoChainLink !== Object.prototype)
+
+	for (const proto of protoChain) {
+		const keys = Object.getOwnPropertyNames(proto.prototype)
+
+		for (const key of keys) {
+			if (key === 'constructor') continue
+			if (key in target) throw Error(`Cannot overwrite "${key}" on express application.`)
+
+			const descriptor = Object.getOwnPropertyDescriptor(proto.prototype, key)!
+			Object.defineProperty(target, key, descriptor)
+		}
 	}
 }
 

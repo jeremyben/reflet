@@ -4,6 +4,23 @@ import { Application, Catch, Get, Send, Use } from '../src'
 import { getGlobalMiddlewares } from '../src/register'
 import { log } from '../../testing/tools'
 
+test('simple app', async () => {
+	@Send()
+	class Bar {
+		@Get('/bar')
+		getOne() {
+			return 'bar'
+		}
+	}
+
+	const app = new Application().register([Bar])
+	const rq = supertest(app)
+
+	const res = await rq.get('/bar')
+	expect(res.text).toBe('bar')
+	expect(res.type).toBe('text/html')
+})
+
 describe('inherit application class', () => {
 	@Catch<Error>(function fooErr(err, req, res, next) {
 		err.message += 'o'
@@ -15,6 +32,10 @@ describe('inherit application class', () => {
 		getOne(req: express.Request, res: express.Response) {
 			throw Error('y')
 		}
+	}
+
+	class Service {
+		user = 'Jeremy'
 	}
 
 	@Catch<Error>(function barErr(err, req, res, next) {
@@ -32,7 +53,7 @@ describe('inherit application class', () => {
 	})
 	@Send()
 	class App extends Application {
-		constructor() {
+		constructor(public service: Service) {
 			super()
 			this.disable('x-powered-by')
 			this.register()
@@ -43,15 +64,23 @@ describe('inherit application class', () => {
 			next()
 		})
 		@Get('/healthcheck')
-		protected healthcheck(req: express.Request, res: express.Response) {
-			return this.text
+		protected healthCheck(req: express.Request, res: express.Response) {
+			return this.successText
 		}
 
-		private text = 'success'
+		private successText = 'success'
 	}
 
-	const app = new App().register([Foo])
+	const app = new App(new Service()).register([Foo])
 	const rq = supertest(app)
+
+	test('inheritance', () => {
+		expect(app).toHaveProperty('register')
+		expect(app).toHaveProperty('successText')
+		expect(app).toHaveProperty('healthCheck')
+		expect(app).toHaveProperty('service')
+		expect(app.service.user).toBe('Jeremy')
+	})
 
 	test('middlewares and route', async () => {
 		const res = await rq.get('/healthcheck')
