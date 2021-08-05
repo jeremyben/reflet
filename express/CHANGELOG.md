@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.6.0](https://github.com/jeremyben/reflet/tree/master/express/compare/@reflet/express@1.5.3...@reflet/express@1.6.0) (2021-08-05)
+
+
+### Bug Fixes
+
+* **express:** application class mixin in node 14 and 16 ([396fcb8](https://github.com/jeremyben/reflet/tree/master/express/commit/396fcb85a9c7d948f8fde131fe8c28f6f06d295d))
+* **express:** more flexible union signature in register ([b9d9780](https://github.com/jeremyben/reflet/tree/master/express/commit/b9d9780412d07ef0eb2221aa9646e6bc9bb85783))
+* **express:** only wrap async functions instead of promisify everything ([2f2ffb6](https://github.com/jeremyben/reflet/tree/master/express/commit/2f2ffb6b5d1501d377af75832577a74be1673e8c))
+
+
+### Features
+
+* **express:** application class ([1baae1e](https://github.com/jeremyben/reflet/tree/master/express/commit/1baae1eff5570f2f0033a2a12a0a60b974566a5d))
+* **express:** can decorate application class with Send ([d56195a](https://github.com/jeremyben/reflet/tree/master/express/commit/d56195a491a3f656b65a91dc59d28ff8031e950f))
+* **express:** dynamic router ([10e8491](https://github.com/jeremyben/reflet/tree/master/express/commit/10e84917ed08fe1e81e57d6fa89e79faa0e4c70b))
+* **express:** router children decorator ([b7fe72f](https://github.com/jeremyben/reflet/tree/master/express/commit/b7fe72f83b1509189b974f23b590816c30a6bea9))
+* **express:** use same register function for child routers, deprecate the other one ([741ef76](https://github.com/jeremyben/reflet/tree/master/express/commit/741ef76dc1aa2d1fa404c0a03de759932eb7bba5))
+
+
+
+
+
 ## [1.5.3](https://github.com/jeremyben/reflet/tree/master/express/compare/@reflet/express@1.5.2...@reflet/express@1.5.3) (2021-02-18)
 
 
