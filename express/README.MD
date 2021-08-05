@@ -321,6 +321,7 @@ Express [Router options](https://expressjs.com/en/4x/api.html#express.router) ca
 #### Nested routers
 
 > 🔦 `register(parent, [controllers])`
+> 🔦 `@Router.Children(register)`
 
 You can register child routers within the `constructor` of the parent router, using the same `register` function.
 
@@ -332,6 +333,17 @@ class AlbumController {
     register(this, [TrackController])
   }
 }
+
+@Router('/:albumId/track', { mergeParams: true })
+class TrackController {}
+```
+
+As a more declarative alternative, you can register child routers with the dedicated decorator `Router.Children`:
+
+```ts
+@Router('/album')
+@Router.Children(() => [TrackController])
+class AlbumController {}
 
 @Router('/:albumId/track', { mergeParams: true })
 class TrackController {}
@@ -1144,10 +1156,9 @@ You can even pass dependencies down your nested controllers:
 
 ```ts
 @Router('/parent')
+@Router.Children<typeof ParentController>((service) => [new NestedController(service)])
 class ParentController {
-  constructor(private service: Service) {
-    register(this, [new ChildController(service)])
-  }
+  constructor(private service: Service) {}
 }
 
 register(app, [new ParentController(new Service())])

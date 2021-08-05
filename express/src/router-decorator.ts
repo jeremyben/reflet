@@ -58,12 +58,15 @@ export namespace Router {
 	 *
 	 * @example
 	 * ```ts
-	 * ＠Router('/foo', { mergeParams: true })
-	 * class Foo {
+	 * ＠Router('/foo')
+	 * class ParentController {
 	 *   constructor() {
-	 *     Router.register(this, [Bar, Baz])
+	 *     Router.register(this, [NestedController])
 	 *   }
 	 * }
+	 *
+	 * ＠Router('/bar')
+	 * class NestedController {}
 	 * ```
 	 * ------
 	 * @deprecated use `register(this, children)`
@@ -81,6 +84,20 @@ export namespace Router {
 	}
 
 	/**
+	 * Attaches children controllers to a parent router, to have nested routers.
+	 *
+	 * @param register - function that should return an array of controllers.
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Router('/foo')
+	 * ＠Router.Children(() => [NestedController])
+	 * class ParentController {}
+	 *
+	 * ＠Router('/bar')
+	 * class NestedController {}
+	 * ```
+	 * ------
 	 * @public
 	 */
 	export function Children<T extends ClassType = any>(

@@ -47,12 +47,15 @@ export function register(app: express.Application, controllers: Controllers): ex
  *
  * @example
  * ```ts
- * ＠Router('/foo', { mergeParams: true })
- * class Foo {
+ * ＠Router('/foo')
+ * class ParentController {
  *   constructor() {
- *     register(this, [Bar, Baz])
+ *     register(this, [NestedController])
  *   }
  * }
+ *
+ * ＠Router('/bar')
+ * class NestedController {}
  * ```
  * ------
  * @public
