@@ -10,7 +10,8 @@
 		"express-middlewares",
 		"benchmarks",
 		"mongoose",
-		"cron"
+		"cron",
+		"decorator-plugin"
 	],
 	"engines": {
 		"node": ">=8.10"

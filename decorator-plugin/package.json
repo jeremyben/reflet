@@ -1,0 +1,36 @@
+{
+	"name": "@reflet/decorator-plugin",
+	"version": "1.0.0",
+	"author": "Jeremy Bensimon",
+	"license": "MIT",
+	"repository": "https://github.com/jeremyben/reflet/tree/master/decorator-plugin",
+	"description": "Typescript language service for decorators",
+	"keywords": [
+		"language service",
+		"plugin",
+		"decorators",
+		"typescript"
+	],
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"publishConfig": {
+		"access": "public"
+	},
+	"engines": {
+		"node": ">=8.10"
+	},
+	"engineStrict": true,
+	"peerDependencies": {},
+	"devDependencies": {},
+	"scripts": {
+		"build": "ts-node -T ../build.ts",
+		"test": "jest --config ../jest.config.js",
+		"test:watch": "yarn test --watch --verbose false",
+		"test:file": "yarn test --testPathPattern",
+		"preversion": "yarn test --coverage && ts-node -T ../testing/summary.ts && git add coverage-summary.json",
+		"prepublishOnly": "yarn run build"
+	}
+}
