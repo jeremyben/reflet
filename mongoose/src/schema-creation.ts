@@ -4,7 +4,7 @@ import { mergeSchemaOptionsAndKeys } from './schema-options-decorators'
 import { applyPreHooks, applyPostHooks } from './hooks-decorators'
 import { getKind } from './kind-decorator'
 import { applySchemaCallback } from './schema-callback-decorator'
-import { attachPopulateVirtuals } from './virtual-populate-decorator'
+import { attachVirtuals } from './virtual-decorator'
 import { ClassType, AsDocument } from './interfaces'
 
 /**
@@ -52,7 +52,7 @@ export function createSchema<T extends ClassType>(Class: T, { full }: { full: bo
 
 	const schema = new mongoose.Schema<AsDocument<InstanceType<T>>>(fields, options)
 
-	attachPopulateVirtuals(schema, Class)
+	attachVirtuals(schema, Class)
 	loadClassMethods(schema, Class)
 	applyPreHooks(schema, Class)
 	applyPostHooks(schema, Class)

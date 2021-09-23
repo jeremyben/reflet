@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose'
-import { Field, PopulateVirtual, Model, SchemaOptions, Plain } from '../src'
+import { Field, Virtual, Model, SchemaOptions, Plain } from '../src'
 
 test('virtual populate', async () => {
 	type NewTrack = Plain<Track, { Optional: '_id' }>
@@ -42,7 +42,7 @@ test('virtual populate', async () => {
 		@Field([mongoose.Schema.Types.ObjectId])
 		trackIds: mongoose.Types.ObjectId[]
 
-		@PopulateVirtual<Track, Album>({
+		@Virtual<Track, Album>({
 			ref: Track,
 			foreignField: '_id',
 			localField: 'trackIds',
@@ -52,7 +52,7 @@ test('virtual populate', async () => {
 		@Field({ type: mongoose.Schema.Types.ObjectId, required: true })
 		bandId: mongoose.Types.ObjectId
 
-		@PopulateVirtual<Band, Album>({
+		@Virtual<Band, Album>({
 			ref: Band,
 			foreignField: '_id',
 			localField: 'bandId',

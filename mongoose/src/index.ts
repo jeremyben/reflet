@@ -8,7 +8,7 @@ export { Field } from './field-decorators'
 
 export { Kind, DiscriminatorKey } from './kind-decorator'
 
-export { PopulateVirtual } from './virtual-populate-decorator'
+export { Virtual } from './virtual-decorator'
 
 export { PreHook, PostHook } from './hooks-decorators'
 

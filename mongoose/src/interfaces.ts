@@ -116,7 +116,7 @@ export namespace Decorator {
 	}
 
 	/**
-	 * Used for `@PopulateVirtual` decorator.
+	 * Used for `@Virtual` decorator.
 	 * Equivalent to `PropertyDecorator`.
 	 * @public
 	 */
@@ -357,6 +357,13 @@ declare global {
 		 * @public
 		 */
 		interface SchemaTypeOptions {}
+
+		/**
+		 * Open interface to extend `@Virtual` options.
+		 * Useful for global plugins.
+		 * @public
+		 */
+		interface VirtualOptions {}
 
 		/**
 		 * Open class to extend every document.

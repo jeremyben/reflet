@@ -15,7 +15,7 @@ The **best** decorators for [Mongoose](https://mongoosejs.com/). Have a look at 
 * [Hooks](#hooks)
 * [Model discriminators](#model-discriminators)
 * [Embedded discriminators](#embedded-discriminators)
-* [Populate virtuals](#populate-virtuals)
+* [Populated virtuals](#populated-virtuals)
 * [Plain helper](#plain-helper)
 * [Augmentations](#augmentations)
 
@@ -785,9 +785,9 @@ const batch = new Batch({
 })
 ```
 
-## Populate virtuals
+## Populated virtuals
 
-> 🔦 `@PopulateVirtual(options)`<br>
+> 🔦 `@Virtual(options)`<br>
 > 💫 Related Mongoose method: [`schema.virtual`](https://mongoosejs.com/docs/populate#populate-virtuals)
 
 ```ts
@@ -809,7 +809,7 @@ class Band extends Model.I {
   @Field(String)
   name: string
 
-  @PopulateVirtual<Person, Band>({
+  @Virtual<Person, Band>({
     ref: 'Person',
     foreignField: 'band',
     localField: 'name'
@@ -929,6 +929,18 @@ class User extends Model.I {
     autopopulate: true
   })
   company: Company
+}
+```
+
+#### Virtual options
+
+The same can be done with the `@Virtual` decorator:
+
+```ts
+declare global {
+  namespace RefletMongoose {
+    interface VirtualOptions {}
+  }
 }
 ```
 
