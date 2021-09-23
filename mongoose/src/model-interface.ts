@@ -4,10 +4,10 @@ import { ClassType, IsAny, Plain } from './interfaces'
 
 /** @ts-ignore protected */
 type NewDocParameter<T extends MongooseModel> = IsAny<T['$typeof']> extends true
-	? Plain.PartialDeep<T>
+	? Plain.AllowString.PartialDeep<T>
 	: // @ts-ignore protected
 	IsAny<ConstructorParameters<T['$typeof']>[0]> extends true
-	? Plain.PartialDeep<T>
+	? Plain.AllowString.PartialDeep<T>
 	: // @ts-ignore protected
 	  ConstructorParameters<T['$typeof']>[0]
 

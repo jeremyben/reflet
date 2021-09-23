@@ -49,6 +49,8 @@ test('model with custom collection and connection', async () => {
 test('model discriminators', async () => {
 	@Model()
 	class User extends Model.I<typeof User> {
+		_id: mongoose.Types.ObjectId
+
 		@Field({ type: String, required: true })
 		firstname: string
 
@@ -70,7 +72,7 @@ test('model discriminators', async () => {
 			return this.firstname + ' ' + this.lastname
 		}
 
-		constructor(doc?: Plain<User, { Omit: 'fullname'; Optional: '_id' }>) {
+		constructor(doc?: Plain.AllowString<User, { Omit: 'fullname'; Optional: '_id' }>) {
 			super()
 		}
 	}
@@ -83,7 +85,7 @@ test('model discriminators', async () => {
 		@Kind('developer')
 		kind: 'developer'
 
-		constructor(doc?: Plain<Developer, { Omit: 'fullname' | 'kind'; Optional: '_id' }>) {
+		constructor(doc?: Plain.AllowString<Developer, { Omit: 'fullname' | 'kind'; Optional: '_id' }>) {
 			super()
 		}
 		protected $typeof: typeof Developer
@@ -101,13 +103,17 @@ test('model discriminators', async () => {
 			return 'Dr ' + this.firstname + ' ' + this.lastname
 		}
 
-		constructor(doc?: Plain<Doctor, { Omit: 'fullname' | 'kind'; Optional: '_id' }>) {
+		constructor(doc?: Plain.AllowString<Doctor, { Omit: 'fullname' | 'kind'; Optional: '_id' }>) {
 			super()
 		}
 		protected $typeof: typeof Doctor
 	}
 
-	const user = await User.create({ firstname: 'Jeremy', lastname: 'Ben' })
+	const user = await User.create({
+		_id: new mongoose.Types.ObjectId().toString(),
+		firstname: 'Jeremy',
+		lastname: 'Ben',
+	})
 	expect(user.fullname).toBe('Jeremy Ben')
 	expect((user as any).kind).toBeUndefined()
 

@@ -169,6 +169,17 @@ type _PartialDeep<T> = {
 /**
  * @public
  */
+type _AllowString<T> = {
+	[K in keyof T]: [Extract<T[K], mongodb.ObjectId>] extends [never]
+		? T[K] extends PrimitiveOrBuiltIn
+			? T[K]
+			: _AllowString<T[K]>
+		: T[K] | string
+}
+
+/**
+ * @public
+ */
 type PlainKeys<T> = {
 	[K in keyof T]: K extends '_id' ? K : K extends keyof mongoose.Document ? never : T[K] extends Function ? never : K
 }[keyof T]
@@ -246,6 +257,62 @@ export namespace Plain {
 	 * @public
 	 */
 	export type PartialDeep<T> = _PartialDeep<_Plain<T>>
+
+	/**
+	 * Omits Mongoose properties (except `_id`) and all methods.
+	 *
+	 * **Allows `string` for ObjectIds.**
+	 *
+	 * @template T - mongoose document.
+	 * @template O - options to omit and/or make optional other keys.
+	 */
+	export type AllowString<T, O extends { Omit?: PlainKeys<T>; Optional?: PlainKeys<T> } | void = void> = _AllowString<
+		Plain<T, O>
+	>
+
+	export namespace AllowString {
+		/**
+		 * Omits Mongoose properties, all methods, and custom keys.
+		 *
+		 * **Allows `string` for ObjectIds.**
+		 *
+		 * @template T - mongoose document.
+		 * @template K - other keys to omit.
+		 * @public
+		 */
+		export type Omit<T, K extends PlainKeys<T>> = Plain.AllowString<T, { Omit: K }>
+
+		/**
+		 * Omits Mongoose properties, all methods, and makes custom keys optional.
+		 *
+		 * **Allows `string` for ObjectIds.**
+		 *
+		 * @template T - mongoose document.
+		 * @template K - other keys to make optional.
+		 * @public
+		 */
+		export type Optional<T, K extends PlainKeys<T>> = Plain.AllowString<T, { Optional: K }>
+
+		/**
+		 * Omits Mongoose properties and all methods, and makes remaining keys optional.
+		 *
+		 * **Allows `string` for ObjectIds.**
+		 *
+		 * @template T - mongoose document.
+		 * @public
+		 */
+		export type Partial<T> = globalThis.Partial<_AllowString<_Plain<T>>>
+
+		/**
+		 * Omits Mongoose properties and all methods, and makes remaining keys optional, recursively.
+		 *
+		 * **Allows `string` for ObjectIds.**
+		 *
+		 * @template T - mongoose document.
+		 * @public
+		 */
+		export type PartialDeep<T> = _PartialDeep<_AllowString<_Plain<T>>>
+	}
 }
 
 // tslint:enable: no-shadowed-variable

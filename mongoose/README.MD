@@ -836,6 +836,22 @@ Reflet provides a generic type to discard Mongoose properties and methods from a
 
 _These options exist as standalone generics as well: `Plain.Omit<T, keyof T>` and `Plain.Optional<T, keyof T>`._
 
+With this you can narrow the return type of `toObject()` and `toJson()`:
+
+```ts
+const userPlain = user.toObject({ getters: false }) as Plain.Omit<User, 'fullname'>
+```
+
+#### Allow `string` for `ObjectId`
+
+> 🔦 `Plain.AllowString<class, options?>`
+
+When creating or querying documents, you can pass `ObjectId` as `string`. To allow this, Reflet provides a generic type with the same API as `Plain`:
+
+* `Plain.AllowString<T, { Omit: keyof T; Optional: keyof T } >`
+* `Plain.AllowString.Partial<T>`
+* `Plain.AllowString.PartialDeep<T>`
+
 ### One document, multiple shapes
 
 In each of your models, some fields might be present when you read the document from the database, but optional or even absent when you create it. 😕
@@ -866,7 +882,7 @@ class User extends Model.I {
 This is how you can type `constructor` and `create` parameters:
 
 ```ts
-type NewUser = Plain<User, { Omit: 'fullname' | 'createdAt'; Optional: '_id' | 'activated' }>
+type NewUser = Plain.AllowString<User, { Omit: 'fullname' | 'createdAt'; Optional: '_id' | 'activated' }>
 
 @Model()
 class User extends Model.I<typeof User>  {
@@ -882,12 +898,6 @@ await User.create({ firstname: 'Jeremy', lastname: 'Doe', activated: true })
 By passing `typeof User` to `Model.I`, Reflet is now able to use the constructor signature to type the following static methods: `create`, `insertMany` and `replaceOne`.
 
 _The compiler checks `NewUser` as we need, so you can safely use ts-ignore on the `constructor` to avoid implementing an empty one (remember that `@Model` will replace it with mongoose Model constructor)._
-
-You can also narrow the return type of `toObject()` and `toJson()`:
-
-```ts
-const userPlain = user.toObject({ getters: false }) as Plain.Omit<User, 'fullname'>
-```
 
 ## Augmentations
 
