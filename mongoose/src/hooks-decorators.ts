@@ -1,4 +1,5 @@
 import * as mongoose from 'mongoose'
+import * as mongodb from 'mongodb'
 import { checkDecoratorsOrder } from './check-decorator-order'
 import { AsDocument, ClassType, Decorator, DocumentAny } from './interfaces'
 
@@ -297,7 +298,7 @@ export function PostHook<T extends DocumentAny, TError = any>(
 export function PostHook<T extends DocumentAny>(
 	method: DocumentMayBeQueryMethod,
 	options: { query: true; document: false },
-	callback: (this: mongoose.Query<T, T>, result: DeleteWriteOpResultResult, next: HookNextFunction) => void
+	callback: (this: mongoose.Query<T, T>, result: mongodb.DeleteResult, next: HookNextFunction) => void
 ): Decorator.PostHook
 
 // 5
@@ -308,7 +309,7 @@ export function PostHook<T extends DocumentAny>(
 export function PostHook<T extends DocumentAny>(
 	method: DocumentMayBeQueryMethod,
 	options: { query: true; document?: true },
-	callback: (this: T | mongoose.Query<T, T>, result: T | DeleteWriteOpResultResult, next: HookNextFunction) => void
+	callback: (this: T | mongoose.Query<T, T>, result: T | mongodb.DeleteResult, next: HookNextFunction) => void
 ): Decorator.PostHook
 
 // 6
@@ -364,7 +365,7 @@ export function PostHook<T extends DocumentAny>(
  */
 export function PostHook<T extends DocumentAny>(
 	method: 'update' | 'updateMany',
-	callback: (this: mongoose.Query<T, T>, result: UpdateWriteOpResultResult, next: HookNextFunction) => void
+	callback: (this: mongoose.Query<T, T>, result: mongodb.UpdateResult, next: HookNextFunction) => void
 ): Decorator.PostHook
 
 // 10
@@ -377,7 +378,7 @@ export function PostHook<T extends DocumentAny>(
  */
 export function PostHook<T extends DocumentAny>(
 	method: 'deleteMany',
-	callback: (this: mongoose.Query<T, T>, result: DeleteWriteOpResultResult, next: HookNextFunction) => void
+	callback: (this: mongoose.Query<T, T>, result: mongodb.DeleteResult, next: HookNextFunction) => void
 ): Decorator.PostHook
 
 // 11
@@ -433,7 +434,7 @@ export function PostHook<T extends DocumentAny, TError = any>(
 export function PostHook<T extends DocumentAny>(
 	method: 'updateOne',
 	callbackOrOptions:
-		| ((this: mongoose.Query<T, T>, result: UpdateWriteOpResultResult, next: HookNextFunction) => void)
+		| ((this: mongoose.Query<T, T>, result: mongodb.UpdateResult, next: HookNextFunction) => void)
 		| { document: true; query?: false },
 	callbackIfOptions?: (this: T, result: T, next: HookNextFunction) => void
 ): Decorator.PostHook
@@ -446,12 +447,7 @@ export function PostHook<T extends DocumentAny>(
 export function PostHook<T extends DocumentAny, TError = any>(
 	method: 'updateOne',
 	callbackOrOptions:
-		| ((
-				this: mongoose.Query<T, T>,
-				error: TError,
-				result: UpdateWriteOpResultResult,
-				next: HookNextFunction
-		  ) => void)
+		| ((this: mongoose.Query<T, T>, error: TError, result: mongodb.UpdateResult, next: HookNextFunction) => void)
 		| { document: true; query?: false },
 	callbackIfOptions?: (this: T, error: TError, result: T, next: HookNextFunction) => void
 ): Decorator.PostHook
@@ -471,7 +467,7 @@ export function PostHook<T extends DocumentAny, TError = any>(
 export function PostHook<T extends DocumentAny>(
 	method: 'deleteOne',
 	callbackOrOptions:
-		| ((this: mongoose.Query<T, T>, result: DeleteWriteOpResultResult, next: HookNextFunction) => void)
+		| ((this: mongoose.Query<T, T>, result: mongodb.DeleteResult, next: HookNextFunction) => void)
 		| { document: true; query?: false },
 	callbackIfOptions?: (this: T, result: T, next: HookNextFunction) => void
 ): Decorator.PostHook
@@ -484,12 +480,7 @@ export function PostHook<T extends DocumentAny>(
 export function PostHook<T extends DocumentAny, TError = any>(
 	method: 'deleteOne',
 	callbackOrOptions:
-		| ((
-				this: mongoose.Query<T, T>,
-				error: TError,
-				result: DeleteWriteOpResultResult,
-				next: HookNextFunction
-		  ) => void)
+		| ((this: mongoose.Query<T, T>, error: TError, result: mongodb.DeleteResult, next: HookNextFunction) => void)
 		| { document: true; query?: false },
 	callbackIfOptions?: (this: T, error: TError, result: T, next: HookNextFunction) => void
 ): Decorator.PostHook
@@ -685,23 +676,3 @@ type AggregateMethod = 'aggregate'
  * @public
  */
 type HookNextFunction = (err?: Error) => void
-
-/**
- * http://mongodb.github.io/node-mongodb-native/3.1/api/Collection#~updateWriteOpResult
- * @public
- */
-interface UpdateWriteOpResultResult {
-	ok: number
-	n: number
-	nModified: number
-}
-
-/**
- * http://mongodb.github.io/node-mongodb-native/3.1/api/Collection#~deleteWriteOpResult
- * @public
- */
-interface DeleteWriteOpResultResult {
-	n: number
-	ok: number
-	deletedCount: number
-}

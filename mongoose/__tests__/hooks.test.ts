@@ -88,7 +88,7 @@ test('updateOne, deleteOne', async () => {
 		next()
 	})
 	@PostHook<UserHookUD>('updateOne', function (result, next) {
-		console.info('post-updateOne', this.constructor.name, result.nModified)
+		console.info('post-updateOne', this.constructor.name, result.modifiedCount)
 		next()
 	})
 	@PreHook<UserHookUD>('deleteOne', function (next) {
@@ -133,7 +133,7 @@ test('insertMany, find, update, updateMany, count, deleteMany', async () => {
 		next()
 	})
 	@PostHook<UserHookIFUUCD>('update', (result, next) => {
-		console.info('post-update', result.ok)
+		console.info('post-update', result.modifiedCount)
 		next()
 	})
 	@PostHook<UserHookIFUUCD>('updateMany', (result, next) => {
@@ -177,9 +177,9 @@ test('insertMany, find, update, updateMany, count, deleteMany', async () => {
 	expect(consoleSpy).toBeCalledWith('post-find', 2)
 	expect(consoleSpy).toBeCalledWith('post-update', 1)
 	expect(consoleSpy).toBeCalledWith('post-find-error', expect.any(Error), null)
-	expect(consoleSpy).toBeCalledWith('post-updateMany', { n: 2, nModified: 2, ok: 1 })
+	expect(consoleSpy).toBeCalledWith('post-updateMany', expect.objectContaining({ matchedCount: 2, modifiedCount: 2 }))
 	expect(consoleSpy).toBeCalledWith('post-count', 2)
-	expect(consoleSpy).toBeCalledWith('post-deleteMany', { n: 2, ok: 1, deletedCount: 2 })
+	expect(consoleSpy).toBeCalledWith('post-deleteMany', { deletedCount: 2 })
 	expect(consoleSpy).toBeCalledWith('post-deleteMany-error', expect.any(Error), null)
 })
 
