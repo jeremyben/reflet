@@ -73,7 +73,7 @@ test('virtual populate', async () => {
 	const band = await Band.create({ lead: 'Jeremy' })
 	const album = await new Album({ trackIds: tracks.map((t) => t._id), bandId: band._id }).save()
 
-	await album.populate('tracks band').execPopulate()
+	await album.populate('tracks band')
 
 	expect(album.bandId.equals(album.band?._id)).toBe(true)
 	expect(album.band?.lead).toBe('Jeremy')

@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose'
 import { checkDecoratorsOrder } from './check-decorator-order'
-import { ConstructorType, Decorator } from './interfaces'
+import { ClassType, Decorator } from './interfaces'
 
 const MetaSchemaOptions = Symbol('schema-options')
 const MetaSchemaOptionsKeys = Symbol('schema-options-keys')
@@ -104,7 +104,7 @@ export const VersionKey: PropertyDecorator = (target, key) => {
 /**
  * @internal
  */
-function getSchemaOptions(target: ConstructorType): mongoose.SchemaOptions | undefined {
+function getSchemaOptions(target: ClassType): mongoose.SchemaOptions | undefined {
 	return Reflect.getMetadata(MetaSchemaOptions, target)
 }
 
@@ -121,7 +121,7 @@ function getSchemaOptionsKeys(target: object): SchemaOptionsKeysMeta {
  * Then assign custom keys to schema options.
  * @internal
  */
-export function mergeSchemaOptionsAndKeys(Class: ConstructorType): mongoose.SchemaOptions | undefined {
+export function mergeSchemaOptionsAndKeys(Class: ClassType): mongoose.SchemaOptions | undefined {
 	let options = getSchemaOptions(Class)
 	const keys = getSchemaOptionsKeys(Class)
 

@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose'
-import { ConstructorType, Decorator } from './interfaces'
+import { ClassType, Decorator } from './interfaces'
 import { schemaFrom } from './schema-creation'
 
 const MetaField = Symbol('field')
@@ -53,10 +53,10 @@ export namespace Field {
 	 * Defines a sub-schema on a property (uses `schemaFrom` internally).
 	 * @public
 	 */
-	export function Schema<T extends ConstructorType | [ConstructorType]>(Class: T): Decorator.FieldSchema {
+	export function Schema<T extends ClassType | [ClassType]>(Class: T): Decorator.FieldSchema {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
-			fields[<string>key] = Array.isArray(Class) ? [schemaFrom(Class[0])] : schemaFrom(Class as ConstructorType)
+			fields[<string>key] = Array.isArray(Class) ? [schemaFrom(Class[0])] : schemaFrom(Class as ClassType)
 			Reflect.defineMetadata(MetaField, fields, target.constructor)
 		}
 	}
@@ -66,11 +66,9 @@ export namespace Field {
 	 * @see https://mongoosejs.com/docs/discriminators#single-nested-discriminators
 	 * @public
 	 */
-	export function Union(classes: ConstructorType[], options?: UnionOptions): Decorator.FieldUnion
-	export function Union(...classes: ConstructorType[]): Decorator.FieldUnion
-	export function Union(
-		...args: ConstructorType[] | (ConstructorType[] | UnionOptions | undefined)[]
-	): Decorator.FieldUnion {
+	export function Union(classes: ClassType[], options?: UnionOptions): Decorator.FieldUnion
+	export function Union(...classes: ClassType[]): Decorator.FieldUnion
+	export function Union(...args: ClassType[] | (ClassType[] | UnionOptions | undefined)[]): Decorator.FieldUnion {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
 			// We must remove _id from the base schema or `{ _id: false }` won't do anything on the discriminator schema (_id is still there by default).
@@ -79,8 +77,8 @@ export namespace Field {
 			const discriminatorFields = getDiscriminatorFields(target.constructor)
 
 			discriminatorFields[<string>key] = Array.isArray(args[0])
-				? { classes: args[0] as ConstructorType[], options: args[1] as UnionOptions | undefined }
-				: { classes: args as ConstructorType[] }
+				? { classes: args[0] as ClassType[], options: args[1] as UnionOptions | undefined }
+				: { classes: args as ClassType[] }
 
 			Reflect.defineMetadata(MetaFieldDiscriminators, discriminatorFields, target.constructor)
 		}
@@ -91,10 +89,10 @@ export namespace Field {
 	 * @see https://mongoosejs.com/docs/discriminators#embedded-discriminators-in-arrays
 	 * @public
 	 */
-	export function ArrayOfUnion(classes: ConstructorType[], options?: UnionOptions): Decorator.FieldArrayOfUnion
-	export function ArrayOfUnion(...classes: ConstructorType[]): Decorator.FieldArrayOfUnion
+	export function ArrayOfUnion(classes: ClassType[], options?: UnionOptions): Decorator.FieldArrayOfUnion
+	export function ArrayOfUnion(...classes: ClassType[]): Decorator.FieldArrayOfUnion
 	export function ArrayOfUnion(
-		...args: ConstructorType[] | (ConstructorType[] | UnionOptions | undefined)[]
+		...args: ClassType[] | (ClassType[] | UnionOptions | undefined)[]
 	): Decorator.FieldArrayOfUnion {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
@@ -105,8 +103,8 @@ export namespace Field {
 			const discriminatorArrayFields = getDiscriminatorFields(target.constructor)
 
 			discriminatorArrayFields[<string>key] = Array.isArray(args[0])
-				? { classes: args[0] as ConstructorType[], options: args[1] as UnionOptions | undefined }
-				: { classes: args as ConstructorType[] }
+				? { classes: args[0] as ClassType[], options: args[1] as UnionOptions | undefined }
+				: { classes: args as ClassType[] }
 
 			Reflect.defineMetadata(MetaFieldDiscriminators, discriminatorArrayFields, target.constructor)
 		}
@@ -116,7 +114,7 @@ export namespace Field {
 /**
  * @internal
  */
-export function getFields(target: object): { [key: string]: any } {
+export function getFields(target: object): mongoose.SchemaDefinition<{ [key: string]: any }> {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
 	return Object.assign({}, Reflect.getMetadata(MetaField, target))
 }
@@ -124,9 +122,9 @@ export function getFields(target: object): { [key: string]: any } {
 /**
  * @internal
  */
-export function getDiscriminatorFields(
-	target: object
-): { [key: string]: { classes: ConstructorType[]; options?: UnionOptions } } {
+export function getDiscriminatorFields(target: object): {
+	[key: string]: { classes: ClassType[]; options?: UnionOptions }
+} {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
 	return Object.assign({}, Reflect.getMetadata(MetaFieldDiscriminators, target))
 }
@@ -262,6 +260,15 @@ type SchemaTypeOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]> = R
 	 * [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-unique)
 	 */
 	unique?: boolean
+
+	/**
+	 * If truthy, Mongoose will build a text index on this path.
+	 *
+	 * _All types_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api.html#schematypeoptions_SchemaTypeOptions-text)
+	 */
+	text?: boolean | number
 
 	/**
 	 * Disallow changes to this path once the document is saved to the database for the first time.
@@ -458,11 +465,11 @@ type ObjectIdOptions = {
 		? string | mongoose.Model<any> | ((this: any, doc: any) => string | mongoose.Model<any>)
 		:
 				| keyof RefletMongoose.Ref
-				| ConstructorType<RefletMongoose.Ref[keyof RefletMongoose.Ref]>
+				| ClassType<RefletMongoose.Ref[keyof RefletMongoose.Ref]>
 				| ((
 						this: any,
 						doc: any
-				  ) => keyof RefletMongoose.Ref | ConstructorType<RefletMongoose.Ref[keyof RefletMongoose.Ref]>)
+				  ) => keyof RefletMongoose.Ref | ClassType<RefletMongoose.Ref[keyof RefletMongoose.Ref]>)
 
 	/**
 	 * _ObjectId type_

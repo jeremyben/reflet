@@ -12,7 +12,7 @@ export namespace Decorator {
 	 * Equivalent to `ClassDecorator`.
 	 * @public
 	 */
-	export type Model<T extends ConstructorType> = ((target: T) => any) & {
+	export type Model<T extends ClassType> = ((target: T) => any) & {
 		__mongooseModel?: never
 	}
 
@@ -21,7 +21,7 @@ export namespace Decorator {
 	 * Equivalent to `ClassDecorator`.
 	 * @public
 	 */
-	export type ModelDiscriminator<T extends ConstructorType> = ((target: T) => any) & {
+	export type ModelDiscriminator<T extends ClassType> = ((target: T) => any) & {
 		__mongooseModelDiscriminator?: never
 	}
 
@@ -137,6 +137,7 @@ type PrimitiveOrBuiltIn =
 	| symbol
 	| null
 	| bigint
+	| BigInt
 	| Date
 	| RegExp
 	| Buffer
@@ -172,10 +173,7 @@ type PlainKeys<T> = {
  * @public
  */
 type _Plain<T> = {
-	[K in Exclude<PlainKeys<T>, undefined>]: T[K] extends
-		| mongoose.Document
-		| mongoose.Types.Subdocument
-		| mongoose.Types.EmbeddedDocument
+	[K in Exclude<PlainKeys<T>, undefined>]: T[K] extends mongoose.Document | mongoose.Types.Subdocument
 		? _Plain<T[K]>
 		: T[K] extends mongoose.Types.DocumentArray<infer U>
 		? _Plain<U>[]
@@ -278,17 +276,12 @@ export type ModelAny = { [K in keyof mongoose.Model<mongoose.Document>]: any } &
 /**
  * @public
  */
-export type DocumentAny = { [K in keyof mongoose.Document]: any }
+export type DocumentAny = { [K in keyof mongoose.Require_id<mongoose.Document>]: any }
 
 /**
  * @public
  */
-export type ConstructorType<T = any> = Function & { prototype: T }
-
-/**
- * @public
- */
-export type ConstructorInstance<T extends ConstructorType> = T extends Function & { prototype: infer R } ? R : never
+export type ClassType<T = any> = abstract new (...args: any) => T
 
 /**
  * @public

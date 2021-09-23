@@ -5,7 +5,7 @@ import { applyPreHooks, applyPostHooks } from './hooks-decorators'
 import { getKind } from './kind-decorator'
 import { applySchemaCallback } from './schema-callback-decorator'
 import { attachPopulateVirtuals } from './virtual-populate-decorator'
-import { ConstructorType, ConstructorInstance, AsDocument } from './interfaces'
+import { ClassType, AsDocument } from './interfaces'
 
 /**
  * Retrieves the schema from a decorated class.
@@ -33,7 +33,7 @@ import { ConstructorType, ConstructorInstance, AsDocument } from './interfaces'
  * ---
  * @public
  */
-export function schemaFrom<T extends ConstructorType>(Class: T): mongoose.Schema<AsDocument<ConstructorInstance<T>>> {
+export function schemaFrom<T extends ClassType>(Class: T): mongoose.Schema<AsDocument<InstanceType<T>>> {
 	if (Class.prototype.$isMongooseModelPrototype) {
 		return Class.prototype.schema
 	}
@@ -43,14 +43,14 @@ export function schemaFrom<T extends ConstructorType>(Class: T): mongoose.Schema
 
 /**
  * Used directly by `@Model` and `@Model.Discriminator` to avoid the check and bypass of `schemaFrom` method.
- * @param full - for nested schemas of recursive embedded discriminators, to avoid infinite loop on.
+ * @param full - for nested schemas of recursive embedded discriminators, to avoid infinite loop.
  * @internal
  */
-export function createSchema<T extends ConstructorType>(Class: T, { full }: { full: boolean }) {
-	const fields = getFields(Class)
+export function createSchema<T extends ClassType>(Class: T, { full }: { full: boolean }) {
+	const fields = getFields(Class) as mongoose.SchemaDefinition<{}>
 	const options = mergeSchemaOptionsAndKeys(Class)
 
-	const schema = new mongoose.Schema<AsDocument<ConstructorInstance<T>>>(fields, options)
+	const schema = new mongoose.Schema<AsDocument<InstanceType<T>>>(fields, options)
 
 	attachPopulateVirtuals(schema, Class)
 	loadClassMethods(schema, Class)
@@ -77,7 +77,7 @@ export function createSchema<T extends ConstructorType>(Class: T, { full }: { fu
  * @see https://github.com/Automattic/mongoose/blob/5.9/lib/schema.js#L1944-L1986
  * @internal
  */
-function loadClassMethods<T extends mongoose.Document>(schema: mongoose.Schema<T>, Class: ConstructorType): void {
+function loadClassMethods<T extends mongoose.Document>(schema: mongoose.Schema<T>, Class: ClassType): void {
 	// If we extend a class decorated by @Model (when we need to use @Model.Discriminator for example),
 	// its protototype is gonna be a mongoose model and have `$isMongooseModelPrototype` property.
 	// If it's the case, we can't attach methods, statics, or virtuals from its parent, because
@@ -114,9 +114,9 @@ function loadClassMethods<T extends mongoose.Document>(schema: mongoose.Schema<T
  */
 function attachNestedDiscriminators<T extends mongoose.Document>(
 	parentSchema: mongoose.Schema<T>,
-	parentClass: ConstructorType,
-	nestedDiscriminators: Map<ConstructorType, mongoose.Schema> = new Map()
-): Map<ConstructorType, mongoose.Schema> {
+	parentClass: ClassType,
+	nestedDiscriminators: Map<ClassType, mongoose.Schema> = new Map()
+): Map<ClassType, mongoose.Schema> {
 	// https://mongoosejs.com/docs/discriminators#single-nested-discriminators
 	// https://mongoosejs.com/docs/discriminators#embedded-discriminators-in-arrays
 
@@ -178,11 +178,7 @@ function attachNestedDiscriminators<T extends mongoose.Document>(
 /**
  * @internal
  */
-function setNestedDiscriminatorKey(
-	nestedPath: NestedPath,
-	nestedClasses: ConstructorType[],
-	strict: boolean | undefined
-) {
+function setNestedDiscriminatorKey(nestedPath: NestedPath, nestedClasses: ClassType[], strict: boolean | undefined) {
 	let discriminatorKey: string | undefined
 
 	for (const subClass of nestedClasses) {

@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose'
 import { checkDecoratorsOrder } from './check-decorator-order'
-import { AsDocument, ConstructorType, Decorator, DocumentAny, Plain } from './interfaces'
+import { AsDocument, ClassType, Decorator, DocumentAny } from './interfaces'
 
 //
 // ────────────────────────────────────────────────────────────────────────────
@@ -213,7 +213,7 @@ export function PreHook(
 /**
  * @internal
  */
-export function applyPreHooks(schema: mongoose.Schema<any>, target: ConstructorType): void {
+export function applyPreHooks(schema: mongoose.Schema<any>, target: ClassType): void {
 	const preHooks = getPreHooks(target)
 
 	for (const preHook of preHooks) {
@@ -224,7 +224,7 @@ export function applyPreHooks(schema: mongoose.Schema<any>, target: ConstructorT
 /**
  * @internal
  */
-function getPreHooks(target: ConstructorType): Hook[] {
+function getPreHooks(target: Function): Hook[] {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
 	return (Reflect.getMetadata(MetaPreHook, target) || []).slice()
 }
@@ -529,7 +529,7 @@ export function PostHook<T extends DocumentAny, TError = any>(
  */
 export function PostHook<T extends DocumentAny>(
 	method: AggregateMethod,
-	callback: (this: mongoose.Aggregate<T>, results: Plain<T>[], next: HookNextFunction) => void
+	callback: (this: mongoose.Aggregate<T>, results: mongoose.LeanDocument<T>[], next: HookNextFunction) => void
 ): Decorator.PostHook
 
 // 20
@@ -598,7 +598,7 @@ export function PostHook(
 /**
  * @internal
  */
-export function applyPostHooks(schema: mongoose.Schema<any>, target: ConstructorType): void {
+export function applyPostHooks(schema: mongoose.Schema<any>, target: ClassType): void {
 	const postHooks = getPostHooks(target)
 
 	for (const postHook of postHooks) {
@@ -609,7 +609,7 @@ export function applyPostHooks(schema: mongoose.Schema<any>, target: Constructor
 /**
  * @internal
  */
-function getPostHooks(target: ConstructorType): Hook[] {
+function getPostHooks(target: Function): Hook[] {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
 	return (Reflect.getMetadata(MetaPostHook, target) || []).slice()
 }

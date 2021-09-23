@@ -104,7 +104,7 @@ test('schema with reference', async () => {
 
 describe('timestamps', () => {
 	test('without schema options', async () => {
-		class TS {
+		abstract class TS {
 			@Field(String)
 			name: string
 

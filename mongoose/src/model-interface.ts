@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose'
 import * as mongodb from 'mongodb' // tslint:disable-line: no-implicit-dependencies
-import { IsAny, Plain } from './interfaces'
+import { ClassType, IsAny, Plain } from './interfaces'
 
 /** @ts-ignore protected */
 type NewDocParameter<T extends MongooseModel> = IsAny<T['$typeof']> extends true
@@ -15,7 +15,7 @@ type NewDocParameter<T extends MongooseModel> = IsAny<T['$typeof']> extends true
  * Intermediary abstract class with overloaded static methods to properly infer the child class.
  * @public
  */
-export class MongooseModel<C extends new (...args: any[]) => any = any> extends (class {} as RefletMongoose.Model) {
+export abstract class MongooseModel<C extends ClassType = any> extends (class {} as RefletMongoose.Model) {
 	constructor(doc?: any, strict?: mongoose.SchemaOptions['strict']) {
 		super()
 	}
@@ -130,8 +130,8 @@ export class MongooseModel<C extends new (...args: any[]) => any = any> extends 
 		id: mongodb.ObjectId | string,
 		update: mongoose.UpdateQuery<T>,
 		options: mongoose.QueryOptions & { rawResult: true },
-		callback?: (err: any, doc: mongodb.FindAndModifyWriteOpResultObject<T>, res: any) => void
-	): mongoose.Query<mongodb.FindAndModifyWriteOpResultObject<T>, T>
+		callback?: (err: any, doc: any, res: any) => void
+	): mongoose.Query<any, T>
 
 	static findByIdAndUpdate<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
@@ -185,7 +185,7 @@ export class MongooseModel<C extends new (...args: any[]) => any = any> extends 
 	static findOneAndReplace<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		filter: mongoose.FilterQuery<T>,
-		replacement: Plain.PartialDeep<T>,
+		replacement: mongoose.DocumentDefinition<T>,
 		options: mongoose.QueryOptions & { upsert: true } & mongoose.ReturnsNewDoc,
 		callback?: (err: any, doc: T, res: any) => void
 	): mongoose.Query<T, T>
@@ -194,7 +194,7 @@ export class MongooseModel<C extends new (...args: any[]) => any = any> extends 
 	static findOneAndReplace<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		filter?: mongoose.FilterQuery<T>,
-		replacement?: Plain.PartialDeep<T>,
+		replacement?: mongoose.DocumentDefinition<T>,
 		options?: mongoose.QueryOptions | null,
 		callback?: (err: any, doc: T | null, res: any) => void
 	): mongoose.Query<T | null, T>
@@ -213,8 +213,8 @@ export class MongooseModel<C extends new (...args: any[]) => any = any> extends 
 		conditions: mongoose.FilterQuery<T>,
 		update: mongoose.UpdateQuery<T>,
 		options: ({ rawResult: true } & { upsert: true; new: true } & mongoose.QueryOptions) | null,
-		callback?: (err: any, doc: mongodb.FindAndModifyWriteOpResultObject<T>, res: any) => void
-	): mongoose.Query<mongodb.FindAndModifyWriteOpResultObject<T>, T>
+		callback?: (err: any, doc: any, res: any) => void
+	): mongoose.Query<any, T>
 
 	static findOneAndUpdate<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
@@ -229,8 +229,8 @@ export class MongooseModel<C extends new (...args: any[]) => any = any> extends 
 		conditions: mongoose.FilterQuery<T>,
 		update: mongoose.UpdateQuery<T>,
 		options: ({ rawResult: true } & mongoose.QueryOptions) | null,
-		callback?: (err: any, doc: mongodb.FindAndModifyWriteOpResultObject<T | null>, res: any) => void
-	): mongoose.Query<mongodb.FindAndModifyWriteOpResultObject<T | null>, T>
+		callback?: (err: any, doc: any | null, res: any) => void
+	): mongoose.Query<any | null, T>
 
 	// @ts-ignore implementation
 	static findOneAndUpdate<T extends MongooseModel>(
@@ -290,38 +290,37 @@ export class MongooseModel<C extends new (...args: any[]) => any = any> extends 
 	// @ts-ignore implementation
 	static remove<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
-		conditions: mongoose.FilterQuery<T>,
+		filter?: mongoose.FilterQuery<T>,
 		callback?: (err: any) => void
-	): mongoose.Query<mongodb.DeleteWriteOpResultObject['result'] & { deletedCount?: number }, T>
+	): mongoose.Query<mongodb.DeleteResult & { deletedCount?: number }, T>
+
+	static deleteOne<T extends MongooseModel>(
+		this: new (...a: any[]) => T,
+		filter?: mongoose.FilterQuery<T>,
+		callback?: (err: any) => void
+	): mongoose.Query<mongodb.DeleteResult & { deletedCount?: number }, T>
 
 	// @ts-ignore implementation
 	static deleteOne<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
-		conditions: mongoose.FilterQuery<T>,
+		filter?: mongoose.FilterQuery<T>,
+		options?: mongoose.QueryOptions,
 		callback?: (err: any) => void
-	): mongoose.Query<mongodb.DeleteWriteOpResultObject['result'] & { deletedCount?: number }, T>
-
-	// @ts-ignore implementation
-	static deleteOne<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		conditions: mongoose.FilterQuery<T>,
-		options: mongoose.QueryOptions,
-		callback?: (err: any) => void
-	): mongoose.Query<mongodb.DeleteWriteOpResultObject['result'] & { deletedCount?: number }, T>
+	): mongoose.Query<mongodb.DeleteResult & { deletedCount?: number }, T>
 
 	static deleteMany<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
-		conditions: mongoose.FilterQuery<T>,
+		filter?: mongoose.FilterQuery<T>,
 		callback?: (err: any) => void
-	): mongoose.Query<mongodb.DeleteWriteOpResultObject['result'] & { deletedCount?: number }, T>
+	): mongoose.Query<mongodb.DeleteResult & { deletedCount?: number }, T>
 
 	// @ts-ignore implementation
 	static deleteMany<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
-		conditions: mongoose.FilterQuery<T>,
-		options: mongoose.QueryOptions,
+		filter?: mongoose.FilterQuery<T>,
+		options?: mongoose.QueryOptions,
 		callback?: (err: any) => void
-	): mongoose.Query<mongodb.DeleteWriteOpResultObject['result'] & { deletedCount?: number }, T>
+	): mongoose.Query<mongodb.DeleteResult & { deletedCount?: number }, T>
 
 	// @ts-ignore implementation
 	static replaceOne<T extends MongooseModel>(
@@ -337,7 +336,7 @@ export class MongooseModel<C extends new (...args: any[]) => any = any> extends 
 		filter?: mongoose.FilterQuery<T>,
 		update?: mongoose.UpdateQuery<T>,
 		callback?: (err: any, res: any) => void
-	): mongoose.Query<mongodb.WriteOpResult['result'], T>
+	): mongoose.Query<mongodb.UpdateResult, T>
 
 	// @ts-ignore implementation
 	static update<T extends MongooseModel>(
@@ -346,14 +345,14 @@ export class MongooseModel<C extends new (...args: any[]) => any = any> extends 
 		update?: mongoose.UpdateQuery<T>,
 		options?: mongoose.QueryOptions | null,
 		callback?: (err: any, raw: any) => void
-	): mongoose.Query<mongodb.WriteOpResult['result'], T>
+	): mongoose.Query<mongodb.UpdateResult, T>
 
 	static updateOne<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
 		filter?: mongoose.FilterQuery<T>,
 		update?: mongoose.UpdateQuery<T>,
 		callback?: (err: any, raw: any) => void
-	): mongoose.Query<mongodb.WriteOpResult['result'], T>
+	): mongoose.Query<mongodb.UpdateResult, T>
 
 	// @ts-ignore implementation
 	static updateOne<T extends MongooseModel>(
@@ -362,46 +361,14 @@ export class MongooseModel<C extends new (...args: any[]) => any = any> extends 
 		update?: mongoose.UpdateQuery<T>,
 		options?: mongoose.QueryOptions | null,
 		callback?: (err: any, raw: any) => void
-	): mongoose.Query<mongodb.WriteOpResult['result'], T>
-
-	static updateMany<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		conditions: mongoose.FilterQuery<T>,
-		doc: mongoose.UpdateQuery<T>,
-		callback?: (err: any, raw: any) => void
-	): mongoose.Query<mongodb.WriteOpResult['result'], T>
+	): mongoose.Query<mongodb.UpdateResult, T>
 
 	// @ts-ignore implementation
 	static updateMany<T extends MongooseModel>(
 		this: new (...a: any[]) => T,
-		conditions: mongoose.FilterQuery<T>,
-		doc: mongoose.UpdateQuery<T>,
-		options: mongoose.QueryOptions,
+		filter?: mongoose.FilterQuery<T>,
+		doc?: mongoose.UpdateQuery<T>,
+		options?: mongoose.QueryOptions,
 		callback?: (err: any, raw: any) => void
-	): mongoose.Query<mongodb.WriteOpResult['result'], T>
-
-	update(doc: mongoose.UpdateQuery<this>, callback?: (err: any, raw: any) => void): mongoose.Query<any, this>
-
-	// @ts-ignore implementation
-	update(
-		doc: mongoose.UpdateQuery<this>,
-		options: mongoose.QueryOptions,
-		callback?: (err: any, raw: any) => void
-	): mongoose.Query<any, this>
-
-	updateOne(doc: mongoose.UpdateQuery<this>, callback?: (err: any, raw: any) => void): mongoose.Query<any, this>
-
-	// @ts-ignore implementation
-	updateOne(
-		doc: mongoose.UpdateQuery<this>,
-		options: mongoose.QueryOptions,
-		callback?: (err: any, raw: any) => void
-	): mongoose.Query<any, this>
-
-	// Plain seems to be not compatible with LeanDocument
-	// @ts-ignore implementation
-	toObject(options?: mongoose.ToObjectOptions): mongoose.LeanDocument<this>
-
-	// @ts-ignore implementation
-	toJSON(options?: mongoose.ToObjectOptions): mongoose.LeanDocument<this>
+	): mongoose.Query<mongodb.UpdateResult, T>
 }

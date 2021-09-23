@@ -60,7 +60,7 @@ export function attachPopulateVirtuals(schema: mongoose.Schema<any>, target: obj
 		if (!populateVirtuals.hasOwnProperty(virtualKey)) continue
 
 		const virtualOptions = populateVirtuals[virtualKey]
-		schema.virtual(virtualKey, virtualOptions)
+		schema.virtual(virtualKey, virtualOptions as any)
 	}
 }
 

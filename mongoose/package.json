@@ -30,12 +30,12 @@
 	"engineStrict": true,
 	"peerDependencies": {
 		"@types/node": ">=8",
-		"mongoose": ">=5.11",
+		"mongoose": ">=6",
 		"reflect-metadata": "^0.1.13"
 	},
 	"devDependencies": {
 		"@shelf/jest-mongodb": "^1.2.3",
-		"mongoose": "^5.12.13"
+		"mongoose": "^6.0.7"
 	},
 	"scripts": {
 		"build": "ts-node -T ../build.ts",

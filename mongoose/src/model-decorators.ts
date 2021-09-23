@@ -3,7 +3,7 @@ import { createSchema } from './schema-creation'
 import { registerModelDecorator } from './check-decorator-order'
 import { getKind, assignModelKindKey } from './kind-decorator'
 import { MongooseModel } from './model-interface'
-import { Decorator, ModelAny } from './interfaces'
+import { ClassType, Decorator, ModelAny } from './interfaces'
 
 /**
  * Transforms the decorated class into a mongoose Model.
@@ -32,7 +32,7 @@ export function Model<T extends ModelAny>(collection?: string, connection?: mong
 		const schema = createSchema(Class, { full: true })
 
 		if (connection) return connection.model(Class.name, schema, collection)
-		const model = mongoose.model(Class.name, schema, collection)
+		const model = mongoose.model<mongoose.Document>(Class.name, schema, collection)
 
 		registerModelDecorator(model, 'Model')
 
@@ -102,7 +102,7 @@ export namespace Model {
 	 * @public
 	 */
 	export const Interface = MongooseModel
-	export type Interface<C extends new (...args: any[]) => any = any> = MongooseModel<C>
+	export type Interface<C extends ClassType = any> = MongooseModel<C>
 
 	/**
 	 * Dummy class to extend from, to get all the (narrowed) types from mongoose Model and Document.
@@ -110,5 +110,5 @@ export namespace Model {
 	 * @public
 	 */
 	export const I = MongooseModel
-	export type I<C extends new (...args: any[]) => any = any> = MongooseModel<C>
+	export type I<C extends ClassType = any> = MongooseModel<C>
 }

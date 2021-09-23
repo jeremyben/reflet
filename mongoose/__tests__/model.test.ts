@@ -2,11 +2,7 @@ import * as mongoose from 'mongoose'
 import { Field, Model, schemaFrom, Kind, Plain, SchemaOptions, SchemaCallback, PostHook, PreHook } from '../src'
 
 test('model with custom collection and connection', async () => {
-	const db = mongoose.createConnection(process.env.MONGO_URL!, {
-		useNewUrlParser: true,
-		useUnifiedTopology: true,
-		useCreateIndex: true,
-	})
+	const db = mongoose.createConnection(process.env.MONGO_URL!)
 
 	@Model('people', db)
 	class UserOther extends Model.I {
