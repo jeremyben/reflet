@@ -1,5 +1,15 @@
 import * as mongoose from 'mongoose'
-import { Field, SchemaOptions, schemaFrom, VersionKey, CreatedAt, UpdatedAt, SchemaCallback, Model } from '../src'
+import {
+	Field,
+	SchemaOptions,
+	schemaFrom,
+	VersionKey,
+	CreatedAt,
+	UpdatedAt,
+	SchemaCallback,
+	Model,
+	Plain,
+} from '../src'
 
 test('schema with reference', async () => {
 	@SchemaOptions({ _id: false })
@@ -94,7 +104,8 @@ test('schema with reference', async () => {
 
 	const s = (await S.findOne({ name: 'Jeremy' }).populate('srefs'))!
 	// console.log(s)
-	// console.log('object', s.toObject())
+	// const obj = s.toObject() as Plain.Omit<S, 'buf'>
+	// console.log('object', obj)
 
 	expect(s.srefs[0]._id).toBeInstanceOf(mongoose.Types.ObjectId)
 	expect(s.srefs[0].hello).toBe('hi')

@@ -130,6 +130,11 @@ export namespace Decorator {
 /**
  * @public
  */
+type EnsureString<T> = T extends string ? T : never
+
+/**
+ * @public
+ */
 type PrimitiveOrBuiltIn =
 	| number
 	| boolean
@@ -169,24 +174,11 @@ type PlainKeys<T> = {
 }[keyof T]
 
 /**
- * Recursive.
  * @public
  */
-type _Plain<T> = {
-	[K in Exclude<PlainKeys<T>, undefined>]: T[K] extends mongoose.Document | mongoose.Types.Subdocument
-		? _Plain<T[K]>
-		: T[K] extends mongoose.Types.DocumentArray<infer U>
-		? _Plain<U>[]
-		: T[K] extends mongoose.Types.Array<infer U>
-		? U[]
-		: T[K] extends (infer U & mongoose.Document)[] // Must also constraint to mongoose.document to avoid problems with regular arrays
-		? _Plain<U>[]
-		: T[K] extends mongoose.Types.Map<infer V>
-		? Map<string, V>
-		: T[K] extends mongoose.Types.Buffer
-		? mongodb.Binary
-		: T[K]
-}
+type _Plain<T> = mongoose.LeanDocument<{
+	[P in PlainKeys<T>]: T[P]
+}>
 
 /**
  * Omits Mongoose properties (except `_id`) and all methods.
@@ -220,11 +212,8 @@ type _Plain<T> = {
 export type Plain<T, O extends { Omit?: PlainKeys<T>; Optional?: PlainKeys<T> } | void = void> = O extends {
 	[key: string]: any
 }
-	? Omit<
-			_Plain<T>,
-			(O['Omit'] extends string ? O['Omit'] : never) | (O['Optional'] extends string ? O['Optional'] : never)
-	  > &
-			Pick<Partial<T>, O['Optional'] extends string ? O['Optional'] : never>
+	? Omit<_Plain<T>, EnsureString<O['Omit']> | EnsureString<O['Optional']>> &
+			(O['Optional'] extends string ? Pick<Partial<T>, O['Optional']> : {})
 	: _Plain<T>
 
 export namespace Plain {
