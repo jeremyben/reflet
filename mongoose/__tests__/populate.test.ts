@@ -43,7 +43,7 @@ test('virtual populate', async () => {
 		trackIds: mongoose.Types.ObjectId[]
 
 		@Virtual<Track, Album>({
-			ref: Track,
+			ref: 'Track',
 			foreignField: '_id',
 			localField: 'trackIds',
 		})
@@ -53,7 +53,7 @@ test('virtual populate', async () => {
 		bandId: mongoose.Types.ObjectId
 
 		@Virtual<Band, Album>({
-			ref: Band,
+			ref: 'Band',
 			foreignField: '_id',
 			localField: 'bandId',
 			justOne: true,

@@ -34,7 +34,7 @@
 		"reflect-metadata": "^0.1.13"
 	},
 	"devDependencies": {
-		"@shelf/jest-mongodb": "^1.2.3",
+		"@shelf/jest-mongodb": "^2.1.0",
 		"mongoose": "^6.0.7"
 	},
 	"scripts": {

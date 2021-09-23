@@ -136,14 +136,20 @@ test('recursive embedded discriminators in arrays', async () => {
 	}
 
 	const doc = await EventList.create(list)
+	const obj = doc.toObject()
 
-	expect(doc.events).toHaveLength(2)
+	expect(obj.events).toHaveLength(2)
 
-	expect(doc.events[0].sub_events[0].message).toBe('test1')
-	expect(doc.events[0].message).toBe('hello')
+	const [firstEvent, secondEvent] = obj.events
 
-	expect(doc.events[1].sub_events[0].sub_events[0].message).toBe('test3')
-	expect(doc.events[1].message).toBe('world')
+	expect(firstEvent.sub_events).toHaveLength(1)
+
+	expect(firstEvent.sub_events[0]).toEqual({ message: 'test1', kind: 'SubEvent', sub_events: [] })
+	expect(firstEvent.sub_events[0].message).toBe('test1')
+	expect(firstEvent.message).toBe('hello')
+
+	expect(secondEvent.sub_events[0].sub_events[0].message).toBe('test3')
+	expect(secondEvent.message).toBe('world')
 })
 
 test('nested discriminators kind key coercion', async () => {
