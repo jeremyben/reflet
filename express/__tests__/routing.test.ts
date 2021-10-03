@@ -1,10 +1,10 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
-import { register, Router, Get, Post, Patch, Method, Res, Req, Use, Params, Body } from '../src'
+import { register, Router, Get, Post, Patch, Route, Res, Req, Use, Params, Body } from '../src'
 import { log } from '../../testing/tools'
 
 describe('basic routing', () => {
-	const PostAndPut = (path: string | RegExp) => Method(['post', 'put'], path)
+	const PostAndPut = (path: string | RegExp) => Route(['post', 'put'], path)
 
 	class UserService {
 		private users = [
@@ -42,12 +42,12 @@ describe('basic routing', () => {
 	class MessageController {
 		prop = 1
 
-		@Method('options', '/message')
+		@Route('options', '/message')
 		options = (req: express.Request, res: express.Response, next: express.NextFunction) => {
 			res.send([{ id: this.prop }])
 		}
 
-		@Method.Get('/message/:id')
+		@Route.Get('/message/:id')
 		get(@Res res: express.Response, @Req req: express.Request) {
 			const id = Number.parseInt(req.params.id, 10)
 			res.send({ id })

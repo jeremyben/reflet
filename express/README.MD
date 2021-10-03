@@ -252,34 +252,34 @@ Pretty obvious, like any other decorator framework.
 
 #### Other route decorators
 
-> 🔦 `@Method(method, path)`<br>
+> 🔦 `@Route(method, path)`<br>
 > 💫 Related Express methods: [`app.METHOD`](https://expressjs.com/en/4x/api.html#app.METHOD), [`app.all`](https://expressjs.com/en/4x/api.html#app.all)
 
-Common route decorators are created from `Method`, a decorator in itself, that can be used to create a route decorator for any other [routing method](https://expressjs.com/en/4x/api.html#routing-methods) supported by Express (plus the [`all` method](https://expressjs.com/en/4x/api.html#app.all)).
+Common route decorators are created from `Route`, a decorator in itself, that can be used to create a route decorator for any other [routing method](https://expressjs.com/en/4x/api.html#routing-methods) supported by Express (plus the [`all` method](https://expressjs.com/en/4x/api.html#app.all)).
 
-As a convenience, `Method` is also a namespace that gives access to all route decorators as its properties.
+As a convenience, `Route` is also a namespace that gives access to all route decorators as its properties.
 
 ```ts
-const Options = (path: string | RegExp) => Method('options', path)
+const Options = (path: string | RegExp) => Route('options', path)
 
 class Controller {
   @Options('/things')
   opts(req: Request, res: Response, next: NextFunction) {}
 
-  @Method.All('/things')
+  @Route.All('/things')
   all(req: Request, res: Response, next: NextFunction) {}
 
-  @Method.Get('/things')
+  @Route.Get('/things')
   get(req: Request, res: Response, next: NextFunction) {}
 }
 ```
 
 #### Handler with multiple verbs
 
-You can share the same handler with multiple HTTP verbs, by passing an array to `Method`.
+You can share the same handler with multiple HTTP verbs, by passing an array to `Route`.
 
 ```ts
-const Patch_Put = (path: string | RegExp) => Method(['patch', 'put'], path)
+const Patch_Put = (path: string | RegExp) => Route(['patch', 'put'], path)
 
 class Controller {
   @Patch_Put('/things/:id')

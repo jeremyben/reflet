@@ -2,7 +2,7 @@ export { register } from './register'
 
 export { Router } from './router-decorator'
 
-export { Method, Get, Post, Put, Patch, Delete } from './route-decorators'
+export { Route, Get, Post, Put, Patch, Delete } from './route-decorators'
 
 export { Use } from './middleware-decorator'
 

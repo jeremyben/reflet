@@ -26,7 +26,7 @@ export namespace Decorator {
 	 * Equivalent to `MethodDecorator`.
 	 * @public
 	 */
-	export type Route<T extends RoutingMethod> = PropertyOrMethodDecorator & { __expressRoute?: T }
+	export type Route = PropertyOrMethodDecorator & { __expressRoute?: never }
 
 	/**
 	 * Used for `createParamDecorator`.
@@ -242,36 +242,6 @@ export type RequestHeaderName =
 	| 'content-md5'
 
 /**
- * @see http://expressjs.com/en/4x/api.html#routing-methods
- * @public
- */
-export type RoutingMethod =
-	| 'checkout'
-	| 'copy'
-	| 'delete'
-	| 'get'
-	| 'head'
-	| 'lock'
-	| 'merge'
-	| 'mkactivity'
-	| 'mkcol'
-	| 'move'
-	| 'm-search'
-	| 'notify'
-	| 'options'
-	| 'patch'
-	| 'post'
-	| 'purge'
-	| 'put'
-	| 'report'
-	| 'search'
-	| 'subscribe'
-	| 'trace'
-	| 'unlock'
-	| 'unsubscribe'
-	| 'all'
-
-/**
  * @public
  */
 export type StatusCode =
@@ -320,7 +290,7 @@ declare module 'express' {
 
 	type LayerRoute = {
 		path: string
-		methods: { [key in RoutingMethod]?: true }
+		methods: { [method: string]: true }
 		stack: {
 			handle: import('express').RequestHandler
 			name: string
@@ -328,7 +298,7 @@ declare module 'express' {
 			path: string | undefined
 			keys: { name: string; optional: boolean; offset: number }[]
 			regexp: RegExp
-			method: RoutingMethod
+			method: string
 		}[]
 	}
 }
