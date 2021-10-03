@@ -165,3 +165,14 @@ describe('param middlewares deduplication', () => {
 		expect(paramMwares).toHaveLength(0)
 	})
 })
+
+test('only one decorator', () => {
+	const QueryBool = (subKey: string) => createParamDecorator((req) => Boolean(req.query[subKey]))
+
+	expect(() => {
+		class Foo {
+			@Get()
+			get(@QueryBool('ok') @Query('ok') ok: boolean) {}
+		}
+	}).toThrowError()
+})

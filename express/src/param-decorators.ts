@@ -8,7 +8,6 @@ const META = Symbol('param')
  * @internal
  */
 type ParamMeta = {
-	readonly index: number
 	readonly mapper: (req: express.Request, res: express.Response, next?: express.NextFunction) => any
 	readonly use?: express.RequestHandler[]
 	readonly dedupeUse?: boolean
@@ -296,7 +295,12 @@ export function createParamDecorator<T = any>(
 	return (target, key, index) => {
 		const params: ParamMeta[] = Reflect.getOwnMetadata(META, target, key) || []
 
-		params.push({ index, mapper, use, dedupeUse })
+		if (params[index]) {
+			const codePath = `${target.constructor.name}.${key.toString()}`
+			throw Error(`Parameter ${index} of "${codePath}" should have a single express decorator.`)
+		}
+
+		params[index] = { mapper, use, dedupeUse }
 		Reflect.defineMetadata(META, params, target, key)
 	}
 }
@@ -319,7 +323,8 @@ export function extractParams(
 
 	const args: any[] = []
 
-	for (const { index, mapper } of params) {
+	for (let index = 0; index < params.length; index++) {
+		const { mapper } = params[index]
 		args[index] = mapper(req, res, next)
 	}
 
