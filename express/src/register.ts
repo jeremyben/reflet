@@ -184,6 +184,10 @@ function registerRouter(
 
 	// Recursively attach children routers
 	if (routerMeta?.children) {
+		if (routerMeta.path == null) {
+			throw Error(`"${routerClass.name}" must be decorated with @Router.`)
+		}
+
 		// Keep track of all shared middlewares for dedupe.
 		const parentSharedMwares_ = parentSharedMwares.concat(sharedMwares)
 
