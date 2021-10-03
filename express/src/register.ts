@@ -1,6 +1,6 @@
 import * as express from 'express'
 import { wrapAsync, wrapAsyncError } from './async-wrapper'
-import { ClassType, Controllers, ObjectInstance } from './interfaces'
+import { ClassType, RegistrationArray, ClassInstance } from './interfaces'
 import { isPromise, isReadableStream, isClass, isExpressApp, isExpressRouter, isAsyncFunction } from './type-guards'
 
 // Extractors
@@ -13,9 +13,9 @@ import { extractSend } from './send-decorator'
 import { ApplicationMeta, extractApplicationClass } from './application-class'
 
 /**
- * Main method to register controllers into an express application.
+ * Main method to register routers into an express application.
  * @param app - express application.
- * @param controllers - classes or instances with decorated routes.
+ * @param routers - decorated classes or instances.
  *
  * @example
  * ```ts
@@ -34,10 +34,10 @@ import { ApplicationMeta, extractApplicationClass } from './application-class'
  * ------
  * @public
  */
-export function register(app: express.Application, controllers: Controllers): express.Application
+export function register(app: express.Application, routers: RegistrationArray): express.Application
 
 /**
- * Attaches children controllers to a parent router, to have nested routers.
+ * Attaches children routers to a parent router, to have nested routers.
  *
  * To be used in the **constructor** of a `@Router` decorated class.
  *
@@ -47,21 +47,21 @@ export function register(app: express.Application, controllers: Controllers): ex
  * @example
  * ```ts
  * ＠Router('/foo')
- * class ParentController {
+ * class ParentRouter {
  *   constructor() {
- *     register(this, [NestedController])
+ *     register(this, [NestedRouter])
  *   }
  * }
  *
  * ＠Router('/bar')
- * class NestedController {}
+ * class NestedRouter {}
  * ```
  * ------
  * @public
  */
-export function register(parent: ObjectInstance, children: Controllers): void
+export function register(parent: ClassInstance, children: RegistrationArray): void
 
-export function register(appInstance: object, controllers: Controllers): express.Application | void {
+export function register(appInstance: object, routers: RegistrationArray): express.Application | void {
 	if (isExpressApp(appInstance)) {
 		const appMeta = extractApplicationClass(appInstance)
 
@@ -70,8 +70,8 @@ export function register(appInstance: object, controllers: Controllers): express
 		// Retrieve all global middlewares from plain `use` and from application class decorators if any.
 		const globalMwares = getGlobalMiddlewares(appInstance)
 
-		for (const controller of controllers) {
-			registerController(controller, appInstance, globalMwares, [], appMeta?.class)
+		for (const router of routers) {
+			registerRouter(router, appInstance, globalMwares, [], appMeta?.class)
 		}
 
 		registerRootErrorHandlers(appInstance, appMeta)
@@ -83,7 +83,7 @@ export function register(appInstance: object, controllers: Controllers): express
 		return appInstance
 	}
 
-	// Register call from controller constructor
+	// Register call from router constructor
 	else {
 		const parentClass = appInstance.constructor as ClassType
 		const routerMeta = extractRouterMeta(parentClass)
@@ -96,23 +96,23 @@ export function register(appInstance: object, controllers: Controllers): express
 			throw Error(`First argument should be an express application or an instance decorated with @Router.`)
 		}
 
-		defineChildRouters(parentClass, routerMeta, controllers)
+		defineChildRouters(parentClass, routerMeta, routers)
 	}
 }
 
 /**
  * @internal
  */
-function registerController(
-	controller: Controllers[number],
+function registerRouter(
+	registration: RegistrationArray[number],
 	app: express.Router,
 	globalMwares: express.RequestHandler[],
 	parentSharedMwares: express.RequestHandler[] = [],
 	appClass?: ClassType
 ) {
-	const { path: constrainedPath, router } = isPathRouterObject(controller)
-		? controller
-		: { path: undefined, router: controller }
+	const { path: constrainedPath, router } = isPathRouterObject(registration)
+		? registration
+		: { path: undefined, router: registration }
 
 	// Attach plain express routers.
 	if (constrainedPath && isExpressRouter(router)) {
@@ -120,25 +120,25 @@ function registerController(
 		return
 	}
 
-	const controllerInstance = isClass(router) ? new router() : router
-	const controllerClass = isClass(router) ? router : (controllerInstance.constructor as ClassType)
+	const routerInstance = isClass(router) ? new router() : router
+	const routerClass = isClass(router) ? router : (routerInstance.constructor as ClassType)
 
 	// Must be after instanciation to properly retrieve child routers from metadata.
-	const routerMeta = extractRouterMeta(controllerClass)
+	const routerMeta = extractRouterMeta(routerClass)
 
-	checkPathConstraint(constrainedPath, routerMeta, controllerClass)
+	checkPathConstraint(constrainedPath, routerMeta, routerClass)
 
 	// Either attach middlewares/handlers to an intermediary router or directly to the app.
 	const appInstance = routerMeta ? express.Router(routerMeta.options) : app
 
-	const routes = extractRoutes(controllerClass)
+	const routes = extractRoutes(routerClass)
 
 	if (!routes.length && !routerMeta) {
-		console.warn(`"${controllerClass.name}" doesn't have any route or router to register.`)
+		console.warn(`"${routerClass.name}" doesn't have any route or router to register.`)
 	}
 
-	const sharedMwares = extractMiddlewares(controllerClass)
-	const sharedErrHandlers = extractErrorHandlers(controllerClass)
+	const sharedMwares = extractMiddlewares(routerClass)
+	const sharedErrHandlers = extractErrorHandlers(routerClass)
 
 	// Apply shared middlewares to the router instance
 	// or to each of the routes if the class is attached on the base app.
@@ -149,16 +149,16 @@ function registerController(
 	}
 
 	for (const { path, method, key } of routes) {
-		const routeMwares = extractMiddlewares(controllerClass, key)
-		const routeErrHandlers = extractErrorHandlers(controllerClass, key)
-		const paramsMwares = extractParamsMiddlewares(controllerClass, key, [
+		const routeMwares = extractMiddlewares(routerClass, key)
+		const routeErrHandlers = extractErrorHandlers(routerClass, key)
+		const paramsMwares = extractParamsMiddlewares(routerClass, key, [
 			globalMwares,
 			parentSharedMwares,
 			sharedMwares,
 			routeMwares,
 		])
 
-		const handler = createHandler(controllerClass, controllerInstance, key, appClass)
+		const handler = createHandler(routerClass, routerInstance, key, appClass)
 
 		if (routerMeta) {
 			appInstance[method](
@@ -182,7 +182,7 @@ function registerController(
 		}
 	}
 
-	// Recursively attach children controllers
+	// Recursively attach children routers
 	if (routerMeta?.children) {
 		// Keep track of all shared middlewares for dedupe.
 		const parentSharedMwares_ = parentSharedMwares.concat(sharedMwares)
@@ -197,7 +197,7 @@ function registerController(
 			if (Array.isArray(child) && typeof child[0] === 'string' && isExpressRouter(child[1])) {
 				appInstance.use(child[0], child[1])
 			} else {
-				registerController(child, appInstance, globalMwares, parentSharedMwares_, appClass)
+				registerRouter(child, appInstance, globalMwares, parentSharedMwares_, appClass)
 			}
 		}
 	}
@@ -297,13 +297,13 @@ function registerRootErrorHandlers(app: express.Application, appMeta?: Applicati
  * @internal
  */
 function isPathRouterObject(
-	controller: Record<string, any>
-): controller is { path: string | RegExp | symbol; router: object } {
+	registration: Record<string, any>
+): registration is { path: string | RegExp | symbol; router: object } {
 	return (
-		controller.hasOwnProperty('path') &&
-		controller.hasOwnProperty('router') &&
-		(typeof controller.path === 'string' || controller.path instanceof RegExp) &&
-		(typeof controller.router === 'function' || typeof controller.router === 'object')
+		registration.hasOwnProperty('path') &&
+		registration.hasOwnProperty('router') &&
+		(typeof registration.path === 'string' || registration.path instanceof RegExp) &&
+		(typeof registration.router === 'function' || typeof registration.router === 'object')
 	)
 }
 
@@ -313,11 +313,11 @@ function isPathRouterObject(
 function checkPathConstraint(
 	constrainedPath: string | RegExp | undefined,
 	router: ReturnType<typeof extractRouterMeta>,
-	controllerClass: ClassType
+	routerClass: ClassType
 ) {
 	if (!constrainedPath) {
 		if (router?.path === DYNAMIC_PATH) {
-			throw Error(`"${controllerClass.name}" is dynamic and must be registered with a path.`)
+			throw Error(`"${routerClass.name}" is dynamic and must be registered with a path.`)
 		}
 
 		return
@@ -325,7 +325,7 @@ function checkPathConstraint(
 
 	if (!router) {
 		throw Error(
-			`"${controllerClass.name}" is constrained to the specific path "${constrainedPath}" and must be decorated with @Router.`
+			`"${routerClass.name}" is constrained to the specific path "${constrainedPath}" and must be decorated with @Router.`
 		)
 	}
 
@@ -337,7 +337,7 @@ function checkPathConstraint(
 		typeof router.path === 'string' && typeof constrainedPath === 'string' && router.path !== constrainedPath
 
 	if (notSameString) {
-		throw Error(`"${controllerClass.name}" expects "${constrainedPath}" as root path. Actual: "${router.path}".`)
+		throw Error(`"${routerClass.name}" expects "${constrainedPath}" as root path. Actual: "${router.path}".`)
 	}
 
 	const notSameRegex =
@@ -346,14 +346,14 @@ function checkPathConstraint(
 		router.path.source !== constrainedPath.source
 
 	if (notSameRegex) {
-		throw Error(`"${controllerClass.name}" expects "${constrainedPath}" as root path. Actual: "${router.path}".`)
+		throw Error(`"${routerClass.name}" expects "${constrainedPath}" as root path. Actual: "${router.path}".`)
 	}
 
 	const shouldBeString = router.path instanceof RegExp && typeof constrainedPath === 'string'
 
 	if (shouldBeString) {
 		throw Error(
-			`"${controllerClass.name}" expects string "${constrainedPath}" as root path. Actual: "${router.path}" (regex).`
+			`"${routerClass.name}" expects string "${constrainedPath}" as root path. Actual: "${router.path}" (regex).`
 		)
 	}
 
@@ -361,7 +361,7 @@ function checkPathConstraint(
 
 	if (shouldBeRegex) {
 		throw Error(
-			`"${controllerClass.name}" expects regex "${constrainedPath}" as root path. Actual: "${router.path}" (string).`
+			`"${routerClass.name}" expects regex "${constrainedPath}" as root path. Actual: "${router.path}" (string).`
 		)
 	}
 }
@@ -370,25 +370,25 @@ function checkPathConstraint(
  * @internal
  */
 function createHandler(
-	controllerClass: ClassType, // different from `controllerInstance.constructor` in case of decorated Application class.
-	controllerInstance: any,
+	routerClass: ClassType, // different from `routerInstance.constructor` in case of decorated Application class.
+	routerInstance: any,
 	key: string | symbol,
 	appClass?: ClassType
 ) {
-	const toSend = extractSend(controllerClass, key, appClass)
+	const toSend = extractSend(routerClass, key, appClass)
 
 	// get from the instance instead of the prototype, so this can be a function property and not only a method.
-	const fn = controllerInstance[key] as Function
+	const fn = routerInstance[key] as Function
 
 	if (typeof fn !== 'function') {
-		throw Error(`"${controllerClass.name}.${key.toString()}" should be a function.`)
+		throw Error(`"${routerClass.name}.${key.toString()}" should be a function.`)
 	}
 
 	const isAsync = isAsyncFunction(fn)
 
 	return (req: express.Request, res: express.Response, next: express.NextFunction) => {
-		const args = extractParams(controllerClass, key, { req, res, next })
-		const result = fn.apply(controllerInstance, args)
+		const args = extractParams(routerClass, key, { req, res, next })
+		const result = fn.apply(routerInstance, args)
 
 		// Handle or bypass sending the method's result according to @Send decorator,
 		// if the response has already been sent to the client, we also bypass.
@@ -412,7 +412,7 @@ function createHandler(
 			return send(result)
 		}
 
-		function send(value: any): express.Response {
+		function send(value: any) {
 			// Default status
 			if (status) {
 				res.status(status)
@@ -427,7 +427,7 @@ function createHandler(
 
 			// Readable stream
 			if (isReadableStream(value)) {
-				return value.pipe(res)
+				return value.pipe(res as any)
 			}
 
 			// Response object itself

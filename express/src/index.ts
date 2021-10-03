@@ -14,4 +14,4 @@ export { Send } from './send-decorator'
 
 export { Application } from './application-class'
 
-export { Controllers, Decorator } from './interfaces'
+export { RegistrationArray, Decorator } from './interfaces'

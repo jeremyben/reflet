@@ -4,7 +4,7 @@ import { ClassType, Decorator } from './interfaces'
 const META = Symbol('catch')
 
 /**
- * Attaches an error handler on a single route when applied to a method, or on multipe routes when applied to a controller class.
+ * Attaches an error handler on a single route when applied to a method, or on multipe routes when applied to a router class.
  * @see http://expressjs.com/en/guide/error-handling.html
  *
  * @remarks

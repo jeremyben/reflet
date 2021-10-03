@@ -11,7 +11,7 @@ Organize your [Express](https://expressjs.com/) application. Have a little taste
 ```ts
 @Use(isAuthenticated)
 @Router('/things')
-class ThingController {
+class ThingRouter {
 
   @Get('/:id')
   async get(@Params('id') id: string, @Res res: Response) {

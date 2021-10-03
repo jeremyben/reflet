@@ -5,7 +5,7 @@ import { register, Router, Get, Put, Post, Patch, Delete, Res, Params, Send, Dec
 import { log } from '../../testing/tools'
 
 describe('handle return value', () => {
-	class Controller {
+	class FooRouter {
 		@Send()
 		@Get('/:type')
 		get(@Params('type') type: 'string' | 'object') {
@@ -45,7 +45,7 @@ describe('handle return value', () => {
 		}
 	}
 
-	const rq = supertest(register(express(), [Controller]))
+	const rq = supertest(register(express(), [FooRouter]))
 
 	test('object value', async () => {
 		const res = await rq.get('/object')
@@ -95,7 +95,7 @@ describe('handle return value', () => {
 })
 
 describe('specific status', () => {
-	class Controller {
+	class FooRouter {
 		@Send({ status: 201, undefinedStatus: 404, nullStatus: 204 })
 		@Put('/:type')
 		async put(@Params('type') type: 'null' | 'undefined') {
@@ -108,7 +108,7 @@ describe('specific status', () => {
 
 	const app = express()
 	const rq = supertest(app)
-	register(app, [Controller])
+	register(app, [FooRouter])
 
 	test('success', async () => {
 		const res = await rq.put('/yolo')
@@ -130,7 +130,7 @@ describe('specific status', () => {
 })
 
 describe('streams', () => {
-	class Controller {
+	class FooRouter {
 		@Send()
 		@Get()
 		get() {
@@ -151,7 +151,7 @@ describe('streams', () => {
 		}
 	}
 
-	const rq = supertest(register(express(), [Controller]))
+	const rq = supertest(register(express(), [FooRouter]))
 	const thisFile = readFileSync(__filename, 'utf8')
 
 	test('readable stream', async () => {
@@ -177,7 +177,7 @@ describe('streams', () => {
 })
 
 describe('buffers', () => {
-	class Controller {
+	class FooRouter {
 		@Send({ status: 201 })
 		@Get()
 		get() {
@@ -197,7 +197,7 @@ describe('buffers', () => {
 		}
 	}
 
-	const rq = supertest(register(express(), [Controller]))
+	const rq = supertest(register(express(), [FooRouter]))
 
 	test('file buffer', async () => {
 		const res = await rq.get('')
@@ -231,7 +231,7 @@ describe('class decorator', () => {
 	}
 
 	@JsonRouter('/')
-	class Controller {
+	class BarRouter {
 		@Get()
 		get() {
 			return 'bar'
@@ -250,7 +250,7 @@ describe('class decorator', () => {
 		}
 	}
 
-	const rq = supertest(register(express(), [Controller]))
+	const rq = supertest(register(express(), [BarRouter]))
 
 	test('class decorator combo', async () => {
 		const res = await rq.get('/')

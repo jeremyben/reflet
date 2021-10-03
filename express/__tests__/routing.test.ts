@@ -18,7 +18,7 @@ describe('basic routing', () => {
 	}
 
 	@Router('/user', { caseSensitive: true })
-	class UserController {
+	class UserRouter {
 		constructor(private userService: UserService) {}
 
 		@Get()
@@ -39,7 +39,7 @@ describe('basic routing', () => {
 		}
 	}
 
-	class MessageController {
+	class MessageRouter {
 		prop = 1
 
 		@Route('options', '/message')
@@ -57,11 +57,7 @@ describe('basic routing', () => {
 	const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
 
 	const rq = supertest(
-		register(express(), [
-			new UserController(new UserService()),
-			new MessageController(),
-			/* will warn */ new UserService(),
-		])
+		register(express(), [new UserRouter(new UserService()), new MessageRouter(), /* will warn */ new UserService()])
 	)
 	expect(consoleSpy).toBeCalledWith(expect.stringContaining('register'))
 	consoleSpy.mockRestore()
@@ -99,7 +95,7 @@ describe('basic routing', () => {
 	})
 })
 
-describe('children controllers', () => {
+describe('children routers', () => {
 	test('simple registration', async () => {
 		@Use((req, res, next) => {
 			res.status(201)
@@ -108,12 +104,12 @@ describe('children controllers', () => {
 		@Router('/module')
 		class Module {
 			constructor() {
-				register(this, [Controller])
+				register(this, [FooRouter])
 			}
 		}
 
 		@Router('/foo')
-		class Controller {
+		class FooRouter {
 			@Get()
 			get(@Res res: express.Response) {
 				res.send({})
@@ -136,7 +132,7 @@ describe('children controllers', () => {
 		}
 
 		@Use(express.json({ strict: false }))
-		@Router.Children<typeof AppModule>((service) => [new UserController(service)])
+		@Router.Children<typeof AppModule>((service) => [new UserRouter(service)])
 		@Router('/module')
 		class AppModule {
 			constructor(service: UserService) {
@@ -145,10 +141,10 @@ describe('children controllers', () => {
 		}
 
 		@Router('/user/:userId?', { mergeParams: true })
-		@Router.Children<typeof UserController>((service) => [
-			{ path: '/item/:itemId', router: new UserItemController(service) },
+		@Router.Children<typeof UserRouter>((service) => [
+			{ path: '/item/:itemId', router: new UserItemRouter(service) },
 		])
-		class UserController {
+		class UserRouter {
 			constructor(service: UserService) {
 				// register(this, [new UserItemController(service)])
 			}
@@ -160,7 +156,7 @@ describe('children controllers', () => {
 		}
 
 		@Router('/item/:itemId', { mergeParams: true })
-		class UserItemController {
+		class UserItemRouter {
 			constructor(private service: UserService) {}
 
 			@Get()

@@ -6,7 +6,7 @@ import { log } from '../../testing/tools'
 @Catch(async (err, req, res, next) => res.status(418).send({ err }))
 @Use(express.json())
 @Router('')
-class FooController {
+class FooRouter {
 	@Use(
 		(req: express.Request & { user?: any }, res, next) => {
 			req.user = { id: 1, name: 'jeremy' }
@@ -41,7 +41,7 @@ class FooController {
 	}
 }
 
-const rq = supertest(register(express(), [FooController]))
+const rq = supertest(register(express(), [FooRouter]))
 
 test('middleware order', async () => {
 	const res = await rq.get('')

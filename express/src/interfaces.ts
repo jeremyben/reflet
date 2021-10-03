@@ -141,28 +141,29 @@ export type ClassType = new (...args: any[]) => any
 /**
  * @public
  */
-export type ObjectInstance = object & {
-	[Symbol.hasInstance]?(value: any): never // not a function
-	[Symbol.iterator]?(): never // not an array
-}
+export type ClassInstance = object & NotFunction & NotArray
+
+type NotFunction = { bind?(): never } | { call?(): never } | { apply?(): never }
+
+type NotArray = { push?(): never } | { pop?(): never } | { shift?(): never } | { unshift?(): never }
 
 /**
  * @example
  * ```ts
- * const controllers: Controllers = [
+ * const routers: RegistrationArray = [
  *   { path: '/foo', router: Foo },
  *   { path: '/bar', router: Bar },
  *   new Baz(),
  * ]
- * register(app, controllers)
+ * register(app, routers)
  * ```
  * ------
  * @public
  */
-export type Controllers = (
+export type RegistrationArray = (
 	| (new () => any)
-	| ObjectInstance
-	| { path: string | RegExp; router: (new () => any) | ObjectInstance | express.IRouter }
+	| ClassInstance
+	| { path: string | RegExp; router: (new () => any) | ClassInstance | express.IRouter }
 )[]
 
 /**

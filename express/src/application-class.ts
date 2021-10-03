@@ -1,6 +1,6 @@
 import * as express from 'express'
 import { register } from './register'
-import { ClassType, Controllers } from './interfaces'
+import { ClassType, RegistrationArray } from './interfaces'
 
 /**
  * @internal
@@ -31,7 +31,7 @@ export interface Application extends express.Application {}
  * }
  *
  * ＠Router('/foo')
- * class FooController {
+ * class FooRouter {
  *   ＠Get()
  *   list() {
  *     return db.collection('foo').find({})
@@ -39,7 +39,7 @@ export interface Application extends express.Application {}
  * }
  *
  * const app = new App()
- * app.register([FooController])
+ * app.register([FooRouter])
  * app.listen(3000)
  * ```
  * ------
@@ -61,8 +61,8 @@ export class Application {
 		return app as unknown as this
 	}
 
-	register(controllers: Controllers = []) {
-		register(this, controllers)
+	register(routers: RegistrationArray = []) {
+		register(this, routers)
 
 		return this
 	}

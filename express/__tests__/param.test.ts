@@ -12,7 +12,7 @@ describe('basic decorators', () => {
 		req.headers.shared = 'shared'
 		next()
 	})
-	class Controller {
+	class FooRouter {
 		@Get()
 		async get(@Headers headers: any, @Headers('via') via: string, @Res res: express.Response) {
 			res.send({ via, shared: headers.shared })
@@ -36,7 +36,7 @@ describe('basic decorators', () => {
 		}
 	}
 
-	const rq = supertest(register(express(), [Controller]))
+	const rq = supertest(register(express(), [FooRouter]))
 
 	test('@Headers', async () => {
 		const res = await rq.get('')
@@ -67,7 +67,7 @@ describe('custom decorators', () => {
 		req.user = { id: 1, name: 'jeremy' }
 		next()
 	})
-	class Controller {
+	class FooRouter {
 		@Get()
 		get(@CurrentUser user: object, @Res res: express.Response) {
 			res.send({ user })
@@ -81,7 +81,7 @@ describe('custom decorators', () => {
 		}
 	}
 
-	const rq = supertest(register(express(), [Controller]))
+	const rq = supertest(register(express(), [FooRouter]))
 
 	test('simple decorator', async () => {
 		const res = await rq.get('')

@@ -1,5 +1,5 @@
 import * as express from 'express'
-import { ClassType, Controllers, Decorator, IsAny, ObjectInstance } from './interfaces'
+import { ClassType, RegistrationArray, Decorator, IsAny } from './interfaces'
 
 const META = Symbol('router')
 
@@ -9,7 +9,7 @@ const META = Symbol('router')
 type RouterMeta = {
 	path: string | RegExp | typeof DYNAMIC_PATH | null
 	options?: express.RouterOptions
-	children?: Controllers | ((...deps: any[]) => Controllers)
+	children?: RegistrationArray | ((...deps: any[]) => RegistrationArray)
 	childrenDeps?: any[]
 }
 
@@ -53,36 +53,36 @@ export function Router(path: string | RegExp, options?: express.RouterOptions): 
 
 export namespace Router {
 	/**
-	 * Attaches children controllers to a parent router, to have nested routers.
+	 * Attaches children routers to a parent router, to have nested routers.
 	 *
-	 * @param register - function that should return an array of controllers.
+	 * @param register - function that should return an array of routers.
 	 *
 	 * @example
 	 * ```ts
 	 * ＠Router('/foo')
-	 * ＠Router.Children(() => [NestedController])
-	 * class ParentController {}
+	 * ＠Router.Children(() => [NestedRouter])
+	 * class ParentRouter {}
 	 *
 	 * ＠Router('/bar')
-	 * class NestedController {}
+	 * class NestedRouter {}
 	 * ```
 	 * ------
 	 * @public
 	 */
 	export function Children<T extends ClassType = any>(
 		// tslint:disable-next-line: no-shadowed-variable
-		register: (...deps: IsAny<T> extends true ? unknown[] : ConstructorParameters<T>) => Controllers
+		register: (...deps: IsAny<T> extends true ? unknown[] : ConstructorParameters<T>) => RegistrationArray
 	): Decorator.RouterChildren {
 		return (target) => {
 			const existingRouterMeta = extractRouterMeta(target)
 
 			if (existingRouterMeta) {
-				existingRouterMeta.children = register as (...deps: any[]) => Controllers
+				existingRouterMeta.children = register as (...deps: any[]) => RegistrationArray
 				existingRouterMeta.childrenDeps = []
 			} else {
 				const newRouterMeta: RouterMeta = {
 					path: null,
-					children: register as (...deps: any[]) => Controllers,
+					children: register as (...deps: any[]) => RegistrationArray,
 					childrenDeps: [],
 				}
 
@@ -153,10 +153,10 @@ export namespace Router {
 export const DYNAMIC_PATH = Symbol('dynamic-path')
 
 /**
- * Attaches children controllers to a parent router metadata, before registering the parent.
+ * Attaches children routers to a parent router metadata, before registering the parent.
  * @internal
  */
-export function defineChildRouters(parentClass: ClassType, routerMeta: RouterMeta, children: Controllers): void {
+export function defineChildRouters(parentClass: ClassType, routerMeta: RouterMeta, children: RegistrationArray): void {
 	if (typeof routerMeta.children === 'function') {
 		throw Error('Nested routers are already defined through @Router.Children.')
 	}

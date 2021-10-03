@@ -107,14 +107,14 @@ export function extractSend(
 ): Send.Options | null | undefined {
 	const appSend: Send.Options | undefined = appClass ? Reflect.getOwnMetadata(META, appClass) : undefined
 
-	const controllerSend: Send.Options | null | undefined = Reflect.getOwnMetadata(META, (target as Function).prototype)
+	const routerSend: Send.Options | null | undefined = Reflect.getOwnMetadata(META, (target as Function).prototype)
 
 	const methodSend: Send.Options | null | undefined = Reflect.getOwnMetadata(META, target.prototype, key)
 
 	// Send on method
 	if (methodSend) {
-		if (appSend || controllerSend) {
-			return Object.assign({}, appSend, controllerSend, methodSend)
+		if (appSend || routerSend) {
+			return Object.assign({}, appSend, routerSend, methodSend)
 		} else {
 			return methodSend
 		}
@@ -122,11 +122,11 @@ export function extractSend(
 		// No Send on method
 		if (methodSend === undefined) {
 			// Send on router
-			if (controllerSend) {
-				return Object.assign({}, appSend, controllerSend)
+			if (routerSend) {
+				return Object.assign({}, appSend, routerSend)
 			} else {
 				// No Send on method or router
-				if (controllerSend === undefined) {
+				if (routerSend === undefined) {
 					return appSend
 				}
 
