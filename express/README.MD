@@ -990,6 +990,88 @@ Logically, class-scoped error handlers are applied further down the handlers' st
 
 Throw some **[HTTP Errors](https://github.com/jeremyben/tshttp/tree/master/error)** from the same maintainer (you know who) for an even better developer experience. _Compatible with express default error handler as well._
 
+### Final Handler
+
+> 🔦 `finalHandler(options)`
+
+```ts
+const app = express()
+
+register(app, [ThingRouter])
+
+app.use(finalHandler({
+  sendAsJson: 'from-response-type',
+  log: '5xx',
+  revealErrorMessage: true, 
+  revealErrorName: true,
+  cleanStatusAndHeaders: true,
+  notFoundHandler: true
+}))
+```
+
+##### `sendAsJson`
+
+Express default error handler always sends a `text/html` response ([source code](https://github.com/pillarjs/finalhandler/blob/v1.1.2/index.js#L272-L311)). This doesn't go well with today's world of JSON APIs.
+
+* `sendAsJson: 'always'` always sends the error with `res.json`.
+  
+* `sendAsJson: 'never'` sends the error with `res.send` (default).
+
+* `sendAsJson: 'from-response-type'` sends the error with `res.json` by looking for `Content-Type` on the response:
+
+    ```ts
+    res.type('json')
+    // ...
+    throw Error('Nope') // Content-Type: 'application/json'
+    ```
+
+* `sendAsJson: 'from-response-type-or-request'` first looks for `Content-Type` on the response, or infers it from `X-Requested-With` or `Accept` headers on the request:
+
+    ```http
+    GET http://host/foo
+    Accept: application/json
+    ```
+
+    ```ts
+    throw Error('Nope') // Content-Type: 'application/json'
+    ```
+
+##### `log`
+
+* `log: 'always'` always logs errors.
+* `log: 'never'` never logs errors (default).
+* `log: '5xx'` only logs server errors.
+
+##### `logger`
+
+By default, errors are logged to `stderr` with `console.error`.
+
+You can bind a custom logger like [winston](https://github.com/winstonjs/winston) or [pino](https://github.com/pinojs/pino):
+```ts
+import * as pino from "pino";
+const logger = pino()
+
+finalHandler({
+  log: '5xx',
+  logger: logger.error, 
+})
+```
+
+##### `revealErrorMessage`, `revealErrorName`
+
+Error `message` and `name` are not serialized by default. These options make `message` or `name` enumerable so they can be serialized.
+
+##### `cleanStatusAndHeaders`
+
+This option deletes any `status`, `statusCode`, and `headers` properties from the error object after they have been applied to the response.
+
+##### `notFoundHandler`
+
+Like the error handler, Express default route handler always sends a `text/html` response when the route is not found.
+
+* `notFoundHandler: true` defines a default handler similar to the Express one, with a 404 status, but compatible with json.
+* `notFoundHandler: (req, res, next) => {}` lets you define your own.
+
 ## Application class
 
 > 🔦 `Application`
@@ -1018,12 +1100,12 @@ import { Application, RegistrationArray } from '@reflet/express'
 import { UserRouter } from './user.router'
 
 @Send({ json: true })
-@Catch((err, req, res, next) => {
-  console.error(err)
-  res.status(err.status || 500)
-  res.json(err)
-})
 @Use(express.json(), express.urlencoded())
+@Catch(finalHandler({ 
+  sendAsJson: 'always',
+  log: 'always',
+  notFoundHandler: true,
+}))
 class MyApp extends Application {
   constructor(routers: RegistrationArray) {
     super()
@@ -1040,6 +1122,8 @@ const app = new MyApp([UserRouter])
 
 app.listen(3000)
 ```
+
+_If you call `register` multiple times, Reflet will make sure global middlewares are added only once, and gloral error handlers are still at the end of the stack._
 
 ## Pure dependency injection
 
