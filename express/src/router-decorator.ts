@@ -97,7 +97,7 @@ export namespace Router {
 			// Intercept the constructor to retrieve dependencies and pass them down to children.
 			// https://stackoverflow.com/questions/34411546/how-to-properly-wrap-constructors-with-decorators-in-typescript
 			return new Proxy(target, {
-				construct(target_, args, newTarget) {
+				construct(targett, args, newTarget) {
 					const routerMeta = extractRouterMeta(target)!
 					routerMeta.childrenDeps = args
 
@@ -151,20 +151,6 @@ export namespace Router {
  * @internal
  */
 export const DYNAMIC_PATH = Symbol('dynamic-path')
-
-/**
- * Attaches children routers to a parent router metadata, before registering the parent.
- * @internal
- */
-export function defineChildRouters(parentClass: ClassType, routerMeta: RouterMeta, children: RegistrationArray): void {
-	if (typeof routerMeta.children === 'function') {
-		throw Error('Nested routers are already defined through @Router.Children.')
-	}
-
-	routerMeta.children = routerMeta.children ? routerMeta.children.concat(children) : children
-
-	defineRouterMeta(routerMeta, parentClass)
-}
 
 /**
  * @internal

@@ -102,11 +102,8 @@ describe('children routers', () => {
 			next()
 		})
 		@Router('/module')
-		class Module {
-			constructor() {
-				register(this, [FooRouter])
-			}
-		}
+		@Router.Children(() => [FooRouter])
+		class Module {}
 
 		@Router('/foo')
 		class FooRouter {
@@ -135,9 +132,7 @@ describe('children routers', () => {
 		@Router.Children<typeof AppModule>((service) => [new UserRouter(service)])
 		@Router('/module')
 		class AppModule {
-			constructor(service: UserService) {
-				// register(this, [new UserController(service)])
-			}
+			constructor(service: UserService) {}
 		}
 
 		@Router('/user/:userId?', { mergeParams: true })
@@ -145,9 +140,7 @@ describe('children routers', () => {
 			{ path: '/item/:itemId', router: new UserItemRouter(service) },
 		])
 		class UserRouter {
-			constructor(service: UserService) {
-				// register(this, [new UserItemController(service)])
-			}
+			constructor(service: UserService) {}
 
 			@Post()
 			post(@Res res: express.Response, @Body() body: any) {
@@ -192,11 +185,8 @@ describe('children routers', () => {
 			}
 		}
 
+		@Router.Children(() => [Bar])
 		class Foo {
-			constructor() {
-				register(this, [Bar])
-			}
-
 			@Get('/foo')
 			get(@Res res: express.Response) {
 				res.sendStatus(200)
@@ -213,11 +203,8 @@ describe('children routers', () => {
 describe('constrain with path-router objects', () => {
 	test('happy path', () => {
 		@Router('/foo')
+		@Router.Children(() => [{ path: '/bar', router: Bar }])
 		class Foo {
-			constructor() {
-				register(this, [{ path: '/bar', router: Bar }])
-			}
-
 			@Get()
 			get() {}
 		}
@@ -306,12 +293,8 @@ describe('constrain with path-router objects', () => {
 			next()
 		})
 		@Router('/foo')
-		class Foo {
-			constructor() {
-				register(this, [{ path: '/child1', router: plainRouter }])
-				register(this, [['/child2', plainRouter] as object])
-			}
-		}
+		@Router.Children(() => [{ path: '/child1', router: plainRouter }, ['/child2', plainRouter] as object])
+		class Foo {}
 
 		const app = register(express(), [
 			{ path: '/foo', router: Foo },
@@ -327,22 +310,16 @@ describe('constrain with path-router objects', () => {
 
 	test('dynamic router', async () => {
 		@Router('/foo')
-		class Foo {
-			constructor() {
-				register(this, [{ path: '/items', router: Items }])
-			}
-		}
+		@Router.Children(() => [{ path: '/items', router: Items }])
+		class Foo {}
 
 		@Use((req, res, next) => {
 			res.status(201)
 			next()
 		})
 		@Router('/bar')
-		class Bar {
-			constructor() {
-				register(this, [{ path: '/elements', router: Items }])
-			}
-		}
+		@Router.Children(() => [{ path: '/elements', router: Items }])
+		class Bar {}
 
 		@Router.Dynamic()
 		class Items {
@@ -373,11 +350,8 @@ describe('constrain with path-router objects', () => {
 		}
 
 		@Router('/foo')
-		class Foo {
-			constructor() {
-				register(this, [Items])
-			}
-		}
+		@Router.Children(() => [Items])
+		class Foo {}
 
 		expect(() => register(express(), [Foo])).toThrow(/dynamic/)
 	})

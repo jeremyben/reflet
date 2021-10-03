@@ -1,11 +1,11 @@
 import * as express from 'express'
 import { wrapAsync, wrapAsyncError } from './async-wrapper'
-import { ClassType, RegistrationArray, ClassInstance } from './interfaces'
+import { ClassType, RegistrationArray } from './interfaces'
 import { isPromise, isReadableStream, isClass, isExpressApp, isExpressRouter, isAsyncFunction } from './type-guards'
 
 // Extractors
-import { defineChildRouters, DYNAMIC_PATH, extractRouterMeta } from './router-decorator'
-import { extractRoutes, hasRoutes } from './route-decorators'
+import { DYNAMIC_PATH, extractRouterMeta } from './router-decorator'
+import { extractRoutes } from './route-decorators'
 import { extractMiddlewares } from './middleware-decorator'
 import { extractErrorHandlers } from './error-handler-decorator'
 import { extractParams, extractParamsMiddlewares } from './param-decorators'
@@ -34,70 +34,29 @@ import { ApplicationMeta, extractApplicationClass } from './application-class'
  * ------
  * @public
  */
-export function register(app: express.Application, routers: RegistrationArray): express.Application
-
-/**
- * Attaches children routers to a parent router, to have nested routers.
- *
- * To be used in the **constructor** of a `@Router` decorated class.
- *
- * @param parent - should simply be `this`.
- * @param children - classes or instances with decorated routes.
- *
- * @example
- * ```ts
- * ＠Router('/foo')
- * class ParentRouter {
- *   constructor() {
- *     register(this, [NestedRouter])
- *   }
- * }
- *
- * ＠Router('/bar')
- * class NestedRouter {}
- * ```
- * ------
- * @public
- */
-export function register(parent: ClassInstance, children: RegistrationArray): void
-
-export function register(appInstance: object, routers: RegistrationArray): express.Application | void {
-	if (isExpressApp(appInstance)) {
-		const appMeta = extractApplicationClass(appInstance)
-
-		registerRootHandlers(appInstance, appMeta)
-
-		// Retrieve all global middlewares from plain `use` and from application class decorators if any.
-		const globalMwares = getGlobalMiddlewares(appInstance)
-
-		for (const router of routers) {
-			registerRouter(router, appInstance, globalMwares, [], appMeta?.class)
-		}
-
-		registerRootErrorHandlers(appInstance, appMeta)
-
-		if (appMeta && !appMeta.registered) {
-			appMeta.registered = true
-		}
-
-		return appInstance
+export function register(app: express.Application, routers: RegistrationArray): express.Application {
+	if (!isExpressApp(app)) {
+		throw Error()
 	}
 
-	// Register call from router constructor
-	else {
-		const parentClass = appInstance.constructor as ClassType
-		const routerMeta = extractRouterMeta(parentClass)
+	const appMeta = extractApplicationClass(app)
 
-		if (routerMeta?.path == null) {
-			if (hasRoutes(parentClass)) {
-				throw Error(`"${parentClass.name}" must be decorated with @Router.`)
-			}
+	registerRootHandlers(app, appMeta)
 
-			throw Error(`First argument should be an express application or an instance decorated with @Router.`)
-		}
+	// Retrieve all global middlewares from plain `use` and from application class decorators if any.
+	const globalMwares = getGlobalMiddlewares(app)
 
-		defineChildRouters(parentClass, routerMeta, routers)
+	for (const router of routers) {
+		registerRouter(router, app, globalMwares, [], appMeta?.class)
 	}
+
+	registerRootErrorHandlers(app, appMeta)
+
+	if (appMeta && !appMeta.registered) {
+		appMeta.registered = true
+	}
+
+	return app
 }
 
 /**

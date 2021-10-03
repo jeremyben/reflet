@@ -320,25 +320,9 @@ Express [Router options](https://expressjs.com/en/4x/api.html#express.router) ca
 
 #### Nested routers
 
-> 🔦 `register(parent, [routers])`
 > 🔦 `@Router.Children(register)`
 
-You can register child routers within the `constructor` of the parent router, using the same `register` function.
-
-```ts
-@Router('/album')
-class AlbumRouter {
-  constructor() {
-    // ⚠️ Should always be used within the constructor of a `@Router` decorated class.
-    register(this, [TrackRouter])
-  }
-}
-
-@Router('/:albumId/track', { mergeParams: true })
-class TrackRouter {}
-```
-
-As a more declarative alternative, you can register child routers with the dedicated decorator `Router.Children`:
+You can register child routers with the dedicated decorator `Router.Children`:
 
 ```ts
 @Router('/album')
