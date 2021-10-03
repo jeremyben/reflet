@@ -1,6 +1,5 @@
 import * as express from 'express'
 import { wrapAsync, wrapAsyncError } from './async-wrapper'
-import { globalErrorHandler, makeGlobalErrorHandlerRemovable } from './global-error-handler'
 import { ClassType, Controllers, ObjectInstance } from './interfaces'
 import { isPromise, isReadableStream, isClass, isExpressApp, isExpressRouter, isAsyncFunction } from './type-guards'
 
@@ -263,19 +262,12 @@ function registerRootHandlers(app: express.Application, appMeta?: ApplicationMet
  */
 function registerRootErrorHandlers(app: express.Application, appMeta?: ApplicationMeta) {
 	if (!appMeta) {
-		// todo: remove the default one and give user a way to compose its own (decorator or not).
-		app.use(globalErrorHandler)
-		makeGlobalErrorHandlerRemovable(app)
 		return
 	}
 
 	const customGlobalErrorHandlers = extractErrorHandlers(appMeta.class)
 
 	if (!customGlobalErrorHandlers.length) {
-		// We attach the default global error handler even on subsequent register calls,
-		// since it will first removes itself automatically.
-		app.use(globalErrorHandler)
-		makeGlobalErrorHandlerRemovable(app)
 		return
 	}
 

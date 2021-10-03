@@ -78,7 +78,7 @@ describe('handle return value', () => {
 	test('error thrown', async () => {
 		const res = await rq.delete('').accept('json')
 		expect(res.status).toBe(400)
-		expect(res.body).toEqual({ status: 400, message: 'wtf' })
+		expect(res.text).toMatch('wtf')
 	})
 
 	test('already sent', async () => {
@@ -88,12 +88,9 @@ describe('handle return value', () => {
 	})
 
 	test('response object', async () => {
-		const consoleSpy = jest.spyOn(console, 'error').mockImplementation()
 		const res = await rq.put('').accept('json')
 		expect(res.status).toBe(500)
-		expect(res.body.message).toMatch('Response')
-		expect(consoleSpy).toBeCalledWith(expect.any(Error))
-		consoleSpy.mockRestore()
+		expect(res.text).toMatch('Response')
 	})
 })
 

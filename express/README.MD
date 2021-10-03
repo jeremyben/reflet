@@ -1006,69 +1006,6 @@ Logically, class-scoped error handlers are applied further down the handlers' st
 
 Throw some **[HTTP Errors](https://github.com/jeremyben/tshttp/tree/master/error)** from the same maintainer (you know who) for an even better developer experience. _Compatible with express default error handler as well._
 
-### Global error handler
-
-> 💫 Related Express concept: [Default error handler](https://expressjs.com/en/guide/error-handling.html#the-default-error-handler)
-
-Reflet already adds a **smart** global error handler to your app. It tries to stay generic enough to not get in your way, but you can easily **overwrite** it by applying yours.
-
-#### JSON detection
-
-Express default error handler always send a `text/html` response ([source code](https://github.com/pillarjs/finalhandler/blob/v1.1.2/index.js#L272-L311)). This doesn't go well with today's world of JSON APIs. Reflet adds an intermediary default error handler to detect whether to send the error as a JSON response.
-
-* It first looks for `Content-Type` on the response:
-
-    ```ts
-    res.type('json')
-    // ...
-    throw Error('Nope') // Content-Type: 'application/json'
-    ```
-
-* If none is found, it infers it from `X-Requested-With` or `Accept` headers on the request:
-
-    ```http
-    GET http://host/foo
-    Accept: application/json
-    ```
-
-    ```ts
-    throw Error('Nope') // Content-Type: 'application/json'
-    ```
-
-#### Status detection
-
-Reflet parses the error value and looks for a `4xx` or `5xx` status code.
-
-The following will set the response status to `400`:
-
-```ts
-throw { status: 400, message: 'Please stop' } // no error stack
-
-const err = Error('Please stop')
-err.status = 400
-throw err // the Express way
-```
-
-If none is found, it will look at the response status code, and if still nothing, will set `500` as default.
-
-#### Error logging
-
-If the error has a `5xx` status code, Reflet will also log it to stderr.
-
-#### Simply the default
-
-Don't want all that smartness ? 😥 After registering your controllers, attach your own global error handler and Reflet's global error handler will be removed from handlers' stack.
-
-```ts
-const app = register(express(), [Controller])
-// From there, a little magic detects a new global error handler on the app.
-
-app.use((err, req, res, next) => res.status(500).send(err))
-// Your error handler has been applied and has removed Reflet's error handler.
-
-app.listen(3000)
-```
-
 ## Application class
 
 > 🔦 `Application`
