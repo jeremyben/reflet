@@ -89,58 +89,39 @@ export namespace Decorator {
 	 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
 	 * @public
 	 */
-	export type Use<T extends ClassOrMethodUnion = 'class|method'> = ClassOrMethodDecorator<T> & {
-		__expressUse?: never
-	}
+	export type Use = ClassOrMethodDecorator & { __expressUse?: never }
 
 	/**
 	 * Used for `@Catch` decorator.
 	 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
 	 * @public
 	 */
-	export type Catch<T extends ClassOrMethodUnion = 'class|method'> = ClassOrMethodDecorator<T> & {
-		__expressCatch?: never
-	}
+	export type Catch = ClassOrMethodDecorator & { __expressCatch?: never }
 
 	/**
 	 * Used for `@Send` decorator.
 	 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
 	 * @public
 	 */
-	export type Send<T extends ClassOrMethodUnion = 'class|method'> = ClassOrMethodDecorator<T> & {
-		__expressSend?: never
-	}
+	export type Send = ClassOrMethodDecorator & { __expressSend?: never }
 
 	/**
 	 * Used for `@Send.Dont` decorator.
 	 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
 	 * @public
 	 */
-	export type DontSend<T extends ClassOrMethodUnion = 'class|method'> = ClassOrMethodDecorator<T> & {
-		__expressDontSend?: never
-	}
+	export type DontSend = ClassOrMethodDecorator & { __expressDontSend?: never }
 }
-
-/**
- * @public
- */
-type ClassOrMethodUnion = 'class' | 'method' | 'class|method'
 
 /**
  * Generic decorator type to choose beetween `ClassDecorator`, `MethodDecorator`, or both.
  * @public
  */
-type ClassOrMethodDecorator<T extends ClassOrMethodUnion = 'class|method'> = T extends 'class'
-	? ClassDecorator
-	: T extends 'method'
-	? MethodDecorator
-	: T extends 'class|method'
-	? <TFunction extends Function>(
-			target: TFunction | Object,
-			propertyKey?: string | symbol,
-			descriptor?: TypedPropertyDescriptor<any>
-	  ) => any
-	: never
+type ClassOrMethodDecorator = <TFunction extends Function>(
+	target: TFunction | Object,
+	propertyKey?: string | symbol,
+	descriptor?: TypedPropertyDescriptor<any>
+) => any
 
 /**
  * @public
@@ -150,16 +131,6 @@ type PropertyOrMethodDecorator = (
 	propertyKey: string | symbol,
 	descriptor?: TypedPropertyDescriptor<any>
 ) => any
-
-/**
- * @public
- */
-type TypedDescriptor<T> = {
-	enumerable?: boolean
-	configurable?: boolean
-	writable?: boolean
-	value?: T
-}
 
 /**
  * Defines a class type. Does the opposite of built-in `InstanceType`.

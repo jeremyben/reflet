@@ -226,9 +226,9 @@ describe('buffers', () => {
 })
 
 describe('class decorator', () => {
-	const JsonRouter = (path: string | RegExp): Decorator.Router & Decorator.Send<'class'> => {
+	const JsonRouter = (path: string | RegExp): Decorator.Router & Decorator.Send => {
 		return (target) => {
-			Router(path)(target)
+			Router(path)(target as Function)
 			Send({ json: true, undefinedStatus: 404 })(target)
 		}
 	}
