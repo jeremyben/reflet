@@ -10,7 +10,7 @@ export { Catch } from './error-handler-decorator'
 
 export { Req, Res, Next, Body, Params, Query, Headers, createParamDecorator } from './param-decorators'
 
-export { Send, DontSend } from './send-decorator'
+export { Send } from './send-decorator'
 
 export { Application } from './application-class'
 

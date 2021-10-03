@@ -97,18 +97,6 @@ export namespace Send {
 }
 
 /**
- * @deprecated use `@Send.Dont()`
- * @public
- */
-/* istanbul ignore next - deprecated and replaced by same logic */
-export function DontSend(): Decorator.DontSend {
-	return (target, key, descriptor) => {
-		if (key) Reflect.defineMetadata(META, null, target, key)
-		else Reflect.defineMetadata(META, null, (target as Function).prototype)
-	}
-}
-
-/**
  * Retrieve send options from both the method and the class, so method options can extend class options.
  * @internal
  */
