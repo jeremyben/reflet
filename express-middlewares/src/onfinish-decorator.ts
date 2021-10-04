@@ -1,4 +1,4 @@
-import { Use, Decorator } from '@reflet/express'
+import { Use } from '@reflet/express'
 import * as express from 'express'
 import { ResponseReadonly } from './interfaces'
 
@@ -31,11 +31,11 @@ import { ResponseReadonly } from './interfaces'
 export function UseOnFinish<ResBody = any>(
 	effect: (req: express.Request, res: ResponseReadonly & { body: ResBody }) => void | Promise<void>,
 	exposeBody: true
-): Decorator.Use
+): Use.Decorator
 
 export function UseOnFinish(
 	effect: (req: express.Request, res: ResponseReadonly) => void | Promise<void>
-): Decorator.Use
+): Use.Decorator
 
 export function UseOnFinish<ResBody = any>(
 	effect: (req: express.Request, res: ResponseReadonly & { body: ResBody }) => void | Promise<void>,
@@ -105,7 +105,7 @@ export function UseOnFinish<ResBody = any>(
 					res.body = concatChunks(data, res.body as any, encodingOrCallback as BufferEncoding) as any
 				}
 
-				return write0.apply(res, (arguments as unknown) as Parameters<express.Response['write']>)
+				return write0.apply(res, arguments as unknown as Parameters<express.Response['write']>)
 			}
 
 			// https://nodejs.org/api/http.html#http_response_end_data_encoding_callback
@@ -132,7 +132,7 @@ export function UseOnFinish<ResBody = any>(
 					) as any
 				}
 
-				return end0.apply(res, (arguments as unknown) as Parameters<express.Response['end']>)
+				return end0.apply(res, arguments as unknown as Parameters<express.Response['end']>)
 			}
 		}
 

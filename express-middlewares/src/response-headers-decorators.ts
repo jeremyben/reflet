@@ -1,4 +1,4 @@
-import { Use, Decorator } from '@reflet/express'
+import { Use } from '@reflet/express'
 import { ResponseHeaderName, CommonType } from './interfaces'
 
 /**
@@ -17,9 +17,9 @@ import { ResponseHeaderName, CommonType } from './interfaces'
 export function UseHeader<H extends string = ResponseHeaderName>(
 	field: H extends ResponseHeaderName ? ResponseHeaderName : string,
 	value: string
-): Decorator.Use
+): Use.Decorator
 
-export function UseHeader<H extends string = ResponseHeaderName>(headers: ResponseHeaders<H>): Decorator.Use
+export function UseHeader<H extends string = ResponseHeaderName>(headers: ResponseHeaders<H>): Use.Decorator
 
 export function UseHeader(field: string | ResponseHeaders, value?: string) {
 	const headers: ResponseHeaders = typeof field === 'string' ? { [field]: value } : field
