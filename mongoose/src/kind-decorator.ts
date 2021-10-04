@@ -1,5 +1,4 @@
 import * as mongoose from 'mongoose'
-import { Decorator } from './interfaces'
 
 const MetaKind = Symbol('kind')
 
@@ -24,9 +23,9 @@ const MetaKind = Symbol('kind')
  * ---
  * @public
  */
-export function Kind(value?: string): Decorator.Kind
+export function Kind(value?: string): Kind.Decorator
 
-export function Kind(...args: Parameters<Decorator.Kind>): void
+export function Kind(...args: Parameters<Kind.Decorator>): void
 
 export function Kind(valueOrTarget?: string | Object, key?: string | symbol) {
 	if (typeof valueOrTarget === 'string' && !key) {
@@ -38,6 +37,16 @@ export function Kind(valueOrTarget?: string | Object, key?: string | symbol) {
 		}
 	} else {
 		return Reflect.defineMetadata(MetaKind, [key, undefined], valueOrTarget!.constructor)
+	}
+}
+
+export namespace Kind {
+	/**
+	 * Equivalent to `PropertyDecorator`.
+	 * @public
+	 */
+	export type Decorator = PropertyDecorator & {
+		__mongooseKind?: never
 	}
 }
 

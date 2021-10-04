@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose'
-import { ClassType, Decorator } from './interfaces'
+import { ClassType } from './interfaces'
 import { schemaFrom } from './schema-creation'
 
 const MetaField = Symbol('field')
@@ -12,7 +12,7 @@ const MetaFieldDiscriminators = Symbol('field-discriminators')
  */
 export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(
 	field: SchemaTypeOptions<T> | [SchemaTypeOptions<T>]
-): Decorator.Field
+): Field.Decorator
 
 /**
  * Defines a SchemaType on a property.
@@ -20,11 +20,11 @@ export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(
  * @public
  */
 // tslint:disable-next-line: unified-signatures - more precise compiler errors
-export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(field: T): Decorator.Field
+export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(field: T): Field.Decorator
 
 export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(
 	field: T | SchemaTypeOptions<T> | [SchemaTypeOptions<T>]
-): Decorator.Field {
+): Field.Decorator {
 	return (target, key) => {
 		const fields = getFields(target.constructor)
 		fields[<string>key] = field
@@ -34,6 +34,14 @@ export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(
 
 export namespace Field {
 	/**
+	 * Equivalent to `PropertyDecorator`.
+	 * @public
+	 */
+	export type Decorator = PropertyDecorator & {
+		__mongooseField?: never
+	}
+
+	/**
 	 * Defines a nested SchemaType on a property.
 	 *
 	 * Logic is the same as `@Field` but types are looser to allow nested objects.
@@ -41,7 +49,7 @@ export namespace Field {
 	 * @see https://mongoosejs.com/docs/schematypes
 	 * @public
 	 */
-	export function Nested<T extends SchemaTypeNested | SchemaTypeNested[]>(field: T): Decorator.FieldNested {
+	export function Nested<T extends SchemaTypeNested | SchemaTypeNested[]>(field: T): Field.Nested.Decorator {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
 			fields[<string>key] = field
@@ -49,15 +57,35 @@ export namespace Field {
 		}
 	}
 
+	export namespace Nested {
+		/**
+		 * Equivalent to `PropertyDecorator`.
+		 * @public
+		 */
+		export type Decorator = PropertyDecorator & {
+			__mongooseFieldNested?: never
+		}
+	}
+
 	/**
 	 * Defines a sub-schema on a property (uses `schemaFrom` internally).
 	 * @public
 	 */
-	export function Schema<T extends ClassType | [ClassType]>(Class: T): Decorator.FieldSchema {
+	export function Schema<T extends ClassType | [ClassType]>(Class: T): Field.Schema.Decorator {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
 			fields[<string>key] = Array.isArray(Class) ? [schemaFrom(Class[0])] : schemaFrom(Class as ClassType)
 			Reflect.defineMetadata(MetaField, fields, target.constructor)
+		}
+	}
+
+	export namespace Schema {
+		/**
+		 * Equivalent to `PropertyDecorator`.
+		 * @public
+		 */
+		export type Decorator = PropertyDecorator & {
+			__mongooseFieldSchema?: never
 		}
 	}
 
@@ -66,9 +94,9 @@ export namespace Field {
 	 * @see https://mongoosejs.com/docs/discriminators#single-nested-discriminators
 	 * @public
 	 */
-	export function Union(classes: ClassType[], options?: UnionOptions): Decorator.FieldUnion
-	export function Union(...classes: ClassType[]): Decorator.FieldUnion
-	export function Union(...args: ClassType[] | (ClassType[] | UnionOptions | undefined)[]): Decorator.FieldUnion {
+	export function Union(classes: ClassType[], options?: UnionOptions): Field.Union.Decorator
+	export function Union(...classes: ClassType[]): Field.Union.Decorator
+	export function Union(...args: ClassType[] | (ClassType[] | UnionOptions | undefined)[]): Field.Union.Decorator {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
 			// We must remove _id from the base schema or `{ _id: false }` won't do anything on the discriminator schema (_id is still there by default).
@@ -84,16 +112,26 @@ export namespace Field {
 		}
 	}
 
+	export namespace Union {
+		/**
+		 * Equivalent to `PropertyDecorator`.
+		 * @public
+		 */
+		export type Decorator = PropertyDecorator & {
+			__mongooseFieldUnion?: never
+		}
+	}
+
 	/**
 	 * Defines a union of discriminators on a embedded document array.
 	 * @see https://mongoosejs.com/docs/discriminators#embedded-discriminators-in-arrays
 	 * @public
 	 */
-	export function ArrayOfUnion(classes: ClassType[], options?: UnionOptions): Decorator.FieldArrayOfUnion
-	export function ArrayOfUnion(...classes: ClassType[]): Decorator.FieldArrayOfUnion
+	export function ArrayOfUnion(classes: ClassType[], options?: UnionOptions): Field.ArrayOfUnion.Decorator
+	export function ArrayOfUnion(...classes: ClassType[]): Field.ArrayOfUnion.Decorator
 	export function ArrayOfUnion(
 		...args: ClassType[] | (ClassType[] | UnionOptions | undefined)[]
-	): Decorator.FieldArrayOfUnion {
+	): Field.ArrayOfUnion.Decorator {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
 			// We must remove _id from the base schema or `{ _id: false }` won't do anything on the discriminator schema (_id is still there by default).
@@ -107,6 +145,16 @@ export namespace Field {
 				: { classes: args as ClassType[] }
 
 			Reflect.defineMetadata(MetaFieldDiscriminators, discriminatorArrayFields, target.constructor)
+		}
+	}
+
+	export namespace ArrayOfUnion {
+		/**
+		 * Equivalent to `PropertyDecorator`.
+		 * @public
+		 */
+		export type Decorator = PropertyDecorator & {
+			__mongooseFieldArrayOfUnion?: never
 		}
 	}
 }

@@ -1,7 +1,7 @@
 import * as mongoose from 'mongoose'
 import * as mongodb from 'mongodb'
 import { checkDecoratorsOrder } from './check-decorator-order'
-import { AsDocument, ClassType, Decorator, DocumentAny } from './interfaces'
+import { AsDocument, ClassType, DocumentAny } from './interfaces'
 
 //
 // ────────────────────────────────────────────────────────────────────────────
@@ -24,7 +24,7 @@ const MetaPreHook = Symbol('pre-hook')
 export function PreHook<T extends DocumentAny>(
 	method: 'init',
 	callback: (this: T, doc: T) => undefined | void
-): Decorator.PreHook
+): PreHook.Decorator
 
 // 2
 /**
@@ -44,7 +44,7 @@ export function PreHook<T extends DocumentAny>(
 export function PreHook<T extends DocumentAny>(
 	method: DocumentMethodOnly | DocumentMayBeQueryMethod | (DocumentMethodOnly | DocumentMayBeQueryMethod)[],
 	callback: (this: T, next: HookNextFunction) => void
-): Decorator.PreHook
+): PreHook.Decorator
 
 // 3
 /**
@@ -62,7 +62,7 @@ export function PreHook<T extends DocumentAny>(
 	method: DocumentMayBeQueryMethod,
 	options: { query: true; document: false },
 	callback: (this: mongoose.Query<T, T>, next: HookNextFunction) => void
-): Decorator.PreHook
+): PreHook.Decorator
 
 // 4
 /**
@@ -73,7 +73,7 @@ export function PreHook<T extends DocumentAny>(
 	method: DocumentMayBeQueryMethod,
 	options: { query: true; document?: true },
 	callback: (this: T | mongoose.Query<T, T>, next: HookNextFunction) => void
-): Decorator.PreHook
+): PreHook.Decorator
 
 // 5
 /**
@@ -97,7 +97,7 @@ export function PreHook<T extends DocumentAny>(
 export function PreHook<T extends DocumentAny>(
 	method: QueryMethodOnly | QueryMaybeDocumentMethod | (QueryMethodOnly | QueryMaybeDocumentMethod)[],
 	callback: (this: mongoose.Query<T, T>, next: HookNextFunction) => void
-): Decorator.PreHook
+): PreHook.Decorator
 
 // 6
 /**
@@ -117,7 +117,7 @@ export function PreHook<T extends DocumentAny>(
 	method: QueryMaybeDocumentMethod,
 	options: { document: true; query: false },
 	callback: (this: T, next: HookNextFunction) => void
-): Decorator.PreHook
+): PreHook.Decorator
 
 // 7
 /**
@@ -128,7 +128,7 @@ export function PreHook<T extends DocumentAny>(
 	method: QueryMaybeDocumentMethod,
 	options: { document: true; query?: true },
 	callback: (this: T | mongoose.Query<T, T>, next: HookNextFunction) => void
-): Decorator.PreHook
+): PreHook.Decorator
 
 // 8
 /**
@@ -142,7 +142,7 @@ export function PreHook<T extends DocumentAny>(
 export function PreHook<T extends DocumentAny>(
 	method: ModelMethod,
 	callback: (this: mongoose.Model<AsDocument<T>>, next: HookNextFunction) => void
-): Decorator.PreHook
+): PreHook.Decorator
 
 // 9
 /**
@@ -156,7 +156,7 @@ export function PreHook<T extends DocumentAny>(
 export function PreHook<T extends DocumentAny>(
 	method: AggregateMethod,
 	callback: (this: mongoose.Aggregate<T>, next: HookNextFunction) => void
-): Decorator.PreHook
+): PreHook.Decorator
 
 // 10
 /**
@@ -185,7 +185,7 @@ export function PreHook<T extends DocumentAny>(
 export function PreHook<T extends DocumentAny>(
 	method: RegExp | (DocumentMethod | QueryMethod | AggregateMethod | ModelMethod)[],
 	callback: (this: unknown, next: HookNextFunction) => void
-): Decorator.PreHook
+): PreHook.Decorator
 
 // 11
 /**
@@ -195,19 +195,29 @@ export function PreHook<T extends DocumentAny>(
 export function PreHook<T extends DocumentAny>(
 	method: (DocumentMethod | QueryMethod | AggregateMethod | ModelMethod | 'init')[],
 	callback: (this: unknown, nextOrDoc: HookNextFunction | T) => void
-): Decorator.PreHook
+): PreHook.Decorator
 
 // Implementation
 export function PreHook(
 	method: string | string[] | RegExp,
 	callbackOrOptions: Function | { document?: boolean; query?: boolean },
 	callbackIfOptions?: Function
-): Decorator.PreHook {
+): PreHook.Decorator {
 	return (Class) => {
 		checkDecoratorsOrder(Class)
 		const preHooks = getPreHooks(Class)
 		preHooks.push({ method, callbackOrOptions, callbackIfOptions })
 		Reflect.defineMetadata(MetaPreHook, preHooks, Class)
+	}
+}
+
+export namespace PreHook {
+	/**
+	 * Equivalent to `ClassDecorator`.
+	 * @public
+	 */
+	export type Decorator = ClassDecorator & {
+		__mongoosePreHook?: never
 	}
 }
 
@@ -251,7 +261,7 @@ const MetaPostHook = Symbol('post-hook')
 export function PostHook<T extends DocumentAny>(
 	method: 'init',
 	callback: (this: T, doc: T) => undefined | void
-): Decorator.PostHook
+): PostHook.Decorator
 
 // 2
 /**
@@ -271,7 +281,7 @@ export function PostHook<T extends DocumentAny>(
 export function PostHook<T extends DocumentAny>(
 	method: DocumentMethodOnly | DocumentMayBeQueryMethod | (DocumentMethodOnly | DocumentMayBeQueryMethod)[],
 	callback: (this: T, result: T, next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
 // 3
 /**
@@ -281,7 +291,7 @@ export function PostHook<T extends DocumentAny>(
 export function PostHook<T extends DocumentAny, TError = any>(
 	method: DocumentMethodOnly | DocumentMayBeQueryMethod | (DocumentMethodOnly | DocumentMayBeQueryMethod)[],
 	callback: (this: T, error: TError, result: null, next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
 // 4
 /**
@@ -299,7 +309,7 @@ export function PostHook<T extends DocumentAny>(
 	method: DocumentMayBeQueryMethod,
 	options: { query: true; document: false },
 	callback: (this: mongoose.Query<T, T>, result: mongodb.DeleteResult, next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
 // 5
 /**
@@ -310,7 +320,7 @@ export function PostHook<T extends DocumentAny>(
 	method: DocumentMayBeQueryMethod,
 	options: { query: true; document?: true },
 	callback: (this: T | mongoose.Query<T, T>, result: T | mongodb.DeleteResult, next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
 // 6
 /**
@@ -321,7 +331,7 @@ export function PostHook<T extends DocumentAny, TError = any>(
 	method: DocumentMayBeQueryMethod,
 	options: { query: true; document?: boolean },
 	callback: (this: T | mongoose.Query<T, T>, error: TError, result: null, next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
 // 7
 /**
@@ -338,7 +348,7 @@ export function PostHook<T extends DocumentAny, TError = any>(
 export function PostHook<T extends DocumentAny>(
 	method: 'findOne' | 'findOneAndUpdate' | 'findOneAndDelete' | 'findOneAndRemove',
 	callback: (this: mongoose.Query<T, T>, result: T, next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
 // 8
 /**
@@ -352,7 +362,7 @@ export function PostHook<T extends DocumentAny>(
 export function PostHook<T extends DocumentAny>(
 	method: 'find',
 	callback: (this: mongoose.Query<T, T>, results: T[], next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
 // 9
 /**
@@ -366,7 +376,7 @@ export function PostHook<T extends DocumentAny>(
 export function PostHook<T extends DocumentAny>(
 	method: 'update' | 'updateMany',
 	callback: (this: mongoose.Query<T, T>, result: mongodb.UpdateResult, next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
 // 10
 /**
@@ -379,7 +389,7 @@ export function PostHook<T extends DocumentAny>(
 export function PostHook<T extends DocumentAny>(
 	method: 'deleteMany',
 	callback: (this: mongoose.Query<T, T>, result: mongodb.DeleteResult, next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
 // 11
 /**
@@ -393,7 +403,7 @@ export function PostHook<T extends DocumentAny>(
 export function PostHook<T extends DocumentAny>(
 	method: 'count',
 	callback: (this: mongoose.Query<T, T>, result: number, next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
 // 12
 /**
@@ -417,7 +427,7 @@ export function PostHook<T extends DocumentAny>(
 export function PostHook<T extends DocumentAny, TError = any>(
 	method: QueryMethodOnly | (QueryMethodOnly | QueryMaybeDocumentMethod)[],
 	callback: (this: mongoose.Query<T, T>, error: TError, result: null, next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
 // 13
 /**
@@ -437,7 +447,7 @@ export function PostHook<T extends DocumentAny>(
 		| ((this: mongoose.Query<T, T>, result: mongodb.UpdateResult, next: HookNextFunction) => void)
 		| { document: true; query?: false },
 	callbackIfOptions?: (this: T, result: T, next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
 // 14
 /**
@@ -450,7 +460,7 @@ export function PostHook<T extends DocumentAny, TError = any>(
 		| ((this: mongoose.Query<T, T>, error: TError, result: mongodb.UpdateResult, next: HookNextFunction) => void)
 		| { document: true; query?: false },
 	callbackIfOptions?: (this: T, error: TError, result: T, next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
 // 15
 /**
@@ -470,7 +480,7 @@ export function PostHook<T extends DocumentAny>(
 		| ((this: mongoose.Query<T, T>, result: mongodb.DeleteResult, next: HookNextFunction) => void)
 		| { document: true; query?: false },
 	callbackIfOptions?: (this: T, result: T, next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
 // 16
 /**
@@ -483,7 +493,7 @@ export function PostHook<T extends DocumentAny, TError = any>(
 		| ((this: mongoose.Query<T, T>, error: TError, result: mongodb.DeleteResult, next: HookNextFunction) => void)
 		| { document: true; query?: false },
 	callbackIfOptions?: (this: T, error: TError, result: T, next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
 // 17
 /**
@@ -497,7 +507,7 @@ export function PostHook<T extends DocumentAny, TError = any>(
 export function PostHook<T extends DocumentAny>(
 	method: ModelMethod,
 	callback: (this: mongoose.Model<AsDocument<T>>, results: T[], next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
 // 18
 /**
@@ -507,7 +517,7 @@ export function PostHook<T extends DocumentAny>(
 export function PostHook<T extends DocumentAny, TError = any>(
 	method: ModelMethod,
 	callback: (this: mongoose.Model<AsDocument<T>>, error: TError, results: T[], next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
 // 19
 /**
@@ -521,7 +531,7 @@ export function PostHook<T extends DocumentAny, TError = any>(
 export function PostHook<T extends DocumentAny>(
 	method: AggregateMethod,
 	callback: (this: mongoose.Aggregate<T>, results: mongoose.LeanDocument<T>[], next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
 // 20
 /**
@@ -531,7 +541,7 @@ export function PostHook<T extends DocumentAny>(
 export function PostHook<T extends DocumentAny, TError = any>(
 	method: AggregateMethod,
 	callback: (this: mongoose.Aggregate<T>, error: TError, results: undefined, next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
 // 21
 /**
@@ -560,7 +570,7 @@ export function PostHook<T extends DocumentAny, TError = any>(
 export function PostHook<T extends DocumentAny>(
 	method: RegExp | (DocumentMethod | QueryMethod | AggregateMethod | ModelMethod)[],
 	callback: (this: unknown, result: unknown, next: HookNextFunction) => void
-): Decorator.PreHook
+): PreHook.Decorator
 
 // 22
 /**
@@ -570,19 +580,29 @@ export function PostHook<T extends DocumentAny>(
 export function PostHook<T extends DocumentAny, TError = any>(
 	method: RegExp | (DocumentMethod | QueryMethod | AggregateMethod | ModelMethod)[],
 	callback: (this: unknown, error: TError, result: unknown, next: HookNextFunction) => void
-): Decorator.PreHook
+): PreHook.Decorator
 
 // Implementation
 export function PostHook(
 	method: string | string[] | RegExp,
 	callbackOrOptions: Function | { document?: boolean; query?: boolean },
 	callbackIfOptions?: Function
-): Decorator.PostHook {
+): PostHook.Decorator {
 	return (Class) => {
 		checkDecoratorsOrder(Class)
 		const postHooks = getPostHooks(Class)
 		postHooks.push({ method, callbackOrOptions, callbackIfOptions })
 		Reflect.defineMetadata(MetaPostHook, postHooks, Class)
+	}
+}
+
+export namespace PostHook {
+	/**
+	 * Equivalent to `ClassDecorator`.
+	 * @public
+	 */
+	export type Decorator = ClassDecorator & {
+		__mongoosePostHook?: never
 	}
 }
 

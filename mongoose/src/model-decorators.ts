@@ -3,7 +3,7 @@ import { createSchema } from './schema-creation'
 import { registerModelDecorator } from './check-decorator-order'
 import { getKind, assignModelKindKey } from './kind-decorator'
 import { MongooseModel } from './model-interface'
-import { ClassType, Decorator, ModelAny } from './interfaces'
+import { ClassType, ModelAny } from './interfaces'
 
 /**
  * Transforms the decorated class into a mongoose Model.
@@ -27,7 +27,7 @@ import { ClassType, Decorator, ModelAny } from './interfaces'
  * ---
  * @public
  */
-export function Model<T extends ModelAny>(collection?: string, connection?: mongoose.Connection): Decorator.Model<T> {
+export function Model<T extends ModelAny>(collection?: string, connection?: mongoose.Connection): Model.Decorator<T> {
 	return (Class) => {
 		const schema = createSchema(Class, { full: true })
 
@@ -71,7 +71,7 @@ export namespace Model {
 	 * ---
 	 * @public
 	 */
-	export function Discriminator<T extends ModelAny>(rootModel: T): Decorator.ModelDiscriminator<T> {
+	export function Discriminator<T extends ModelAny>(rootModel: T): Model.Discriminator.Decorator<T> {
 		return (Class) => {
 			if (!rootModel.prototype.$isMongooseModelPrototype) {
 				throw Error(
@@ -96,6 +96,16 @@ export namespace Model {
 		}
 	}
 
+	export namespace Discriminator {
+		/**
+		 * Equivalent to `ClassDecorator`.
+		 * @public
+		 */
+		export type Decorator<T extends ClassType> = ((target: T) => any) & {
+			__mongooseModelDiscriminator?: never
+		}
+	}
+
 	/**
 	 * Dummy class to extend from, to get all the (narrowed) types from mongoose Model and Document.
 	 * @abstract
@@ -111,4 +121,12 @@ export namespace Model {
 	 */
 	export const I = MongooseModel
 	export type I<C extends ClassType = any> = MongooseModel<C>
+
+	/**
+	 * Equivalent to `ClassDecorator`.
+	 * @public
+	 */
+	export type Decorator<T extends ClassType> = ((target: T) => any) & {
+		__mongooseModel?: never
+	}
 }

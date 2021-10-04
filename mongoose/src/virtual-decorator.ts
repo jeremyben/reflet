@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose'
-import { Decorator, Plain } from './interfaces'
+import { Plain } from './interfaces'
 
 const MetaVirtual = Symbol('virtual')
 
@@ -41,7 +41,7 @@ const MetaVirtual = Symbol('virtual')
  */
 export function Virtual<TForeign extends object, TLocal extends object>(
 	options: Virtual.Options<TForeign, TLocal>
-): Decorator.Virtual {
+): Virtual.Decorator {
 	return (target, key) => {
 		const fields = getVirtuals(target.constructor)
 		fields[<string>key] = options
@@ -112,6 +112,14 @@ export namespace Virtual {
 			sort?: string | Record<keyof mongoose.LeanDocument<TForeign>, -1 | 1>
 			lean?: boolean
 		}
+	}
+
+	/**
+	 * Equivalent to `PropertyDecorator`.
+	 * @public
+	 */
+	export type Decorator = PropertyDecorator & {
+		__mongooseVirtual?: never
 	}
 }
 

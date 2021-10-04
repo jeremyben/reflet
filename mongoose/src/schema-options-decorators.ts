@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose'
 import { checkDecoratorsOrder } from './check-decorator-order'
-import { ClassType, Decorator } from './interfaces'
+import { ClassType } from './interfaces'
 
 const MetaSchemaOptions = Symbol('schema-options')
 const MetaSchemaOptionsKeys = Symbol('schema-options-keys')
@@ -19,10 +19,20 @@ const MetaSchemaOptionsKeys = Symbol('schema-options-keys')
  * ---
  * @public
  */
-export function SchemaOptions(options: mongoose.SchemaOptions): Decorator.SchemaOptions {
+export function SchemaOptions(options: mongoose.SchemaOptions): SchemaOptions.Decorator {
 	return (Class) => {
 		checkDecoratorsOrder(Class)
 		Reflect.defineMetadata(MetaSchemaOptions, options, Class)
+	}
+}
+
+export namespace SchemaOptions {
+	/**
+	 * Equivalent to `ClassDecorator`.
+	 * @public
+	 */
+	export type Decorator = ClassDecorator & {
+		__mongooseSchemaOptions?: never
 	}
 }
 
