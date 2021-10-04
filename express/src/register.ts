@@ -11,6 +11,7 @@ import { extractErrorHandlers } from './error-handler-decorator'
 import { extractParams, extractParamsMiddlewares } from './param-decorators'
 import { extractSend } from './send-decorator'
 import { ApplicationMeta, extractApplicationClass } from './application-class'
+import { RefletExpressError } from './reflet-error'
 
 /**
  * Main method to register routers into an express application.
@@ -36,7 +37,7 @@ import { ApplicationMeta, extractApplicationClass } from './application-class'
  */
 export function register(app: express.Application, routers: RegistrationArray): express.Application {
 	if (!isExpressApp(app)) {
-		throw Error('This is not an Express application.')
+		throw new RefletExpressError('INVALID_EXPRESS_APP', 'This is not an Express application.')
 	}
 
 	const appMeta = extractApplicationClass(app)
@@ -86,7 +87,10 @@ function registerRouter(
 	const routerMeta = extractRouterMeta(routerClass)
 
 	if (!routerMeta || routerMeta.path == null) {
-		throw Error(`"${routerClass.name}" must be decorated with @Router.`)
+		throw new RefletExpressError(
+			'ROUTER_DECORATOR_MISSING',
+			`"${routerClass.name}" must be decorated with @Router.`
+		)
 	}
 
 	checkPathConstraint(constrainedPath, routerMeta, routerClass)
@@ -260,7 +264,10 @@ function checkPathConstraint(
 ) {
 	if (router.path === DYNAMIC_PATH) {
 		if (constrainedPath == null) {
-			throw Error(`"${routerClass.name}" is dynamic and must be registered with a path.`)
+			throw new RefletExpressError(
+				'DYNAMIC_ROUTER_PATH_UNDEFINED',
+				`"${routerClass.name}" is dynamic and must be registered with a path.`
+			)
 		}
 
 		// stop there if dynamic path
@@ -271,7 +278,10 @@ function checkPathConstraint(
 		typeof router.path === 'string' && typeof constrainedPath === 'string' && router.path !== constrainedPath
 
 	if (notSameString) {
-		throw Error(`"${routerClass.name}" expects "${constrainedPath}" as root path. Actual: "${router.path}".`)
+		throw new RefletExpressError(
+			'ROUTER_PATH_CONSTRAINED',
+			`"${routerClass.name}" expects "${constrainedPath}" as root path. Actual: "${router.path}".`
+		)
 	}
 
 	const notSameRegex =
@@ -280,13 +290,17 @@ function checkPathConstraint(
 		router.path.source !== constrainedPath.source
 
 	if (notSameRegex) {
-		throw Error(`"${routerClass.name}" expects "${constrainedPath}" as root path. Actual: "${router.path}".`)
+		throw new RefletExpressError(
+			'ROUTER_PATH_CONSTRAINED',
+			`"${routerClass.name}" expects "${constrainedPath}" as root path. Actual: "${router.path}".`
+		)
 	}
 
 	const shouldBeString = router.path instanceof RegExp && typeof constrainedPath === 'string'
 
 	if (shouldBeString) {
-		throw Error(
+		throw new RefletExpressError(
+			'ROUTER_PATH_CONSTRAINED',
 			`"${routerClass.name}" expects string "${constrainedPath}" as root path. Actual: "${router.path}" (regex).`
 		)
 	}
@@ -294,7 +308,8 @@ function checkPathConstraint(
 	const shouldBeRegex = typeof router.path === 'string' && constrainedPath instanceof RegExp
 
 	if (shouldBeRegex) {
-		throw Error(
+		throw new RefletExpressError(
+			'ROUTER_PATH_CONSTRAINED',
 			`"${routerClass.name}" expects regex "${constrainedPath}" as root path. Actual: "${router.path}" (string).`
 		)
 	}
@@ -315,7 +330,10 @@ function createHandler(
 	const fn = routerInstance[key] as Function
 
 	if (typeof fn !== 'function') {
-		throw Error(`"${routerClass.name}.${key.toString()}" should be a function.`)
+		throw new RefletExpressError(
+			'INVALID_ROUTE_TYPE',
+			`"${routerClass.name}.${key.toString()}" should be a function.`
+		)
 	}
 
 	const isAsync = isAsyncFunction(fn)

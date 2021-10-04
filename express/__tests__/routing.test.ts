@@ -1,6 +1,7 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
 import { register, Router, Get, Post, Patch, Route, Res, Req, Use, Params, Body } from '../src'
+import { RefletExpressError } from '../src/reflet-error'
 import { log } from '../../testing/tools'
 
 describe('basic routing', () => {
@@ -190,7 +191,9 @@ describe('children routers', () => {
 
 		const app = express()
 
-		expect(() => register(app, [Foo])).toThrowError(/@Router/)
+		expect(() => register(app, [Foo])).toThrow(
+			expect.objectContaining({ code: <RefletExpressError['code']>'ROUTER_DECORATOR_MISSING' })
+		)
 	})
 })
 
@@ -339,7 +342,9 @@ describe('constrain with path-router objects', () => {
 		@Router.Children(() => [Items])
 		class Foo {}
 
-		expect(() => register(express(), [Foo])).toThrow(/dynamic/)
+		expect(() => register(express(), [Foo])).toThrow(
+			expect.objectContaining({ code: <RefletExpressError['code']>'DYNAMIC_ROUTER_PATH_UNDEFINED' })
+		)
 	})
 })
 // tslint:enable: no-empty
@@ -351,5 +356,7 @@ test('route function constraint', async () => {
 		prop = 'foo'
 	}
 
-	expect(() => register(express(), [Foo])).toThrow(/function/)
+	expect(() => register(express(), [Foo])).toThrow(
+		expect.objectContaining({ code: <RefletExpressError['code']>'INVALID_ROUTE_TYPE' })
+	)
 })

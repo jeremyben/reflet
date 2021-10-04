@@ -1,6 +1,7 @@
 import * as express from 'express'
 import { flatMapFast } from './array-manipulation'
 import { ClassType, RequestHeaderName } from './interfaces'
+import { RefletExpressError } from './reflet-error'
 
 const META = Symbol('param')
 
@@ -353,7 +354,11 @@ export function createParamDecorator<T = any>(
 
 		if (params[index]) {
 			const codePath = `${target.constructor.name}.${key.toString()}`
-			throw Error(`Parameter ${index} of "${codePath}" should have a single express decorator.`)
+
+			throw new RefletExpressError(
+				'MULTIPLE_PARAMETER_DECORATORS',
+				`Parameter ${index} of "${codePath}" should have a single express decorator.`
+			)
 		}
 
 		params[index] = { mapper, use, dedupeUse }

@@ -1,6 +1,7 @@
 import * as express from 'express'
 import { register } from './register'
 import { ClassType, RegistrationArray } from './interfaces'
+import { RefletExpressError } from './reflet-error'
 
 /**
  * @internal
@@ -86,7 +87,13 @@ function mixinApplication(target: express.Application, source: Function) {
 
 		for (const key of keys) {
 			if (key === 'constructor') continue
-			if (key in target) throw Error(`Cannot overwrite "${key}" on express application.`)
+
+			if (key in target) {
+				throw new RefletExpressError(
+					'EXPRESS_PROPERTY_PROTECTED',
+					`Cannot overwrite "${key}" on express application.`
+				)
+			}
 
 			const descriptor = Object.getOwnPropertyDescriptor(proto.prototype, key)!
 			Object.defineProperty(target, key, descriptor)
