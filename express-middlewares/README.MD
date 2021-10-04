@@ -179,6 +179,8 @@ Use **[HTTP status enums](https://github.com/jeremyben/tshttp/tree/master/status
 
 ## Response headers
 
+### Set headers
+
 > 🔦 `@UseHeader(header, value)|(headers)`<br>
 > 💫 Related Express method: [`res.set`](https://expressjs.com/en/4x/api.html#res.set)
 
@@ -204,6 +206,17 @@ class Controller {
 ##### 💡 Tip
 
 Use **[HTTP response headers enum](https://github.com/jeremyben/tshttp/tree/master/header)** from the same maintainer for an even better developer experience.
+
+### Append header value
+
+> 🔦 `@UseHeader.Append(header, value)`<br>
+> 💫 Related Express method: [`res.set`](https://expressjs.com/en/4x/api.html#res.append)
+
+Appends the specified `value` to the HTTP response header `field`. If the header is not already set, it creates the header with the specified `value`.
+
+```ts
+@UseHeader.Append('link', ['<http://localhost/>', '<http://localhost:3000/>'])
+```
 
 ## Response type
 

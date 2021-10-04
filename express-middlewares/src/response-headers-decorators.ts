@@ -30,6 +30,28 @@ export function UseHeader(field: string | ResponseHeaders, value?: string) {
 	})
 }
 
+export namespace UseHeader {
+	/**
+	 * Appends the specified `value` to the HTTP response header `field`.
+	 * @see https://expressjs.com/fr/api.html#res.append
+	 * @example
+	 * ```ts
+	 * ＠UseHeader.Append('link', ['<http://localhost/>', '<http://localhost:3000/>'])
+	 * ```
+	 * ------
+	 * @public
+	 */
+	export function Append<H extends string = ResponseHeaderName>(
+		field: H extends ResponseHeaderName ? ResponseHeaderName : string,
+		value: string | string[]
+	) {
+		return Use((req, res, next) => {
+			res.append(field, value)
+			next()
+		})
+	}
+}
+
 /**
  * Sets the `Content-Type` HTTP header to the specified MIME type.
  * @see https://expressjs.com/en/api.html#res.type
