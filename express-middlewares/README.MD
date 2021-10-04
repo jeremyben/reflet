@@ -179,15 +179,15 @@ Use **[HTTP status enums](https://github.com/jeremyben/tshttp/tree/master/status
 
 ## Response headers
 
-> 🔦 `@UseSet(header, value)|(headers)` alias `@UseHeader`<br>
+> 🔦 `@UseHeader(header, value)|(headers)`<br>
 > 💫 Related Express method: [`res.set`](https://expressjs.com/en/4x/api.html#res.set)
 
 Set any response header with a dedicated decorator.
 
 ```ts
-@UseSet({ 'x-powered-by': 'brainfuck' })
+@UseHeader({ 'x-powered-by': 'brainfuck' })
 class Controller {
-  @UseSet('allow', 'GET')
+  @UseHeader('allow', 'GET')
   @Post('/things')
   create(@Res res: Response) {
     res.sendStatus(405)
@@ -195,10 +195,10 @@ class Controller {
 }
 ```
 
-`UseSet`/`UseHeader` input type is narrowed to a union of known **response headers** (instead of just `string`). You can still opt-out by expanding the input type to `string` or `any`:
+`UseHeader` input type is narrowed to a union of known **response headers** (instead of just `string`). You can still opt-out by expanding the input type to `string` or `any`:
 
 ```ts
-@UseSet<string>('x-custom', 'value')
+@UseHeader<string>('x-custom', 'value')
 ```
 
 ##### 💡 Tip
@@ -207,7 +207,7 @@ Use **[HTTP response headers enum](https://github.com/jeremyben/tshttp/tree/mast
 
 ## Response type
 
-> 🔦 `@UseType(contentType)` alias `@UseContentType`<br>
+> 🔦 `@UseType(contentType)`<br>
 > 💫 Related Express method: [`res.type`](https://expressjs.com/en/4x/api.html#res.type)
 
 Set the response `Content-Type` with a dedicated decorator.
@@ -223,7 +223,7 @@ class Controller {
 }
 ```
 
-`UseType`/`UseContentType` input type is narrowed to a union of common content types (instead of just `string`). You can still opt-out by expanding the input type to `string` or `any`:
+`UseType` input type is narrowed to a union of common content types (instead of just `string`). You can still opt-out by expanding the input type to `string` or `any`:
 
 ```ts
 @UseType<string>('application/x-my-type')
