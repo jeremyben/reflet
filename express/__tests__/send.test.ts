@@ -1,7 +1,7 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
 import { createReadStream, readFileSync } from 'fs'
-import { register, Router, Get, Put, Post, Patch, Delete, Res, Params, Send, Decorator } from '../src'
+import { register, Router, Get, Put, Post, Patch, Delete, Res, Params, Send } from '../src'
 import { log } from '../../testing/tools'
 
 describe('handle return value', () => {
@@ -223,7 +223,7 @@ describe('buffers', () => {
 })
 
 describe('class decorator', () => {
-	const JsonRouter = (path: string | RegExp): Decorator.Router & Decorator.Send => {
+	const JsonRouter = (path: string | RegExp): Router.Decorator & Send.Decorator => {
 		return (target) => {
 			Router(path)(target as Function)
 			Send({ json: true, undefinedStatus: 404 })(target)

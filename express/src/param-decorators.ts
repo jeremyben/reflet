@@ -1,6 +1,6 @@
 import * as express from 'express'
 import { flatMapFast } from './array-manipulation'
-import { ClassType, RequestHeaderName, Decorator } from './interfaces'
+import { ClassType, RequestHeaderName } from './interfaces'
 
 const META = Symbol('param')
 
@@ -29,9 +29,9 @@ type ParamMeta = {
  * ------
  * @public
  */
-export function Req(): Decorator.Req
+export function Req(): Req.Decorator
 
-export function Req(...args: Parameters<Decorator.Req>): void
+export function Req(...args: Parameters<Req.Decorator>): void
 
 export function Req() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
@@ -39,6 +39,14 @@ export function Req() {
 	} else {
 		return createParamDecorator((req) => req)
 	}
+}
+
+export namespace Req {
+	/**
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Decorator = ParameterDecorator & { __expressReq?: never; __expressHandlerParameter?: never }
 }
 
 /**
@@ -57,9 +65,9 @@ export function Req() {
  * ------
  * @public
  */
-export function Res(): Decorator.Res
+export function Res(): Res.Decorator
 
-export function Res(...args: Parameters<Decorator.Res>): void
+export function Res(...args: Parameters<Res.Decorator>): void
 
 export function Res() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
@@ -67,6 +75,14 @@ export function Res() {
 	} else {
 		return createParamDecorator((req, res: express.Response) => res)
 	}
+}
+
+export namespace Res {
+	/**
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Decorator = ParameterDecorator & { __expressRes?: never; __expressHandlerParameter?: never }
 }
 
 /**
@@ -85,9 +101,9 @@ export function Res() {
  * ------
  * @public
  */
-export function Next(): Decorator.Next
+export function Next(): Next.Decorator
 
-export function Next(...args: Parameters<Decorator.Next>): void
+export function Next(...args: Parameters<Next.Decorator>): void
 
 export function Next() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
@@ -97,6 +113,14 @@ export function Next() {
 	} else {
 		return createParamDecorator((req, res, next?: express.NextFunction) => next!)
 	}
+}
+
+export namespace Next {
+	/**
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Decorator = ParameterDecorator & { __expressNext?: never; __expressHandlerParameter?: never }
 }
 
 /** default parser middlewares to apply with @Body decorator */
@@ -123,10 +147,10 @@ const bodyParsers = [express.json(), express.urlencoded({ extended: true })]
  * ------
  * @public
  */
-export function Body<T extends object>(key?: keyof T): Decorator.Body
+export function Body<T extends object>(key?: keyof T): Body.Decorator
 // todo: https://codewithstyle.info/Deep-property-access-in-TypeScript/
 
-export function Body(...args: Parameters<Decorator.Body>): void
+export function Body(...args: Parameters<Body.Decorator>): void
 
 export function Body<T extends object>(
 	keyOrTarget?: keyof T | object,
@@ -140,6 +164,14 @@ export function Body<T extends object>(
 		const subKey = keyOrTarget as keyof T | undefined
 		return createParamDecorator((req) => (subKey ? req.body[subKey] : req.body), bodyParsers, true)
 	}
+}
+
+export namespace Body {
+	/**
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Decorator = ParameterDecorator & { __expressBody?: never; __expressHandlerParameter?: never }
 }
 
 /**
@@ -163,9 +195,9 @@ export function Body<T extends object>(
  * ------
  * @public
  */
-export function Params(name?: string): Decorator.Params
+export function Params(name?: string): Params.Decorator
 
-export function Params(...args: Parameters<Decorator.Params>): void
+export function Params(...args: Parameters<Params.Decorator>): void
 
 export function Params(nameOrTarget?: string | object, propertyKey?: string | symbol, parameterIndex?: number) {
 	if (arguments.length === 3 && typeof nameOrTarget === 'object') {
@@ -175,6 +207,14 @@ export function Params(nameOrTarget?: string | object, propertyKey?: string | sy
 		const subKey = nameOrTarget as string | undefined
 		return createParamDecorator((req) => (subKey ? req.params[subKey] : req.params))
 	}
+}
+
+export namespace Params {
+	/**
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Decorator = ParameterDecorator & { __expressParams?: never; __expressHandlerParameter?: never }
 }
 
 /**
@@ -198,9 +238,9 @@ export function Params(nameOrTarget?: string | object, propertyKey?: string | sy
  * ------
  * @public
  */
-export function Query(field?: string): Decorator.Query
+export function Query(field?: string): Query.Decorator
 
-export function Query(...args: Parameters<Decorator.Query>): void
+export function Query(...args: Parameters<Query.Decorator>): void
 
 export function Query(fieldOrTarget?: string | object, propertyKey?: string | symbol, parameterIndex?: number) {
 	if (arguments.length === 3 && typeof fieldOrTarget === 'object') {
@@ -210,6 +250,14 @@ export function Query(fieldOrTarget?: string | object, propertyKey?: string | sy
 		const subKey = fieldOrTarget as string | undefined
 		return createParamDecorator((req) => (subKey ? req.query[subKey] : req.query))
 	}
+}
+
+export namespace Query {
+	/**
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Decorator = ParameterDecorator & { __expressQuery?: never; __expressHandlerParameter?: never }
 }
 
 /**
@@ -235,9 +283,9 @@ export function Query(fieldOrTarget?: string | object, propertyKey?: string | sy
  */
 export function Headers<T extends string = RequestHeaderName>(
 	name?: T extends RequestHeaderName ? RequestHeaderName : string
-): Decorator.Headers
+): Headers.Decorator
 
-export function Headers(...args: Parameters<Decorator.Headers>): void
+export function Headers(...args: Parameters<Headers.Decorator>): void
 
 export function Headers(nameOrTarget?: string | object, propertyKey?: string | symbol, parameterIndex?: number) {
 	if (arguments.length === 3 && typeof nameOrTarget === 'object') {
@@ -247,6 +295,14 @@ export function Headers(nameOrTarget?: string | object, propertyKey?: string | s
 		const subKey = nameOrTarget as string | undefined
 		return createParamDecorator((req) => (subKey ? req.headers[subKey] : req.headers))
 	}
+}
+
+export namespace Headers {
+	/**
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Decorator = ParameterDecorator & { __expressHeaders?: never; __expressHandlerParameter?: never }
 }
 
 /**
@@ -291,7 +347,7 @@ export function createParamDecorator<T = any>(
 	mapper: (req: express.Request, res: express.Response) => T,
 	use?: express.RequestHandler[],
 	dedupeUse?: boolean
-): Decorator.HandlerParameter {
+): createParamDecorator.Decorator {
 	return (target, key, index) => {
 		const params: ParamMeta[] = Reflect.getOwnMetadata(META, target, key) || []
 
@@ -303,6 +359,14 @@ export function createParamDecorator<T = any>(
 		params[index] = { mapper, use, dedupeUse }
 		Reflect.defineMetadata(META, params, target, key)
 	}
+}
+
+export namespace createParamDecorator {
+	/**
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Decorator = ParameterDecorator & { __expressHandlerParameter?: never }
 }
 
 /**

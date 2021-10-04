@@ -1,4 +1,4 @@
-import { ClassType, Decorator } from './interfaces'
+import { ClassType, PropertyOrMethodDecorator } from './interfaces'
 
 const META = Symbol('route')
 
@@ -98,7 +98,7 @@ export const Delete = (path: string | RegExp = '') => Route('delete', path)
  * @see https://expressjs.com/en/4x/api.html#app.METHOD
  * @public
  */
-export function Route(method: Route.Method | Route.Method[], path: string | RegExp): Decorator.Route {
+export function Route(method: Route.Method | Route.Method[], path: string | RegExp): Route.Decorator {
 	return (target, key, descriptor) => {
 		// Attach routes to class instead of methods to extract and traverse all of them at once
 		const routes: RouteMeta[] = Reflect.getOwnMetadata(META, target) || []
@@ -172,6 +172,12 @@ export namespace Route {
 		| 'unlock'
 		| 'unsubscribe'
 		| 'all'
+
+	/**
+	 * Equivalent to an union of `MethodDecorator` and `ProperyDecorator`.
+	 * @public
+	 */
+	export type Decorator = PropertyOrMethodDecorator & { __expressRoute?: never }
 }
 
 /**

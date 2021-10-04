@@ -2,122 +2,9 @@ import * as express from 'express'
 import * as core from 'express-serve-static-core'
 
 /**
- * Exported decorators interfaces.
- * Branded as distinct symbols for the dedicated linter and the compiler API.
  * @public
  */
-export namespace Decorator {
-	/**
-	 * Used for `@Router` decorator.
-	 * Equivalent to `ClassDecorator`.
-	 * @public
-	 */
-	export type Router = ClassDecorator & { __expressRouter?: never }
-
-	/**
-	 * Used for `@Router.Children` decorator.
-	 * Equivalent to `ClassDecorator`.
-	 * @public
-	 */
-	export type RouterChildren = ClassDecorator & { __expressRouterChildren?: never }
-
-	/**
-	 * Used for `@Get, @Post, @Put, @Patch, @Delete, @Method` decorators.
-	 * Equivalent to `MethodDecorator`.
-	 * @public
-	 */
-	export type Route = PropertyOrMethodDecorator & { __expressRoute?: never }
-
-	/**
-	 * Used for `createParamDecorator`.
-	 * Equivalent to `ParameterDecorator`.
-	 * @public
-	 */
-	export type HandlerParameter = ParameterDecorator & { __expressHandlerParameter?: never }
-
-	/**
-	 * Used for `@Req` decorator.
-	 * Equivalent to `ParameterDecorator`.
-	 * @public
-	 */
-	export type Req = ParameterDecorator & { __expressReq?: never; __expressHandlerParameter?: never }
-
-	/**
-	 * Used for `@Res` decorator.
-	 * Equivalent to `ParameterDecorator`.
-	 * @public
-	 */
-	export type Res = ParameterDecorator & { __expressRes?: never; __expressHandlerParameter?: never }
-
-	/**
-	 * Used for `@Next` decorator.
-	 * Equivalent to `ParameterDecorator`.
-	 * @public
-	 */
-	export type Next = ParameterDecorator & { __expressNext?: never; __expressHandlerParameter?: never }
-
-	/**
-	 * Used for `@Body` decorator.
-	 * Equivalent to `ParameterDecorator`.
-	 * @public
-	 */
-	export type Body = ParameterDecorator & { __expressBody?: never; __expressHandlerParameter?: never }
-
-	/**
-	 * Used for `@Params` decorator.
-	 * Equivalent to `ParameterDecorator`.
-	 * @public
-	 */
-	export type Params = ParameterDecorator & { __expressParams?: never; __expressHandlerParameter?: never }
-
-	/**
-	 * Used for `@Query` decorator.
-	 * Equivalent to `ParameterDecorator`.
-	 * @public
-	 */
-	export type Query = ParameterDecorator & { __expressQuery?: never; __expressHandlerParameter?: never }
-
-	/**
-	 * Used for `@Headers` decorator.
-	 * Equivalent to `ParameterDecorator`.
-	 * @public
-	 */
-	export type Headers = ParameterDecorator & { __expressHeaders?: never; __expressHandlerParameter?: never }
-
-	/**
-	 * Used for `@Use` decorator.
-	 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
-	 * @public
-	 */
-	export type Use = ClassOrMethodDecorator & { __expressUse?: never }
-
-	/**
-	 * Used for `@Catch` decorator.
-	 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
-	 * @public
-	 */
-	export type Catch = ClassOrMethodDecorator & { __expressCatch?: never }
-
-	/**
-	 * Used for `@Send` decorator.
-	 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
-	 * @public
-	 */
-	export type Send = ClassOrMethodDecorator & { __expressSend?: never }
-
-	/**
-	 * Used for `@Send.Dont` decorator.
-	 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
-	 * @public
-	 */
-	export type DontSend = ClassOrMethodDecorator & { __expressDontSend?: never }
-}
-
-/**
- * Generic decorator type to choose beetween `ClassDecorator`, `MethodDecorator`, or both.
- * @public
- */
-type ClassOrMethodDecorator = <TFunction extends Function>(
+export type ClassOrMethodDecorator = <TFunction extends Function>(
 	target: TFunction | Object,
 	propertyKey?: string | symbol,
 	descriptor?: TypedPropertyDescriptor<any>
@@ -126,7 +13,7 @@ type ClassOrMethodDecorator = <TFunction extends Function>(
 /**
  * @public
  */
-type PropertyOrMethodDecorator = (
+export type PropertyOrMethodDecorator = (
 	target: Object,
 	propertyKey: string | symbol,
 	descriptor?: TypedPropertyDescriptor<any>

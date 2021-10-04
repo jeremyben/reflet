@@ -1,5 +1,5 @@
 import * as express from 'express'
-import { ClassType, Decorator } from './interfaces'
+import { ClassOrMethodDecorator, ClassType } from './interfaces'
 
 const META = Symbol('catch')
 
@@ -29,7 +29,7 @@ const META = Symbol('catch')
  */
 export function Catch<T = any>(
 	errorHandler: (err: T, req: express.Request, res: express.Response, next: express.NextFunction) => any
-): Decorator.Catch {
+): Catch.Decorator {
 	return (target, key, descriptor) => {
 		// Method
 		if (key) {
@@ -45,6 +45,15 @@ export function Catch<T = any>(
 			Reflect.defineMetadata(META, handlers, (target as Function).prototype)
 		}
 	}
+}
+
+export namespace Catch {
+	/**
+	 * Used for `@Catch` decorator.
+	 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
+	 * @public
+	 */
+	export type Decorator = ClassOrMethodDecorator & { __expressCatch?: never }
 }
 
 /**

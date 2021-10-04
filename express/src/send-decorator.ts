@@ -1,4 +1,4 @@
-import { ClassType, StatusCode, Decorator } from './interfaces'
+import { ClassType, StatusCode, ClassOrMethodDecorator } from './interfaces'
 
 const META = Symbol('send')
 
@@ -39,7 +39,7 @@ const META = Symbol('send')
  * ------
  * @public
  */
-export function Send(options: Send.Options = {}): Decorator.Send {
+export function Send(options: Send.Options = {}): Send.Decorator {
 	return (target, key, descriptor) => {
 		if (key) Reflect.defineMetadata(META, options, target, key)
 		else Reflect.defineMetadata(META, options, (target as Function).prototype)
@@ -88,12 +88,26 @@ export namespace Send {
 	 * ------
 	 * @public
 	 */
-	export function Dont(): Decorator.DontSend {
+	export function Dont(): Send.Dont.Decorator {
 		return (target, key, descriptor) => {
 			if (key) Reflect.defineMetadata(META, null, target, key)
 			else Reflect.defineMetadata(META, null, (target as Function).prototype)
 		}
 	}
+
+	export namespace Dont {
+		/**
+		 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
+		 * @public
+		 */
+		export type Decorator = ClassOrMethodDecorator & { __expressSendDont?: never }
+	}
+
+	/**
+	 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
+	 * @public
+	 */
+	export type Decorator = ClassOrMethodDecorator & { __expressSend?: never }
 }
 
 /**

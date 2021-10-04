@@ -1,5 +1,5 @@
 import * as express from 'express'
-import { ClassType, RegistrationArray, Decorator, IsAny } from './interfaces'
+import { ClassType, RegistrationArray, IsAny } from './interfaces'
 
 const META = Symbol('router')
 
@@ -37,7 +37,7 @@ type RouterMeta = {
  *
  * @public
  */
-export function Router(path: string | RegExp, options?: express.RouterOptions): Decorator.Router {
+export function Router(path: string | RegExp, options?: express.RouterOptions): Router.Decorator {
 	return (target) => {
 		const existingRouterMeta = extractRouterMeta(target)
 
@@ -72,7 +72,7 @@ export namespace Router {
 	export function Children<T extends ClassType = any>(
 		// tslint:disable-next-line: no-shadowed-variable
 		register: (...deps: IsAny<T> extends true ? unknown[] : ConstructorParameters<T>) => RegistrationArray
-	): Decorator.RouterChildren {
+	): Router.Children.Decorator {
 		return (target) => {
 			const existingRouterMeta = extractRouterMeta(target)
 
@@ -107,6 +107,14 @@ export namespace Router {
 		}
 	}
 
+	export namespace Children {
+		/**
+		 * Equivalent to `ClassDecorator`.
+		 * @public
+		 */
+		export type Decorator = ClassDecorator & { __expressRouterChildren?: never }
+	}
+
 	/**
 	 * Attaches an express Router to a class, without defining a root path.
 	 * The root path must be defined at registration.
@@ -138,12 +146,18 @@ export namespace Router {
 	 * ------
 	 * @public
 	 */
-	export function Dynamic(options?: express.RouterOptions): Decorator.Router {
+	export function Dynamic(options?: express.RouterOptions): Router.Decorator {
 		return (target) => {
 			const routerMeta: RouterMeta = { path: DYNAMIC_PATH, options }
 			defineRouterMeta(routerMeta, target)
 		}
 	}
+
+	/**
+	 * Equivalent to `ClassDecorator`.
+	 * @public
+	 */
+	export type Decorator = ClassDecorator & { __expressRouter?: never }
 }
 
 /**
