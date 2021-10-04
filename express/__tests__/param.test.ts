@@ -1,6 +1,20 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
-import { register, Get, Post, Put, Patch, Use, Res, Body, Params, Headers, Query, createParamDecorator } from '../src'
+import {
+	register,
+	Router,
+	Get,
+	Post,
+	Put,
+	Patch,
+	Use,
+	Res,
+	Body,
+	Params,
+	Headers,
+	Query,
+	createParamDecorator,
+} from '../src'
 import { extractMiddlewares } from '../src/middleware-decorator'
 import { extractParamsMiddlewares } from '../src/param-decorators'
 import { getGlobalMiddlewares } from '../src/register'
@@ -12,6 +26,7 @@ describe('basic decorators', () => {
 		req.headers.shared = 'shared'
 		next()
 	})
+	@Router('')
 	class FooRouter {
 		@Get()
 		async get(@Headers headers: any, @Headers('via') via: string, @Res res: express.Response) {
@@ -67,6 +82,7 @@ describe('custom decorators', () => {
 		req.user = { id: 1, name: 'jeremy' }
 		next()
 	})
+	@Router('')
 	class FooRouter {
 		@Get()
 		get(@CurrentUser user: object, @Res res: express.Response) {

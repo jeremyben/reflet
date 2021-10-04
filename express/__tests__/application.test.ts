@@ -1,11 +1,12 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
-import { Application, Catch, Get, Send, Use } from '../src'
+import { Application, Catch, Get, Router, Send, Use } from '../src'
 import { getGlobalMiddlewares } from '../src/register'
 import { log } from '../../testing/tools'
 
 test('simple app', async () => {
 	@Send()
+	@Router('/')
 	class Bar {
 		@Get('/bar')
 		getOne() {
@@ -27,6 +28,7 @@ describe('inherit application class', () => {
 		next(err)
 	})
 	@Send.Dont()
+	@Router('/')
 	class Foo {
 		@Get('/foo')
 		getOne(req: express.Request, res: express.Response) {

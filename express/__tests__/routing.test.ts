@@ -39,28 +39,23 @@ describe('basic routing', () => {
 		}
 	}
 
+	@Router('/message')
 	class MessageRouter {
 		prop = 1
 
-		@Route('options', '/message')
+		@Route('options', '')
 		options = (req: express.Request, res: express.Response, next: express.NextFunction) => {
 			res.send([{ id: this.prop }])
 		}
 
-		@Route.Get('/message/:id')
+		@Route.Get('/:id')
 		get(@Res res: express.Response, @Req req: express.Request) {
 			const id = Number.parseInt(req.params.id, 10)
 			res.send({ id })
 		}
 	}
 
-	const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
-
-	const rq = supertest(
-		register(express(), [new UserRouter(new UserService()), new MessageRouter(), /* will warn */ new UserService()])
-	)
-	expect(consoleSpy).toBeCalledWith(expect.stringContaining('register'))
-	consoleSpy.mockRestore()
+	const rq = supertest(register(express(), [new UserRouter(new UserService()), new MessageRouter()]))
 
 	test('@Get with Router', async () => {
 		const res = await rq.get('/user')
@@ -82,13 +77,13 @@ describe('basic routing', () => {
 		await rq.put('/user/ME').expect(404)
 	})
 
-	test('Options verb without Router, property instead of function', async () => {
+	test('Options verb, property instead of function', async () => {
 		const res = await rq.options('/message')
 		expect(res.status).toBe(200)
 		expect(res.body).toEqual([{ id: 1 }])
 	})
 
-	test('@Get without Router, with route param', async () => {
+	test('@Get with route param', async () => {
 		const res = await rq.get('/message/2')
 		expect(res.status).toBe(200)
 		expect(res.body).toEqual({ id: 2 })
@@ -132,7 +127,7 @@ describe('children routers', () => {
 		@Router.Children<typeof AppModule>((service) => [new UserRouter(service)])
 		@Router('/module')
 		class AppModule {
-			constructor(service: UserService) {}
+			constructor(private service: UserService) {}
 		}
 
 		@Router('/user/:userId?', { mergeParams: true })
@@ -140,7 +135,7 @@ describe('children routers', () => {
 			{ path: '/item/:itemId', router: new UserItemRouter(service) },
 		])
 		class UserRouter {
-			constructor(service: UserService) {}
+			constructor(private service: UserService) {}
 
 			@Post()
 			post(@Res res: express.Response, @Body() body: any) {
@@ -216,15 +211,6 @@ describe('constrain with path-router objects', () => {
 		}
 
 		expect(() => register(express(), [{ path: '/foo', router: new Foo() }])).not.toThrow()
-	})
-
-	test('missing decorator', () => {
-		class Foo {
-			@Get()
-			get() {}
-		}
-
-		expect(() => register(express(), [{ path: 'foo', router: Foo }])).toThrow(/constrained.*"foo".*decorated/)
 	})
 
 	test('wrong string', () => {

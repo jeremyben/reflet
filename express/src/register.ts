@@ -36,7 +36,7 @@ import { ApplicationMeta, extractApplicationClass } from './application-class'
  */
 export function register(app: express.Application, routers: RegistrationArray): express.Application {
 	if (!isExpressApp(app)) {
-		throw Error()
+		throw Error('This is not an Express application.')
 	}
 
 	const appMeta = extractApplicationClass(app)
@@ -85,6 +85,10 @@ function registerRouter(
 	// Must be after instanciation to properly retrieve child routers from metadata.
 	const routerMeta = extractRouterMeta(routerClass)
 
+	if (!routerMeta || routerMeta.path == null) {
+		throw Error(`"${routerClass.name}" must be decorated with @Router.`)
+	}
+
 	checkPathConstraint(constrainedPath, routerMeta, routerClass)
 
 	// Either attach middlewares/handlers to an intermediary router or directly to the app.
@@ -92,19 +96,14 @@ function registerRouter(
 
 	const routes = extractRoutes(routerClass)
 
-	if (!routes.length && !routerMeta) {
-		console.warn(`"${routerClass.name}" doesn't have any route or router to register.`)
-	}
-
 	const sharedMwares = extractMiddlewares(routerClass)
 	const sharedErrHandlers = extractErrorHandlers(routerClass)
 
 	// Apply shared middlewares to the router instance
 	// or to each of the routes if the class is attached on the base app.
-	if (routerMeta) {
-		for (const mware of sharedMwares) {
-			appInstance.use(wrapAsync(mware))
-		}
+
+	for (const mware of sharedMwares) {
+		appInstance.use(wrapAsync(mware))
 	}
 
 	for (const { path, method, key } of routes) {
@@ -119,34 +118,17 @@ function registerRouter(
 
 		const handler = createHandler(routerClass, routerInstance, key, appClass)
 
-		if (routerMeta) {
-			appInstance[method](
-				path,
-				routeMwares.map(wrapAsync),
-				paramsMwares.map(wrapAsync),
-				handler,
-				routeErrHandlers.map(wrapAsyncError)
-			)
-		} else {
-			// Have same order of middlewares by surrounding route specific ones by shared ones.
-			appInstance[method](
-				path,
-				sharedMwares.map(wrapAsync),
-				routeMwares.map(wrapAsync),
-				paramsMwares.map(wrapAsync),
-				handler,
-				routeErrHandlers.map(wrapAsyncError),
-				sharedErrHandlers.map(wrapAsyncError)
-			)
-		}
+		appInstance[method](
+			path,
+			routeMwares.map(wrapAsync),
+			paramsMwares.map(wrapAsync),
+			handler,
+			routeErrHandlers.map(wrapAsyncError)
+		)
 	}
 
 	// Recursively attach children routers
-	if (routerMeta?.children) {
-		if (routerMeta.path == null) {
-			throw Error(`"${routerClass.name}" must be decorated with @Router.`)
-		}
-
+	if (routerMeta.children) {
 		// Keep track of all shared middlewares for dedupe.
 		const parentSharedMwares_ = parentSharedMwares.concat(sharedMwares)
 
@@ -165,16 +147,14 @@ function registerRouter(
 		}
 	}
 
-	if (routerMeta?.path != null) {
-		for (const errHandler of sharedErrHandlers) {
-			appInstance.use(wrapAsyncError(errHandler))
-		}
-
-		const routerPath = routerMeta.path === DYNAMIC_PATH ? constrainedPath! : routerMeta.path
-
-		// Finally attach the router to the app
-		app.use(routerPath, appInstance)
+	for (const errHandler of sharedErrHandlers) {
+		appInstance.use(wrapAsyncError(errHandler))
 	}
+
+	const routerPath = routerMeta.path === DYNAMIC_PATH ? constrainedPath! : routerMeta.path
+
+	// Finally attach the router to the app
+	app.use(routerPath, appInstance)
 }
 
 /**
@@ -228,16 +208,16 @@ function registerRootErrorHandlers(app: express.Application, appMeta?: Applicati
 		return
 	}
 
-	const customGlobalErrorHandlers = extractErrorHandlers(appMeta.class)
+	const globalErrorHandlers = extractErrorHandlers(appMeta.class)
 
-	if (!customGlobalErrorHandlers.length) {
+	if (!globalErrorHandlers.length) {
 		return
 	}
 
 	// Error handlers added at the end of the stack during the first `register` call,
 	// are moved to the last position for subsequent calls, to keep their behavior global.
 	if (appMeta.registered) {
-		for (const errHandler of customGlobalErrorHandlers) {
+		for (const errHandler of globalErrorHandlers) {
 			const layerIndex = app._router?.stack.findIndex((layer) => layer.handle === errHandler)
 
 			// optimisation, not sure about side effects.
@@ -250,7 +230,7 @@ function registerRootErrorHandlers(app: express.Application, appMeta?: Applicati
 			}
 		}
 	} else {
-		for (const errHandler of customGlobalErrorHandlers) {
+		for (const errHandler of globalErrorHandlers) {
 			app.use(wrapAsyncError(errHandler))
 		}
 	}
@@ -275,24 +255,15 @@ function isPathRouterObject(
  */
 function checkPathConstraint(
 	constrainedPath: string | RegExp | undefined,
-	router: ReturnType<typeof extractRouterMeta>,
+	router: Exclude<ReturnType<typeof extractRouterMeta>, undefined>,
 	routerClass: ClassType
 ) {
-	if (!constrainedPath) {
-		if (router?.path === DYNAMIC_PATH) {
+	if (router.path === DYNAMIC_PATH) {
+		if (constrainedPath == null) {
 			throw Error(`"${routerClass.name}" is dynamic and must be registered with a path.`)
 		}
 
-		return
-	}
-
-	if (!router) {
-		throw Error(
-			`"${routerClass.name}" is constrained to the specific path "${constrainedPath}" and must be decorated with @Router.`
-		)
-	}
-
-	if (router.path === DYNAMIC_PATH) {
+		// stop there if dynamic path
 		return
 	}
 

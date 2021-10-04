@@ -54,22 +54,23 @@ The **best** decorators for [Express](https://expressjs.com/). Have a look at [R
 
     ```ts
     // thing.router.ts
-    import { Get, Post, Res, Params, Body } from '@reflet/express'
+    import { Get, Post, Res, Params, Body, Router } from '@reflet/express'
 
+    @Router('/things')
     export class ThingRouter {
-      @Get('/things')
+      @Get()
       async list(@Res res: Response) {
         const things = await db.collection('things').find({})
         res.send(things)
       }
 
-      @Get('/things/:id')
+      @Get('/:id')
       async get(@Params('id') id: string, @Res res: Response) {
         const thing = await db.collection('things').find({ id })
         res.send(thing)
       }
 
-      @Post('/things')
+      @Post()
       async create(@Res res: Response, @Body body: Thing) {
         const newThing = await db.collection('things').insertOne(body)
         res.status(201).send(newThing)
@@ -260,8 +261,9 @@ Common route decorators are created from `Route`, a decorator in itself, that ca
 As a convenience, `Route` is also a namespace that gives access to all route decorators as its properties.
 
 ```ts
-const Options = (path: string | RegExp) => Route('options', path)
+const Options = (path?: string | RegExp) => Route('options', path)
 
+@Router('/')
 class ThingRouter {
   @Options('/things')
   opts(req: Request, res: Response, next: NextFunction) {}
@@ -292,9 +294,7 @@ class ThingRouter {
 > 🔦 `@Router(path, options?)`<br>
 > 💫 Related Express method: [`express.Router`](https://expressjs.com/en/4x/api.html#express.router)
 
-As you've seen, you **don't need** to decorate your router classes for routing to work (contrary to most frameworks). The routes will simply be attached to the main app.
-
-But you can also attach routes to an Express [Router](https://expressjs.com/en/4x/api.html#router), so they can share a root path, just like with plain Express.
+You then attach routes to an Express [Router](https://expressjs.com/en/4x/api.html#router), so they can share a root path, just like with plain Express.
 
 ```ts
 @Router('/things')
@@ -335,7 +335,7 @@ class TrackRouter {}
 
 #### Paths centralization and constraint
 
-You might want the root paths of your routers to be centralized as well, so you can have a glance at all of them. 👀<br>You can register all your routers with a path constraint (Reflet will enforce those paths):
+You might want the root paths of your routers to be centralized as well, so you can have a glance at all of them. 👀<br>You can register your routers with a path constraint (Reflet will enforce those paths):
 
 ```ts
 @Router('/foo')
@@ -408,13 +408,14 @@ class BarRouter {
 You can inject the handler parameters in any order by applying dedicated parameter decorators:
 
 ```ts
+@Router('/things')
 class ThingRouter {
-  @Get('/things')
+  @Get()
   list(@Res res: Response, @Next next: NextFunction) {
     res.send('done')
   }
 
-  @Post('/things')
+  @Post()
   create(@Res() res: Response, @Req() req: Request) {
     res.json(req.body)
   }
@@ -448,16 +449,17 @@ Apply middlewares on specific routes or whole routers:
 ```ts
 @Use(express.json(), express.urlencoded())
 @Use(cors())
+@Router('/things')
 class ThingRouter {
   @Use((req, res, next) => next())
-  @Get('/things')
+  @Get()
   list() {}
 }
 ```
 
 `Use` is highly versatile, like the underlying `app.use` method. You can pass **as many** middlewares as you want inside a `Use` decorator, and you can apply **as many** `Use` decorators as you want on a single class or method.
 
-If `Router` decorator is used, Reflet will apply class-scoped middlewares to the newly created Express Router.
+Reflet respects Express flow and will apply class-scoped middlewares to the newly created Express Router:
 
 <table>
 <thead>
@@ -467,28 +469,6 @@ If `Router` decorator is used, Reflet will apply class-scoped middlewares to the
 </tr>
 </thead>
 <tbody>
-<tr>
-  <td>
-
-```ts
-@Use(A)
-class Foo {
-  @Use(B, C)
-  @Use(D)
-  @Get('/foo')
-  get(req, res, next) {}
-}
-```
-
-  </td>
-  <td>
-
-```ts
-app.get('/foo', A, B, C, D, (req, res, next) => {})
-```
-
-  </td>
-</tr>
 <tr>
   <td>
 
@@ -534,9 +514,10 @@ function UseStatus(statusCode: number) {
   })
 }
 
+@Router('/things')
 class ThingRouter {
   @UseStatus(201)
-  @Post('/things')
+  @Post()
   create(req: Request, res: Response, next: NextFunction) {}
 }
 ```
@@ -588,13 +569,14 @@ class UserRouter {
 Given the request: `GET http://host/things?size=large&color=green`
 
 ```ts
+@Router('/things')
 class ThingRouter {
   // Whole query object
-  @Get('/things')
+  @Get()
   list(@Query query: { size?: string; color?: string }) {}
 
   // Specific field
-  @Get('/things')
+  @Get()
   list(@Query('size') size?: string, @Query('color') color?: string) {}
 }
 ```
@@ -605,13 +587,14 @@ class ThingRouter {
 > 💫 Related Express object: [`req.body`](https://expressjs.com/en/4x/api.html#req.body)
 
 ```ts
+@Router('/things')
 class ThingRouter {
   // Whole body
-  @Patch('/things/:id')
+  @Patch('/:id')
   update(@Body body: Partial<Thing>) {}
 
   // Specific key
-  @Patch('/things/:id')
+  @Patch('/:id')
   update(@Body<Thing>('name') name: string) {}
 }
 ```
@@ -625,8 +608,9 @@ You can `Use` the same body parsers (or apply them globally on your app) with di
 
 ```ts
 @Use(express.json({ limit: '500kb' }))
+@Router('/things')
 class ThingRouter {
-  @Post('/things')
+  @Post()
   create(@Body body: Thing) {} // default jsonParser won't be applied again here.
 }
 ```
@@ -637,13 +621,14 @@ class ThingRouter {
 > 💫 Related Node.js object: [`req.headers`](https://nodejs.org/api/http.html#http_message_headers)
 
 ```ts
+@Router('/things')
 class ThingRouter {
   // Whole headers object
-  @Get('/things')
+  @Get()
   list(@Headers headers: IncomingHttpHeaders) {}
   
   // Specific header
-  @Get('/things')
+  @Get()
   list(@Headers('user-agent') userAgent: string) {}
 }
 ```
@@ -651,8 +636,9 @@ class ThingRouter {
 `Header` input type is narrowed to a union of known **request headers** (instead of just `string`), so typos are prevented and you have that sweet auto-completion. You can still opt-out by expanding the input type to `string` or `any`:
 
 ```ts
+@Router('/things')
 class ThingRouter {
-  @Get('/things')
+  @Get()
   list(@Headers<string>('x-custom') custom: string) {}
 }
 ```
@@ -670,8 +656,9 @@ Inject and manipulate whatever you need from the Request object:
 ```ts
 const CurrentUser = createParamDecorator((req) => req.user)
 
+@Router('/things')
 class ThingRouter {
-  @Get('/things')
+  @Get()
   list(@CurrentUser user: User) {}
 }
 ```
@@ -693,8 +680,9 @@ Now what if this implicit middleware is already applied explicitely before ? You
 
 ```ts
 @Use(isAuthenticated)
+@Router('/things')
 class ThingRouter {
-  @Get('/things')
+  @Get()
   list(@CurrentUser user: User) {}
 }
 ```
@@ -723,8 +711,9 @@ const BodyTrimmed = (key: string) => createParamDecorator(
   true
 )
 
+@Router('/things')
 class ThingRouter {
-  @Post('/things')
+  @Post()
   create(@BodyTrimmed('name') name: string) {}
 }
 ```
@@ -905,12 +894,13 @@ It's not that Reflet dislikes magic. But magic should be explicit and have its o
 > 💫 Related Express method: [`app.use`](https://expressjs.com/en/4x/api.html#app.use)
 
 ```ts
+@Router('/things')
 class ThingRouter {
   @Catch((err, req, res, next) => {
     res.status(400)
     next(err)
   })
-  @Get('/things')
+  @Get()
   list(req: Request, res: Response, next: NextFunction) {
     throw Error('Nope') // or next('Nope')
   }
@@ -927,30 +917,6 @@ If Router decorator is used, Reflet will apply class-scoped error handlers to th
 </tr>
 </thead>
 <tbody>
-<tr>
-  <td>
-
-```ts
-@Catch(A)
-class Foo {
-  @Catch(B)
-  @Catch(C)
-  @Get('/foo')
-  get(req, res, next) {
-    throw Error()
-  }
-}
-```
-
-  </td>
-  <td>
-
-```ts
-app.get('/foo', (req, res, next) => { throw Error() }, B, C, A)
-```
-
-  </td>
-</tr>
 <tr>
   <td>
 

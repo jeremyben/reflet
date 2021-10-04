@@ -5,6 +5,7 @@ import { register, Router, Get, Put, Post, Patch, Delete, Res, Params, Send } fr
 import { log } from '../../testing/tools'
 
 describe('handle return value', () => {
+	@Router('/')
 	class FooRouter {
 		@Send()
 		@Get('/:type')
@@ -95,6 +96,7 @@ describe('handle return value', () => {
 })
 
 describe('specific status', () => {
+	@Router('/')
 	class FooRouter {
 		@Send({ status: 201, undefinedStatus: 404, nullStatus: 204 })
 		@Put('/:type')
@@ -130,6 +132,7 @@ describe('specific status', () => {
 })
 
 describe('streams', () => {
+	@Router('/')
 	class FooRouter {
 		@Send()
 		@Get()
@@ -177,6 +180,7 @@ describe('streams', () => {
 })
 
 describe('buffers', () => {
+	@Router('/')
 	class FooRouter {
 		@Send({ status: 201 })
 		@Get()
