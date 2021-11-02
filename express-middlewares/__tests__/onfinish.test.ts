@@ -12,7 +12,7 @@ afterAll(() => consoleSpy.mockRestore())
 describe('response properties on finish event', () => {
 	@Router('/')
 	class Controller {
-		@UseOnFinish((req, res) => console.info(res.headersSent, res.finished, res.statusCode))
+		@UseOnFinish((req, res) => console.info(res.headersSent, res.finished, res.writableEnded, res.statusCode))
 		@Get()
 		get(req: express.Request, res: express.Response, next: express.NextFunction) {
 			res.sendStatus(201)
@@ -33,10 +33,10 @@ describe('response properties on finish event', () => {
 
 	const rq = supertest(register(express(), [Controller]))
 
-	test('headersSent, finished, status', async () => {
+	test('headersSent, finished, writableEnded, status', async () => {
 		const res = await rq.get('/')
 		expect(res.status).toBe(201)
-		expect(consoleSpy).toBeCalledWith(true, true, 201)
+		expect(consoleSpy).toBeCalledWith(true, true, true, 201)
 	})
 
 	test('body is not exposed', async () => {
