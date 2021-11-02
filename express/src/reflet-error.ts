@@ -1,6 +1,6 @@
 /**
  * Dedicated Reflet Error.
- * @public
+ * @internal
  */
 export class RefletExpressError extends Error {
 	code:
@@ -15,6 +15,7 @@ export class RefletExpressError extends Error {
 	constructor(code: RefletExpressError['code'], message: string) {
 		super(message)
 		this.code = code
+		Object.defineProperty(this, 'name', { value: 'RefletExpressError', configurable: true })
 
 		Error.captureStackTrace(this, RefletExpressError)
 	}

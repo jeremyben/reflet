@@ -17,7 +17,7 @@ import * as express from 'express'
  * ------
  * @public
  */
-export function finalHandler(options: FinalHandlerOptions): express.ErrorRequestHandler {
+export function finalHandler(options: finalHandler.Options): express.ErrorRequestHandler {
 	const finalErrorHandler: express.ErrorRequestHandler = (err, req, res, next) => {
 		if (res.headersSent) {
 			return next(err)
@@ -112,71 +112,90 @@ export function finalHandler(options: FinalHandlerOptions): express.ErrorRequest
 		return finalErrorHandler
 	}
 
-	const notFoundHandler: express.RequestHandler =
-		typeof options.notFoundHandler === 'function' ? options.notFoundHandler : notFoundHandlerDefault
+	const notFoundHandlerr: express.RequestHandler =
+		typeof options.notFoundHandler === 'function' ? options.notFoundHandler : notFoundHandler
 
-	return [notFoundHandler, finalErrorHandler] as any
+	return [notFoundHandlerr, finalErrorHandler] as any
 }
 
-/**
- * @public
- */
-export interface FinalHandlerOptions {
+export namespace finalHandler {
 	/**
-	 * Specifies behavior to use `res.json` to send errors:
-	 * - `'always'`: always send as json.
-	 * - `'never'`: pass the error to `next`.
-	 * - `'from-response-type'`: looks for a json compatible `Content-Type` on the response (or else pass to `next`)
-	 * - `'from-response-type-or-request'`: if the response doesn't have a `Content-type` header, it looks for  `X-Requested-With` or `Accept` headers on the request (or else pass to `next`)
+	 * @public
 	 */
-	sendAsJson: 'always' | 'never' | 'from-response-type' | 'from-response-type-or-request'
+	export interface Options {
+		/**
+		 * Specifies behavior to use `res.json` to send errors:
+		 * - `'always'`: always send as json.
+		 * - `'never'`: pass the error to `next`.
+		 * - `'from-response-type'`: looks for a json compatible `Content-Type` on the response (or else pass to `next`)
+		 * - `'from-response-type-or-request'`: if the response doesn't have a `Content-type` header, it looks for  `X-Requested-With` or `Accept` headers on the request (or else pass to `next`)
+		 */
+		sendAsJson: 'always' | 'never' | 'from-response-type' | 'from-response-type-or-request'
 
-	/**
-	 * log error:
-	 * - `'always'`: every error
-	 * - `'never'`: none
-	 * - `'5xx'`: only server errors
-	 */
-	log?: 'always' | 'never' | '5xx'
+		/**
+		 * log error:
+		 * - `'always'`: every error
+		 * - `'never'`: none
+		 * - `'5xx'`: only server errors
+		 */
+		log?: 'always' | 'never' | '5xx'
 
-	/**
-	 * Custom logger
-	 * @default console.error
-	 */
-	logger?: (err: any) => any
+		/**
+		 * Custom logger
+		 * @default console.error
+		 */
+		logger?: (err: any) => any
 
-	/**
-	 * Make error `message` enumerable so it can be serialized.
-	 */
-	revealErrorMessage?: boolean
+		/**
+		 * Make error `message` enumerable so it can be serialized.
+		 */
+		revealErrorMessage?: boolean
 
-	/**
-	 * Make error `name` enumerable so it can be serialized.
-	 */
-	revealErrorName?: boolean
+		/**
+		 * Make error `name` enumerable so it can be serialized.
+		 */
+		revealErrorName?: boolean
 
-	/**
-	 * Remove `status`, `statusCode` or `headers` properties from error object, once they are applied to the response.
-	 */
-	cleanStatusAndHeaders?: boolean
+		/**
+		 * Remove `status`, `statusCode` or `headers` properties from error object, once they are applied to the response.
+		 */
+		cleanStatusAndHeaders?: boolean
 
-	/**
-	 * Defines the handler when the route is not found:
-	 *
-	 * - switch to `true` to apply a basic handler throwing a `404` error
-	 * - or declare your own handler
-	 */
-	notFoundHandler?: boolean | express.RequestHandler
+		/**
+		 * Defines the handler when the route is not found:
+		 *
+		 * - switch to `true` to apply a basic handler throwing a `404` error
+		 * - or declare your own handler
+		 */
+		notFoundHandler?: boolean | express.RequestHandler
+	}
 }
 
 /**
  * @see https://github.com/pillarjs/finalhandler/blob/v1.1.2/index.js#L113-L115
  * @internal
  */
-function notFoundHandlerDefault(req: express.Request, res: express.Response, next: express.NextFunction) {
+function notFoundHandler(req: express.Request, res: express.Response, next: express.NextFunction) {
 	res.status(404)
-	const notFoundError = Error(`Cannot ${req.method} ${req.baseUrl}${req.path}`)
+	const notFoundError = new RouteNotFoundError(`Cannot ${req.method} ${req.baseUrl}${req.path}`)
 	next(notFoundError)
+}
+
+/**
+ * @internal
+ */
+class RouteNotFoundError extends Error {
+	constructor(message: string) {
+		super(message)
+		// Must assign the name this way:
+		Object.defineProperty(this, 'name', { value: 'RouteNotFoundError', configurable: true })
+		Error.captureStackTrace(this, RouteNotFoundError)
+	}
+
+	// The dev user doesn't need a stack trace for this error.
+	toString() {
+		return `${this.name}: ${this.message}`
+	}
 }
 
 /**

@@ -16,4 +16,4 @@ export { Application } from './application-class'
 
 export { RegistrationArray } from './interfaces'
 
-export { finalHandler, FinalHandlerOptions } from './final-handler'
+export { finalHandler } from './final-handler'
