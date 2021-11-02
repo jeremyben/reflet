@@ -119,7 +119,9 @@ export function extractSend(
 	key: string | symbol,
 	appClass?: ClassType
 ): Send.Options | null | undefined {
-	const appSend: Send.Options | undefined = appClass ? Reflect.getOwnMetadata(META, appClass) : undefined
+	const appSend: Send.Options | undefined = appClass
+		? Reflect.getOwnMetadata(META, (appClass as Function).prototype)
+		: undefined
 
 	const routerSend: Send.Options | null | undefined = Reflect.getOwnMetadata(META, (target as Function).prototype)
 

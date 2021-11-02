@@ -7,18 +7,18 @@ import { log } from '../../testing/tools'
 test('simple app', async () => {
 	@Send()
 	@Router('/')
-	class Bar {
-		@Get('/bar')
+	class Simple {
+		@Get('/simple')
 		getOne() {
-			return 'bar'
+			return 'simple'
 		}
 	}
 
-	const app = new Application().register([Bar])
+	const app = new Application().register([Simple])
 	const rq = supertest(app)
 
-	const res = await rq.get('/bar')
-	expect(res.text).toBe('bar')
+	const res = await rq.get('/simple')
+	expect(res.text).toBe('simple')
 	expect(res.type).toBe('text/html')
 })
 
@@ -33,6 +33,14 @@ describe('inherit application class', () => {
 		@Get('/foo')
 		getOne(req: express.Request, res: express.Response) {
 			throw Error('y')
+		}
+	}
+
+	@Router('/bar')
+	class Bar {
+		@Get('/')
+		getBar() {
+			return true
 		}
 	}
 
@@ -73,7 +81,7 @@ describe('inherit application class', () => {
 		private successText = 'success'
 	}
 
-	const app = new App(new Service()).register([Foo])
+	const app = new App(new Service()).register([Foo, Bar])
 	const rq = supertest(app)
 
 	test('inheritance', () => {
@@ -82,6 +90,11 @@ describe('inherit application class', () => {
 		expect(app).toHaveProperty('healthCheck')
 		expect(app).toHaveProperty('service')
 		expect(app.service.user).toBe('Jeremy')
+	})
+
+	test('send inheritance', async () => {
+		const res = await rq.get('/bar')
+		expect(res.text).toEqual('true')
 	})
 
 	test('middlewares and route', async () => {
