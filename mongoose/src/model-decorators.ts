@@ -32,8 +32,9 @@ export function Model<T extends ModelAny>(collection?: string, connection?: mong
 	return (target) => {
 		const schema = createSchema(target, { full: true })
 
-		if (connection) return connection.model(Class.name, schema, collection)
-		const model = mongoose.model<mongoose.Document>(Class.name, schema, collection)
+		const model = connection
+			? connection.model(target.name, schema, collection)
+			: mongoose.model(target.name, schema, collection)
 
 		registerModelDecorator(model, 'Model')
 

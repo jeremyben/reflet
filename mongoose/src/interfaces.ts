@@ -213,7 +213,7 @@ export type DocumentAny = { [K in keyof mongoose.Require_id<mongoose.Document>]:
 /**
  * @public
  */
-export type ClassType<T = any> = abstract new (...args: any) => T
+export type ClassType<T = any> = abstract new (...args: any[]) => T
 
 /**
  * @public
