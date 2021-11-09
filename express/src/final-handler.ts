@@ -55,11 +55,18 @@ export function finalHandler(options: finalHandler.Options): express.ErrorReques
 		// ─── Reveal ───
 
 		if (err instanceof Error) {
-			if (options.revealErrorMessage) {
+			const revealMessage =
+				options.revealErrorMessage === 'always' ||
+				(options.revealErrorMessage === '4xx' && res.statusCode < 500)
+
+			if (revealMessage) {
 				Object.defineProperty(err, 'message', { enumerable: true })
 			}
 
-			if (options.revealErrorName) {
+			const revealName =
+				options.revealErrorName === 'always' || (options.revealErrorName === '4xx' && res.statusCode < 500)
+
+			if (revealName) {
 				// Doesn't work without reassigning value.
 				Object.defineProperty(err, 'name', { enumerable: true, value: err.name })
 			}
@@ -148,13 +155,19 @@ export namespace finalHandler {
 
 		/**
 		 * Make error `message` enumerable so it can be serialized.
+		 *
+		 * @remarks
+		 * Beware of information leakage with the `'always'` option.
 		 */
-		revealErrorMessage?: boolean
+		revealErrorMessage?: 'always' | 'never' | '4xx'
 
 		/**
 		 * Make error `name` enumerable so it can be serialized.
+		 *
+		 * @remarks
+		 * Beware of information leakage with the `'always'` option.
 		 */
-		revealErrorName?: boolean
+		revealErrorName?: 'always' | 'never' | '4xx'
 
 		/**
 		 * Remove `status`, `statusCode` or `headers` properties from error object, once they are applied to the response.

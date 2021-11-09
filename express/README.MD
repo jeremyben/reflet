@@ -968,8 +968,8 @@ register(app, [ThingRouter])
 app.use(finalHandler({
   sendAsJson: 'from-response-type',
   log: '5xx',
-  revealErrorMessage: true, 
-  revealErrorName: true,
+  revealErrorMessage: '4xx', 
+  revealErrorName: 'always',
   cleanStatusAndHeaders: true,
   notFoundHandler: true
 }))
@@ -1026,6 +1026,12 @@ finalHandler({
 ##### `revealErrorMessage`, `revealErrorName`
 
 Error `message` and `name` are not serialized by default. These options make `message` or `name` enumerable so they can be serialized.
+
+* `'always'` always reveals the property (beware of information leakage).
+* `'never'` never reveals the property (default).
+* `'4xx'` only reveals the property on client errors.
+
+_`'5xx'` is not available as an option, to avoid information leakage to the client. In that regard, beware of the `'always'` option as well._
 
 ##### `cleanStatusAndHeaders`
 
