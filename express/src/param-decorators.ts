@@ -6,15 +6,6 @@ import { RefletExpressError } from './reflet-error'
 const META = Symbol('param')
 
 /**
- * @internal
- */
-type ParamMeta = {
-	readonly mapper: (req: express.Request, res: express.Response, next?: express.NextFunction) => any
-	readonly use?: express.RequestHandler[]
-	readonly dedupeUse?: boolean
-}
-
-/**
  * Injects Request object in the method's parameters.
  * @see https://expressjs.com/en/4x/api.html#req
  * @example
@@ -125,7 +116,10 @@ export namespace Next {
 }
 
 /** default parser middlewares to apply with @Body decorator */
-const bodyParsers = [express.json(), express.urlencoded({ extended: true })]
+const bodyParsers: createParamDecorator.Middleware[] = [
+	{ handler: express.json(), dedupeByReference: true, dedupeByName: true },
+	{ handler: express.urlencoded({ extended: true }), dedupeByReference: true, dedupeByName: true },
+]
 
 /**
  * Injects request body in the method's parameters.
@@ -160,10 +154,10 @@ export function Body<T extends object>(
 ) {
 	if (arguments.length === 3 && typeof keyOrTarget === 'object') {
 		const target = keyOrTarget
-		return createParamDecorator((req) => req.body, bodyParsers, true)(target, propertyKey!, parameterIndex!)
+		return createParamDecorator((req) => req.body, bodyParsers)(target, propertyKey!, parameterIndex!)
 	} else {
 		const subKey = keyOrTarget as keyof T | undefined
-		return createParamDecorator((req) => (subKey ? req.body[subKey] : req.body), bodyParsers, true)
+		return createParamDecorator((req) => (subKey ? req.body[subKey] : req.body), bodyParsers)
 	}
 }
 
@@ -310,8 +304,7 @@ export namespace Headers {
  * Creates a parameter decorator, to inject anything we want in decorated routes.
  *
  * @param mapper - function that should return the thing we want to inject from the Request object.
- * @param use - adds middlewares to the route if the mapper needs them (_e.g. we need body-parser middlewares to retrieve `req.body`_).
- * @param dedupeUse - marks the middlewares for deduplication based on the function reference and name (_e.g. if 'jsonParser' is already in use locally or globally, it won't be added again_).
+ * @param use - adds middlewares to the route if the mapper needs them (_e.g. we need body-parser middlewares to retrieve `req.body`_). You can pass options to deduplicate middlewares based on the handler function reference or name (_e.g. if 'jsonParser' is already in use locally or globally, it won't be added again_).
  *
  * @remarks
  * We can create decorators with or without options.
@@ -333,8 +326,7 @@ export namespace Headers {
  * // Advanced decorator (with option and middleware):
  * const BodyTrimmed = (key: string) => createParamDecorator(
  *   (req) => req.body[key].trim(),
- *   [express.json()],
- *   true
+ *   [{ handler: express.json(), dedupeByReference: true, dedupeByName: true }]
  * )
  * class Foo {
  *   ＠Post('/message')
@@ -346,11 +338,10 @@ export namespace Headers {
  */
 export function createParamDecorator<T = any>(
 	mapper: (req: express.Request, res: express.Response) => T,
-	use?: express.RequestHandler[],
-	dedupeUse?: boolean
+	use?: createParamDecorator.Middleware[]
 ): createParamDecorator.Decorator {
 	return (target, key, index) => {
-		const params: ParamMeta[] = Reflect.getOwnMetadata(META, target, key) || []
+		const params: createParamDecorator.Options[] = Reflect.getOwnMetadata(META, target, key) || []
 
 		if (params[index]) {
 			const codePath = `${target.constructor.name}.${key.toString()}`
@@ -361,12 +352,27 @@ export function createParamDecorator<T = any>(
 			)
 		}
 
-		params[index] = { mapper, use, dedupeUse }
+		params[index] = { mapper, use }
 		Reflect.defineMetadata(META, params, target, key)
 	}
 }
 
 export namespace createParamDecorator {
+	/**
+	 * @public
+	 */
+	export type Options = {
+		readonly mapper: (req: express.Request, res: express.Response, next?: express.NextFunction) => any
+		readonly use?: Middleware[]
+	}
+
+	/**
+	 * @public
+	 */
+	export type Middleware =
+		| express.RequestHandler
+		| { handler: express.RequestHandler; dedupeByReference?: boolean; dedupeByName?: boolean }
+
 	/**
 	 * Equivalent to `ParameterDecorator`.
 	 * @public
@@ -385,7 +391,7 @@ export function extractParams(
 	key: string | symbol,
 	{ req, res, next }: { req: express.Request; res: express.Response; next: express.NextFunction }
 ): any[] {
-	const params: ParamMeta[] = Reflect.getOwnMetadata(META, target.prototype, key) || []
+	const params: createParamDecorator.Options[] = Reflect.getOwnMetadata(META, target.prototype, key) || []
 
 	// No decorator found in the method: simply return the original arguments in the original order
 	if (!params.length) return [req, res, next]
@@ -417,36 +423,55 @@ export function extractParamsMiddlewares(
 	key: string | symbol,
 	alreadyMwares: express.RequestHandler[][]
 ): express.RequestHandler[] {
-	const params: ParamMeta[] = Reflect.getOwnMetadata(META, target.prototype, key) || []
+	const params: createParamDecorator.Options[] = Reflect.getOwnMetadata(META, target.prototype, key) || []
 	if (!params.length) return []
 
 	const paramMwares: express.RequestHandler[] = []
 
 	let alreadyNames: string[] = []
 
-	for (const { use, dedupeUse } of params) {
+	for (const { use } of params) {
 		if (!use) continue
 
-		if (dedupeUse && !alreadyNames.length) {
-			// Perform the flatmap only if one of the parameter requires deduplication.
-			alreadyNames = flatMapFast(alreadyMwares, (m) => m.name)
-		}
-
 		for (const mware of use) {
-			// If the same param decorator is used twice, we prevent adding its middlewares twice
-			// whether or not it's marked for dedupe, to do that we simply compare by reference.
-			if (paramMwares.includes(mware)) continue
+			if (typeof mware === 'function') {
+				// If the same param decorator is used twice, we prevent adding its middlewares twice
+				// whether or not it's marked for dedupe, to do that we simply compare by reference.
+				if (paramMwares.includes(mware)) {
+					continue
+				}
 
-			// Dedupe middlewares in upper layers.
-			if (dedupeUse) {
-				const sameRef = alreadyMwares.some((alreadyMware) => alreadyMware.includes(mware))
-				const sameName = !!mware.name && alreadyNames.includes(mware.name)
+				paramMwares.push(mware)
+			} else {
+				if (paramMwares.includes(mware.handler)) {
+					continue
+				}
 
-				// console.log('dedupe:', mware.name, sameRef, sameName)
-				if (sameRef || sameName) continue
+				// Dedupe middlewares in upper layers.
+
+				if (mware.dedupeByReference) {
+					const sameRef = alreadyMwares.some((alreadyMware) => alreadyMware.includes(mware.handler))
+					// console.log('dedupe-by-reference:', mware.handler.name, sameRef)
+					if (sameRef) {
+						continue
+					}
+				}
+
+				if (mware.dedupeByName) {
+					// Perform the flatmap only if one of the parameter requires deduplication by name.
+					if (!alreadyNames.length) {
+						alreadyNames = flatMapFast(alreadyMwares, (m) => m.name)
+					}
+
+					const sameName = !!mware.handler.name && alreadyNames.includes(mware.handler.name)
+					// console.log('dedupe-by-name:', mware.handler.name, sameName)
+					if (sameName) {
+						continue
+					}
+				}
+
+				paramMwares.push(mware.handler)
 			}
-
-			paramMwares.push(mware)
 
 			// todo?: alreadyNames.push(mware.name)
 			// Should we dedupe by *name* the same middleware on different param decorators ?

@@ -687,13 +687,17 @@ class ThingRouter {
 }
 ```
 
-A final option marks your custom decorator's middlewares for **deduplication**:
+You can mark your custom decorator's middlewares for **deduplication**:
 
 ```ts
-const CurrentUser = createParamDecorator((req) => req.user, [isAuthenticated], true)
+const CurrentUser = createParamDecorator(
+  (req) => req.user, 
+  [{ handler: isAuthenticated, dedupeByReference: true, dedupeByName: true }]
+)
 ```
 
-With this option turned on, on registering, Reflet won't add the implicit middlewares if they're already applied locally (on a route or router) or globally (on the app). _Comparison is done by **reference** and by **name**._
+With these options, on registering, Reflet won't add the implicit middlewares if they're already applied locally (on a route or router) or globally (on the app). 
+Comparison is done by function reference with `dedupeByReference` and by function name with `dedupeByName`.
 
 That's basically how the `Body` decorator works with its body parsers.
 
@@ -707,8 +711,10 @@ const BodyTrimmed = (key: string) => createParamDecorator(
     if (typeof req.body[key] === 'string') return req.body[key].trim()
     else return req.body[key]
   },
-  [express.json(), express.urlencoded()],
-  true
+  [
+    { handler: express.json(), dedupeByReference: true, dedupeByName: true },
+    { handler: express.urlencoded(), dedupeByReference: true, dedupeByName: true },
+  ]
 )
 
 @Router('/things')
