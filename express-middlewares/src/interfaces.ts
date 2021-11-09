@@ -91,14 +91,15 @@ export type ResponseHeaderName =
  * @public
  */
 export type CommonType =
-	| CommonTypes.Application
-	| CommonTypes.Text
-	| CommonTypes.Font
-	| CommonTypes.Image
-	| CommonTypes.Video
-	| CommonTypes.Audio
+	| CommonType.Application
+	| CommonType.Text
+	| CommonType.Font
+	| CommonType.Image
+	| CommonType.Video
+	| CommonType.Audio
+	| CommonType.Shorthand
 
-namespace CommonTypes {
+export namespace CommonType {
 	export type Application =
 		| 'application/octet-stream'
 		| 'application/json'
@@ -113,6 +114,7 @@ namespace CommonTypes {
 		| 'application/vnd.openxmlformats-officedocument.presentationml.presentation' // pptx
 		| 'application/zip'
 		| 'application/gzip'
+		| 'application/vnd.rar'
 		| 'application/ld+json'
 		| 'application/vnd.api+json'
 
@@ -127,9 +129,10 @@ namespace CommonTypes {
 		| 'image/bmp'
 		| 'image/svg+xml'
 		| 'image/x-icon'
+		| 'image/vnd.microsoft.icon'
 		| 'image/webp'
 
-	export type Video = 'video/mpeg' | 'video/x-msvideo' | 'video/ogg' | 'video/webm'
+	export type Video = 'video/mpeg' | 'video/x-msvideo' | 'video/ogg' | 'video/webm' | 'video/mp4' | 'video/quicktime'
 
 	export type Audio =
 		| 'audio/mpeg'
@@ -139,6 +142,31 @@ namespace CommonTypes {
 		| 'audio/x-midi'
 		| 'audio/ogg'
 		| 'audio/webm'
+
+	export type Shorthand =
+		| 'html'
+		| 'txt'
+		| 'css'
+		| 'csv'
+		| 'ics'
+		| 'png'
+		| 'jpeg'
+		| 'gif'
+		| 'svg'
+		| 'bin'
+		| 'js'
+		| 'json'
+		| 'xml'
+		| 'zip'
+		| 'gz'
+		| 'rar'
+		| 'doc'
+		| 'docx'
+		| 'xls'
+		| 'xlsx'
+		| 'ppt'
+		| 'pptx'
+		| 'pdf'
 }
 
 /**

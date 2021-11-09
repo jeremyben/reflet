@@ -13,7 +13,7 @@ class Controller {
 		res.sendStatus(406)
 	}
 
-	@UseType('application/vnd.api+json')
+	@UseType('json')
 	@Put()
 	put(req: express.Request, res: express.Response, next: express.NextFunction) {
 		res.json('done')
@@ -31,6 +31,6 @@ test('set response header', async () => {
 
 test('set response content-type', async () => {
 	const res = await rq.put('/')
-	expect(res.type).toBe('application/vnd.api+json')
+	expect(res.type).toBe('application/json')
 	expect(res.header.via).toBe('jest')
 })
