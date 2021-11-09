@@ -1,5 +1,6 @@
 import * as mongoose from 'mongoose'
 import { checkDecoratorsOrder } from './check-decorator-order'
+import { RefletMongooseError } from './reflet-error'
 import { ClassType } from './interfaces'
 
 const MetaSchemaOptions = Symbol('schema-options')
@@ -20,9 +21,9 @@ const MetaSchemaOptionsKeys = Symbol('schema-options-keys')
  * @public
  */
 export function SchemaOptions(options: mongoose.SchemaOptions): SchemaOptions.Decorator {
-	return (Class) => {
-		checkDecoratorsOrder(Class)
-		Reflect.defineMetadata(MetaSchemaOptions, options, Class)
+	return (target) => {
+		checkDecoratorsOrder(target)
+		Reflect.defineMetadata(MetaSchemaOptions, options, target)
 	}
 }
 
@@ -131,31 +132,47 @@ function getSchemaOptionsKeys(target: object): SchemaOptionsKeysMeta {
  * Then assign custom keys to schema options.
  * @internal
  */
-export function mergeSchemaOptionsAndKeys(Class: ClassType): mongoose.SchemaOptions | undefined {
-	let options = getSchemaOptions(Class)
-	const keys = getSchemaOptionsKeys(Class)
+export function mergeSchemaOptionsAndKeys(target: ClassType): mongoose.SchemaOptions | undefined {
+	let options = getSchemaOptions(target)
+	const keys = getSchemaOptionsKeys(target)
 
 	if (!!keys.CreatedAt || !!keys.UpdatedAt) {
 		options = options || {}
 
-		const createdAtError = `Schema "${Class.name}" cannot overwrite @CreatedAtKey "${
-			keys.CreatedAt
-		}" with different schema option "timestamps: ${JSON.stringify(options.timestamps)}".`
+		const createdAtError = () =>
+			new RefletMongooseError(
+				'TIMESTAMP_OPTION_CONFLICT',
+				`Schema "${target.name}" cannot overwrite @CreatedAtKey "${
+					keys.CreatedAt
+				}" with different schema option "timestamps: ${JSON.stringify(options?.timestamps)}".`
+			)
 
-		const updatedAtError = `Schema "${Class.name}" cannot overwrite @UpdatedAtKey "${
-			keys.UpdatedAt
-		}" with different schema option "timestamps: ${JSON.stringify(options.timestamps)}".`
+		const updatedAtError = () =>
+			new RefletMongooseError(
+				'TIMESTAMP_OPTION_CONFLICT',
+				`Schema "${target.name}" cannot overwrite @UpdatedAtKey "${
+					keys.UpdatedAt
+				}" with different schema option "timestamps: ${JSON.stringify(options?.timestamps)}".`
+			)
 
 		if (options.timestamps === true) {
-			if (keys.CreatedAt !== 'createdAt') throw Error(createdAtError)
+			if (keys.CreatedAt !== 'createdAt') {
+				throw createdAtError()
+			}
 			/* istanbul ignore next - same */
-			if (keys.UpdatedAt !== 'updatedAt') throw Error(updatedAtError)
+			if (keys.UpdatedAt !== 'updatedAt') {
+				throw updatedAtError()
+			}
 		}
 
 		if (options.timestamps === false) {
-			if (!!keys.CreatedAt) throw Error(createdAtError)
+			if (!!keys.CreatedAt) {
+				throw createdAtError()
+			}
 			/* istanbul ignore next - same */
-			if (!!keys.UpdatedAt) throw Error(updatedAtError)
+			if (!!keys.UpdatedAt) {
+				throw updatedAtError()
+			}
 		}
 
 		if (!!options.timestamps && typeof options.timestamps === 'object') {
@@ -164,7 +181,7 @@ export function mergeSchemaOptionsAndKeys(Class: ClassType): mongoose.SchemaOpti
 				(options.timestamps.createdAt === false && !!keys.CreatedAt) ||
 				(typeof options.timestamps.createdAt === 'string' && keys.CreatedAt !== options.timestamps.createdAt)
 			) {
-				throw Error(createdAtError)
+				throw createdAtError()
 			}
 
 			/* istanbul ignore next - same */
@@ -173,7 +190,7 @@ export function mergeSchemaOptionsAndKeys(Class: ClassType): mongoose.SchemaOpti
 				(options.timestamps.updatedAt === false && !!keys.UpdatedAt) ||
 				(typeof options.timestamps.updatedAt === 'string' && keys.UpdatedAt !== options.timestamps.updatedAt)
 			) {
-				throw Error(updatedAtError)
+				throw updatedAtError()
 			}
 		}
 
@@ -186,14 +203,18 @@ export function mergeSchemaOptionsAndKeys(Class: ClassType): mongoose.SchemaOpti
 	if (!!keys.VersionKey) {
 		options = options || {}
 
-		const versionKeyError = `Schema "${Class.name}" cannot overwrite @VersionKey "${keys.VersionKey}" with different schema option "versionKey: ${options.versionKey}".`
+		const versionKeyError = () =>
+			new RefletMongooseError(
+				'VERSIONKEY_OPTION_CONFLICT',
+				`Schema "${target.name}" cannot overwrite @VersionKey "${keys.VersionKey}" with different schema option "versionKey: ${options?.versionKey}".`
+			)
 
 		if (options.versionKey === false) {
-			throw Error(versionKeyError)
+			throw versionKeyError()
 		}
 
 		if (typeof options.versionKey === 'string' && options.versionKey !== keys.VersionKey) {
-			throw Error(versionKeyError)
+			throw versionKeyError()
 		}
 
 		options.versionKey = keys.VersionKey

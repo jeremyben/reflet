@@ -1,3 +1,4 @@
+import { RefletMongooseError } from './reflet-error'
 import { ModelAny } from './interfaces'
 
 const MetaModel = Symbol('model')
@@ -17,6 +18,9 @@ export function checkDecoratorsOrder(target: object): void {
 	const appliedModelDecorator = Reflect.getOwnMetadata(MetaModel, target)
 
 	if (appliedModelDecorator) {
-		throw Error(`You must put @${appliedModelDecorator} at the top of "${(target as any).modelName}" decorators`)
+		throw new RefletMongooseError(
+			'INVALID_DECORATORS_ORDER',
+			`You must put @${appliedModelDecorator} at the top of "${(target as any).modelName}" decorators.`
+		)
 	}
 }

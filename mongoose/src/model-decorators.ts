@@ -3,6 +3,7 @@ import { createSchema } from './schema-creation'
 import { registerModelDecorator } from './check-decorator-order'
 import { getKind, assignModelKindKey } from './kind-decorator'
 import { MongooseModel } from './model-interface'
+import { RefletMongooseError } from './reflet-error'
 import { ClassType, ModelAny } from './interfaces'
 
 /**
@@ -28,8 +29,8 @@ import { ClassType, ModelAny } from './interfaces'
  * @public
  */
 export function Model<T extends ModelAny>(collection?: string, connection?: mongoose.Connection): Model.Decorator<T> {
-	return (Class) => {
-		const schema = createSchema(Class, { full: true })
+	return (target) => {
+		const schema = createSchema(target, { full: true })
 
 		if (connection) return connection.model(Class.name, schema, collection)
 		const model = mongoose.model<mongoose.Document>(Class.name, schema, collection)
@@ -72,23 +73,24 @@ export namespace Model {
 	 * @public
 	 */
 	export function Discriminator<T extends ModelAny>(rootModel: T): Model.Discriminator.Decorator<T> {
-		return (Class) => {
+		return (target) => {
 			if (!rootModel.prototype.$isMongooseModelPrototype) {
-				throw Error(
-					`Discriminator "${Class.name}" must have its root model "${rootModel.name}" decorated with @Model.`
+				throw new RefletMongooseError(
+					'MISSING_ROOT_MODEL',
+					`Discriminator "${target.name}" must have its root model "${rootModel.name}" decorated with @Model.`
 				)
 			}
 
-			const [kindKey, kindValue] = getKind(Class)
-			assignModelKindKey({ kindKey, rootModel, discriminatorModel: Class })
+			const [kindKey, kindValue] = getKind(target)
+			assignModelKindKey({ kindKey, rootModel, discriminatorModel: target })
 
 			// If the discriminator class extends the root class, e.g. `class Child extends Root`,
 			// we don't worry about Child inheriting Reflet metadata from Root,
 			// because Root has already been transformed into a Mongoose Model
 			// which does not have any Reflet metadata.
 
-			const schema = createSchema(Class, { full: true })
-			const modelDiscriminator = rootModel.discriminator(Class.name, schema, kindValue)
+			const schema = createSchema(target, { full: true })
+			const modelDiscriminator = rootModel.discriminator(target.name, schema, kindValue)
 
 			registerModelDecorator(modelDiscriminator, 'Model.Discriminator')
 

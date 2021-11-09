@@ -10,6 +10,7 @@ import {
 	Model,
 	Plain,
 } from '../src'
+import { RefletMongooseError } from '../src/reflet-error'
 
 test('schema with reference', async () => {
 	@SchemaOptions({ _id: false })
@@ -114,6 +115,8 @@ test('schema with reference', async () => {
 })
 
 describe('timestamps', () => {
+	const code: RefletMongooseError['code'] = 'TIMESTAMP_OPTION_CONFLICT'
+
 	test('without schema options', async () => {
 		abstract class TS {
 			@Field(String)
@@ -175,7 +178,7 @@ describe('timestamps', () => {
 			_updated: Date
 		}
 
-		expect(() => schemaFrom(TS2)).toThrowError(/cannot overwrite/)
+		expect(() => schemaFrom(TS2)).toThrow(expect.objectContaining({ code }))
 
 		@SchemaOptions({ timestamps: { createdAt: 'created', updatedAt: 'updated' } })
 		class TS2b {
@@ -189,7 +192,7 @@ describe('timestamps', () => {
 			_updated: Date
 		}
 
-		expect(() => schemaFrom(TS2b)).toThrowError(/cannot overwrite/)
+		expect(() => schemaFrom(TS2b)).toThrow(expect.objectContaining({ code }))
 	})
 
 	test('keys are defined whereas option is false', async () => {
@@ -205,7 +208,7 @@ describe('timestamps', () => {
 			updatedAt: Date
 		}
 
-		expect(() => schemaFrom(TS3)).toThrowError(/cannot overwrite/)
+		expect(() => schemaFrom(TS3)).toThrow(expect.objectContaining({ code }))
 
 		@SchemaOptions({ timestamps: { createdAt: false } })
 		class TS3b {
@@ -216,11 +219,13 @@ describe('timestamps', () => {
 			createdAt: Date
 		}
 
-		expect(() => schemaFrom(TS3b)).toThrowError(/cannot overwrite/)
+		expect(() => schemaFrom(TS3b)).toThrow(expect.objectContaining({ code }))
 	})
 })
 
 describe('versionKey', () => {
+	const code: RefletMongooseError['code'] = 'VERSIONKEY_OPTION_CONFLICT'
+
 	test('without schema options', async () => {
 		class VK {
 			@Field(String)
@@ -244,7 +249,7 @@ describe('versionKey', () => {
 			version: number
 		}
 
-		expect(() => schemaFrom(VK1)).toThrowError(/cannot overwrite/)
+		expect(() => schemaFrom(VK1)).toThrow(expect.objectContaining({ code }))
 	})
 
 	test('key is defined and option is false', async () => {
@@ -257,6 +262,6 @@ describe('versionKey', () => {
 			version: number
 		}
 
-		expect(() => schemaFrom(VK2)).toThrowError(/cannot overwrite/)
+		expect(() => schemaFrom(VK2)).toThrow(expect.objectContaining({ code }))
 	})
 })

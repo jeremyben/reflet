@@ -203,11 +203,11 @@ export function PreHook(
 	callbackOrOptions: Function | { document?: boolean; query?: boolean },
 	callbackIfOptions?: Function
 ): PreHook.Decorator {
-	return (Class) => {
-		checkDecoratorsOrder(Class)
-		const preHooks = getPreHooks(Class)
+	return (target) => {
+		checkDecoratorsOrder(target)
+		const preHooks = getPreHooks(target)
 		preHooks.push({ method, callbackOrOptions, callbackIfOptions })
-		Reflect.defineMetadata(MetaPreHook, preHooks, Class)
+		Reflect.defineMetadata(MetaPreHook, preHooks, target)
 	}
 }
 
@@ -588,11 +588,11 @@ export function PostHook(
 	callbackOrOptions: Function | { document?: boolean; query?: boolean },
 	callbackIfOptions?: Function
 ): PostHook.Decorator {
-	return (Class) => {
-		checkDecoratorsOrder(Class)
-		const postHooks = getPostHooks(Class)
+	return (target) => {
+		checkDecoratorsOrder(target)
+		const postHooks = getPostHooks(target)
 		postHooks.push({ method, callbackOrOptions, callbackIfOptions })
-		Reflect.defineMetadata(MetaPostHook, postHooks, Class)
+		Reflect.defineMetadata(MetaPostHook, postHooks, target)
 	}
 }
 

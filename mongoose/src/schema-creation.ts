@@ -5,6 +5,7 @@ import { applyPreHooks, applyPostHooks } from './hooks-decorators'
 import { getKind } from './kind-decorator'
 import { applySchemaCallback } from './schema-callback-decorator'
 import { attachVirtuals } from './virtual-decorator'
+import { RefletMongooseError } from './reflet-error'
 import { ClassType, AsDocument } from './interfaces'
 
 /**
@@ -46,29 +47,29 @@ export function schemaFrom<T extends ClassType>(Class: T): mongoose.Schema<AsDoc
  * @param full - for nested schemas of recursive embedded discriminators, to avoid infinite loop.
  * @internal
  */
-export function createSchema<T extends ClassType>(Class: T, { full }: { full: boolean }) {
-	const fields = getFields(Class) as mongoose.SchemaDefinition<{}>
-	const options = mergeSchemaOptionsAndKeys(Class)
+export function createSchema<T extends ClassType>(target: T, { full }: { full: boolean }) {
+	const fields = getFields(target) as mongoose.SchemaDefinition<{}>
+	const options = mergeSchemaOptionsAndKeys(target)
 
 	const schema = new mongoose.Schema<AsDocument<InstanceType<T>>>(fields, options)
 
-	attachVirtuals(schema, Class)
-	loadClassMethods(schema, Class)
-	applyPreHooks(schema, Class)
-	applyPostHooks(schema, Class)
+	attachVirtuals(schema, target)
+	loadClassMethods(schema, target)
+	applyPreHooks(schema, target)
+	applyPostHooks(schema, target)
 
 	// Add embedded discriminators after hooks, like the mongoose documentation recommends.
 	if (full) {
-		const nestedDiscriminators = attachNestedDiscriminators(schema, Class)
+		const nestedDiscriminators = attachNestedDiscriminators(schema, target)
 
 		nestedDiscriminators.forEach((nestedSchema, nestedClass) => {
 			applySchemaCallback(nestedSchema, nestedClass)
 		})
 
-		applySchemaCallback(schema, Class)
+		applySchemaCallback(schema, target)
 	}
 
-	// console.log(Class.name, schema)
+	// console.log(target.name, schema)
 
 	return schema
 }
@@ -77,31 +78,31 @@ export function createSchema<T extends ClassType>(Class: T, { full }: { full: bo
  * @see https://github.com/Automattic/mongoose/blob/5.9/lib/schema.js#L1944-L1986
  * @internal
  */
-function loadClassMethods<T extends mongoose.Document>(schema: mongoose.Schema<T>, Class: ClassType): void {
+function loadClassMethods<T extends mongoose.Document>(schema: mongoose.Schema<T>, target: ClassType): void {
 	// If we extend a class decorated by @Model (when we need to use @Model.Discriminator for example),
 	// its protototype is gonna be a mongoose model and have `$isMongooseModelPrototype` property.
 	// If it's the case, we can't attach methods, statics, or virtuals from its parent, because
 	// we would get errors like 'Virtual path "_id" conflicts with a real path in the schema'.
 	// https://github.com/Automattic/mongoose/issues/4942
-	const parent = Object.getPrototypeOf(Class)
+	const parent = Object.getPrototypeOf(target)
 	if (parent !== Object.prototype && parent !== Function.prototype && !parent.prototype.$isMongooseModelPrototype) {
 		loadClassMethods(schema, parent)
 	}
 
 	// Add static methods.
-	for (const name of Object.getOwnPropertyNames(Class)) {
+	for (const name of Object.getOwnPropertyNames(target)) {
 		if (name.match(/^(length|name|prototype)$/)) continue
 
-		const method = Object.getOwnPropertyDescriptor(Class, name)
+		const method = Object.getOwnPropertyDescriptor(target, name)
 
 		if (typeof method?.value === 'function') schema.static(name, method.value)
 	}
 
 	// Add methods and virtuals.
-	for (const methodName of Object.getOwnPropertyNames(Class.prototype)) {
+	for (const methodName of Object.getOwnPropertyNames(target.prototype)) {
 		if (methodName.match(/^(constructor)$/)) continue
 
-		const method = Object.getOwnPropertyDescriptor(Class.prototype, methodName)
+		const method = Object.getOwnPropertyDescriptor(target.prototype, methodName)
 
 		if (typeof method?.value === 'function') schema.method(methodName, method.value)
 		if (typeof method?.get === 'function') schema.virtual(methodName).get(method.get)
@@ -143,8 +144,9 @@ function attachNestedDiscriminators<T extends mongoose.Document>(
 
 			// Checks that sibling discriminators have the same @Kind key.
 			if (kindKey && discriminatorKey !== kindKey) {
-				throw Error(
-					`Embedded discriminator "${parentClass.name}" must have @Kind named "${discriminatorKey}", like its sibling embedded discriminator(s).`
+				throw new RefletMongooseError(
+					'DISCRIMINATOR_KEY_CONFLICT',
+					`Embedded discriminator "${parentClass.name}" must have @Kind (or @DiscriminatorKey) named "${discriminatorKey}", like its sibling embedded discriminator(s).`
 				)
 			}
 

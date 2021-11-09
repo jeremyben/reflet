@@ -1,4 +1,5 @@
 import * as mongoose from 'mongoose'
+import { RefletMongooseError } from './reflet-error'
 
 const MetaKind = Symbol('kind')
 
@@ -29,11 +30,16 @@ export function Kind(...args: Parameters<Kind.Decorator>): void
 
 export function Kind(valueOrTarget?: string | Object, key?: string | symbol) {
 	if (typeof valueOrTarget === 'string' && !key) {
-		return (target: Object, key_: string | symbol) => {
+		return (target: Object, keyy: string | symbol) => {
 			/* istanbul ignore if - checked by the compiler */
-			if (!valueOrTarget) throw Error(`Schema ${target.constructor.name} cannot have an empty @Kind value`)
+			if (!valueOrTarget) {
+				throw new RefletMongooseError(
+					'EMPTY_DISCRIMINATOR_KEY',
+					`Schema ${target.constructor.name} cannot have an empty @Kind (or @DiscriminatorKey) value`
+				)
+			}
 
-			Reflect.defineMetadata(MetaKind, [key_, valueOrTarget], target.constructor)
+			Reflect.defineMetadata(MetaKind, [keyy, valueOrTarget], target.constructor)
 		}
 	} else {
 		return Reflect.defineMetadata(MetaKind, [key, undefined], valueOrTarget!.constructor)
@@ -78,15 +84,17 @@ export function assignModelKindKey({
 
 	// Check that sibling discriminators have the same @Kind key.
 	if ((providedKindKey && !kindKey) || (providedKindKey && kindKey && providedKindKey !== kindKey)) {
-		throw Error(
-			`Discriminator "${discriminatorModel.name}" must have @Kind named "${providedKindKey}", like its sibling discriminator(s).`
+		throw new RefletMongooseError(
+			'DISCRIMINATOR_KEY_CONFLICT',
+			`Discriminator "${discriminatorModel.name}" must have @Kind (or @DiscriminatorKey) named "${providedKindKey}", like its sibling discriminator(s).`
 		)
 	}
 
 	// Then check overwriting of the discriminatorKey provided by the user on the root model.
 	if (providedDiscriminatorKey && kindKey && providedDiscriminatorKey !== kindKey) {
-		throw Error(
-			`Discriminator "${discriminatorModel.name}" cannot overwrite discriminatorKey "${providedDiscriminatorKey}" of root model "${rootModel.modelName}" with @Kind named "${kindKey}".`
+		throw new RefletMongooseError(
+			'DISCRIMINATOR_KEY_CONFLICT',
+			`Discriminator "${discriminatorModel.name}" cannot overwrite discriminatorKey "${providedDiscriminatorKey}" of root model "${rootModel.modelName}" with @Kind (or @DiscriminatorKey) named "${kindKey}".`
 		)
 	}
 

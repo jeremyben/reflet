@@ -1,5 +1,6 @@
 import * as mongoose from 'mongoose'
 import { Field, Model, schemaFrom, Kind, Plain, SchemaOptions, SchemaCallback, PostHook, PreHook } from '../src'
+import { RefletMongooseError } from '../src/reflet-error'
 
 test('model with custom collection and connection', async () => {
 	const db = mongoose.createConnection(process.env.MONGO_URL!)
@@ -128,6 +129,8 @@ test('model discriminators', async () => {
 })
 
 test('model decorator must be at the top', () => {
+	const code: RefletMongooseError['code'] = 'INVALID_DECORATORS_ORDER'
+
 	expect(() => {
 		@SchemaCallback(() => null)
 		@Model()
@@ -135,7 +138,7 @@ test('model decorator must be at the top', () => {
 			@Field(String)
 			name: string
 		}
-	}).toThrowError(/@Model.*WrongSchemaCallbackOrder/)
+	}).toThrow(expect.objectContaining({ code }))
 
 	expect(() => {
 		@PreHook('init', () => undefined)
@@ -144,7 +147,7 @@ test('model decorator must be at the top', () => {
 			@Field(String)
 			name: string
 		}
-	}).toThrowError(/@Model.*WrongPreHookOrder/)
+	}).toThrow(expect.objectContaining({ code }))
 
 	expect(() => {
 		@PostHook('init', () => undefined)
@@ -153,7 +156,7 @@ test('model decorator must be at the top', () => {
 			@Field(String)
 			name: string
 		}
-	}).toThrowError(/@Model.*WrongPostHookOrder/)
+	}).toThrow(expect.objectContaining({ code }))
 
 	expect(() => {
 		@Model()
@@ -169,7 +172,7 @@ test('model decorator must be at the top', () => {
 			@Field(String)
 			name: string
 		}
-	}).toThrowError(/@Model\.Discriminator.*WrongSchemaOptionsOrder/)
+	}).toThrow(expect.objectContaining({ code }))
 
 	expect(() => {
 		@Model()
@@ -185,11 +188,13 @@ test('model decorator must be at the top', () => {
 			@Field(String)
 			name: string
 		}
-	}).not.toThrowError()
+	}).not.toThrow()
 })
 
 describe('model discriminators coercion', () => {
 	test('root model must be decorated', async () => {
+		const code: RefletMongooseError['code'] = 'MISSING_ROOT_MODEL'
+
 		class RootNotDecorated extends Model.I {
 			@Field(String)
 			name: string
@@ -201,10 +206,12 @@ describe('model discriminators coercion', () => {
 				@Field(Number)
 				age: number
 			}
-		}).toThrowError(/decorated/)
+		}).toThrow(expect.objectContaining({ code }))
 	})
 
 	test('siblings should have same kind key', async () => {
+		const code: RefletMongooseError['code'] = 'DISCRIMINATOR_KEY_CONFLICT'
+
 		@Model()
 		class A extends Model.Interface {
 			@Field(String)
@@ -229,10 +236,12 @@ describe('model discriminators coercion', () => {
 				@Kind('c')
 				type: 'c'
 			}
-		}).toThrowError(/sibling/)
+		}).toThrow(expect.objectContaining({ code }))
 	})
 
 	test('kind key should not overwrite options', async () => {
+		const code: RefletMongooseError['code'] = 'DISCRIMINATOR_KEY_CONFLICT'
+
 		@Model()
 		@SchemaOptions({ discriminatorKey: 'kind' })
 		class A1 extends Model.Interface {
@@ -249,6 +258,6 @@ describe('model discriminators coercion', () => {
 				@Kind
 				type: 'B1'
 			}
-		}).toThrowError(/overwrite discriminatorKey/)
+		}).toThrow(expect.objectContaining({ code }))
 	})
 })

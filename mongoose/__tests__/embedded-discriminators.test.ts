@@ -1,5 +1,6 @@
 import * as mongoose from 'mongoose'
 import { SchemaOptions, Field, Kind, DiscriminatorKey, Model, Plain } from '../src'
+import { RefletMongooseError } from '../src/reflet-error'
 
 /**
  * https://mongoosejs.com/docs/discriminators#single-nested-discriminators
@@ -153,6 +154,8 @@ test('recursive embedded discriminators in arrays', async () => {
 })
 
 test('nested discriminators kind key coercion', async () => {
+	const code: RefletMongooseError['code'] = 'DISCRIMINATOR_KEY_CONFLICT'
+
 	abstract class N1 {
 		@Field(Number)
 		radius: number
@@ -175,7 +178,7 @@ test('nested discriminators kind key coercion', async () => {
 			@Field.Union(N1, N2)
 			shape: N1 | N2
 		}
-	}).toThrowError(/sibling/)
+	}).toThrow(expect.objectContaining({ code }))
 })
 
 describe('union options', () => {
