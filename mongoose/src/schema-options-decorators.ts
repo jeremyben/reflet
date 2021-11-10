@@ -146,7 +146,7 @@ type SchemaOptionsKeysMeta = Partial<{
  * @example
  * ```ts
  * ＠Model()
- * class User extends Model.Interface {
+ * class User extends Model.I {
  *   ＠CreatedAt
  *   createdAt: Date
  *
@@ -157,10 +157,20 @@ type SchemaOptionsKeysMeta = Partial<{
  * ---
  * @public
  */
-export const CreatedAt: PropertyDecorator = (target, key) => {
+export function CreatedAt(target: Object, key: string | symbol): ReturnType<CreatedAt.Decorator> {
 	const schemaKeys = getSchemaOptionsKeys(target.constructor)
 	schemaKeys.CreatedAt = key as string
 	Reflect.defineMetadata(MetaSchemaOptionsKeys, schemaKeys, target.constructor)
+}
+
+export namespace CreatedAt {
+	/**
+	 * Equivalent to `PropertyDecorator`.
+	 * @public
+	 */
+	export type Decorator = PropertyDecorator & {
+		__mongooseTimestampCreatedAt?: never
+	}
 }
 
 /**
@@ -169,7 +179,7 @@ export const CreatedAt: PropertyDecorator = (target, key) => {
  * @example
  * ```ts
  * ＠Model()
- * class User extends Model.Interface {
+ * class User extends Model.I {
  *   ＠CreatedAt
  *   createdAt: Date
  *
@@ -180,19 +190,30 @@ export const CreatedAt: PropertyDecorator = (target, key) => {
  * ---
  * @public
  */
-export const UpdatedAt: PropertyDecorator = (target, key) => {
+export function UpdatedAt(target: Object, key: string | symbol): ReturnType<UpdatedAt.Decorator> {
 	const schemaKeys = getSchemaOptionsKeys(target.constructor)
 	schemaKeys.UpdatedAt = key as string
 	Reflect.defineMetadata(MetaSchemaOptionsKeys, schemaKeys, target.constructor)
 }
 
+export namespace UpdatedAt {
+	/**
+	 * Equivalent to `PropertyDecorator`.
+	 * @public
+	 */
+	export type Decorator = PropertyDecorator & {
+		__mongooseTimestampUpdatedAt?: never
+	}
+}
+
 /**
+ * Defines version key directly in the model.
  * @see https://mongoosejs.com/docs/guide#versionKey
  *
  * @example
  * ```ts
  * ＠Model()
- * class User extends Model.Interface {
+ * class User extends Model.I {
  *   ＠VersionKey
  *   version: number
  * }
@@ -200,10 +221,20 @@ export const UpdatedAt: PropertyDecorator = (target, key) => {
  * ---
  * @public
  */
-export const VersionKey: PropertyDecorator = (target, key) => {
+export function VersionKey(target: Object, key: string | symbol): ReturnType<VersionKey.Decorator> {
 	const schemaKeys = getSchemaOptionsKeys(target.constructor)
 	schemaKeys.VersionKey = key as string
 	Reflect.defineMetadata(MetaSchemaOptionsKeys, schemaKeys, target.constructor)
+}
+
+export namespace VersionKey {
+	/**
+	 * Equivalent to `PropertyDecorator`.
+	 * @public
+	 */
+	export type Decorator = PropertyDecorator & {
+		__mongooseVersionKey?: never
+	}
 }
 
 /**
