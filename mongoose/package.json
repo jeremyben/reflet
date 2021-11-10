@@ -35,7 +35,8 @@
 	},
 	"devDependencies": {
 		"@shelf/jest-mongodb": "^2.1.0",
-		"mongoose": "^6.0.7"
+		"mongoose": "^6.0.12",
+		"mongoose-autopopulate": "^0.16.0"
 	},
 	"scripts": {
 		"build": "ts-node -T ../build.ts",

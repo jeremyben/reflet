@@ -27,7 +27,7 @@ export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(
 ): Field.Decorator {
 	return (target, key) => {
 		const fields = getFields(target.constructor)
-		fields[<string>key] = field
+		fields[<string>key] = field as any
 		Reflect.defineMetadata(MetaField, fields, target.constructor)
 	}
 }
@@ -192,7 +192,7 @@ export namespace Field {
 /**
  * @internal
  */
-export function getFields(target: object): mongoose.SchemaDefinition<{ [key: string]: any }> {
+export function getFields(target: object): mongoose.SchemaDefinition<any> {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
 	return Object.assign({}, Reflect.getMetadata(MetaField, target))
 }
