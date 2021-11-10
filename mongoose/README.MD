@@ -559,6 +559,8 @@ const User = mongoose.model<UserDocument>('User', userSchema)
 
 The `@PreHook` API is a direct wrapper of Mongoose [Schema.pre method](https://mongoosejs.com/docs/api/schema#schema_Schema-pre), you can put in there everything that you used to.
 
+Successive `@PreHook` will be applied in the order they are written, even though decorator functions in JS are executed in a bottom-up way (due to their _wrapping_ nature).
+
 ### Post hook
 
 > 🔦 `@PostHook(method, callback)`<br>
@@ -612,6 +614,8 @@ const User = mongoose.model<UserDocument>('User', userSchema)
 </table>
 
 The `@PostHook` API is a direct wrapper of Mongoose [Schema.post method](https://mongoosejs.com/docs/api/schema#schema_Schema-post), you can put in there everything that you used to.
+
+Successive `@PostHook` will be applied in the order they are written, even though decorator functions in JS are executed in a bottom-up way (due to their _wrapping_ nature).
 
 #### Post error handling middleware
 

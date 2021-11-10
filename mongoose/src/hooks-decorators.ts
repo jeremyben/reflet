@@ -206,7 +206,7 @@ export function PreHook(
 	return (target) => {
 		checkDecoratorsOrder(target)
 		const preHooks = getPreHooks(target)
-		preHooks.push({ method, callbackOrOptions, callbackIfOptions })
+		preHooks.unshift({ method, callbackOrOptions, callbackIfOptions })
 		Reflect.defineMetadata(MetaPreHook, preHooks, target)
 	}
 }
@@ -591,7 +591,7 @@ export function PostHook(
 	return (target) => {
 		checkDecoratorsOrder(target)
 		const postHooks = getPostHooks(target)
-		postHooks.push({ method, callbackOrOptions, callbackIfOptions })
+		postHooks.unshift({ method, callbackOrOptions, callbackIfOptions })
 		Reflect.defineMetadata(MetaPostHook, postHooks, target)
 	}
 }
