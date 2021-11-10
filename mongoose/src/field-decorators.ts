@@ -111,9 +111,11 @@ export namespace Field {
 	 * @see https://mongoosejs.com/docs/discriminators#single-nested-discriminators
 	 * @public
 	 */
-	export function Union(classes: ClassType[], options?: UnionOptions): Field.Union.Decorator
+	export function Union(classes: ClassType[], options?: Field.Union.Options): Field.Union.Decorator
 	export function Union(...classes: ClassType[]): Field.Union.Decorator
-	export function Union(...args: ClassType[] | (ClassType[] | UnionOptions | undefined)[]): Field.Union.Decorator {
+	export function Union(
+		...args: ClassType[] | (ClassType[] | Field.Union.Options | undefined)[]
+	): Field.Union.Decorator {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
 			// We must remove _id from the base schema or `{ _id: false }` won't do anything on the discriminator schema (_id is still there by default).
@@ -122,7 +124,7 @@ export namespace Field {
 			const discriminatorFields = getDiscriminatorFields(target.constructor)
 
 			discriminatorFields[<string>key] = Array.isArray(args[0])
-				? { classes: args[0] as ClassType[], options: args[1] as UnionOptions | undefined }
+				? { classes: args[0] as ClassType[], options: args[1] as Field.Union.Options | undefined }
 				: { classes: args as ClassType[] }
 
 			Reflect.defineMetadata(MetaFieldDiscriminators, discriminatorFields, target.constructor)
@@ -130,6 +132,17 @@ export namespace Field {
 	}
 
 	export namespace Union {
+		/**
+		 * @public
+		 */
+		export interface Options {
+			/** If `true`, the field itself is required. */
+			required?: boolean
+
+			/** If `true`, the discriminator key in nested schemas is always required and narrowed to its possible values. */
+			strict?: boolean
+		}
+
 		/**
 		 * Equivalent to `PropertyDecorator`.
 		 * @public
@@ -144,10 +157,10 @@ export namespace Field {
 	 * @see https://mongoosejs.com/docs/discriminators#embedded-discriminators-in-arrays
 	 * @public
 	 */
-	export function ArrayOfUnion(classes: ClassType[], options?: UnionOptions): Field.ArrayOfUnion.Decorator
+	export function ArrayOfUnion(classes: ClassType[], options?: Field.Union.Options): Field.ArrayOfUnion.Decorator
 	export function ArrayOfUnion(...classes: ClassType[]): Field.ArrayOfUnion.Decorator
 	export function ArrayOfUnion(
-		...args: ClassType[] | (ClassType[] | UnionOptions | undefined)[]
+		...args: ClassType[] | (ClassType[] | Field.Union.Options | undefined)[]
 	): Field.ArrayOfUnion.Decorator {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
@@ -158,7 +171,7 @@ export namespace Field {
 			const discriminatorArrayFields = getDiscriminatorFields(target.constructor)
 
 			discriminatorArrayFields[<string>key] = Array.isArray(args[0])
-				? { classes: args[0] as ClassType[], options: args[1] as UnionOptions | undefined }
+				? { classes: args[0] as ClassType[], options: args[1] as Field.Union.Options | undefined }
 				: { classes: args as ClassType[] }
 
 			Reflect.defineMetadata(MetaFieldDiscriminators, discriminatorArrayFields, target.constructor)
@@ -188,7 +201,7 @@ export function getFields(target: object): mongoose.SchemaDefinition<{ [key: str
  * @internal
  */
 export function getDiscriminatorFields(target: object): {
-	[key: string]: { classes: ClassType[]; options?: UnionOptions }
+	[key: string]: { classes: ClassType[]; options?: Field.Union.Options }
 } {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
 	return Object.assign({}, Reflect.getMetadata(MetaFieldDiscriminators, target))
@@ -197,7 +210,7 @@ export function getDiscriminatorFields(target: object): {
 /**
  * @public
  */
-type SchemaTypeNested = {
+interface SchemaTypeNested {
 	[key: string]:
 		| SchemaTypeOptions<SchemaType | [SchemaType] | [[SchemaType]]>
 		| [SchemaTypeOptions<SchemaType | [SchemaType] | [[SchemaType]]>]
@@ -222,7 +235,28 @@ type SchemaType =
 /**
  * @public
  */
-type SchemaTypeOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]> = RefletMongoose.SchemaTypeOptions & {
+type SchemaTypeOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]> = RefletMongoose.SchemaTypeOptions &
+	CommonOptions<T> &
+	(T extends StringConstructor | typeof mongoose.Schema.Types.String
+		? StringOptions
+		: T extends StringConstructor[] | StringConstructor[][]
+		? ArrayOptions<string>
+		: T extends NumberConstructor | typeof mongoose.Schema.Types.Number
+		? NumberOptions
+		: T extends NumberConstructor[] | NumberConstructor[][]
+		? ArrayOptions<number>
+		: T extends DateConstructor | typeof mongoose.Schema.Types.Date
+		? DateOptions
+		: T extends typeof mongoose.Schema.Types.ObjectId | 'ObjectId'
+		? ObjectIdOptions
+		: T extends MapConstructor
+		? MapOptions
+		: {})
+
+/**
+ * @public
+ */
+interface CommonOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]> {
 	/**
 	 * The type to cast this path to.
 	 *
@@ -355,26 +389,12 @@ type SchemaTypeOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]> = R
 	 * [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-cast)
 	 */
 	cast?: string
-} & (T extends StringConstructor | typeof mongoose.Schema.Types.String
-		? StringOptions
-		: T extends StringConstructor[] | StringConstructor[][]
-		? ArrayOptions<string>
-		: T extends NumberConstructor | typeof mongoose.Schema.Types.Number
-		? NumberOptions
-		: T extends NumberConstructor[] | NumberConstructor[][]
-		? ArrayOptions<number>
-		: T extends DateConstructor | typeof mongoose.Schema.Types.Date
-		? DateOptions
-		: T extends typeof mongoose.Schema.Types.ObjectId | 'ObjectId'
-		? ObjectIdOptions
-		: T extends MapConstructor
-		? MapOptions
-		: {})
+}
 
 /**
  * @public
  */
-type StringOptions = {
+interface StringOptions {
 	/**
 	 * Add a custom setter that lowercases this string using JavaScript's built-in `String#toLowerCase()`.
 	 *
@@ -442,7 +462,7 @@ type StringOptions = {
 /**
  * @public
  */
-type NumberOptions = {
+interface NumberOptions {
 	/**
 	 * The minimum value allowed.
 	 *
@@ -474,7 +494,7 @@ type NumberOptions = {
 /**
  * @public
  */
-type ArrayOptions<T extends string | number> = {
+interface ArrayOptions<T extends string | number> {
 	/**
 	 * _Array type_
 	 *
@@ -486,7 +506,7 @@ type ArrayOptions<T extends string | number> = {
 /**
  * @public
  */
-type DateOptions = {
+interface DateOptions {
 	/**
 	 * The minimum date allowed.
 	 *
@@ -518,7 +538,7 @@ type DateOptions = {
 /**
  * @public
  */
-type ObjectIdOptions = {
+interface ObjectIdOptions {
 	/**
 	 * The model that `populate()` should use if populating this path.
 	 *
@@ -548,7 +568,7 @@ type ObjectIdOptions = {
 /**
  * @public
  */
-type MapOptions = {
+interface MapOptions {
 	/**
 	 *  _Map type_
 	 *
@@ -579,7 +599,7 @@ type Infer<T> = T extends NumberConstructor | typeof mongoose.Schema.Types.Numbe
 /**
  * @public
  */
-type ValidateObj<T> = {
+interface ValidateObj<T> {
 	validator: (value: T) => boolean | Promise<boolean>
 	msg?: string | ValidateMessageFn<T>
 	message?: string | ValidateMessageFn<T>
@@ -595,14 +615,3 @@ type ValidateMessageFn<T> = (props: {
 	path: string
 	value: T
 }) => string
-
-/**
- * @public
- */
-type UnionOptions = {
-	/** If `true`, the field itself is required. */
-	required?: boolean
-
-	/** If `true`, the discriminator key in nested schemas is always required and narrowed to its possible values. */
-	strict?: boolean
-}
