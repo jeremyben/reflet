@@ -61,13 +61,7 @@ test('schema with reference', async () => {
 		})
 		numbers: number[][]
 
-		@Field([
-			{
-				type: 'ObjectId',
-				ref: SReference,
-				autopopulate: true,
-			},
-		])
+		@Field.Ref([SReference], { autopopulate: true })
 		srefs: mongoose.Types.DocumentArray<SReference>
 
 		@Field.Nested({

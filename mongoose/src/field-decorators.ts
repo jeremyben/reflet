@@ -187,6 +187,93 @@ export namespace Field {
 			__mongooseFieldArrayOfUnion?: never
 		}
 	}
+
+	/**
+	 * Define references more succintly.
+	 * @see https://mongoosejs.com/docs/populate.html#populate
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Model()
+	 * class Company extends Model.I {
+	 *   ＠Field(String)
+	 *   name: Company
+	 * }
+	 *
+	 * ＠Model()
+	 * class User extends Model.I {
+	 *   ＠Field.Ref(Company, { required: true })
+	 *   company: Company | ObjectId
+	 * }
+	 * ```
+	 * ---
+	 * @public
+	 */
+	export function Ref<T extends Record<string, any>>(
+		ref: Ref<any, T> | [Ref<any, T>],
+		options: Field.Ref.Options = {}
+	): Field.Ref.Decorator {
+		return (target, key) => {
+			const type = mongoose.Schema.Types.ObjectId
+
+			const fields = getFields(target.constructor)
+
+			fields[<string>key] = Array.isArray(ref)
+				? [{ type, ref: ref[0], ...(options as {}) }]
+				: { type, ref, ...(options as {}) }
+
+			Reflect.defineMetadata(MetaField, fields, target.constructor)
+		}
+	}
+
+	export namespace Ref {
+		/**
+		 * @public
+		 */
+		export interface Options
+			extends RefletMongoose.SchemaTypeOptions,
+				Pick<CommonOptions<'ObjectId'>, 'required' | 'index' | 'unique' | 'select' | 'default'> {}
+
+		/**
+		 * Equivalent to `PropertyDecorator`.
+		 * @public
+		 */
+		export type Decorator = PropertyDecorator & {
+			__mongooseFieldRef?: never
+		}
+	}
+
+	/**
+	 * Define dynamic references more succintly.
+	 * @see https://mongoosejs.com/docs/populate.html#dynamic-ref
+	 * @public
+	 */
+	export function RefPath<T extends Record<string, any>>(
+		refPath: PlainKeys<T> | [PlainKeys<T>],
+		options: Field.Ref.Options = {}
+	): Field.RefPath.Decorator {
+		return (target, key) => {
+			const type = mongoose.Schema.Types.ObjectId
+
+			const fields = getFields(target.constructor)
+
+			fields[<string>key] = Array.isArray(refPath)
+				? [{ type, refPath: refPath[0], ...(options as {}) }]
+				: { type, refPath, ...(options as {}) }
+
+			Reflect.defineMetadata(MetaField, fields, target.constructor)
+		}
+	}
+
+	export namespace RefPath {
+		/**
+		 * Equivalent to `PropertyDecorator`.
+		 * @public
+		 */
+		export type Decorator = PropertyDecorator & {
+			__mongooseFieldRefPath?: never
+		}
+	}
 }
 
 /**
