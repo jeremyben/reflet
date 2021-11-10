@@ -71,15 +71,32 @@ export namespace Field {
 	 * Defines a sub-schema on a property (uses `schemaFrom` internally).
 	 * @public
 	 */
-	export function Schema<T extends ClassType | [ClassType]>(Class: T): Field.Schema.Decorator {
+	export function Schema<T extends ClassType | [ClassType]>(
+		Class: T,
+		options?: Field.Schema.Options
+	): Field.Schema.Decorator {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
-			fields[<string>key] = Array.isArray(Class) ? [schemaFrom(Class[0])] : schemaFrom(Class as ClassType)
+
+			const required = options?.required
+
+			fields[<string>key] = Array.isArray(Class)
+				? [{ type: schemaFrom(Class[0]), required }]
+				: { type: schemaFrom(Class), required }
+
 			Reflect.defineMetadata(MetaField, fields, target.constructor)
 		}
 	}
 
 	export namespace Schema {
+		/**
+		 * @public
+		 */
+		export interface Options {
+			// https://mongoosejs.com/docs/validation.html#required-validators-on-nested-objects
+			required?: boolean
+		}
+
 		/**
 		 * Equivalent to `PropertyDecorator`.
 		 * @public
