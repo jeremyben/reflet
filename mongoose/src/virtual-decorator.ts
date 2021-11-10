@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose'
-import { Plain } from './interfaces'
+import { ClassType, DocumentAny, Plain } from './interfaces'
 
 const MetaVirtual = Symbol('virtual')
 
@@ -39,8 +39,8 @@ const MetaVirtual = Symbol('virtual')
  * ```
  * @public
  */
-export function Virtual<TForeign extends object, TLocal extends object>(
-	options: Virtual.Options<TForeign, TLocal>
+export function Virtual<Local extends Record<string, any>, Foreign extends Record<string, any>>(
+	options: Virtual.Options<Local, Foreign>
 ): Virtual.Decorator {
 	return (target, key) => {
 		const fields = getVirtuals(target.constructor)
@@ -50,24 +50,30 @@ export function Virtual<TForeign extends object, TLocal extends object>(
 }
 
 export namespace Virtual {
+	type Ref<Foreign> =
+		| keyof RefletMongoose.Ref
+		| (Foreign extends DocumentAny ? ClassType<Foreign> : ClassType<RefletMongoose.Ref[keyof RefletMongoose.Ref]>)
+
 	/**
 	 * Options for `Virtual` decorator.
 	 * @public
 	 */
-	export interface Options<TForeign extends object, TLocal extends object> extends RefletMongoose.VirtualOptions {
-		ref: keyof RefletMongoose.Ref extends undefined
-			? string | (new (...args: any[]) => TForeign)
-			: keyof RefletMongoose.Ref | (new (...args: any[]) => TForeign)
+	export interface Options<Local, Foreign> extends RefletMongoose.VirtualOptions {
+		ref?: keyof RefletMongoose.Ref extends undefined
+			? string | ClassType<Foreign> | ((this: Local, doc: Local) => string | ClassType<Foreign>)
+			: Ref<Foreign> | ((this: Local, doc: Local) => Ref<Foreign>)
 
-		/**
-		 * The foreign field to populate on.
-		 */
-		foreignField: keyof Plain<TForeign>
+		refPath?: keyof Plain<Local>
 
 		/**
 		 * The local field to populate on.
 		 */
-		localField: keyof Plain<TLocal>
+		localField: keyof Plain<Local> | ((this: Local, doc: Local) => string)
+
+		/**
+		 * The foreign field to populate on.
+		 */
+		foreignField: keyof Plain<Foreign> | ((this: Local) => string)
 
 		/**
 		 * By default, a populated virtual is an array. If you set `justOne`, the populated virtual will be a single doc or `null`.
@@ -84,7 +90,7 @@ export namespace Virtual {
 		/**
 		 * Add an extra match condition to `populate()`.
 		 */
-		match?: mongoose.FilterQuery<TForeign>
+		match?: mongoose.FilterQuery<Foreign>
 
 		/**
 		 * Add a default `limit` to the `populate()` query.
@@ -109,7 +115,7 @@ export namespace Virtual {
 		perDocumentLimit?: number
 
 		options?: Omit<mongoose.QueryOptions, 'sort' | 'lean'> & {
-			sort?: string | Record<keyof mongoose.LeanDocument<TForeign>, -1 | 1>
+			sort?: string | Record<keyof mongoose.LeanDocument<Foreign>, -1 | 1>
 			lean?: boolean
 		}
 	}

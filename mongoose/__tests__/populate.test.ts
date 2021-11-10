@@ -42,7 +42,7 @@ test('virtual populate', async () => {
 		@Field([mongoose.Schema.Types.ObjectId])
 		trackIds: mongoose.Types.ObjectId[]
 
-		@Virtual<Track, Album>({
+		@Virtual<Album, Track>({
 			ref: 'Track',
 			foreignField: '_id',
 			localField: 'trackIds',
@@ -52,7 +52,7 @@ test('virtual populate', async () => {
 		@Field({ type: mongoose.Schema.Types.ObjectId, required: true })
 		bandId: mongoose.Types.ObjectId
 
-		@Virtual<Band, Album>({
+		@Virtual<Album, Band>({
 			ref: 'Band',
 			foreignField: '_id',
 			localField: 'bandId',

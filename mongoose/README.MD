@@ -809,7 +809,7 @@ class Band extends Model.I {
   @Field(String)
   name: string
 
-  @Virtual<Person, Band>({
+  @Virtual<Band, Person>({
     ref: 'Person',
     foreignField: 'band',
     localField: 'name'
