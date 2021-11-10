@@ -53,8 +53,9 @@ export function createSchema<T extends ClassType>(target: T, { full }: { full: b
 
 	const schema = new mongoose.Schema<AsDocument<InstanceType<T>>>(fields, options)
 
+	attachMethodsAndGetters(schema, target)
 	attachVirtuals(schema, target)
-	loadClassMethods(schema, target)
+
 	applyPreHooks(schema, target)
 	applyPostHooks(schema, target)
 
@@ -78,7 +79,7 @@ export function createSchema<T extends ClassType>(target: T, { full }: { full: b
  * @see https://github.com/Automattic/mongoose/blob/5.9/lib/schema.js#L1944-L1986
  * @internal
  */
-function loadClassMethods<T extends mongoose.Document>(schema: mongoose.Schema<T>, target: ClassType): void {
+function attachMethodsAndGetters<T extends mongoose.Document>(schema: mongoose.Schema<T>, target: ClassType): void {
 	// If we extend a class decorated by @Model (when we need to use @Model.Discriminator for example),
 	// its protototype is gonna be a mongoose model and have `$isMongooseModelPrototype` property.
 	// If it's the case, we can't attach methods, statics, or virtuals from its parent, because
@@ -86,27 +87,39 @@ function loadClassMethods<T extends mongoose.Document>(schema: mongoose.Schema<T
 	// https://github.com/Automattic/mongoose/issues/4942
 	const parent = Object.getPrototypeOf(target)
 	if (parent !== Object.prototype && parent !== Function.prototype && !parent.prototype.$isMongooseModelPrototype) {
-		loadClassMethods(schema, parent)
+		attachMethodsAndGetters(schema, parent)
 	}
 
 	// Add static methods.
 	for (const name of Object.getOwnPropertyNames(target)) {
-		if (name.match(/^(length|name|prototype)$/)) continue
+		if (name.match(/^(length|name|prototype)$/)) {
+			continue
+		}
 
 		const method = Object.getOwnPropertyDescriptor(target, name)
 
-		if (typeof method?.value === 'function') schema.static(name, method.value)
+		if (typeof method?.value === 'function') {
+			schema.static(name, method.value)
+		}
 	}
 
 	// Add methods and virtuals.
 	for (const methodName of Object.getOwnPropertyNames(target.prototype)) {
-		if (methodName.match(/^(constructor)$/)) continue
+		if (methodName.match(/^(constructor)$/)) {
+			continue
+		}
 
 		const method = Object.getOwnPropertyDescriptor(target.prototype, methodName)
 
-		if (typeof method?.value === 'function') schema.method(methodName, method.value)
-		if (typeof method?.get === 'function') schema.virtual(methodName).get(method.get)
-		if (typeof method?.set === 'function') schema.virtual(methodName).set(method.set)
+		if (typeof method?.value === 'function') {
+			schema.method(methodName, method.value)
+		}
+		if (typeof method?.get === 'function') {
+			schema.virtual(methodName).get(method.get)
+		}
+		if (typeof method?.set === 'function') {
+			schema.virtual(methodName).set(method.set)
+		}
 	}
 }
 
