@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose'
-import { ClassType } from './interfaces'
+import { ClassType, PlainKeys, Ref, RefGlobal } from './interfaces'
 import { schemaFrom } from './schema-creation'
 
 const MetaField = Symbol('field')
@@ -547,15 +547,7 @@ interface ObjectIdOptions {
 	 * [Guide reference](https://mongoosejs.com/docs/populate)
 	 * | [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-ref)
 	 */
-	ref?: keyof RefletMongoose.Ref extends undefined
-		? string | mongoose.Model<any> | ((this: any, doc: any) => string | mongoose.Model<any>)
-		:
-				| keyof RefletMongoose.Ref
-				| ClassType<RefletMongoose.Ref[keyof RefletMongoose.Ref]>
-				| ((
-						this: any,
-						doc: any
-				  ) => keyof RefletMongoose.Ref | ClassType<RefletMongoose.Ref[keyof RefletMongoose.Ref]>)
+	ref?: RefGlobal
 
 	/**
 	 * _ObjectId type_

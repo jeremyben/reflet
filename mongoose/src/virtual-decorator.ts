@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose'
-import { ClassType, DocumentAny, Plain } from './interfaces'
+import { PlainKeys, Ref } from './interfaces'
 
 const MetaVirtual = Symbol('virtual')
 
@@ -50,30 +50,24 @@ export function Virtual<Local extends Record<string, any>, Foreign extends Recor
 }
 
 export namespace Virtual {
-	type Ref<Foreign> =
-		| keyof RefletMongoose.Ref
-		| (Foreign extends DocumentAny ? ClassType<Foreign> : ClassType<RefletMongoose.Ref[keyof RefletMongoose.Ref]>)
-
 	/**
 	 * Options for `Virtual` decorator.
 	 * @public
 	 */
 	export interface Options<Local, Foreign> extends RefletMongoose.VirtualOptions {
-		ref?: keyof RefletMongoose.Ref extends undefined
-			? string | ClassType<Foreign> | ((this: Local, doc: Local) => string | ClassType<Foreign>)
-			: Ref<Foreign> | ((this: Local, doc: Local) => Ref<Foreign>)
+		ref?: Ref<Local, Foreign>
 
-		refPath?: keyof Plain<Local>
+		refPath?: PlainKeys<Local>
 
 		/**
 		 * The local field to populate on.
 		 */
-		localField: keyof Plain<Local> | ((this: Local, doc: Local) => string)
+		localField: PlainKeys<Local> | ((this: Local, doc: Local) => string)
 
 		/**
 		 * The foreign field to populate on.
 		 */
-		foreignField: keyof Plain<Foreign> | ((this: Local) => string)
+		foreignField: PlainKeys<Foreign> | ((this: Local) => string)
 
 		/**
 		 * By default, a populated virtual is an array. If you set `justOne`, the populated virtual will be a single doc or `null`.

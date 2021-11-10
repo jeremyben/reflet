@@ -56,7 +56,7 @@ type _AllowString<T> = {
 /**
  * @public
  */
-type PlainKeys<T> = {
+export type PlainKeys<T> = {
 	[K in keyof T]: K extends '_id' ? K : K extends keyof mongoose.Document ? never : T[K] extends Function ? never : K
 }[keyof T]
 
@@ -219,6 +219,40 @@ export type ClassType<T = any> = abstract new (...args: any[]) => T
  * @public
  */
 export type AsDocument<T> = T extends mongoose.Document ? T : T & mongoose.Document
+
+/**
+ * @public
+ */
+export type Ref<Local, Foreign> = keyof RefletMongoose.Ref extends undefined
+	? Ref.OrString<Foreign> | ((this: Local, doc: Local) => string | Ref.OrString<Foreign>)
+	: Ref.OrLitteral<Foreign> | ((this: Local, doc: Local) => Ref.OrLitteral<Foreign>)
+
+export namespace Ref {
+	/**
+	 * @public
+	 */
+	export type OrString<Foreign> = string | ClassType<Foreign>
+
+	/**
+	 * @public
+	 */
+	export type OrLitteral<Foreign> =
+		| keyof RefletMongoose.Ref
+		| (Foreign extends DocumentAny ? ClassType<Foreign> : ClassType<RefletMongoose.Ref[keyof RefletMongoose.Ref]>)
+}
+
+/**
+ * @public
+ */
+export type RefGlobal = keyof RefletMongoose.Ref extends undefined
+	? string | mongoose.Model<any> | ((this: any, doc: any) => string | mongoose.Model<any>)
+	:
+			| keyof RefletMongoose.Ref
+			| ClassType<RefletMongoose.Ref[keyof RefletMongoose.Ref]>
+			| ((
+					this: any,
+					doc: any
+			  ) => keyof RefletMongoose.Ref | ClassType<RefletMongoose.Ref[keyof RefletMongoose.Ref]>)
 
 // tslint:disable: no-empty-interface
 declare global {
