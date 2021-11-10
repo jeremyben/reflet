@@ -200,6 +200,7 @@ type SchemaType =
 	| typeof Buffer
 	| typeof mongoose.SchemaType
 	| mongoose.Schema
+	| 'ObjectId'
 
 /**
  * @public
@@ -347,7 +348,7 @@ type SchemaTypeOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]> = R
 		? ArrayOptions<number>
 		: T extends DateConstructor | typeof mongoose.Schema.Types.Date
 		? DateOptions
-		: T extends typeof mongoose.Schema.Types.ObjectId
+		: T extends typeof mongoose.Schema.Types.ObjectId | 'ObjectId'
 		? ObjectIdOptions
 		: T extends MapConstructor
 		? MapOptions
@@ -550,7 +551,7 @@ type Infer<T> = T extends NumberConstructor | typeof mongoose.Schema.Types.Numbe
 	? boolean
 	: T extends DateConstructor | typeof mongoose.Schema.Types.Date
 	? Date
-	: T extends typeof mongoose.Schema.Types.ObjectId
+	: T extends typeof mongoose.Schema.Types.ObjectId | 'ObjectId'
 	? mongoose.Types.ObjectId
 	: T extends [infer U]
 	? Infer<U>[]

@@ -60,7 +60,7 @@ test('schema with reference', async () => {
 
 		@Field([
 			{
-				type: mongoose.Schema.Types.ObjectId,
+				type: 'ObjectId',
 				ref: SReference,
 			},
 		])
