@@ -1,4 +1,5 @@
 import * as mongoose from 'mongoose'
+import autopopulate = require('mongoose-autopopulate')
 import {
 	Field,
 	SchemaOptions,
@@ -8,6 +9,7 @@ import {
 	UpdatedAt,
 	SchemaCallback,
 	Model,
+	SchemaPlugin,
 	Plain,
 } from '../src'
 import { RefletMongooseError } from '../src/reflet-error'
@@ -40,6 +42,7 @@ test('schema with reference', async () => {
 		toJSON: { getters: true },
 		toObject: { getters: true },
 	})
+	@SchemaPlugin<S, { functions: string[] }>(autopopulate as any, { functions: ['findOne'] })
 	@SchemaCallback<S>((schema) => schema.index({ name: 1, numbers: -1 }))
 	class S extends Model.I {
 		@Field({
@@ -62,6 +65,7 @@ test('schema with reference', async () => {
 			{
 				type: 'ObjectId',
 				ref: SReference,
+				autopopulate: true,
 			},
 		])
 		srefs: mongoose.Types.DocumentArray<SReference>
@@ -103,9 +107,9 @@ test('schema with reference', async () => {
 		dec: mongoose.Types.Decimal128.fromString('13'),
 	})
 
-	const s = (await S.findOne({ name: 'Jeremy' }).populate('srefs'))!
+	const s = (await S.findOne({ name: 'Jeremy' }))!
 	// console.log(s)
-	// const obj = s.toObject() as Plain.Omit<S, 'buf'>
+	// const obj = s.toObject()
 	// console.log('object', obj)
 
 	expect(s.srefs[0]._id).toBeInstanceOf(mongoose.Types.ObjectId)
@@ -265,3 +269,20 @@ describe('versionKey', () => {
 		expect(() => schemaFrom(VK2)).toThrow(expect.objectContaining({ code }))
 	})
 })
+
+declare global {
+	/**
+	 * Namespace dedicated to application-specific declaration merging.
+	 * @public
+	 */
+	namespace RefletMongoose {
+		/**
+		 * Open interface to extend `@Field` SchemaType options.
+		 * Useful for global plugins.
+		 * @public
+		 */
+		interface SchemaTypeOptions {
+			autopopulate?: boolean
+		}
+	}
+}

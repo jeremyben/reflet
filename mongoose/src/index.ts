@@ -2,6 +2,8 @@ export { SchemaOptions, CreatedAt, UpdatedAt, VersionKey } from './schema-option
 
 export { SchemaCallback } from './schema-callback-decorator'
 
+export { SchemaPlugin } from './schema-plugin-decorator'
+
 export { Model } from './model-decorators'
 
 export { Field } from './field-decorators'

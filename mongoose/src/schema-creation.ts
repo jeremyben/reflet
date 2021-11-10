@@ -7,6 +7,7 @@ import { applySchemaCallback } from './schema-callback-decorator'
 import { attachVirtuals } from './virtual-decorator'
 import { RefletMongooseError } from './reflet-error'
 import { ClassType, AsDocument } from './interfaces'
+import { applyPlugins } from './schema-plugin-decorator'
 
 /**
  * Retrieves the schema from a decorated class.
@@ -56,6 +57,7 @@ export function createSchema<T extends ClassType>(target: T, { full }: { full: b
 	attachMethodsAndGetters(schema, target)
 	attachVirtuals(schema, target)
 
+	applyPlugins(schema, target)
 	applyPreHooks(schema, target)
 	applyPostHooks(schema, target)
 
