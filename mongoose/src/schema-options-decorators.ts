@@ -23,17 +23,111 @@ const MetaSchemaOptionsKeys = Symbol('schema-options-keys')
 export function SchemaOptions(options: mongoose.SchemaOptions): SchemaOptions.Decorator {
 	return (target) => {
 		checkDecoratorsOrder(target)
+
+		const previousOptions = getSchemaOptions(target)
+
+		if (previousOptions) {
+			throw new RefletMongooseError(
+				'SCHEMA_OPTIONS_MISSING_MODIFIER',
+				`@SchemaOptions has already been applied on "${target.name}" or its prototype chain, use @SchemaOptions.Override or @SchemaOptions.Merge.`
+			)
+		}
+
 		Reflect.defineMetadata(MetaSchemaOptions, options, target)
 	}
 }
 
 export namespace SchemaOptions {
 	/**
+	 * Same as {@link SchemaOptions}, but only with options allowed in discriminators.
+	 * @public
+	 */
+	export function Discriminator(
+		options: Pick<mongoose.SchemaOptions, '_id' | 'id' | 'toJSON' | 'toObject'>
+	): SchemaOptions.Decorator {
+		return SchemaOptions(options)
+	}
+
+	/**
+	 * Same as {@link SchemaOptions}, but will extend options from the prototype chain.
+	 * @public
+	 */
+	export function Merge(options: mongoose.SchemaOptions): SchemaOptions.Decorator {
+		return (target) => {
+			checkDecoratorsOrder(target)
+
+			const parentOrSiblingOptions = getSchemaOptions(target)
+
+			if (parentOrSiblingOptions) {
+				const mergedOptions = assignDeep({}, parentOrSiblingOptions, options)
+				Reflect.defineMetadata(MetaSchemaOptions, mergedOptions, target)
+			} else {
+				console.warn(
+					`RefletMongooseWarning: No need to use @SchemaOptions.Merge on "${target.name}", simply use @SchemaOptions.`
+				)
+				Reflect.defineMetadata(MetaSchemaOptions, options, target)
+			}
+		}
+	}
+
+	/**
+	 * Same as {@link SchemaOptions}, but used as an explicit override.
+	 * @public
+	 */
+	export function Override(options: mongoose.SchemaOptions): SchemaOptions.Decorator {
+		return (target) => {
+			checkDecoratorsOrder(target)
+
+			const parentOrSiblingOptions = getSchemaOptions(target)
+
+			if (!parentOrSiblingOptions) {
+				console.warn(
+					`RefletMongooseWarning: No need to use @SchemaOptions.Override on "${target.name}", simply use @SchemaOptions.`
+				)
+			}
+
+			Reflect.defineMetadata(MetaSchemaOptions, options, target)
+		}
+	}
+
+	/**
 	 * Equivalent to `ClassDecorator`.
 	 * @public
 	 */
 	export type Decorator = ClassDecorator & {
 		__mongooseSchemaOptions?: never
+	}
+
+	/**
+	 * @internal
+	 */
+	function assignDeep<T extends { [key: string]: any }>(target: T, ...sources: T[]): T {
+		if (!sources.length) {
+			return target
+		}
+		const source = sources.shift()
+
+		if (isLitteralObject(target) && isLitteralObject(source)) {
+			for (const key in source) {
+				if (isLitteralObject(source[key])) {
+					if (!target[key]) {
+						Object.assign(target, { [key]: {} })
+					}
+					assignDeep(target[key], source[key])
+				} else {
+					Object.assign(target, { [key]: source[key] })
+				}
+			}
+		}
+
+		return assignDeep(target, ...sources)
+	}
+
+	/**
+	 * @internal
+	 */
+	function isLitteralObject(val: any) {
+		return !!val && val.constructor === Object
 	}
 }
 
@@ -110,21 +204,6 @@ export const VersionKey: PropertyDecorator = (target, key) => {
 	const schemaKeys = getSchemaOptionsKeys(target.constructor)
 	schemaKeys.VersionKey = key as string
 	Reflect.defineMetadata(MetaSchemaOptionsKeys, schemaKeys, target.constructor)
-}
-
-/**
- * @internal
- */
-function getSchemaOptions(target: ClassType): mongoose.SchemaOptions | undefined {
-	return Reflect.getMetadata(MetaSchemaOptions, target)
-}
-
-/**
- * @internal
- */
-function getSchemaOptionsKeys(target: object): SchemaOptionsKeysMeta {
-	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
-	return Object.assign({}, Reflect.getMetadata(MetaSchemaOptionsKeys, target))
 }
 
 /**
@@ -221,4 +300,19 @@ export function mergeSchemaOptionsAndKeys(target: ClassType): mongoose.SchemaOpt
 	}
 
 	return options
+}
+
+/**
+ * @internal
+ */
+function getSchemaOptions(target: Function): mongoose.SchemaOptions | undefined {
+	return Reflect.getMetadata(MetaSchemaOptions, target)
+}
+
+/**
+ * @internal
+ */
+function getSchemaOptionsKeys(target: Function): SchemaOptionsKeysMeta {
+	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
+	return Object.assign({}, Reflect.getMetadata(MetaSchemaOptionsKeys, target))
 }

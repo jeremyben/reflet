@@ -30,11 +30,42 @@ export function SchemaCallback<T extends DocumentAny>(
 ): SchemaCallback.Decorator {
 	return (target) => {
 		checkDecoratorsOrder(target)
+
+		const previousCallback = getSchemaCallback(target)
+
+		if (previousCallback) {
+			throw new RefletMongooseError(
+				'SCHEMA_CALLBACK_MISSING_MODIFIER',
+				`@SchemaCallback has already been applied on "${target.name}" or its prototype chain, use @SchemaCallback.Override.`
+			)
+		}
+
 		Reflect.defineMetadata(MetaSchemaCallback, callback, target)
 	}
 }
 
 export namespace SchemaCallback {
+	/**
+	 * Same as {@link SchemaCallback}, but used as an explicit override.
+	 * @public
+	 */
+	export function Override<T extends DocumentAny>(
+		callback: (schema: mongoose.Schema<T>) => void
+	): SchemaCallback.Decorator {
+		return (target) => {
+			checkDecoratorsOrder(target)
+
+			const parentOrSiblingCallback = getSchemaCallback(target)
+			if (!parentOrSiblingCallback) {
+				console.warn(
+					`RefletMongooseWarning: No need to use @SchemaCallback.Override on "${target.name}", simply use @SchemaCallback.`
+				)
+			}
+
+			Reflect.defineMetadata(MetaSchemaCallback, callback, target)
+		}
+	}
+
 	/**
 	 * Equivalent to `ClassDecorator`.
 	 * @public
@@ -48,9 +79,16 @@ export namespace SchemaCallback {
  * @internal
  */
 export function applySchemaCallback(schema: mongoose.Schema<any>, target: ClassType): void {
-	const schemaCallback = Reflect.getMetadata(MetaSchemaCallback, target) as ((s: mongoose.Schema) => void) | undefined
+	const callback = getSchemaCallback(target)
 
-	if (typeof schemaCallback === 'function') {
-		schemaCallback(schema)
+	if (typeof callback === 'function') {
+		callback(schema)
 	}
+}
+
+/**
+ * @internal
+ */
+function getSchemaCallback(target: Function): ((s: mongoose.Schema) => void) | undefined {
+	return Reflect.getMetadata(MetaSchemaCallback, target)
 }
