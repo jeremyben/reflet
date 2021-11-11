@@ -1,6 +1,6 @@
 import * as express from 'express'
 import { wrapAsync, wrapAsyncError } from './async-wrapper'
-import { ClassType, RegistrationArray } from './interfaces'
+import { ClassType, Registration } from './interfaces'
 import { isPromise, isReadableStream, isClass, isExpressApp, isExpressRouter, isAsyncFunction } from './type-guards'
 
 // Extractors
@@ -35,7 +35,7 @@ import { RefletExpressError } from './reflet-error'
  * ------
  * @public
  */
-export function register(app: express.Application, routers: RegistrationArray): express.Application {
+export function register(app: express.Application, routers: Registration[]): express.Application {
 	if (!isExpressApp(app)) {
 		throw new RefletExpressError('INVALID_EXPRESS_APP', 'This is not an Express application.')
 	}
@@ -64,15 +64,13 @@ export function register(app: express.Application, routers: RegistrationArray): 
  * @internal
  */
 function registerRouter(
-	registration: RegistrationArray[number],
+	registration: Registration,
 	app: express.Router,
 	globalMwares: express.RequestHandler[],
 	parentSharedMwares: express.RequestHandler[] = [],
 	appClass?: ClassType
 ) {
-	const { path: constrainedPath, router } = isPathRouterObject(registration)
-		? registration
-		: { path: undefined, router: registration }
+	const [constrainedPath, router] = isPathRouterTuple(registration) ? registration : [null, registration]
 
 	// Attach plain express routers.
 	if (constrainedPath && isExpressRouter(router)) {
@@ -142,12 +140,7 @@ function registerRouter(
 				: routerMeta.children
 
 		for (const child of children) {
-			// Undocumented and untyped feature to attach plain express Routers with a tuple. Will be removed.
-			if (Array.isArray(child) && typeof child[0] === 'string' && isExpressRouter(child[1])) {
-				appInstance.use(child[0], child[1])
-			} else {
-				registerRouter(child, appInstance, globalMwares, parentSharedMwares_, appClass)
-			}
+			registerRouter(child, appInstance, globalMwares, parentSharedMwares_, appClass)
 		}
 	}
 
@@ -243,34 +236,32 @@ function registerRootErrorHandlers(app: express.Application, appMeta?: Applicati
 /**
  * @internal
  */
-function isPathRouterObject(
-	registration: Record<string, any>
-): registration is { path: string | RegExp | symbol; router: object } {
-	return (
-		registration.hasOwnProperty('path') &&
-		registration.hasOwnProperty('router') &&
-		(typeof registration.path === 'string' || registration.path instanceof RegExp) &&
-		(typeof registration.router === 'function' || typeof registration.router === 'object')
-	)
+function isPathRouterTuple(registration: object): registration is [path: string | RegExp, router: object] {
+	return Array.isArray(registration) && registration.length === 2
 }
 
 /**
  * @internal
  */
 function checkPathConstraint(
-	constrainedPath: string | RegExp | undefined,
+	constrainedPath: string | RegExp | null,
 	router: Exclude<ReturnType<typeof extractRouterMeta>, undefined>,
 	routerClass: ClassType
 ) {
 	if (router.path === DYNAMIC_PATH) {
-		if (constrainedPath == null) {
+		if (constrainedPath === null) {
 			throw new RefletExpressError(
 				'DYNAMIC_ROUTER_PATH_UNDEFINED',
 				`"${routerClass.name}" is dynamic and must be registered with a path.`
 			)
 		}
 
-		// stop there if dynamic path
+		// Stop there if dynamic path
+		return
+	}
+
+	// Stop there if no constraint on path
+	if (constrainedPath === null) {
 		return
 	}
 

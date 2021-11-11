@@ -1,6 +1,6 @@
 import * as express from 'express'
 import { register } from './register'
-import { ClassType, RegistrationArray } from './interfaces'
+import { ClassType, Registration } from './interfaces'
 import { RefletExpressError } from './reflet-error'
 
 /**
@@ -62,7 +62,7 @@ export class Application {
 		return app as unknown as this
 	}
 
-	register(routers: RegistrationArray = []) {
+	register(routers: Registration[] = []) {
 		register(this, routers)
 
 		return this

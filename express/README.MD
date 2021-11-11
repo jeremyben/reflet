@@ -335,7 +335,7 @@ class TrackRouter {}
 
 #### Paths centralization and constraint
 
-You might want the root paths of your routers to be centralized as well, so you can have a glance at all of them. 👀<br>You can register your routers with a path constraint (Reflet will enforce those paths):
+You might want the root paths of your routers to be centralized as well, so you can have a glance at all of them. 👀<br>You can register your routers as a tuple with a path constraint (Reflet will enforce those paths):
 
 ```ts
 @Router('/foo')
@@ -344,7 +344,7 @@ class Foo {
   list(req: Request, res: Response, next: NextFunction) {}
 }
 
-register(app, [{ path: '/foo', router: Foo }])
+register(app, [['/foo', Foo]])
 ```
 
 _Also possible with child routers._
@@ -363,8 +363,8 @@ class Decorated {
 const plain = express.Router().get('', (req, res, next) => {})
 
 register(app, [
-  { path: '/decorated', router: Decorated },
-  { path: '/plain', router: plain }
+  ['/decorated', Decorated],
+  ['/plain', plain]
 ])
 ```
 
@@ -388,14 +388,14 @@ class ItemRouter {
 @Router('/foo')
 class FooRouter {
   constructor() {
-    register(this, [{ path: '/items', router: ItemRouter }])
+    register(this, [['/items', ItemRouter]])
   }
 }
 
 @Router('/bar')
 class BarRouter {
   constructor() {
-    register(this, [{ path: '/elements', router: ItemRouter }])
+    register(this, [['/elements', ItemRouter]])
   }
 }
 ```
@@ -1078,7 +1078,7 @@ Routes will be attached at the root, and middlewares, error handlers, and `Send`
 
 ```ts
 import * as express from 'express'
-import { Application, RegistrationArray } from '@reflet/express'
+import { Application, Registration } from '@reflet/express'
 import { UserRouter } from './user.router'
 
 @Send({ json: true })
@@ -1089,7 +1089,7 @@ import { UserRouter } from './user.router'
   notFoundHandler: true,
 }))
 class MyApp extends Application {
-  constructor(routers: RegistrationArray) {
+  constructor(routers: Registration[]) {
     super()
     this.register(routers)
   }

@@ -132,9 +132,7 @@ describe('children routers', () => {
 		}
 
 		@Router('/user/:userId?', { mergeParams: true })
-		@Router.Children<typeof UserRouter>((service) => [
-			{ path: '/item/:itemId', router: new UserItemRouter(service) },
-		])
+		@Router.Children<typeof UserRouter>((service) => [['/item/:itemId', new UserItemRouter(service)]])
 		class UserRouter {
 			constructor(private service: UserService) {}
 
@@ -198,10 +196,10 @@ describe('children routers', () => {
 })
 
 // tslint:disable: no-empty
-describe('constrain with path-router objects', () => {
+describe('constrain with path-router tuples', () => {
 	test('happy path', () => {
 		@Router('/foo')
-		@Router.Children(() => [{ path: '/bar', router: Bar }])
+		@Router.Children(() => [['/bar', Bar]])
 		class Foo {
 			@Get()
 			get() {}
@@ -213,7 +211,7 @@ describe('constrain with path-router objects', () => {
 			get() {}
 		}
 
-		expect(() => register(express(), [{ path: '/foo', router: new Foo() }])).not.toThrow()
+		expect(() => register(express(), [['/foo', new Foo()]])).not.toThrow()
 	})
 
 	test('wrong string', () => {
@@ -223,7 +221,7 @@ describe('constrain with path-router objects', () => {
 			get() {}
 		}
 
-		expect(() => register(express(), [{ path: 'foo', router: Foo }])).toThrow(/expects "foo"/)
+		expect(() => register(express(), [['foo', Foo]])).toThrow(/expects "foo"/)
 	})
 
 	test('wrong regex', () => {
@@ -233,7 +231,7 @@ describe('constrain with path-router objects', () => {
 			get() {}
 		}
 
-		expect(() => register(express(), [{ path: /foo/, router: Foo }])).toThrow(/expects "\/foo\/"/)
+		expect(() => register(express(), [[/foo/, Foo]])).toThrow(/expects "\/foo\/"/)
 	})
 
 	test('wrong type', () => {
@@ -243,7 +241,7 @@ describe('constrain with path-router objects', () => {
 			get() {}
 		}
 
-		expect(() => register(express(), [{ path: 'bar', router: Bar }])).toThrow(/expects string/)
+		expect(() => register(express(), [['bar', Bar]])).toThrow(/expects string/)
 
 		@Router('/baz')
 		class Baz {
@@ -251,7 +249,7 @@ describe('constrain with path-router objects', () => {
 			get() {}
 		}
 
-		expect(() => register(express(), [{ path: /baz/, router: Baz }])).toThrow(/expects regex/)
+		expect(() => register(express(), [[/baz/, Baz]])).toThrow(/expects regex/)
 	})
 
 	test('wrong type', () => {
@@ -261,7 +259,7 @@ describe('constrain with path-router objects', () => {
 			get() {}
 		}
 
-		expect(() => register(express(), [{ path: 'bar', router: Bar }])).toThrow(/expects string/)
+		expect(() => register(express(), [['bar', Bar]])).toThrow(/expects string/)
 
 		@Router('/baz')
 		class Baz {
@@ -269,7 +267,7 @@ describe('constrain with path-router objects', () => {
 			get() {}
 		}
 
-		expect(() => register(express(), [{ path: /baz/, router: Baz }])).toThrow(/expects regex/)
+		expect(() => register(express(), [[/baz/, Baz]])).toThrow(/expects regex/)
 	})
 
 	test('attach plain express routers', async () => {
@@ -282,12 +280,15 @@ describe('constrain with path-router objects', () => {
 			next()
 		})
 		@Router('/foo')
-		@Router.Children(() => [{ path: '/child1', router: plainRouter }, ['/child2', plainRouter] as object])
+		@Router.Children(() => [
+			['/child1', plainRouter],
+			['/child2', plainRouter],
+		])
 		class Foo {}
 
 		const app = register(express(), [
-			{ path: '/foo', router: Foo },
-			{ path: '/bar', router: plainRouter },
+			['/foo', Foo],
+			['/bar', plainRouter],
 		])
 
 		const rq = supertest(app)
@@ -299,7 +300,7 @@ describe('constrain with path-router objects', () => {
 
 	test('dynamic router', async () => {
 		@Router('/foo')
-		@Router.Children(() => [{ path: '/items', router: Items }])
+		@Router.Children(() => [['/items', Items]])
 		class Foo {}
 
 		@Use((req, res, next) => {
@@ -307,7 +308,7 @@ describe('constrain with path-router objects', () => {
 			next()
 		})
 		@Router('/bar')
-		@Router.Children(() => [{ path: '/elements', router: Items }])
+		@Router.Children(() => [['/elements', Items]])
 		class Bar {}
 
 		@Router.Dynamic()

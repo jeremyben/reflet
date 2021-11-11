@@ -1,5 +1,5 @@
 import * as express from 'express'
-import { ClassType, RegistrationArray, IsAny } from './interfaces'
+import { ClassType, Registration, IsAny } from './interfaces'
 
 const META = Symbol('router')
 
@@ -9,7 +9,7 @@ const META = Symbol('router')
 type RouterMeta = {
 	path: string | RegExp | typeof DYNAMIC_PATH | null
 	options?: express.RouterOptions
-	children?: RegistrationArray | ((...deps: any[]) => RegistrationArray)
+	children?: Registration[] | ((...deps: any[]) => Registration[])
 	childrenDeps?: any[]
 }
 
@@ -71,18 +71,18 @@ export namespace Router {
 	 */
 	export function Children<T extends ClassType = any>(
 		// tslint:disable-next-line: no-shadowed-variable
-		register: (...deps: IsAny<T> extends true ? unknown[] : ConstructorParameters<T>) => RegistrationArray
+		register: (...deps: IsAny<T> extends true ? unknown[] : ConstructorParameters<T>) => Registration[]
 	): Router.Children.Decorator {
 		return (target) => {
 			const existingRouterMeta = extractRouterMeta(target)
 
 			if (existingRouterMeta) {
-				existingRouterMeta.children = register as (...deps: any[]) => RegistrationArray
+				existingRouterMeta.children = register as (...deps: any[]) => Registration[]
 				existingRouterMeta.childrenDeps = []
 			} else {
 				const newRouterMeta: RouterMeta = {
 					path: null,
-					children: register as (...deps: any[]) => RegistrationArray,
+					children: register as (...deps: any[]) => Registration[],
 					childrenDeps: [],
 				}
 
@@ -132,14 +132,14 @@ export namespace Router {
 	 * ＠Router('/foo')
 	 * class Foo {
 	 *   constructor() {
-	 *     register(this, [{ path: '/items', router: Items }])
+	 *     register(this, [['/items', Items]])
 	 *   }
 	 * }
 	 *
 	 * ＠Router('/bar')
 	 * class Bar {
 	 *   constructor() {
-	 *     register(this, [{ path: '/elements', router: Items }])
+	 *     register(this, [['/elements', Items]])
 	 *   }
 	 * }
 	 * ```

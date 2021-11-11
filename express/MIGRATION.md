@@ -18,7 +18,10 @@
 * `DontSend` decorator was deprecated and has been removed.
   Use `Send.Dont` decorator instead.
 
-* `Controllers` interface was renamed to `RegistrationArray`.
+* `Controllers` array interface was _unwrapped_ and renamed to `Registration`. Use it as `Registration[]`.
+
+* Path constraints on routers are no longer an object with a `path` and a `router` properties, but a tuple.
+  Use `register([['/foo, FooRouter]])` instead of `register([{ path: '/foo', router: FooRouter }])`.
 
 * Option for middleware deduplication in `createParamDecorator` is no longer a single boolean.
   Use the signature `(myMapper, [{ handler: myMiddleware, dedupe: true }])` instead of `(myMapper, myMiddleware, true)`

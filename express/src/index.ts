@@ -14,6 +14,6 @@ export { Send } from './send-decorator'
 
 export { Application } from './application-class'
 
-export { RegistrationArray } from './interfaces'
+export { Registration } from './interfaces'
 
 export { finalHandler } from './final-handler'

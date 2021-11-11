@@ -26,20 +26,11 @@ export type PropertyOrMethodDecorator = (
 export type ClassType = new (...args: any[]) => any
 
 /**
- * @public
- */
-export type ClassInstance = object & NotFunction & NotArray
-
-type NotFunction = { bind?(): never } | { call?(): never } | { apply?(): never }
-
-type NotArray = { push?(): never } | { pop?(): never } | { shift?(): never } | { unshift?(): never }
-
-/**
  * @example
  * ```ts
- * const routers: RegistrationArray = [
- *   { path: '/foo', router: Foo },
- *   { path: '/bar', router: Bar },
+ * const routers: Registration[] = [
+ *   ['/foo', Foo],
+ *   ['/bar', Bar],
  *   new Baz(),
  * ]
  * register(app, routers)
@@ -47,11 +38,34 @@ type NotArray = { push?(): never } | { pop?(): never } | { shift?(): never } | {
  * ------
  * @public
  */
-export type RegistrationArray = (
-	| (new () => any)
-	| ClassInstance
-	| { path: string | RegExp; router: (new () => any) | ClassInstance | express.IRouter }
-)[]
+export type Registration = Registration.Class | Registration.Instance | Registration.Tuple
+
+export namespace Registration {
+	/**
+	 * @public
+	 */
+	export type Class = new () => any
+
+	/**
+	 * @public
+	 */
+	export type Instance = object & NotFunction & NotArray
+
+	/**
+	 * @public
+	 */
+	export type Tuple = [path: string | RegExp, router: Registration.Class | Registration.Instance | express.IRouter]
+}
+
+/**
+ * @public
+ */
+type NotFunction = { bind?(): never } | { call?(): never } | { apply?(): never }
+
+/**
+ * @public
+ */
+type NotArray = { push?(): never } | { pop?(): never } | { shift?(): never } | { unshift?(): never }
 
 /**
  * @public
