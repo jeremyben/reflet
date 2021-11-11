@@ -4,7 +4,7 @@ import * as mongoose from 'mongoose'
  * @see https://docs.mongodb.com/manual/reference/operator/aggregation-pipeline/#aggregation-pipeline-stages
  * @public
  */
-export type PipelineStage<T = Record<string, any>> =
+export type PipelineStage<T = any> =
 	| PipelineStage.AddFields
 	| PipelineStage.Bucket
 	| PipelineStage.BucketAuto
@@ -108,7 +108,7 @@ export namespace PipelineStage {
 		>
 	}
 
-	export interface GeoNear<T = Record<string, any>> {
+	export interface GeoNear<T = any> {
 		/** [`$geoNear` reference](https://docs.mongodb.com/manual/reference/operator/aggregation/geoNear/) */
 		$geoNear: {
 			near: { type: 'Point'; coordinates: [number, number] } | [number, number]
@@ -124,7 +124,7 @@ export namespace PipelineStage {
 		}
 	}
 
-	export interface GraphLookup<T = Record<string, any>> {
+	export interface GraphLookup<T = any> {
 		/** [`$graphLookup` reference](https://docs.mongodb.com/manual/reference/operator/aggregation/graphLookup/) */
 		$graphLookup: {
 			from: string
@@ -173,7 +173,7 @@ export namespace PipelineStage {
 		}
 	}
 
-	export interface Match<T = Record<string, any>> {
+	export interface Match<T = any> {
 		/** [`$match` reference](https://docs.mongodb.com/manual/reference/operator/aggregation/match/) */
 		$match: mongoose.FilterQuery<T>
 	}
@@ -296,41 +296,47 @@ export namespace PipelineStage {
 		/** [`$unwind` reference](https://docs.mongodb.com/manual/reference/operator/aggregation/unwind/) */
 		$unwind: string | { path: string; includeArrayIndex?: string; preserveNullAndEmptyArrays?: boolean }
 	}
-
-	type AccumulatorOperator =
-		| '$accumulator'
-		| '$addToSet'
-		| '$avg'
-		| '$count'
-		| '$first'
-		| '$last'
-		| '$max'
-		| '$mergeObjects'
-		| '$min'
-		| '$push'
-		| '$stdDevPop'
-		| '$stdDevSamp'
-		| '$sum'
-
-	type WindowOperator =
-		| '$addToSet'
-		| '$avg'
-		| '$count'
-		| '$covariancePop'
-		| '$covarianceSamp'
-		| '$derivative'
-		| '$expMovingAvg'
-		| '$integral'
-		| '$max'
-		| '$min'
-		| '$push'
-		| '$stdDevSamp'
-		| '$stdDevPop'
-		| '$sum'
-		| '$first'
-		| '$last'
-		| '$shift'
-		| '$denseRank'
-		| '$documentNumber'
-		| '$rank'
 }
+
+/**
+ * @public
+ */
+type AccumulatorOperator =
+	| '$accumulator'
+	| '$addToSet'
+	| '$avg'
+	| '$count'
+	| '$first'
+	| '$last'
+	| '$max'
+	| '$mergeObjects'
+	| '$min'
+	| '$push'
+	| '$stdDevPop'
+	| '$stdDevSamp'
+	| '$sum'
+
+/**
+ * @public
+ */
+type WindowOperator =
+	| '$addToSet'
+	| '$avg'
+	| '$count'
+	| '$covariancePop'
+	| '$covarianceSamp'
+	| '$derivative'
+	| '$expMovingAvg'
+	| '$integral'
+	| '$max'
+	| '$min'
+	| '$push'
+	| '$stdDevSamp'
+	| '$stdDevPop'
+	| '$sum'
+	| '$first'
+	| '$last'
+	| '$shift'
+	| '$denseRank'
+	| '$documentNumber'
+	| '$rank'
