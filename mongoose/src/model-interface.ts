@@ -1,9 +1,10 @@
 import * as mongoose from 'mongoose'
 import * as mongodb from 'mongodb' // tslint:disable-line: no-implicit-dependencies
-import { ClassType, IsAny, Plain } from './interfaces'
+import { ClassType, IsAny, Plain, PlainKeys } from './interfaces'
+import { PipelineStage } from './pipeline-interface'
 
 /** @ts-ignore protected */
-type NewDocParameter<T extends MongooseModel> = IsAny<T['$typeof']> extends true
+type NewDocParameter<T extends ModelI> = IsAny<T['$typeof']> extends true
 	? Plain.AllowString.PartialDeep<T>
 	: // @ts-ignore protected
 	IsAny<ConstructorParameters<T['$typeof']>[0]> extends true
@@ -15,10 +16,8 @@ type NewDocParameter<T extends MongooseModel> = IsAny<T['$typeof']> extends true
  * Intermediary abstract class with overloaded static methods to properly infer the child class.
  * @public
  */
-export abstract class MongooseModel<C extends ClassType = any> extends (class {} as RefletMongoose.Model) {
-	constructor(doc?: any, strict?: mongoose.SchemaOptions['strict']) {
-		super()
-	}
+export declare abstract class ModelI<C extends ClassType = any> extends (class {} as RefletMongoose.Model) {
+	constructor(doc?: any, strict?: mongoose.SchemaOptions['strict'])
 
 	/**
 	 * Hack to retrieve the constructor type for static methods: `create`, `insertMany` and `replaceOne`.
@@ -27,348 +26,349 @@ export abstract class MongooseModel<C extends ClassType = any> extends (class {}
 	 */
 	protected $typeof?: C
 
-	// @ts-ignore implementation
-	static $where<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		argument: string | Function
-	): mongoose.Query<T[], T>
+	static aggregate<R>(pipeline?: PipelineStage[], options?: mongodb.AggregateOptions): mongoose.Aggregate<R[]>
 
-	static count<T extends MongooseModel>(callback?: (err: any, count: number) => void): mongoose.Query<number, T>
+	static aggregate<R>(pipeline: PipelineStage[], callback: mongoose.Callback<R[]>): Promise<R[]>
 
-	// @ts-ignore implementation
-	static count<T extends MongooseModel>(
+	static aggregate<R>(
+		pipeline: PipelineStage[],
+		options: mongodb.AggregateOptions,
+		callback: mongoose.Callback<R[]>
+	): Promise<R[]>
+
+	static count<T extends ModelI>(callback?: mongoose.Callback<number>): mongoose.Query<number, T>
+
+	static count<T extends ModelI>(
 		filter: mongoose.FilterQuery<T>,
-		callback?: (err: any, count: number) => void
+		callback?: mongoose.Callback<number>
 	): mongoose.Query<number, T>
 
-	static countDocuments<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		callback?: (err: any, count: number) => void
+	static countDocuments<T extends ModelI>(
+		this: ClassType<T>,
+		callback?: mongoose.Callback<number>
 	): mongoose.Query<number, T>
 
-	// @ts-ignore implementation
-	static countDocuments<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
+	static countDocuments<T extends ModelI>(
+		this: ClassType<T>,
 		criteria: mongoose.FilterQuery<T>,
-		callback?: (err: any, count: number) => void
+		callback?: mongoose.Callback<number>
 	): mongoose.Query<number, T>
 
-	static create<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
+	static create<T extends ModelI>(
+		this: ClassType<T>,
 		docs: NewDocParameter<T>[],
 		options?: mongoose.SaveOptions
 	): Promise<T[]>
 
-	static create<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
+	// todo: remove callback signature ?
+	static create<T extends ModelI>(
+		this: ClassType<T>,
 		docs: NewDocParameter<T>[],
-		callback: (err: mongoose.CallbackError, res: T[]) => void
+		callback: mongoose.Callback<T[]>
 	): void
 
 	// must be after signature with array
-	static create<T extends MongooseModel>(this: new (...a: any[]) => T, doc: NewDocParameter<T>): Promise<T>
+	static create<T extends ModelI>(this: ClassType<T>, doc: NewDocParameter<T>): Promise<T>
 
-	static create<T extends MongooseModel>(this: new (...a: any[]) => T, ...docs: NewDocParameter<T>[]): Promise<T[]>
+	// todo: remove rest signature (confuses the compiler) ?
+	static create<T extends ModelI>(this: ClassType<T>, ...docs: NewDocParameter<T>[]): Promise<T[]>
 
-	// @ts-ignore implementation
-	static create<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		doc: NewDocParameter<T>,
-		callback: (err: mongoose.CallbackError, res: T) => void
-	): void
+	// todo: remove callback signature ?
+	static create<T extends ModelI>(this: ClassType<T>, doc: NewDocParameter<T>, callback: mongoose.Callback<T>): void
 
-	static exists<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		filter: mongoose.FilterQuery<T>
-	): Promise<boolean>
-
-	// @ts-ignore implementation
-	static exists<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		filter: mongoose.FilterQuery<T>,
-		callback: (err: any, res: boolean) => void
-	): void
-
-	static find<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		callback?: (err: any, docs: T[]) => void
-	): mongoose.Query<T[], T>
-
-	static find<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		filter: mongoose.FilterQuery<T>,
-		callback?: (err: any, docs: T[]) => void
-	): mongoose.Query<T[], T>
-
-	// @ts-ignore implementation
-	static find<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		filter: mongoose.FilterQuery<T>,
-		projection?: any | null,
-		options?: mongoose.QueryOptions | null,
-		callback?: (err: any, docs: T[]) => void
-	): mongoose.Query<T[], T>
-
-	// @ts-ignore implementation
-	static findById<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		id: mongodb.ObjectId | string,
-		projection?: any | null,
-		options?: mongoose.QueryOptions | null,
-		callback?: (err: any, res: T | null) => void
-	): mongoose.Query<T | null, T>
-
-	static findByIdAndUpdate<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		id: mongodb.ObjectId | string,
-		update: mongoose.UpdateQuery<T>,
-		callback?: (err: any, res: T | null) => void
-	): mongoose.Query<T | null, T>
-
-	static findByIdAndUpdate<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		id: mongodb.ObjectId | string,
-		update: mongoose.UpdateQuery<T>,
-		options: mongoose.QueryOptions & { rawResult: true },
-		callback?: (err: any, doc: any, res: any) => void
-	): mongoose.Query<any, T>
-
-	static findByIdAndUpdate<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		id: mongodb.ObjectId | string,
-		update: mongoose.UpdateQuery<T>,
-		options: mongoose.QueryOptions & { upsert: true } & mongoose.ReturnsNewDoc,
-		callback?: (err: any, doc: T, res: any) => void
-	): mongoose.Query<T, T>
-
-	static findByIdAndUpdate<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		id: mongodb.ObjectId | string,
-		update: mongoose.UpdateQuery<T>,
-		callback?: (err: any, doc: T | null, res: any) => void
-	): mongoose.Query<T, T>
-
-	// @ts-ignore implementation
-	static findByIdAndUpdate<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		id?: mongodb.ObjectId | string,
-		update?: mongoose.UpdateQuery<T>,
-		options?: mongoose.QueryOptions | null,
-		callback?: (err: any, doc: T | null, res: any) => void
-	): mongoose.Query<T | null, T>
-
-	// @ts-ignore implementation
-	static findOne<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
+	static deleteMany<T extends ModelI>(
+		this: ClassType<T>,
 		filter?: mongoose.FilterQuery<T>,
-		projection?: any | null,
+		options?: mongoose.QueryOptions,
+		callback?: mongoose.CallbackWithoutResult
+	): mongoose.Query<mongodb.DeleteResult, T>
+
+	// todo: remove callback signature without options ?
+	static deleteMany<T extends ModelI>(
+		this: ClassType<T>,
+		filter: mongoose.FilterQuery<T>,
+		callback: mongoose.CallbackWithoutResult
+	): mongoose.Query<mongodb.DeleteResult, T>
+
+	static deleteOne<T extends ModelI>(
+		this: ClassType<T>,
+		filter?: mongoose.FilterQuery<T>,
+		options?: mongoose.QueryOptions,
+		callback?: mongoose.CallbackWithoutResult
+	): mongoose.Query<mongodb.DeleteResult, T>
+
+	// todo: remove callback signature without options ?
+	static deleteOne<T extends ModelI>(
+		this: ClassType<T>,
+		filter: mongoose.FilterQuery<T>,
+		callback: mongoose.CallbackWithoutResult
+	): mongoose.Query<mongodb.DeleteResult, T>
+
+	static findById<T extends ModelI>(
+		this: ClassType<T>,
+		id: mongodb.ObjectId | string,
+		projection?: Projection,
+		options?: mongoose.QueryOptions | null,
+		callback?: mongoose.Callback<T | null>
+	): mongoose.Query<T | null, T>
+
+	static findOne<T extends ModelI>(
+		this: ClassType<T>,
+		filter?: mongoose.FilterQuery<T>,
+		projection?: Projection,
 		options?: mongoose.QueryOptions | any,
-		callback?: (err: any, doc: T | null) => void
+		callback?: mongoose.Callback<T | null>
 	): mongoose.Query<T | null, T>
 
-	// @ts-ignore implementation
-	static findOneAndDelete<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		filter?: mongoose.FilterQuery<T>,
-		options?: mongoose.QueryOptions | null,
-		callback?: (err: any, doc: T | null, res: any) => void
-	): mongoose.Query<T | null, T>
+	/**
+	 * Shortcut for creating a new Document from existing raw data, pre-saved in the DB.
+	 * The document returned has no paths marked as modified initially.
+	 */
+	static hydrate<T extends ModelI>(this: ClassType<T>, obj: { [key: string]: any }): T
 
-	// @ts-ignore implementation
-	static findOneAndRemove<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		filter?: mongoose.FilterQuery<T>,
-		options?: mongoose.QueryOptions | null,
-		callback?: (err: any, doc: T | null, res: any) => void
-	): mongoose.Query<T | null, T>
-
-	static findOneAndReplace<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		filter: mongoose.FilterQuery<T>,
-		replacement: mongoose.DocumentDefinition<T>,
-		options: mongoose.QueryOptions & { upsert: true } & mongoose.ReturnsNewDoc,
-		callback?: (err: any, doc: T, res: any) => void
-	): mongoose.Query<T, T>
-
-	// @ts-ignore implementation
-	static findOneAndReplace<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		filter?: mongoose.FilterQuery<T>,
-		replacement?: mongoose.DocumentDefinition<T>,
-		options?: mongoose.QueryOptions | null,
-		callback?: (err: any, doc: T | null, res: any) => void
-	): mongoose.Query<T | null, T>
-
-	static findOneAndUpdate<T extends MongooseModel>(this: new (...a: any[]) => T): mongoose.Query<T | null, T>
-
-	static findOneAndUpdate<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		conditions: mongoose.FilterQuery<T>,
-		update: mongoose.UpdateQuery<T>,
-		callback?: (err: any, doc: T | null, res: any) => void
-	): mongoose.Query<T | null, T>
-
-	static findOneAndUpdate<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		conditions: mongoose.FilterQuery<T>,
-		update: mongoose.UpdateQuery<T>,
-		options: ({ rawResult: true } & { upsert: true; new: true } & mongoose.QueryOptions) | null,
-		callback?: (err: any, doc: any, res: any) => void
-	): mongoose.Query<any, T>
-
-	static findOneAndUpdate<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		conditions: mongoose.FilterQuery<T>,
-		update: mongoose.UpdateQuery<T>,
-		options: ({ upsert: true; new: true } & mongoose.QueryOptions) | null,
-		callback?: (err: any, doc: T, res: any) => void
-	): mongoose.Query<T, T>
-
-	static findOneAndUpdate<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		conditions: mongoose.FilterQuery<T>,
-		update: mongoose.UpdateQuery<T>,
-		options: ({ rawResult: true } & mongoose.QueryOptions) | null,
-		callback?: (err: any, doc: any | null, res: any) => void
-	): mongoose.Query<any | null, T>
-
-	// @ts-ignore implementation
-	static findOneAndUpdate<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		conditions: mongoose.FilterQuery<T>,
-		update: mongoose.UpdateQuery<T>,
-		options: mongoose.QueryOptions | null,
-		callback?: (err: any, doc: T | null, res: any) => void
-	): mongoose.Query<T | null, T>
-
-	// @ts-ignore implementation
-	static hydrate<T extends MongooseModel>(this: new (...a: any[]) => T, obj: { [key: string]: any }): T
-
-	static insertMany<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
+	static insertMany<T extends ModelI>(
+		this: ClassType<T>,
 		docs: NewDocParameter<T>[],
-		callback?: (error: any, docs: T[]) => void
+		options: mongoose.InsertManyOptions & { rawResult: true },
+		callback?: mongoose.Callback<T[]>
+	): Promise<mongoose.InsertManyResult>
+
+	static insertMany<T extends ModelI>(
+		this: ClassType<T>,
+		docs: NewDocParameter<T>[],
+		options?: mongoose.InsertManyOptions,
+		callback?: mongoose.Callback<T[]>
 	): Promise<T[]>
 
-	static insertMany<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		docs: NewDocParameter<T>[],
-		options?: { ordered?: boolean; rawResult?: boolean } & mongoose.InsertManyOptions,
-		callback?: (error: any, docs: T[]) => void
-	): Promise<T[]>
-
-	static insertMany<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
+	static insertMany<T extends ModelI>(
+		this: ClassType<T>,
 		doc: NewDocParameter<T>,
+		options: mongoose.InsertManyOptions & { rawResult: true },
 		callback?: (error: any, doc: T) => void
-	): Promise<T>
+	): Promise<mongoose.InsertManyResult>
 
-	// @ts-ignore implementation
-	static insertMany<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
+	static insertMany<T extends ModelI>(
+		this: ClassType<T>,
 		doc: NewDocParameter<T>,
-		options?: { ordered?: boolean; rawResult?: boolean } & mongoose.InsertManyOptions,
+		options?: mongoose.InsertManyOptions,
 		callback?: (error: any, doc: T) => void
 	): Promise<T>
 
 	// https://mongoosejs.com/docs/api.html#model_Model.populate
-	static populate<T extends MongooseModel, U extends { [key: string]: any }>(
-		this: new (...a: any[]) => T,
+	static populate<T extends ModelI, U extends { [key: string]: any }>(
+		this: ClassType<T>,
 		docs: U[],
 		options: mongoose.PopulateOptions | mongoose.PopulateOptions[] | string,
-		callback?: (err: any, res: U[]) => void
+		callback?: mongoose.Callback<U[]>
 	): Promise<U[]>
 
-	// @ts-ignore implementation
-	static populate<T extends MongooseModel, U extends { [key: string]: any }>(
-		this: new (...a: any[]) => T,
-		docs: U,
+	static populate<T extends ModelI, U extends { [key: string]: any }>(
+		this: ClassType<T>,
+		doc: U,
 		options: mongoose.PopulateOptions | mongoose.PopulateOptions[] | string,
-		callback?: (err: any, res: U) => void
+		callback?: mongoose.Callback<U>
 	): Promise<U>
 
-	// @ts-ignore implementation
-	static remove<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		filter?: mongoose.FilterQuery<T>,
-		callback?: (err: any) => void
-	): mongoose.Query<mongodb.DeleteResult & { deletedCount?: number }, T>
+	static watch<T>(
+		this: ClassType<T>,
+		pipeline?: Array<Record<string, unknown>>,
+		options?: mongodb.ChangeStreamOptions
+	): mongodb.ChangeStream<T>
 
-	static deleteOne<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		filter?: mongoose.FilterQuery<T>,
-		callback?: (err: any) => void
-	): mongoose.Query<mongodb.DeleteResult & { deletedCount?: number }, T>
+	static $where<T extends ModelI>(this: ClassType<T>, argument: string | Function): mongoose.Query<T[], T>
 
-	// @ts-ignore implementation
-	static deleteOne<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
+	/** Creates a `distinct` query: returns the distinct values of the given `field` that match `filter`. */
+	static distinct<T extends ModelI, K extends string & PlainKeys<T>>(
+		this: ClassType<T>,
+		field: K,
 		filter?: mongoose.FilterQuery<T>,
-		options?: mongoose.QueryOptions,
-		callback?: (err: any) => void
-	): mongoose.Query<mongodb.DeleteResult & { deletedCount?: number }, T>
+		callback?: mongoose.Callback<number>
+	): mongoose.Query<T[K][], T>
 
-	static deleteMany<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
+	static exists<T extends ModelI>(this: ClassType<T>, filter: mongoose.FilterQuery<T>): Promise<boolean>
+
+	// todo: remove callback signature ?
+	static exists<T extends ModelI>(
+		this: ClassType<T>,
+		filter: mongoose.FilterQuery<T>,
+		callback: mongoose.Callback<boolean>
+	): void
+
+	// static find<T extends MongooseModel>(this: ClassType<T>, callback?: mongoose.Callback<T[]>): mongoose.Query<T[], T>
+
+	static find<T extends ModelI>(
+		this: ClassType<T>,
 		filter?: mongoose.FilterQuery<T>,
-		callback?: (err: any) => void
-	): mongoose.Query<mongodb.DeleteResult & { deletedCount?: number }, T>
+		callback?: mongoose.Callback<T[]>
+	): mongoose.Query<T[], T>
 
-	// @ts-ignore implementation
-	static deleteMany<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
+	static find<T extends ModelI>(
+		this: ClassType<T>,
+		filter: mongoose.FilterQuery<T>,
+		projection?: Projection,
+		options?: mongoose.QueryOptions | null,
+		callback?: mongoose.Callback<T[]>
+	): mongoose.Query<T[], T>
+
+	static findByIdAndDelete<T extends ModelI>(
+		this: ClassType<T>,
+		id?: mongodb.ObjectId | string,
+		options?: mongoose.QueryOptions | null,
+		callback?: (err: mongoose.CallbackError, doc: T | null, res: any) => void
+	): mongoose.Query<T | null, T>
+
+	static findByIdAndRemove<T extends ModelI>(
+		this: ClassType<T>,
+		id?: mongodb.ObjectId | any,
+		options?: mongoose.QueryOptions | null,
+		callback?: (err: mongoose.CallbackError, doc: T | null, res: any) => void
+	): mongoose.Query<T | null, T>
+
+	static findByIdAndUpdate<T extends ModelI>(
+		this: ClassType<T>,
+		id: mongodb.ObjectId | string,
+		update: mongoose.UpdateQuery<T>,
+		options: mongoose.QueryOptions & { rawResult: true },
+		callback?: (err: mongoose.CallbackError, doc: any, res: any) => void
+	): mongoose.Query<mongodb.ModifyResult<T>, T>
+
+	static findByIdAndUpdate<T extends ModelI>(
+		this: ClassType<T>,
+		id: mongodb.ObjectId | string,
+		update: mongoose.UpdateQuery<T>,
+		options: mongoose.QueryOptions & { upsert: true } & mongoose.ReturnsNewDoc,
+		callback?: (err: mongoose.CallbackError, doc: T, res: any) => void
+	): mongoose.Query<T, T>
+
+	static findByIdAndUpdate<T extends ModelI>(
+		this: ClassType<T>,
+		id?: mongodb.ObjectId | string,
+		update?: mongoose.UpdateQuery<T>,
+		options?: mongoose.QueryOptions | null,
+		callback?: (err: mongoose.CallbackError, doc: T | null, res: any) => void
+	): mongoose.Query<T | null, T>
+
+	// todo: remove callback signature without options ?
+	static findByIdAndUpdate<T extends ModelI>(
+		this: ClassType<T>,
+		id: mongodb.ObjectId | string,
+		update: mongoose.UpdateQuery<T>,
+		callback: (err: mongoose.CallbackError, doc: T | null, res: any) => void
+	): mongoose.Query<T | null, T>
+
+	static findOneAndDelete<T extends ModelI>(
+		this: ClassType<T>,
 		filter?: mongoose.FilterQuery<T>,
-		options?: mongoose.QueryOptions,
-		callback?: (err: any) => void
-	): mongoose.Query<mongodb.DeleteResult & { deletedCount?: number }, T>
+		options?: mongoose.QueryOptions | null,
+		callback?: (err: mongoose.CallbackError, doc: T | null, res: any) => void
+	): mongoose.Query<T | null, T>
 
-	// @ts-ignore implementation
-	static replaceOne<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
+	static findOneAndRemove<T extends ModelI>(
+		this: ClassType<T>,
+		filter?: mongoose.FilterQuery<T>,
+		options?: mongoose.QueryOptions | null,
+		callback?: (err: mongoose.CallbackError, doc: T | null, res: any) => void
+	): mongoose.Query<T | null, T>
+
+	static findOneAndReplace<T extends ModelI>(
+		this: ClassType<T>,
+		filter: mongoose.FilterQuery<T>,
+		replacement: NewDocParameter<T>,
+		options: mongoose.QueryOptions & { upsert: true } & mongoose.ReturnsNewDoc,
+		callback?: (err: mongoose.CallbackError, doc: T, res: any) => void
+	): mongoose.Query<T, T>
+
+	static findOneAndReplace<T extends ModelI>(
+		this: ClassType<T>,
 		filter?: mongoose.FilterQuery<T>,
 		replacement?: NewDocParameter<T>,
 		options?: mongoose.QueryOptions | null,
-		callback?: (err: any, res: any) => void
-	): mongoose.Query<any, T>
+		callback?: (err: mongoose.CallbackError, doc: T | null, res: any) => void
+	): mongoose.Query<T | null, T>
 
-	static update<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		filter?: mongoose.FilterQuery<T>,
-		update?: mongoose.UpdateQuery<T>,
-		callback?: (err: any, res: any) => void
-	): mongoose.Query<mongodb.UpdateResult, T>
+	static findOneAndUpdate<T extends ModelI>(
+		this: ClassType<T>,
+		filter: mongoose.FilterQuery<T>,
+		update: mongoose.UpdateQuery<T>,
+		options: mongoose.QueryOptions & { rawResult: true },
+		callback?: (err: mongoose.CallbackError, doc: any | null, res: any) => void
+	): mongoose.Query<mongodb.ModifyResult<T>, T>
 
-	// @ts-ignore implementation
-	static update<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		filter?: mongoose.FilterQuery<T>,
-		update?: mongoose.UpdateQuery<T>,
-		options?: mongoose.QueryOptions | null,
-		callback?: (err: any, raw: any) => void
-	): mongoose.Query<mongodb.UpdateResult, T>
+	static findOneAndUpdate<T extends ModelI>(
+		this: ClassType<T>,
+		filter: mongoose.FilterQuery<T>,
+		update: mongoose.UpdateQuery<T>,
+		options: mongoose.QueryOptions & { upsert: true } & mongoose.ReturnsNewDoc,
+		callback?: (err: mongoose.CallbackError, doc: T, res: any) => void
+	): mongoose.Query<T, T>
 
-	static updateOne<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
-		filter?: mongoose.FilterQuery<T>,
-		update?: mongoose.UpdateQuery<T>,
-		callback?: (err: any, raw: any) => void
-	): mongoose.Query<mongodb.UpdateResult, T>
-
-	// @ts-ignore implementation
-	static updateOne<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
+	static findOneAndUpdate<T extends ModelI>(
+		this: ClassType<T>,
 		filter?: mongoose.FilterQuery<T>,
 		update?: mongoose.UpdateQuery<T>,
 		options?: mongoose.QueryOptions | null,
-		callback?: (err: any, raw: any) => void
-	): mongoose.Query<mongodb.UpdateResult, T>
+		callback?: (err: mongoose.CallbackError, doc: T | null, res: any) => void
+	): mongoose.Query<T | null, T>
 
-	// @ts-ignore implementation
-	static updateMany<T extends MongooseModel>(
-		this: new (...a: any[]) => T,
+	static geoSearch<T extends ModelI>(
+		this: ClassType<T>,
 		filter?: mongoose.FilterQuery<T>,
-		doc?: mongoose.UpdateQuery<T>,
+		options?: mongoose.GeoSearchOptions,
+		callback?: mongoose.Callback<T[]>
+	): mongoose.Query<T[], T>
+
+	static mapReduce<T extends ModelI, Key, Value>(
+		this: ClassType<T>,
+		o: mongoose.MapReduceOptions<T, Key, Value>,
+		callback?: mongoose.Callback
+	): Promise<any>
+
+	static remove<T extends ModelI>(
+		this: ClassType<T>,
+		filter?: mongoose.FilterQuery<T>,
+		callback?: mongoose.CallbackWithoutResult
+	): mongoose.Query<mongodb.DeleteResult, T>
+
+	static replaceOne<T extends ModelI>(
+		this: ClassType<T>,
+		filter?: mongoose.FilterQuery<T>,
+		replacement?: NewDocParameter<T>,
+		options?: mongoose.QueryOptions | null,
+		callback?: mongoose.Callback<mongoose.UpdateWriteOpResult>
+	): mongoose.Query<mongoose.UpdateWriteOpResult, T>
+
+	static update<T extends ModelI>(
+		this: ClassType<T>,
+		filter?: mongoose.FilterQuery<T>,
+		update?: mongoose.UpdateQuery<T> | mongoose.UpdateWithAggregationPipeline,
+		options?: mongoose.QueryOptions | null,
+		callback?: mongoose.Callback
+	): mongoose.Query<mongoose.UpdateWriteOpResult, T>
+
+	static updateMany<T extends ModelI>(
+		this: ClassType<T>,
+		filter?: mongoose.FilterQuery<T>,
+		update?: mongoose.UpdateQuery<T> | mongoose.UpdateWithAggregationPipeline,
 		options?: mongoose.QueryOptions,
-		callback?: (err: any, raw: any) => void
-	): mongoose.Query<mongodb.UpdateResult, T>
+		callback?: mongoose.Callback
+	): mongoose.Query<mongoose.UpdateWriteOpResult, T>
+
+	static updateOne<T extends ModelI>(
+		this: ClassType<T>,
+		filter?: mongoose.FilterQuery<T>,
+		update?: mongoose.UpdateQuery<T> | mongoose.UpdateWithAggregationPipeline,
+		options?: mongoose.QueryOptions | null,
+		callback?: mongoose.Callback
+	): mongoose.Query<mongoose.UpdateWriteOpResult, T>
+
+	static where<T extends ModelI>(this: ClassType<T>, path: string, val?: any): mongoose.Query<T[], T>
+
+	static where<T extends ModelI>(this: ClassType<T>, obj: { [key: string]: any }): mongoose.Query<T[], T>
+
+	static where<T extends ModelI>(this: ClassType<T>): mongoose.Query<T[], T>
 }
+
+/**
+ * @public
+ */
+type Projection = string | Record<string, 1 | 0> | null

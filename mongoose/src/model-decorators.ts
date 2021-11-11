@@ -2,7 +2,7 @@ import * as mongoose from 'mongoose'
 import { createSchema } from './schema-creation'
 import { registerModelDecorator } from './check-decorator-order'
 import { getKind, assignModelKindKey } from './kind-decorator'
-import { MongooseModel } from './model-interface'
+import { ModelI } from './model-interface'
 import { RefletMongooseError } from './reflet-error'
 import { ClassType, ModelAny } from './interfaces'
 
@@ -18,7 +18,7 @@ import { ClassType, ModelAny } from './interfaces'
  * @example
  * ```ts
  * ＠Model()
- * class User extends Model.I<User> {
+ * class User extends Model.I {
  *   ＠Field({ type: String, required: true })
  *   name: string
  * }
@@ -114,16 +114,16 @@ export namespace Model {
 	 * @abstract
 	 * @public
 	 */
-	export const Interface = MongooseModel
-	export type Interface<C extends ClassType = any> = MongooseModel<C>
+	export const Interface = class {} as unknown as typeof ModelI
+	export type Interface<C extends ClassType = any> = ModelI<C>
 
 	/**
 	 * Dummy class to extend from, to get all the (narrowed) types from mongoose Model and Document.
 	 * @abstract
 	 * @public
 	 */
-	export const I = MongooseModel
-	export type I<C extends ClassType = any> = MongooseModel<C>
+	export const I = Interface
+	export type I<C extends ClassType = any> = ModelI<C>
 
 	/**
 	 * Equivalent to `ClassDecorator`.
