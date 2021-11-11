@@ -21,4 +21,4 @@
 * `Controllers` interface was renamed to `RegistrationArray`.
 
 * Option for middleware deduplication in `createParamDecorator` is no longer a single boolean.
-  Use the signature `(myMapper, [{ handler: myMiddleware, dedupeByReference: true, dedupeByName: true }])` instead of `(myMapper, myMiddleware, true)`
+  Use the signature `(myMapper, [{ handler: myMiddleware, dedupe: true }])` instead of `(myMapper, myMiddleware, true)`

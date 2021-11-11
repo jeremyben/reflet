@@ -117,8 +117,8 @@ export namespace Next {
 
 /** default parser middlewares to apply with @Body decorator */
 const bodyParsers: createParamDecorator.Middleware[] = [
-	{ handler: express.json(), dedupeByReference: true, dedupeByName: true },
-	{ handler: express.urlencoded({ extended: true }), dedupeByReference: true, dedupeByName: true },
+	{ handler: express.json(), dedupe: true },
+	{ handler: express.urlencoded({ extended: true }), dedupe: true },
 ]
 
 /**
@@ -371,7 +371,7 @@ export namespace createParamDecorator {
 	 */
 	export type Middleware =
 		| express.RequestHandler
-		| { handler: express.RequestHandler; dedupeByReference?: boolean; dedupeByName?: boolean }
+		| { handler: express.RequestHandler; dedupe?: boolean | 'by-name' | 'by-reference' }
 
 	/**
 	 * Equivalent to `ParameterDecorator`.
@@ -449,7 +449,7 @@ export function extractParamsMiddlewares(
 
 				// Dedupe middlewares in upper layers.
 
-				if (mware.dedupeByReference) {
+				if (mware.dedupe === true || mware.dedupe === 'by-reference') {
 					const sameRef = alreadyMwares.some((alreadyMware) => alreadyMware.includes(mware.handler))
 					// console.log('dedupe-by-reference:', mware.handler.name, sameRef)
 					if (sameRef) {
@@ -457,7 +457,7 @@ export function extractParamsMiddlewares(
 					}
 				}
 
-				if (mware.dedupeByName) {
+				if (mware.dedupe === true || mware.dedupe === 'by-name') {
 					// Perform the flatmap only if one of the parameter requires deduplication by name.
 					if (!alreadyNames.length) {
 						alreadyNames = flatMapFast(alreadyMwares, (m) => m.name)

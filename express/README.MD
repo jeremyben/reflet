@@ -692,12 +692,16 @@ You can mark your custom decorator's middlewares for **deduplication**:
 ```ts
 const CurrentUser = createParamDecorator(
   (req) => req.user, 
-  [{ handler: isAuthenticated, dedupeByReference: true, dedupeByName: true }]
+  [{ handler: isAuthenticated, dedupe: true }]
 )
 ```
 
 With these options, on registering, Reflet won't add the implicit middlewares if they're already applied locally (on a route or router) or globally (on the app). 
-Comparison is done by function reference with `dedupeByReference` and by function name with `dedupeByName`.
+
+Comparison to deduplicate is done:
+* by function reference with `dedupe: 'by-reference'`
+* by function name with `dedupe: 'by-name'`
+* by both function reference and name with `dedupe: true`
 
 That's basically how the `Body` decorator works with its body parsers.
 
@@ -712,8 +716,8 @@ const BodyTrimmed = (key: string) => createParamDecorator(
     else return req.body[key]
   },
   [
-    { handler: express.json(), dedupeByReference: true, dedupeByName: true },
-    { handler: express.urlencoded(), dedupeByReference: true, dedupeByName: true },
+    { handler: express.json(), dedupe: true },
+    { handler: express.urlencoded(), dedupe: true },
   ]
 )
 

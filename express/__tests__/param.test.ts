@@ -135,7 +135,7 @@ describe('param middlewares deduplication', () => {
 
 	test('body-parsers in different param decorators', async () => {
 		const BodyTrimmed = (subKey: string) =>
-			createParamDecorator((req) => req.body[subKey].trim(), [{ handler: express.json(), dedupeByName: true }])
+			createParamDecorator((req) => req.body[subKey].trim(), [{ handler: express.json(), dedupe: 'by-name' }])
 
 		class Foo {
 			@Post()
@@ -161,10 +161,7 @@ describe('param middlewares deduplication', () => {
 			next()
 		}
 
-		const CurrentUser = createParamDecorator(
-			(req: RequestAuth) => req.user!,
-			[{ handler: authent, dedupeByReference: true }]
-		)
+		const CurrentUser = createParamDecorator((req: RequestAuth) => req.user!, [{ handler: authent, dedupe: true }])
 
 		@Use(authent)
 		class Bar {
