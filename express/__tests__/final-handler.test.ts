@@ -47,7 +47,7 @@ describe('final handler', () => {
 		const res = await rq.get('/bar/baz')
 
 		expect(res.status).toBe(404)
-		expect(res.body).toEqual({ name: 'Error', message: 'Cannot GET /bar/baz' })
+		expect(res.body).toEqual({ name: 'RouteNotFoundError', message: 'Cannot GET /bar/baz' })
 
 		expect(consoleErrorSpy).toBeCalledWith(expect.any(Error))
 	})
