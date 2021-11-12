@@ -645,7 +645,7 @@ class ThingRouter {
 
 ##### 💡 Tip
 
-Use **[HTTP request headers enum](https://github.com/jeremyben/tshttp/tree/master/header)** from the same maintainer (that would be me) for an even better developer experience.
+Use **[`RequestHeader` enum](../http/README.md#header-)** from `@reflet/http` for an even better developer experience.
 
 ### Create your own parameter decorator 🔧
 
@@ -849,7 +849,7 @@ list() {
 
 ##### 💡 Tip
 
-Use **[HTTP status enums](https://github.com/jeremyben/tshttp/tree/master/status)** from the same maintainer (me again) for an even better developer experience.
+Use **[`SuccessStatus` enum](../http/README.md#status-)**  from `@reflet/http` for an even better developer experience.
 
 ### Share and override
 
@@ -964,7 +964,7 @@ Logically, class-scoped error handlers are applied further down the handlers' st
 
 ##### 💡 Tip
 
-Throw some **[HTTP Errors](https://github.com/jeremyben/tshttp/tree/master/error)** from the same maintainer (you know who) for an even better developer experience. _Compatible with express default error handler as well._
+Throw some **[`HTTPError`](../http/README.md#error-)** from `@reflet/http` for an even better developer experience. _Compatible with express default error handler as well._
 
 ### Final Handler
 

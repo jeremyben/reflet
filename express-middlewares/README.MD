@@ -175,7 +175,7 @@ class Controller {
 
 ##### 💡 Tip
 
-Use **[HTTP status enums](https://github.com/jeremyben/tshttp/tree/master/status)** from the same maintainer for an even better developer experience.
+Use **[`Status` enum](../http/README.md#status-)** from `@reflet/http` for an even better developer experience.
 
 ## Response headers
 
@@ -205,7 +205,7 @@ class Controller {
 
 ##### 💡 Tip
 
-Use **[HTTP response headers enum](https://github.com/jeremyben/tshttp/tree/master/header)** from the same maintainer for an even better developer experience.
+Use **[`ResponseHeader` enum](../http/README.md#header-)** from `@reflet/http` for an even better developer experience.
 
 ### Append header value
 

@@ -75,6 +75,24 @@ const jobs = initCronJobs(Jobs)
 jobs.startAll()
 ```
 
+## [Reflet/http](./http)
+
+Typed HTTP primitives to use within any framework (or directly the best: this one 😎).
+**[The documentation](./http/README.md)**.
+
+```ts
+@Router('/things')
+class ThingRouter {
+  @UseStatus(Status.Created)
+  @Post()
+  async create(@Headers(RequestHeader.Authorization) auth: string) {
+    if (!auth) {
+      throw HttpError.Unauthorized('Stop right there')
+    }
+  }
+}
+```
+
 ## Philosophy 📣
 
 Why another decorator framework ? Simply <sub>(and biasedly)</sub> put, a better developer experience.
