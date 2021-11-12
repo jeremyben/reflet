@@ -1,10 +1,11 @@
-import { join } from 'path'
+import { basename, join } from 'path'
 import { build } from 'tsc-prog'
 import * as ts from 'typescript'
 import * as tsdoc from '@microsoft/tsdoc'
 import { writeFileSync } from 'fs'
 
 const basePath = process.cwd()
+const folderName = basename(basePath)
 const dtsEntryPoint = 'index.d.ts'
 
 build({
@@ -20,7 +21,7 @@ build({
 	include: [`src/**/*`],
 	exclude: ['**/__tests__', '**/test.ts', '**/*.test.ts', '**/*.spec.ts', 'node_modules'],
 	clean: { outDir: true },
-	bundleDeclaration: { entryPoint: dtsEntryPoint, augmentations: false },
+	bundleDeclaration: folderName !== 'http' ? { entryPoint: dtsEntryPoint, augmentations: false } : undefined,
 })
 
 syncOverloadsDoc()
