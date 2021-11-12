@@ -25,11 +25,11 @@
 		"access": "public"
 	},
 	"engines": {
-		"node": ">=8.10"
+		"node": ">=10"
 	},
 	"engineStrict": true,
 	"peerDependencies": {
-		"@types/node": ">=8",
+		"@types/node": ">=10",
 		"mongoose": ">=6",
 		"reflect-metadata": "^0.1.13"
 	},
