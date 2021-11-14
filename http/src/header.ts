@@ -1,11 +1,9 @@
 /**
  * Headers containing more information about the resource to be fetched or about the client itself.
- *
- * https://developer.mozilla.org/en-US/docs/Glossary/Request_header
- *
+ * @see https://developer.mozilla.org/en-US/docs/Glossary/Request_header
  * @public
  */
-export const RequestHeader = <const>{
+export const RequestHeader = {
 	//
 	// ═════════ CORS Request Headers ═════════
 	//
@@ -15,24 +13,24 @@ export const RequestHeader = <const>{
 	 * Used when issuing a preflight request to let the server know which HTTP headers will be used
 	 * when the actual request is made.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Request-Headers
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Request-Headers)
 	 */
-	AccessControlRequestHeaders: 'access-control-request-headers',
+	AccessControlRequestHeaders: <const>'access-control-request-headers',
 
 	/**
 	 * Used when issuing a preflight request to let the server know which HTTP method will be used
 	 * when the actual request is made.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Request-Method
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Request-Method)
 	 */
-	AccessControlRequestMethod: 'access-control-request-method',
+	AccessControlRequestMethod: <const>'access-control-request-method',
 
 	/**
 	 * Indicates where a fetch originates from.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Origin
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Origin)
 	 */
-	Origin: 'origin',
+	Origin: <const>'origin',
 
 	//
 	// ═════════ Authentication ═════════
@@ -41,20 +39,20 @@ export const RequestHeader = <const>{
 	/**
 	 * Contains the credentials to authenticate a user agent with a server.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Authorization
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Authorization)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.8
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.8)
 	 */
-	Authorization: 'authorization',
+	Authorization: <const>'authorization',
 
 	/**
 	 * Contains the credentials to authenticate a user agent with a proxy server.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Proxy-Authorization
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Proxy-Authorization)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.34
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.34)
 	 */
-	ProxyAuthorization: 'proxy-authorization',
+	ProxyAuthorization: <const>'proxy-authorization',
 
 	//
 	// ═════════ Content negotiation ═════════
@@ -64,30 +62,30 @@ export const RequestHeader = <const>{
 	/**
 	 * Informs the server about the types of data that can be sent back. It is MIME-type.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.1
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.1)
 	 */
-	Accept: 'accept',
+	Accept: <const>'accept',
 
 	/**
 	 * Informs the server about which character set the client is able to understand.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Charset
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Charset)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.2
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.2)
 	 */
-	AcceptCharset: 'accept-charset',
+	AcceptCharset: <const>'accept-charset',
 
 	/**
 	 * Informs the server about the encoding algorithm, usually a compression algorithm,
 	 * that can be used on the resource sent back.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Encoding
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Encoding)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.3
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.3)
 	 */
-	AcceptEncoding: 'accept-encoding',
+	AcceptEncoding: <const>'accept-encoding',
 
 	/**
 	 * Informs the server about the language the server is expected to send back.
@@ -95,11 +93,11 @@ export const RequestHeader = <const>{
 	 * the server should always pay attention not to override an explicit user choice
 	 * (like selecting a language in a drop down list).
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Language
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Language)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.4
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.4)
 	 */
-	AcceptLanguage: 'accept-language',
+	AcceptLanguage: <const>'accept-language',
 
 	//
 	// ═════════ Caching ═════════
@@ -109,11 +107,11 @@ export const RequestHeader = <const>{
 	/**
 	 * Specifies directives for caching mechanisms in both requests and responses.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9)
 	 */
-	CacheControl: 'cache-control',
+	CacheControl: <const>'cache-control',
 
 	// General header
 	/**
@@ -121,11 +119,11 @@ export const RequestHeader = <const>{
 	 * Used for backwards compatibility with HTTP/1.0 caches where the `Cache-Control` header is not yet present.
 	 * @deprecated
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Pragma
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Pragma)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.32
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.32)
 	 */
-	Pragma: 'pragma',
+	Pragma: <const>'pragma',
 
 	//
 	// ═════════ Transfer coding ═════════
@@ -134,11 +132,11 @@ export const RequestHeader = <const>{
 	/**
 	 * Specifies the transfer encodings the user agent is willing to accept.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/TE
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/TE)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.39
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.39)
 	 */
-	TE: 'te',
+	TE: <const>'te',
 
 	//
 	// ═════════ Request context ═════════
@@ -147,40 +145,40 @@ export const RequestHeader = <const>{
 	/**
 	 * Contains an Internet email address for a human user who controls the requesting user agent.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/From
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/From)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.22
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.22)
 	 */
-	From: 'from',
+	From: <const>'from',
 
 	/**
 	 * Specifies the domain name of the server (for virtual hosting), and (optionally) the TCP port number on which the server is listening.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Host
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Host)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.23
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.23)
 	 */
-	Host: 'host',
+	Host: <const>'host',
 
 	/**
 	 * The address of the previous web page from which a link to the currently requested page was followed.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referer
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referer)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.36
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.36)
 	 */
-	Referer: 'referer',
+	Referer: <const>'referer',
 
 	/**
 	 * Contains a characteristic string that allows the network protocol peers to identify
 	 * the application type, operating system, software vendor or software version
 	 * of the requesting software user agent.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.43
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.43)
 	 */
-	UserAgent: 'user-agent',
+	UserAgent: <const>'user-agent',
 
 	//
 	// ═════════ Controls ═════════
@@ -189,19 +187,19 @@ export const RequestHeader = <const>{
 	/**
 	 * Indicates expectations that need to be fulfilled by the server in order to properly handle the request.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Expect
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Expect)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.20
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.20)
 	 */
-	Expect: 'expect',
+	Expect: <const>'expect',
 
 	/**
 	 * Provides a mechanism with the `TRACE` and `OPTIONS` methods to limit the number
 	 * of proxies or gateways that can forward the request to the next inbound server.
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.31
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.31)
 	 */
-	MaxForwards: 'max-forwards',
+	MaxForwards: <const>'max-forwards',
 
 	//
 	// ═════════ Proxies ═════════
@@ -211,41 +209,41 @@ export const RequestHeader = <const>{
 	 * Contains information from the client-facing side of proxy servers
 	 * that is altered or lost when a proxy is involved in the path of the request.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Forwarded
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Forwarded)
 	 */
-	Forwarded: 'forwarded',
+	Forwarded: <const>'forwarded',
 
 	/**
 	 * Identifies the originating IP addresses of a client connecting to a web server
 	 * through an HTTP proxy or a load balancer.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For)
 	 */
-	XForwardedFor: 'x-forwarded-for',
+	XForwardedFor: <const>'x-forwarded-for',
 
 	/**
 	 * Identifies the original host requested that a client used to connect to your proxy or load balancer.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Host
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Host)
 	 */
-	XForwardedHost: 'x-forwarded-host',
+	XForwardedHost: <const>'x-forwarded-host',
 
 	/**
 	 * Identifies the protocol (HTTP or HTTPS) that a client used to connect to your proxy or load balancer.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Proto
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Proto)
 	 */
-	XForwardedProto: 'x-forwarded-proto',
+	XForwardedProto: <const>'x-forwarded-proto',
 
 	// General header
 	/**
 	 * Added by proxies, both forward and reverse proxies, and can appear in the request headers and the response headers.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Via
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Via)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.45
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.45)
 	 */
-	Via: 'via',
+	Via: <const>'via',
 
 	//
 	// ═════════ Conditionals ═════════
@@ -254,9 +252,9 @@ export const RequestHeader = <const>{
 	/**
 	 * Makes the request conditional and applies the method only if the stored resource matches one of the given ETags.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Match
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Match)
 	 */
-	IfMatch: 'if-match',
+	IfMatch: <const>'if-match',
 
 	/**
 	 * Makes the request conditional and applies the method only if the stored resource doesn't match any of the given ETags.
@@ -264,9 +262,9 @@ export const RequestHeader = <const>{
 	 * This is used to update caches (for safe requests), or to prevent to upload a new resource when one is already existing.
 	 *
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-None-Match
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-None-Match)
 	 */
-	IfNoneMatch: 'if-none-match',
+	IfNoneMatch: <const>'if-none-match',
 
 	/**
 	 * Makes the request conditional and expects the entity to be transmitted only if it has been modified after the given date.
@@ -274,9 +272,9 @@ export const RequestHeader = <const>{
 	 * This is used to transmit data only when the cache is out of date.
 	 *
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Modified-Since
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Modified-Since)
 	 */
-	IfModifiedSince: 'if-modified-since',
+	IfModifiedSince: <const>'if-modified-since',
 
 	/**
 	 * Makes the request conditional and expects the entity to be transmitted only if it has not been modified after the given date.
@@ -285,9 +283,9 @@ export const RequestHeader = <const>{
 	 * or to implement an optimistic concurrency control system when modifying existing documents.
 	 *
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Unmodified-Since
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Unmodified-Since)
 	 */
-	IfUnmodifiedSince: 'if-unmodified-since',
+	IfUnmodifiedSince: <const>'if-unmodified-since',
 
 	//
 	// ═════════ Range requests ═════════
@@ -296,21 +294,21 @@ export const RequestHeader = <const>{
 	/**
 	 * Indicates the part of a document that the server should return.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Range
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Range)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.35
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.35)
 	 */
-	Range: 'range',
+	Range: <const>'range',
 
 	/**
 	 * Creates a conditional range request that is only fulfilled if the given etag or date matches the remote resource.
 	 * Used to prevent downloading two ranges from incompatible version of the resource.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Range
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Range)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.27
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.27)
 	 */
-	IfRange: 'if-range',
+	IfRange: <const>'if-range',
 
 	//
 	// ═════════ Cookies ═════════
@@ -319,9 +317,9 @@ export const RequestHeader = <const>{
 	/**
 	 * Contains stored HTTP cookies previously sent by the server with the `Set-Cookie` header.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie)
 	 */
-	Cookie: 'cookie',
+	Cookie: <const>'cookie',
 
 	//
 	// ═════════ Do Not Track ═════════
@@ -330,9 +328,9 @@ export const RequestHeader = <const>{
 	/**
 	 * Used for expressing the user's tracking preference.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/DNT
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/DNT)
 	 */
-	DNT: 'dnt',
+	DNT: <const>'dnt',
 
 	//
 	// ═════════ Connection management ═════════
@@ -342,21 +340,21 @@ export const RequestHeader = <const>{
 	/**
 	 * Controls whether the network connection stays open after the current transaction finishes.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Connection
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Connection)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.10
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.10)
 	 */
-	Connection: 'connection',
+	Connection: <const>'connection',
 
 	// General header
 	/**
 	 *
 	 * Controls how long a persistent connection should stay open.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Keep-Alive
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Keep-Alive)
 	 *
 	 */
-	KeepAlive: 'keep-alive',
+	KeepAlive: <const>'keep-alive',
 
 	//
 	// ═════════ Downloads ═════════
@@ -371,9 +369,9 @@ export const RequestHeader = <const>{
 	 * Is a general header when used on the subpart of a multipart body to give information about the field it applies to.
 	 *
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition)
 	 */
-	ContentDisposition: 'content-disposition',
+	ContentDisposition: <const>'content-disposition',
 
 	//
 	// ═════════ Security ═════════
@@ -383,21 +381,21 @@ export const RequestHeader = <const>{
 	 * Sends a signal to the server expressing the client’s preference for an encrypted and authenticated response,
 	 * and that it can successfully handle the `upgrade-insecure-requests` directive.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Upgrade-Insecure-Requests
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Upgrade-Insecure-Requests)
 	 */
-	UpgradeInsecureRequests: 'upgrade-insecure-requests',
+	UpgradeInsecureRequests: <const>'upgrade-insecure-requests',
 
 	/**
 	 * Mainly used to identify Ajax requests. Most JavaScript frameworks send this field with value of XMLHttpRequest.
 	 */
-	XRequestedWith: 'x-requested-with',
+	XRequestedWith: <const>'x-requested-with',
 
 	/**
 	 * Used to prevent cross-site request forgery.
 	 *
 	 * https://en.wikipedia.org/wiki/Cross-site_request_forgery#Cookie-to-header_token
 	 */
-	XCSRFToken: 'x-csrf-token',
+	XCSRFToken: <const>'x-csrf-token',
 
 	//
 	// ═════════ Client Hints ═════════
@@ -406,9 +404,9 @@ export const RequestHeader = <const>{
 	/**
 	 * Indicates the user agent's preference for reduced data usage.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Save-Data
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Save-Data)
 	 */
-	SaveData: 'save-data',
+	SaveData: <const>'save-data',
 
 	//
 	// ═════════ Other ═════════
@@ -419,21 +417,21 @@ export const RequestHeader = <const>{
 	 * A general warning field containing information about possible problems.
 	 * @deprecated
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Warning
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Warning)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.46
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.46)
 	 */
-	Warning: 'warning',
+	Warning: <const>'warning',
 
 	// General header
 	/**
 	 * Contains the date and time at which the message was originated.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Date
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Date)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.18
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.18)
 	 */
-	Date: 'date',
+	Date: <const>'date',
 
 	// General header
 	/**
@@ -449,7 +447,7 @@ export const RequestHeader = <const>{
 	 *
 	 * https://tools.ietf.org/html/rfc7230#section-6.7
 	 */
-	Upgrade: 'upgrade',
+	Upgrade: <const>'upgrade',
 
 	/**
 	 * Requests a web application to override the method specified in the request (typically `POST`)
@@ -462,7 +460,7 @@ export const RequestHeader = <const>{
 	 *
 	 * https://opensocial.github.io/spec/2.5.1/Core-API-Server.xml#rfc.section.2.1.1.1
 	 */
-	XHttpMethodOverride: 'x-http-method-override',
+	XHttpMethodOverride: <const>'x-http-method-override',
 
 	/**
 	 * Connection-specific header field that includes parameters that govern the HTTP/2 connection,
@@ -470,7 +468,7 @@ export const RequestHeader = <const>{
 	 *
 	 * https://httpwg.org/specs/rfc7540.html#Http2SettingsHeader
 	 */
-	Http2Settings: 'http2-settings',
+	Http2Settings: <const>'http2-settings',
 
 	//
 	// ═════════ Entity Headers ═════════
@@ -479,28 +477,28 @@ export const RequestHeader = <const>{
 	/**
 	 * Indicates the size of the entity-body, in decimal number of octets, sent to the recipient.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.13
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.13)
 	 */
-	ContentLength: 'content-length',
+	ContentLength: <const>'content-length',
 
 	/**
 	 * Indicates the media type of the resource.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.17
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.17)
 	 */
-	ContentType: 'content-type',
+	ContentType: <const>'content-type',
 
 	/**
 	 * MD5 digest of the entity-body for the purpose of providing
 	 * an end-to-end message integrity check (MIC) of the entity-body.
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.15
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.15)
 	 */
-	ContentMd5: 'content-md5',
+	ContentMd5: <const>'content-md5',
 }
 
 export type RequestHeader = typeof RequestHeader[keyof typeof RequestHeader]
@@ -508,13 +506,11 @@ export type RequestHeader = typeof RequestHeader[keyof typeof RequestHeader]
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
- * Headers with additional information about the response, like its location or about the server itself (name and version etc.).
- *
- * https://developer.mozilla.org/en-US/docs/Glossary/Response_header
- *
+ * Headers with additional information about the response, like its location or about the server itself (name and version, etc).
+ * @see https://developer.mozilla.org/en-US/docs/Glossary/Response_header
  * @public
  */
-export const ResponseHeader = <const>{
+export const ResponseHeader = {
 	//
 	// ═════════ CORS Response Headers ═════════
 	//
@@ -523,44 +519,44 @@ export const ResponseHeader = <const>{
 	/**
 	 * Indicates whether the response can be shared.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin)
 	 */
-	AccessControlAllowOrigin: 'access-control-allow-origin',
+	AccessControlAllowOrigin: <const>'access-control-allow-origin',
 
 	/**
 	 * Indicates whether the response to the request can be exposed when the credentials flag is true.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Credentials
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Credentials)
 	 */
-	AccessControlAllowCredentials: 'access-control-allow-credentials',
+	AccessControlAllowCredentials: <const>'access-control-allow-credentials',
 
 	/**
 	 * Used in response to a preflight request to indicate which HTTP headers can be used when making the actual request.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Headers
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Headers)
 	 */
-	AccessControlAllowHeaders: 'access-control-allow-headers',
+	AccessControlAllowHeaders: <const>'access-control-allow-headers',
 
 	/**
 	 * Specifies the method or methods allowed when accessing the resource in response to a preflight request.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Methods
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Methods)
 	 */
-	AccessControlAllowMethods: 'access-control-allow-methods',
+	AccessControlAllowMethods: <const>'access-control-allow-methods',
 
 	/**
 	 * Indicates which headers can be exposed as part of the response by listing their names.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers)
 	 */
-	AccessControlExposeHeaders: 'access-control-expose-headers',
+	AccessControlExposeHeaders: <const>'access-control-expose-headers',
 
 	/**
 	 * Indicates how long the results of a preflight request can be cached.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age)
 	 */
-	AccessControlMaxAge: 'access-control-max-age',
+	AccessControlMaxAge: <const>'access-control-max-age',
 
 	/**
 	 * Used to remove the path restriction by including this header in the response of the serviceworker script.
@@ -569,15 +565,15 @@ export const ResponseHeader = <const>{
 	 *
 	 * https://w3c.github.io/ServiceWorker/#service-worker-allowed
 	 */
-	ServiceWorkerAllowed: 'service-worker-allowed',
+	ServiceWorkerAllowed: <const>'service-worker-allowed',
 
 	/**
 	 * Specifies origins that are allowed to see values of attributes retrieved via features of the Resource Timing API,
 	 * which would otherwise be reported as zero due to cross-origin restrictions.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Timing-Allow-Origin
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Timing-Allow-Origin)
 	 */
-	TimingAllowOrigin: 'timing-allow-origin',
+	TimingAllowOrigin: <const>'timing-allow-origin',
 
 	/**
 	 * Specifies if a cross-domain policy file (crossdomain.xml) is allowed. The file may define a policy to grant web clients,
@@ -588,7 +584,7 @@ export const ResponseHeader = <const>{
 	 *
 	 * https://helmetjs.github.io/docs/crossdomain/
 	 */
-	XPermittedCrossDomainPolicies: 'x-permitted-cross-domain-policies',
+	XPermittedCrossDomainPolicies: <const>'x-permitted-cross-domain-policies',
 
 	//
 	// ═════════ Authentication ═════════
@@ -597,20 +593,20 @@ export const ResponseHeader = <const>{
 	/**
 	 * Defines the authentication method that should be used to gain access to a resource.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/WWW-Authenticate
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/WWW-Authenticate)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.47
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.47)
 	 */
-	WwwAuthenticate: 'www-authenticate',
+	WwwAuthenticate: <const>'www-authenticate',
 
 	/**
 	 * Defines the authentication method that should be used to gain access to a resource behind a Proxy server.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Proxy-Authenticate
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Proxy-Authenticate)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.33
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.33)
 	 */
-	ProxyAuthenticate: 'proxy-authenticate',
+	ProxyAuthenticate: <const>'proxy-authenticate',
 
 	//
 	// ═════════ Caching ═════════
@@ -620,11 +616,11 @@ export const ResponseHeader = <const>{
 	/**
 	 * Specifies directives for caching mechanisms in both requests and responses.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9)
 	 */
-	CacheControl: 'cache-control',
+	CacheControl: <const>'cache-control',
 
 	// General header
 	/**
@@ -632,37 +628,37 @@ export const ResponseHeader = <const>{
 	 * Used for backwards compatibility with HTTP/1.0 caches where the `Cache-Control` header is not yet present.
 	 * @deprecated
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Pragma
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Pragma)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.32
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.32)
 	 */
-	Pragma: 'pragma',
+	Pragma: <const>'pragma',
 
 	/**
 	 * The time in seconds the object has been in a proxy cache.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Age
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Age)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.17
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.17)
 	 */
-	Age: 'age',
+	Age: <const>'age',
 
 	/**
 	 * Clears browsing data (e.g. cookies, storage, cache) associated with the requesting website.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Clear-Site-Data
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Clear-Site-Data)
 	 */
-	ClearSiteData: 'clear-site-data',
+	ClearSiteData: <const>'clear-site-data',
 
 	// entity header ?
 	/**
 	 * The date/time after which the response is considered stale.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Expires
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Expires)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.21
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.21)
 	 */
-	Expires: 'expires',
+	Expires: <const>'expires',
 
 	//
 	// ═════════ Request context ═════════
@@ -671,11 +667,11 @@ export const ResponseHeader = <const>{
 	/**
 	 * Governs which referrer information sent in the `Referer` header should be included with requests made.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy)
 	 *
 	 * https://helmetjs.github.io/docs/referrer-policy/
 	 */
-	ReferrerPolicy: 'referrer-policy',
+	ReferrerPolicy: <const>'referrer-policy',
 
 	//
 	// ═════════ Response context ═════════
@@ -684,11 +680,11 @@ export const ResponseHeader = <const>{
 	/**
 	 * Contains information about the software used by the origin server to handle the request.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.38
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.38)
 	 */
-	Server: 'server',
+	Server: <const>'server',
 
 	//
 	// ═════════ Downloads ═════════
@@ -703,9 +699,9 @@ export const ResponseHeader = <const>{
 	 * Is a general header when used on the subpart of a multipart body to give information about the field it applies to.
 	 *
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition)
 	 */
-	ContentDisposition: 'content-disposition',
+	ContentDisposition: <const>'content-disposition',
 
 	//
 	// ═════════ Redirects ═════════
@@ -714,9 +710,9 @@ export const ResponseHeader = <const>{
 	/**
 	 * Indicates the URL to redirect a page to.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Location
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Location)
 	 */
-	Location: 'location',
+	Location: <const>'location',
 
 	//
 	// ═════════ Proxies ═════════
@@ -726,11 +722,11 @@ export const ResponseHeader = <const>{
 	/**
 	 * Added by proxies, both forward and reverse proxies, and can appear in the request headers and the response headers.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Via
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Via)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.45
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.45)
 	 */
-	Via: 'via',
+	Via: <const>'via',
 
 	//
 	// ═════════ Conditionals ═════════
@@ -745,29 +741,29 @@ export const ResponseHeader = <const>{
 	 * to change the behavior of the request.
 	 *
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Last-Modified
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Last-Modified)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.29
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.29)
 	 */
-	LastModified: 'last-modified',
+	LastModified: <const>'last-modified',
 
 	/**
 	 * It is a validator, a unique string identifying the version of the resource.
 	 * Conditional requests using `If-Match` and `If-None-Match` use this value to change the behavior of the request.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.19
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.19)
 	 */
-	ETag: 'etag',
+	ETag: <const>'etag',
 
 	/**
 	 * Determines how to match future request headers to decide whether a cached response can be used
 	 * rather than requesting a fresh one from the origin server.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Vary
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Vary)
 	 */
-	Vary: 'vary',
+	Vary: <const>'vary',
 
 	//
 	// ═════════ Range requests ═════════
@@ -776,9 +772,9 @@ export const ResponseHeader = <const>{
 	/**
 	 * Indicates if the server supports range requests, and if so in which unit the range can be expressed.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Ranges
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Ranges)
 	 */
-	AcceptRanges: 'accept-ranges',
+	AcceptRanges: <const>'accept-ranges',
 
 	//
 	// ═════════ Transfer coding ═════════
@@ -788,21 +784,21 @@ export const ResponseHeader = <const>{
 	/**
 	 * Specifies the form of encoding used to safely transfer the entity to the user.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Transfer-Encoding
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Transfer-Encoding)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.41
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.41)
 	 */
-	TransferEncoding: 'transfer-encoding',
+	TransferEncoding: <const>'transfer-encoding',
 
 	// General header
 	/**
 	 * Allows the sender to include additional fields at the end of chunked message.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Trailer
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Trailer)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.40
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.40)
 	 */
-	Trailer: 'trailer',
+	Trailer: <const>'trailer',
 
 	//
 	// ═════════ Cookies ═════════
@@ -811,9 +807,9 @@ export const ResponseHeader = <const>{
 	/**
 	 * Send cookies from the server to the user agent.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie)
 	 */
-	SetCookie: 'set-cookie',
+	SetCookie: <const>'set-cookie',
 
 	//
 	// ═════════ Do Not Track ═════════
@@ -822,9 +818,9 @@ export const ResponseHeader = <const>{
 	/**
 	 * Indicates the tracking status that applied to the corresponding request.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Tk
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Tk)
 	 */
-	Tk: 'tk',
+	Tk: <const>'tk',
 
 	//
 	// ═════════ Connection management ═════════
@@ -834,21 +830,21 @@ export const ResponseHeader = <const>{
 	/**
 	 * Controls whether the network connection stays open after the current transaction finishes.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Connection
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Connection)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.10
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.10)
 	 */
-	Connection: 'connection',
+	Connection: <const>'connection',
 
 	// General header
 	/**
 	 *
 	 * Controls how long a persistent connection should stay open.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Keep-Alive
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Keep-Alive)
 	 *
 	 */
-	KeepAlive: 'keep-alive',
+	KeepAlive: <const>'keep-alive',
 
 	//
 	// ═════════ Security ═════════
@@ -860,32 +856,32 @@ export const ResponseHeader = <const>{
 	 *
 	 * https://www.chromestatus.com/feature/5432089535053824
 	 */
-	CrossOriginOpenerPolicy: 'cross-origin-opener-policy',
+	CrossOriginOpenerPolicy: <const>'cross-origin-opener-policy',
 
 	/**
 	 * Prevents other domains from reading the response of the resources to which this header is applied.
 	 * (CORP)
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Resource-Policy
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Resource-Policy)
 	 */
-	CrossOriginResourcePolicy: 'cross-origin-resource-policy',
+	CrossOriginResourcePolicy: <const>'cross-origin-resource-policy',
 
 	/**
 	 * Controls resources the user agent is allowed to load for a given page.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy)
 	 *
 	 * https://helmetjs.github.io/docs/csp/
 	 */
-	ContentSecurityPolicy: 'content-security-policy',
+	ContentSecurityPolicy: <const>'content-security-policy',
 
 	/**
 	 * Allows web developers to experiment with policies by monitoring, but not enforcing, their effects.
 	 * These violation reports consist of JSON documents sent via an HTTP POST request to the specified URI.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy-Report-Only
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy-Report-Only)
 	 */
-	ContentSecurityPolicyReportOnly: 'content-security-policy-report-only',
+	ContentSecurityPolicyReportOnly: <const>'content-security-policy-report-only',
 
 	/**
 	 * Allows sites to opt in to reporting and/or enforcement of Certificate Transparency requirements,
@@ -893,21 +889,21 @@ export const ResponseHeader = <const>{
 	 * When a site enables the `Expect-CT` header, they are requesting that Chrome check
 	 * that any certificate for that site appears in public CT logs.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Expect-CT
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Expect-CT)
 	 *
 	 * https://helmetjs.github.io/docs/expect-ct/
 	 */
-	ExpectCT: 'expect-ct',
+	ExpectCT: <const>'expect-ct',
 
 	/**
 	 * Provides a mechanism to allow and deny the use of browser features in its own frame,
 	 * and in iframes that it embeds.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Feature-Policy
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Feature-Policy)
 	 *
 	 * https://helmetjs.github.io/docs/feature-policy/
 	 */
-	FeaturePolicy: 'feature-policy',
+	FeaturePolicy: <const>'feature-policy',
 
 	/**
 	 * Associates a specific cryptographic public key with a certain web server to decrease
@@ -915,36 +911,36 @@ export const ResponseHeader = <const>{
 	 * (HPKP)
 	 * @deprecated
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Public-Key-Pins
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Public-Key-Pins)
 	 */
-	PublicKeyPins: 'public-key-pins',
+	PublicKeyPins: <const>'public-key-pins',
 
 	/**
 	 * Sends reports to the report-uri specified in the header and does still allow clients
 	 * to connect to the server even if the pinning is violated.
 	 * @deprecated
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Public-Key-Pins-Report-Only
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Public-Key-Pins-Report-Only)
 	 */
-	PublicKeyPinsReportOnly: 'public-key-pins-report-only',
+	PublicKeyPinsReportOnly: <const>'public-key-pins-report-only',
 
 	/**
 	 * Force communication using HTTPS instead of HTTP.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security)
 	 *
 	 * https://helmetjs.github.io/docs/hsts/
 	 */
-	StrictTransportSecurity: 'strict-transport-security',
+	StrictTransportSecurity: <const>'strict-transport-security',
 
 	/**
 	 * Disables MIME sniffing and forces browser to use the type given in `Content-Type`.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options)
 	 *
 	 * https://helmetjs.github.io/docs/dont-sniff-mimetype/
 	 */
-	XContentTypeOptions: 'x-content-type-options',
+	XContentTypeOptions: <const>'x-content-type-options',
 
 	/**
 	 * Indicates that the browser (Internet Explorer) should not display the option
@@ -954,17 +950,17 @@ export const ResponseHeader = <const>{
 	 *
 	 * https://helmetjs.github.io/docs/ienoopen/
 	 */
-	XDownloadOptions: 'x-download-options',
+	XDownloadOptions: <const>'x-download-options',
 
 	/**
 	 * Indicates whether a browser should be allowed to render a page in a `<frame>,` `<iframe>`, `<embed>` or `<object>`.
 	 * (XFO)
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options)
 	 *
 	 * https://helmetjs.github.io/docs/frameguard/
 	 */
-	XFrameOptions: 'x-frame-options',
+	XFrameOptions: <const>'x-frame-options',
 
 	/**
 	 * May be set by hosting environments or other frameworks and contains information
@@ -973,17 +969,17 @@ export const ResponseHeader = <const>{
 	 *
 	 * https://helmetjs.github.io/docs/hide-powered-by/
 	 */
-	XPoweredBy: 'x-powered-by',
+	XPoweredBy: <const>'x-powered-by',
 
 	/**
 	 * Enables cross-site scripting filtering.
 	 * @deprecated
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection)
 	 *
 	 * https://helmetjs.github.io/docs/xss-filter/
 	 */
-	XXSSProtection: 'x-xss-protection',
+	XXSSProtection: <const>'x-xss-protection',
 
 	//
 	// ═════════ Other ═════════
@@ -994,21 +990,21 @@ export const ResponseHeader = <const>{
 	 * A general warning field containing information about possible problems.
 	 * @deprecated
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Warning
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Warning)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.46
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.46)
 	 */
-	Warning: 'warning',
+	Warning: <const>'warning',
 
 	// General header
 	/**
 	 * Contains the date and time at which the message was originated.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Date
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Date)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.18
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.18)
 	 */
-	Date: 'date',
+	Date: <const>'date',
 
 	// General header
 	/**
@@ -1023,7 +1019,7 @@ export const ResponseHeader = <const>{
 	 *
 	 * https://tools.ietf.org/html/rfc7230#section-6.7
 	 */
-	Upgrade: 'upgrade',
+	Upgrade: <const>'upgrade',
 
 	/**
 	 * Specifies the patch document formats accepted by the server.
@@ -1031,57 +1027,57 @@ export const ResponseHeader = <const>{
 	 * Its presence in response to any method is an implicit indication
 	 * that `PATCH` is allowed on the resource identified by the Request-URI.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Patch
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Patch)
 	 */
-	AcceptPatch: 'accept-patch',
+	AcceptPatch: <const>'accept-patch',
 
 	/**
 	 * Used to list alternate ways to reach this service.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Alt-Svc
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Alt-Svc)
 	 */
-	AltSvc: 'alt-svc',
+	AltSvc: <const>'alt-svc',
 
 	/**
 	 * Indicates how long the user agent should wait before making a follow-up request.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.37
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.37)
 	 */
-	RetryAfter: 'retry-after',
+	RetryAfter: <const>'retry-after',
 
 	/**
 	 * Controls DNS prefetching, a feature by which browsers proactively perform domain name resolution
 	 * on both links that the user may choose to follow as well as URLs for items referenced
 	 * by the document, including images, CSS, JavaScript, and so forth.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-DNS-Prefetch-Control
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-DNS-Prefetch-Control)
 	 *
 	 * https://helmetjs.github.io/docs/dns-prefetch-control/
 	 */
-	XDNSPrefetchControl: 'x-dns-prefetch-control',
+	XDNSPrefetchControl: <const>'x-dns-prefetch-control',
 
 	/**
 	 * Links generated code to a source map.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/SourceMap
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/SourceMap)
 	 */
-	SourceMap: 'sourcemap',
+	SourceMap: <const>'sourcemap',
 
 	/**
 	 * Tells the browser that the page being loaded is going to want to perform a large allocation.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Large-Allocation
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Large-Allocation)
 	 */
-	LargeAllocation: 'large-allocation',
+	LargeAllocation: <const>'large-allocation',
 
 	/**
 	 * Communicates one or more metrics and descriptions for the given request-response cycle.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server-Timing
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server-Timing)
 	 */
-	ServerTiming: 'server-timing',
+	ServerTiming: <const>'server-timing',
 
 	/**
 	 * Recommends the preferred rendering engine (often a backward-compatibility mode)
@@ -1089,15 +1085,15 @@ export const ResponseHeader = <const>{
 	 *
 	 * https://docs.microsoft.com/en-us/openspecs/ie_standards/ms-iedoco/380e2488-f5eb-4457-a07a-0cb1b6e4b4b5
 	 */
-	XUACompatible: 'x-ua-compatible',
+	XUACompatible: <const>'x-ua-compatible',
 
 	/**
 	 * Used to indicate how a web page is to be indexed within public search engine results.
 	 * The header is effectively equivalent to `<meta name="robots" content="...">`.
 	 *
-	 * https://developers.google.com/search/reference/robots_meta_tag
+	 * [MDN Reference](https://developers.google.com/search/reference/robots_meta_tag)
 	 */
-	XRobotsTag: 'x-robots-tag',
+	XRobotsTag: <const>'x-robots-tag',
 
 	//
 	// ═════════ Entity Headers ═════════
@@ -1106,101 +1102,82 @@ export const ResponseHeader = <const>{
 	/**
 	 * Indicates the size of the entity-body, in decimal number of octets, sent to the recipient.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.13
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.13)
 	 */
-	ContentLength: 'content-length',
+	ContentLength: <const>'content-length',
 
 	/**
 	 * Indicates the media type of the resource.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.17
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.17)
 	 */
-	ContentType: 'content-type',
+	ContentType: <const>'content-type',
 
 	/**
 	 * Used to specify the compression algorithm.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Encoding
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Encoding)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.11
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.11)
 	 */
-	ContentEncoding: 'content-encoding',
+	ContentEncoding: <const>'content-encoding',
 
 	/**
 	 * Describes the language(s) intended for the audience,
 	 * so that it allows a user to differentiate according to the users' own preferred language.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Language
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Language)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.12
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.12)
 	 */
-	ContentLanguage: 'content-language',
+	ContentLanguage: <const>'content-language',
 
 	/**
 	 * Indicates an alternate location for the returned data.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Location
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Location)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.14
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.14)
 	 */
-	ContentLocation: 'content-location',
+	ContentLocation: <const>'content-location',
 
 	/**
 	 * Indicates where in a full body message a partial message belongs.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Range
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Range)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.16
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.16)
 	 */
-	ContentRange: 'content-range',
+	ContentRange: <const>'content-range',
 
 	/**
 	 * MD5 digest of the entity-body for the purpose of providing
 	 * an end-to-end message integrity check (MIC) of the entity-body.
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.15
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.15)
 	 */
-	ContentMd5: 'content-md5',
+	ContentMd5: <const>'content-md5',
 
 	/**
 	 * Lists the set of HTTP request methods support by a resource.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Allow
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Allow)
 	 *
-	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.7
+	 * [W3C Reference](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.7)
 	 */
-	Allow: 'allow',
+	Allow: <const>'allow',
 
 	/**
 	 * Provides a means for serialising one or more links in HTTP headers.
 	 * It is semantically equivalent to the HTML `<link>` element.
 	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Link
+	 * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Link)
 	 */
-	Link: 'link',
+	Link: <const>'link',
 }
 
 export type ResponseHeader = typeof ResponseHeader[keyof typeof ResponseHeader]
-
-// ────────────────────────────────────────────────────────────────────────────
-
-/**
- * HTTP headers allow the client and the server to pass additional information with the request or the response.
- * An HTTP header consists of its **case-insensitive** name followed by a colon `:`, then by its value (without line breaks).
- *
- * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
- *
- * https://en.wikipedia.org/wiki/List_of_HTTP_header_fields
- *
- * @public
- */
-export const Header = <const>{
-	...RequestHeader,
-	...ResponseHeader,
-}
-
-export type Header = RequestHeader | ResponseHeader

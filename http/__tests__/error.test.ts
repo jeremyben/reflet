@@ -1,9 +1,9 @@
 import { request, IncomingMessage } from 'http'
 import * as express from 'express'
-import { HttpError } from '../src'
+import { HttpError, Status } from '../src'
 
 test('name', () => {
-	const teapot = HttpError(418)
+	const teapot = HttpError(Status.Error.ImATeapot)
 	expect(teapot.name).toBe('ImATeapot')
 	expect(teapot.constructor.name).toBe('HttpError')
 
