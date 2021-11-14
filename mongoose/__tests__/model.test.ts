@@ -1,5 +1,16 @@
 import * as mongoose from 'mongoose'
-import { Field, Model, schemaFrom, Kind, Plain, SchemaOptions, SchemaCallback, PostHook, PreHook } from '../src'
+import {
+	Field,
+	Model,
+	schemaFrom,
+	Kind,
+	Plain,
+	SchemaOptions,
+	SchemaCallback,
+	PostHook,
+	PreHook,
+	SchemaIndex,
+} from '../src'
 import { RefletMongooseError } from '../src/reflet-error'
 
 test('model with custom collection and connection', async () => {
@@ -49,6 +60,7 @@ test('model with custom collection and connection', async () => {
 
 test('model discriminators', async () => {
 	@Model()
+	@SchemaIndex<User>({ firstname: 1 })
 	class User extends Model.I<typeof User> {
 		_id: mongoose.Types.ObjectId
 

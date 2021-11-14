@@ -8,6 +8,7 @@ import { attachVirtuals } from './virtual-decorator'
 import { RefletMongooseError } from './reflet-error'
 import { ClassType, AsDocument } from './interfaces'
 import { applyPlugins } from './schema-plugin-decorator'
+import { applyIndexes } from './schema-index-decorator'
 
 /**
  * Retrieves the schema from a decorated class.
@@ -69,6 +70,7 @@ export function createSchema<T extends ClassType>(target: T, { full }: { full: b
 			applySchemaCallback(nestedSchema, nestedClass)
 		})
 
+		applyIndexes(schema, target)
 		applySchemaCallback(schema, target)
 	}
 

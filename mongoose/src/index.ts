@@ -4,6 +4,8 @@ export { SchemaCallback } from './schema-callback-decorator'
 
 export { SchemaPlugin } from './schema-plugin-decorator'
 
+export { SchemaIndex } from './schema-index-decorator'
+
 export { Model } from './model-decorators'
 
 export { Field } from './field-decorators'
