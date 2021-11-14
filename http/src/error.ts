@@ -62,6 +62,24 @@ class HttpError<S extends _HttpError.Status | OriginalErrorStatus> extends Error
 		Error.captureStackTrace(this, constructorOpt)
 	}
 
+	/**
+	 * Type guard to ensure the error object is an instance of HttpError and has specific status.
+	 */
+	static is<S extends _HttpError.Status>(error: unknown, status?: S): error is _HttpError<S> {
+		if (status != null) {
+			return error instanceof HttpError && error.status === status
+		}
+
+		return error instanceof HttpError
+	}
+
+	// static [Symbol.hasInstance](obj: any) {
+	// 	if (obj instanceof Error && obj.hasOwnProperty('status') && typeof (obj as any).status === 'number') {
+	// 		return true
+	// 	}
+	// 	return false
+	// }
+
 	static names = {
 		// Client errors
 		400: <const>'BadRequest',
@@ -482,7 +500,7 @@ type OriginalErrorStatus = keyof typeof HttpError.names
 /**
  * @public
  */
-interface HttpErrorStatic extends Pick<typeof HttpError, _HttpError.Name | keyof typeof Error> {}
+interface HttpErrorStatic extends Pick<typeof HttpError, _HttpError.Name | keyof typeof Error | 'is' | 'names'> {}
 
 /**
  * @public
