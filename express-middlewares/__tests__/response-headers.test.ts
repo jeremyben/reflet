@@ -1,13 +1,13 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
 import { register, Get, Put, Router } from '@reflet/express'
-import { UseHeader, UseType } from '../src'
+import { UseResponseHeader, UseType } from '../src'
 import { log } from '../../testing/tools'
 
-@UseHeader({ 'x-powered-by': 'brainfuck', via: 'jest' })
+@UseResponseHeader({ 'x-powered-by': 'brainfuck', via: 'jest' })
 @Router('/')
 class Controller {
-	@UseHeader('allow', 'GET')
+	@UseResponseHeader('allow', 'GET')
 	@Get()
 	get(req: express.Request, res: express.Response, next: express.NextFunction) {
 		res.sendStatus(406)

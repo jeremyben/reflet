@@ -30,7 +30,7 @@ test('pass guards', async () => {
 test("don't pass guards", async () => {
 	const res = await rq.get('/')
 	expect(res.status).toBe(403)
-	expect(res.text).toContain('Error: Access Denied')
+	expect(res.text).toContain('Forbidden: Access Denied')
 })
 
 test('custom html 403 message', async () => {
