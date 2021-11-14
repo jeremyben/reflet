@@ -1,6 +1,6 @@
 {
 	"name": "@reflet/express",
-	"version": "2.0.0-next.2",
+	"version": "2.0.0-next.3",
 	"author": "Jeremy Bensimon",
 	"license": "MIT",
 	"repository": "https://github.com/jeremyben/reflet/tree/master/express",
@@ -33,7 +33,7 @@
 		"reflect-metadata": "^0.1.13"
 	},
 	"devDependencies": {
-		"@reflet/http": "^1.0.0-next.1",
+		"@reflet/http": "^1.0.0-next.2",
 		"@types/express": "^4.17.13",
 		"express": "^4.17.1"
 	},
