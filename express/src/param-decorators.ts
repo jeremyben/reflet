@@ -1,6 +1,7 @@
 import * as express from 'express'
+import { RequestHeader } from '@reflet/http'
 import { flatMapFast } from './array-manipulation'
-import { ClassType, RequestHeaderName } from './interfaces'
+import { ClassType } from './interfaces'
 import { RefletExpressError } from './reflet-error'
 
 const META = Symbol('param')
@@ -257,7 +258,7 @@ export namespace Query {
 
 /**
  * Injects request headers object in the method's parameters.
- * @param name - directly injects a specific header.
+ * @param headerName - directly injects a specific header.
  * @see https://nodejs.org/api/http.html#http_message_headers
  * @example
  * ```ts
@@ -276,9 +277,7 @@ export namespace Query {
  * ------
  * @public
  */
-export function Headers<T extends string = RequestHeaderName>(
-	name?: T extends RequestHeaderName ? RequestHeaderName : string
-): Headers.Decorator
+export function Headers(headerName?: RequestHeader): Headers.Decorator
 
 export function Headers(...args: Parameters<Headers.Decorator>): void
 

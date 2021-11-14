@@ -1,5 +1,5 @@
 import { Use } from '@reflet/express'
-import { NonErrorStatusCode } from './interfaces'
+import { Status } from '@reflet/http'
 
 /**
  * Sets response status.
@@ -12,9 +12,7 @@ import { NonErrorStatusCode } from './interfaces'
  * ------
  * @public
  */
-export function UseStatus<S extends number = NonErrorStatusCode>(
-	statusCode: S extends NonErrorStatusCode ? NonErrorStatusCode : number
-) {
+export function UseStatus(statusCode: Status.Information | Status.Success | Status.Redirection) {
 	return Use((req, res, next) => {
 		res.status(statusCode)
 		next()

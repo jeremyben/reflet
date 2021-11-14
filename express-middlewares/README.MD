@@ -26,7 +26,7 @@ Convenient middleware decorators to use with [Reflet/express](../express).
     yarn add @reflet/express-middlewares
     ```
 
-3. Apply middleware decorators on controllers or specific routes.
+3. Apply middleware decorators on routers or specific routes.
 
 ## Request authorizations
 
@@ -35,7 +35,8 @@ Convenient middleware decorators to use with [Reflet/express](../express).
 A guard is a filter function that takes the Request object as parameter and should return a boolean (asynchronously or not) to authorize the request or not.
 
 ```ts
-class Controller {
+@Router('/things')
+class ThingRouter {
   @UseGuards(
     (req) => req.user != null,
     (req) => req.user.admin === true,
@@ -68,7 +69,8 @@ you can **return** (not throw) an `Error` instance instead of just `false`.
 Intercept and manipulate the response body before it is sent, with a mapping function (asynchronous or not).
 
 ```ts
-class Controller {
+@Router('/things')
+class ThingRouter {
   @UseInterceptor<{ foo: number }>((data) => ({ foo: data.foo * 5 }))
   @Get('/things')
   list(@Res res: Response) {
@@ -125,7 +127,8 @@ In fact, it won't intercept any response sent by chunks with the `res.write` nat
 You need to trigger side-effects ? Log details, send an email, etc.<br>`UseOnFinish` helps you define a callback on each response, on the [`finish` event](https://nodejs.org/api/http.html#http_event_finish) to be exact.
 
 ```ts
-class Controller {
+@Router('/things')
+class ThingRouter {
   @UseOnFinish((req, res) => {
     console.log('Request:', req.method, req.originalUrl, req.body)
     console.log('Response:', res.statusCode)
@@ -142,7 +145,8 @@ As a safety net, any exception happening in your callback will be caught and log
 You can expose the response body on the Response object by switching the last parameter on. Streaming responses will have their body truncated to the first 64kb, to avoid eating up memory.
 
 ```ts
-class Controller {
+@Router('/things')
+class ThingRouter {
   @UseOnFinish((req, res) => {
     console.log('Request:', req.method, req.originalUrl)
     console.log('Response:', res.statusCode, res.body)
@@ -160,36 +164,32 @@ class Controller {
 Set the response status code with a dedicated decorator.
 
 ```ts
-class Controller {
+@Router('/things')
+class ThingRouter {
   @UseStatus(201)
   @Post('/things')
   create() {}
 }
 ```
 
-`UseStatus` input type is narrowed to a union of known **`1XX`, `2XX` and `3XX` status codes** (instead of just `number`). You can still opt-out by expanding the input type to `number` or `any`:
+`UseStatus` input type is narrowed to a union of known **`1XX`, `2XX` and `3XX` status codes** (instead of just `number`).
 
-```ts
-@UseStatus<number>(199)
-```
-
-##### 💡 Tip
-
-Use **[`Status` enum](../http/README.md#status-)** from `@reflet/http` for an even better developer experience.
+Use **[`Status` enum](../http/README.md#status-)** from `@reflet/http` for better discoverability and documentation.
 
 ## Response headers
 
 ### Set headers
 
-> 🔦 `@UseHeader(header, value)|(headers)`<br>
+> 🔦 `@UseResponseHeader(header, value)|(headers)`<br>
 > 💫 Related Express method: [`res.set`](https://expressjs.com/en/4x/api.html#res.set)
 
 Set any response header with a dedicated decorator.
 
 ```ts
-@UseHeader({ 'x-powered-by': 'brainfuck' })
-class Controller {
-  @UseHeader('allow', 'GET')
+@UseResponseHeader({ 'x-powered-by': 'brainfuck' })
+@Router('/things')
+class ThingRouter {
+  @UseResponseHeader('allow', 'GET')
   @Post('/things')
   create(@Res res: Response) {
     res.sendStatus(405)
@@ -197,25 +197,37 @@ class Controller {
 }
 ```
 
-`UseHeader` input type is narrowed to a union of known **response headers** (instead of just `string`). You can still opt-out by expanding the input type to `string` or `any`:
+`UseResponseHeader` input type is narrowed to a union of known **response headers** (instead of just `string`).
+
+Augment the union with the help of the global namespace `RefletHttp`:
 
 ```ts
-@UseHeader<string>('x-custom', 'value')
+declare global {
+  namespace RefletHttp {
+    interface ResponseHeader {
+      XCustom: 'x-custom'
+    }
+  }
+}
+
+@Router('/things')
+class ThingRouter {
+  @Get()
+  list() {}
+}
 ```
 
-##### 💡 Tip
-
-Use **[`ResponseHeader` enum](../http/README.md#header-)** from `@reflet/http` for an even better developer experience.
+Use **[`ResponseHeader` enum](../http/README.md#header-)** from `@reflet/http` for better discoverability and documentation.
 
 ### Append header value
 
-> 🔦 `@UseHeader.Append(header, value)`<br>
+> 🔦 `@UseResponseHeader.Append(header, value)`<br>
 > 💫 Related Express method: [`res.set`](https://expressjs.com/en/4x/api.html#res.append)
 
 Appends the specified `value` to the HTTP response header `field`. If the header is not already set, it creates the header with the specified `value`.
 
 ```ts
-@UseHeader.Append('link', ['<http://localhost/>', '<http://localhost:3000/>'])
+@UseResponseHeader.Append('link', ['<http://localhost/>', '<http://localhost:3000/>'])
 ```
 
 ## Response type
@@ -226,9 +238,10 @@ Appends the specified `value` to the HTTP response header `field`. If the header
 Set the response `Content-Type` with a dedicated decorator.
 
 ```ts
-class Controller {
-  @UseType('application/msword')
-  @Send()
+@Send()
+@Router('/things')
+class ThingRouter {
+  @UseType('docx')
   @Get('/document')
   download() {
     return createReadStream('path/to/doc')
@@ -236,7 +249,7 @@ class Controller {
 }
 ```
 
-`UseType` input type is narrowed to a union of common content types (instead of just `string`). You can still opt-out by expanding the input type to `string` or `any`:
+`UseType` input type is narrowed to a union of common MIME types and extensions (instead of just `string`). You can still opt-out by expanding the input type to `string` or `any`:
 
 ```ts
 @UseType<string>('application/x-my-type')
@@ -250,5 +263,6 @@ In some case, you might want to separate a middleware logic from its applying co
 
 ```ts
 UseIf((req) => req.method === 'POST', [express.json()])
-class Controller {}
+@Router('/things')
+class ThingRouter {}
 ```

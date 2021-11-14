@@ -7,3 +7,8 @@
 
 * `UseContentType` decorator has been removed.
   Simply use its alias `UseType`.
+
+* `UseHeader` decorator has been renamed to `UseResponseHeader`.
+
+* "@reflet/http" is now a required peer dependency.
+  

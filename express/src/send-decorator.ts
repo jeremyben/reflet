@@ -1,4 +1,5 @@
-import { ClassType, StatusCode, ClassOrMethodDecorator } from './interfaces'
+import { Status } from '@reflet/http'
+import { ClassType, ClassOrMethodDecorator } from './interfaces'
 
 const META = Symbol('send')
 
@@ -56,13 +57,13 @@ export namespace Send {
 		json?: boolean
 
 		/** Sets default response status */
-		status?: StatusCode
+		status?: Status
 
 		/** Overrides response status for `undefined` return value */
-		undefinedStatus?: StatusCode
+		undefinedStatus?: Status
 
 		/** Overrides response status for `null` return value */
-		nullStatus?: StatusCode
+		nullStatus?: Status
 	}
 
 	/**

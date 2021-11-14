@@ -3,6 +3,15 @@ import * as express from 'express'
 import { Request } from './interfaces'
 import { isPromise } from './type-guards'
 
+// To avoid crashing the server if the user has not installed reflet/http.
+let ForbiddenError: Function
+try {
+	ForbiddenError = (require('@reflet/http') as typeof import('@reflet/http')).HttpError.Forbidden
+} catch (err) {
+	console.warn(`RefletExpressWarning: The peer dependency "@reflet/http" is not installed.`)
+	ForbiddenError = Error
+}
+
 /**
  * Middleware to handle authorization.
  *
@@ -37,8 +46,11 @@ export function UseGuards<Req extends {}>(
 		...guards.map((guard) => (req: Request<Req>, res: express.Response, next: express.NextFunction) => {
 			const result = guard(req)
 
-			if (isPromise(result)) result.then((value) => authorize(value))
-			else authorize(result)
+			if (isPromise(result)) {
+				result.then((value) => authorize(value))
+			} else {
+				authorize(result)
+			}
 
 			// Attach status to error like express does (https://github.com/expressjs/express/blob/4.x/lib/response.js#L676)
 			// and set the response status too, in case of a custom error handler not handling error status property.
@@ -51,8 +63,7 @@ export function UseGuards<Req extends {}>(
 				} else if (value) {
 					next()
 				} else {
-					const err = Error('Access Denied') as Error & { status: number }
-					err.status = 403
+					const err = ForbiddenError('Access Denied')
 					res.status(403)
 					next(err)
 				}

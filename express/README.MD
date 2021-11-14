@@ -47,7 +47,8 @@ The **best** decorators for [Express](https://expressjs.com/). Have a look at [R
 2. Install the package along with peer dependencies.
 
     ```sh
-    yarn add @reflet/express express && yarn add -D @types/express @types/node
+    yarn add @reflet/express @reflet/http express
+    yarn add -D @types/express @types/node
     ```
 
 3. Create your decorated routing routers.
@@ -625,7 +626,7 @@ class ThingRouter {
 class ThingRouter {
   // Whole headers object
   @Get()
-  list(@Headers headers: IncomingHttpHeaders) {}
+  list(@Headers headers: import('@reflet/http').RequestHeader.Record) {}
   
   // Specific header
   @Get()
@@ -633,19 +634,27 @@ class ThingRouter {
 }
 ```
 
-`Header` input type is narrowed to a union of known **request headers** (instead of just `string`), so typos are prevented and you have that sweet auto-completion. You can still opt-out by expanding the input type to `string` or `any`:
+`Header` input type is narrowed to a union of known **request headers** (instead of just `string`), so typos are prevented and you have that sweet auto-completion.
+
+Augment the union with the help of the global namespace `RefletHttp`:
 
 ```ts
+declare global {
+  namespace RefletHttp {
+    interface RequestHeader {
+      XCustom: 'x-custom'
+    }
+  }
+}
+
 @Router('/things')
 class ThingRouter {
   @Get()
-  list(@Headers<string>('x-custom') custom: string) {}
+  list(@Headers('x-custom') custom: string) {}
 }
 ```
 
-##### 💡 Tip
-
-Use **[`RequestHeader` enum](../http/README.md#header-)** from `@reflet/http` for an even better developer experience.
+Use **[`RequestHeader` enum](../http/README.md#header-)** from `@reflet/http` for better discoverability and documentation.
 
 ### Create your own parameter decorator 🔧
 
