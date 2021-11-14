@@ -79,17 +79,15 @@ test('express default error handling', (done) => {
 })
 
 declare global {
-	namespace RefletHttpError {
-		interface Constraint {
+	namespace RefletHttp {
+		interface ErrorConstraint {
 			status: number
 			// constructor: false
 		}
 
-		interface HttpErrors {
+		interface Errors {
 			420: EnhanceYourCalm
 		}
-
-		interface AnyHttpError {}
 
 		interface EnhanceYourCalm {}
 

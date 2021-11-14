@@ -501,7 +501,16 @@ export const RequestHeader = {
 	ContentMd5: <const>'content-md5',
 }
 
-export type RequestHeader = typeof RequestHeader[keyof typeof RequestHeader]
+export type RequestHeader =
+	| typeof RequestHeader[keyof typeof RequestHeader]
+	| RefletHttp.RequestHeader[keyof RefletHttp.RequestHeader]
+
+export namespace RequestHeader {
+	/**
+	 * @public
+	 */
+	export type Record = Partial<globalThis.Record<RequestHeader, string>>
+}
 
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -1180,4 +1189,31 @@ export const ResponseHeader = {
 	Link: <const>'link',
 }
 
-export type ResponseHeader = typeof ResponseHeader[keyof typeof ResponseHeader]
+export type ResponseHeader =
+	| typeof ResponseHeader[keyof typeof ResponseHeader]
+	| RefletHttp.ResponseHeader[keyof RefletHttp.ResponseHeader]
+
+export namespace ResponseHeader {
+	/**
+	 * @public
+	 */
+	export type Record = Partial<globalThis.Record<ResponseHeader, string>>
+}
+
+declare global {
+	namespace RefletHttp {
+		/**
+		 * Augments union type of RequestHeader.
+		 */
+		interface RequestHeader {
+			// XCustom: 'x-custom'
+		}
+
+		/**
+		 * Augments union type of ResponseHeader.
+		 */
+		interface ResponseHeader {
+			// XCustom: 'x-custom'
+		}
+	}
+}

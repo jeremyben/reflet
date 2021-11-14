@@ -16,9 +16,9 @@ class HttpError<S extends _HttpError.Status | OriginalErrorStatus> extends Error
 
 	constructor(
 		// Only way to make an argument either required or optional without overloading (which does not work properly without `new` keyword)
-		...args: keyof RefletHttpError.HttpErrors[S] extends undefined
+		...args: keyof RefletHttp.Errors[S] extends undefined
 			? [status: S, message?: string]
-			: [status: S, data: RefletHttpError.HttpErrors[S]]
+			: [status: S, data: RefletHttp.Errors[S]]
 	) {
 		super(typeof args[1] === 'string' ? args[1] : '')
 
@@ -489,32 +489,33 @@ interface HttpErrorStatic extends Pick<typeof HttpError, _HttpError.Name | keyof
  */
 interface HttpErrorConstructor {
 	new <S extends _HttpError.Status>(
-		...args: keyof RefletHttpError.HttpErrors[S] extends undefined
+		...args: keyof RefletHttp.Errors[S] extends undefined
 			? [status: S, message?: string]
-			: [status: S, data: RefletHttpError.HttpErrors[S]]
+			: [status: S, data: RefletHttp.Errors[S]]
 	): _HttpError<S>
 
 	<S extends _HttpError.Status>(
-		...args: keyof RefletHttpError.HttpErrors[S] extends undefined
+		...args: keyof RefletHttp.Errors[S] extends undefined
 			? [status: S, message?: string]
-			: [status: S, data: RefletHttpError.HttpErrors[S]]
+			: [status: S, data: RefletHttp.Errors[S]]
 	): _HttpError<S>
 }
 
 /**
  * @public
  */
-type ErrorParams<S extends _HttpError.Status | OriginalErrorStatus> =
-	keyof RefletHttpError.HttpErrors[S] extends undefined ? [message?: string] : [data: RefletHttpError.HttpErrors[S]]
+type ErrorParams<S extends _HttpError.Status | OriginalErrorStatus> = keyof RefletHttp.Errors[S] extends undefined
+	? [message?: string]
+	: [data: RefletHttp.Errors[S]]
 
 /**
  * @public
  */
-type Augmented<S extends _HttpError.Status | OriginalErrorStatus> = RefletHttpError.HttpErrors[S] extends {
+type Augmented<S extends _HttpError.Status | OriginalErrorStatus> = RefletHttp.Errors[S] extends {
 	message?: any
 }
-	? Omit<RefletHttpError.HttpErrors[S], 'message'>
-	: RefletHttpError.HttpErrors[S]
+	? Omit<RefletHttp.Errors[S], 'message'>
+	: RefletHttp.Errors[S]
 
 /**
  * @internal
@@ -541,7 +542,6 @@ const proxyHandler: ProxyHandler<new (...args: any[]) => any> = {
  *
  * @remarks
  * - Invocation with or without the `new` keyword.
- * - Dedicated static methods for every known status.
  * - The error `name` is inferred from `status`,  _e.g._ `400` gives `BadRequest`.
  *
  * ---
@@ -556,7 +556,7 @@ const proxyHandler: ProxyHandler<new (...args: any[]) => any> = {
  * @class
  * @public
  */
-const _HttpError: RefletHttpError.Constraint extends { constructor: false }
+const _HttpError: RefletHttp.ErrorConstraint extends { constructor: false }
 	? HttpErrorStatic
 	: HttpErrorConstructor & HttpErrorStatic = new Proxy<any>(HttpError, proxyHandler)
 
@@ -566,7 +566,7 @@ namespace _HttpError {
 	/**
 	 * Available status codes.
 	 */
-	export type Status = RefletHttpError.Constraint extends { status: infer S }
+	export type Status = RefletHttp.ErrorConstraint extends { status: infer S }
 		? S extends number
 			? S
 			: never
@@ -947,38 +947,14 @@ namespace _HttpError {
 export { _HttpError as HttpError }
 
 declare global {
-	/**
-	 * - Change the message parameter of Http errors to a more detailed object.
-	 * - Whitelist or widen status codes.
-	 * - Forbid the use of `HttpError` constructor (only allow static methods).
-	 * - Create custom errors with their own status code and augmented parameter.
-	 * @example
-	 * ```ts
-	 * declare global {
-	 *   namespace RefletHttpError {
-	 *     interface AnyHttpError {
-	 *       message?: string
-	 *       code: number
-	 *     }
-	 *
-	 *     interface Forbidden {
-	 *       access: 'read' | 'create' | 'update' | 'delete'
-	 *       target: string
-	 *     }
-	 *   }
-	 * }
-	 * ```
-	 * ---
-	 * @public
-	 */
-	namespace RefletHttpError {
+	namespace RefletHttp {
 		/**
 		 * Whitelist or widen status codes, and forbid the use of the `HttpError` constructor (only allow static methods).
 		 * @example
 		 * ```ts
 		 * declare global {
-		 *   namespace RefletHttpError {
-		 *     interface Constraint {
+		 *   namespace RefletHttp {
+		 *     interface ErrorConstraint {
 		 *       status: 400 | 401 | 403 | 404 | 405 | 422 | 500
 		 *       constructor: false
 		 *     }
@@ -986,7 +962,7 @@ declare global {
 		 * }
 		 * ```
 		 */
-		interface Constraint {
+		interface ErrorConstraint {
 			// status: number
 			// constructor: never
 		}
@@ -996,16 +972,16 @@ declare global {
 		 * @example
 		 * ```ts
 		 * declare global {
-		 *   namespace RefletHttpError {
-		 *     interface Constraint {
+		 *   namespace RefletHttp {
+		 *     interface ErrorConstraint {
 		 *       status: number
 		 *     }
 		 *
-		 *     interface HttpErrors {
+		 *     interface Errors {
 		 *       420: EnhanceYourCalm
 		 *     }
 		 *
-		 *     interface EnhanceYourCalm extends AnyHttpError {
+		 *     interface EnhanceYourCalm {
 		 *       title: string
 		 *       message: string
 		 *     }
@@ -1013,332 +989,327 @@ declare global {
 		 * }
 		 * ```
 		 */
-		interface HttpErrors extends Record<_HttpError.Status | OriginalErrorStatus, {}> {
-			400: RefletHttpError.BadRequest
-			401: RefletHttpError.Unauthorized
-			402: RefletHttpError.PaymentRequired
-			403: RefletHttpError.Forbidden
-			404: RefletHttpError.NotFound
-			405: RefletHttpError.MethodNotAllowed
-			406: RefletHttpError.NotAcceptable
-			407: RefletHttpError.ProxyAuthenticationRequired
-			408: RefletHttpError.RequestTimeout
-			409: RefletHttpError.Conflict
-			410: RefletHttpError.Gone
-			411: RefletHttpError.LengthRequired
-			412: RefletHttpError.PreconditionFailed
-			413: RefletHttpError.PayloadTooLarge
-			414: RefletHttpError.URITooLong
-			415: RefletHttpError.UnsupportedMediaType
-			416: RefletHttpError.RequestedRangeNotSatisfiable
-			417: RefletHttpError.ExpectationFailed
-			418: RefletHttpError.ImATeapot
-			421: RefletHttpError.MisdirectedRequest
-			423: RefletHttpError.Locked
-			424: RefletHttpError.FailedDependency
-			425: RefletHttpError.UnorderedCollection
-			426: RefletHttpError.UpgradeRequired
-			428: RefletHttpError.PreconditionRequired
-			429: RefletHttpError.TooManyRequests
-			431: RefletHttpError.RequestHeaderFieldsTooLarge
-			451: RefletHttpError.UnavailableForLegalReasons
+		interface Errors extends Record<_HttpError.Status | OriginalErrorStatus, {}> {
+			400: BadRequest
+			401: Unauthorized
+			402: PaymentRequired
+			403: Forbidden
+			404: NotFound
+			405: MethodNotAllowed
+			406: NotAcceptable
+			407: ProxyAuthenticationRequired
+			408: RequestTimeout
+			409: Conflict
+			410: Gone
+			411: LengthRequired
+			412: PreconditionFailed
+			413: PayloadTooLarge
+			414: URITooLong
+			415: UnsupportedMediaType
+			416: RequestedRangeNotSatisfiable
+			417: ExpectationFailed
+			418: ImATeapot
+			421: MisdirectedRequest
+			423: Locked
+			424: FailedDependency
+			425: UnorderedCollection
+			426: UpgradeRequired
+			428: PreconditionRequired
+			429: TooManyRequests
+			431: RequestHeaderFieldsTooLarge
+			451: UnavailableForLegalReasons
 
-			500: RefletHttpError.InternalServerError
-			501: RefletHttpError.NotImplemented
-			502: RefletHttpError.BadGateway
-			503: RefletHttpError.ServiceUnavailable
-			504: RefletHttpError.GatewayTimeout
-			505: RefletHttpError.HTTPVersionNotSupported
-			506: RefletHttpError.VariantAlsoNegotiates
-			507: RefletHttpError.InsufficientStorage
-			508: RefletHttpError.LoopDetected
-			510: RefletHttpError.NotExtended
-			511: RefletHttpError.NetworkAuthenticationRequired
+			500: InternalServerError
+			501: NotImplemented
+			502: BadGateway
+			503: ServiceUnavailable
+			504: GatewayTimeout
+			505: HTTPVersionNotSupported
+			506: VariantAlsoNegotiates
+			507: InsufficientStorage
+			508: LoopDetected
+			510: NotExtended
+			511: NetworkAuthenticationRequired
 		}
-
-		/**
-		 * Augment every error.
-		 */
-		interface AnyHttpError {}
 
 		/**
 		 * Augment `400` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
 		 */
-		interface BadRequest extends AnyHttpError {}
+		interface BadRequest {}
 
 		/**
 		 * Augment `401` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
 		 */
-		interface Unauthorized extends AnyHttpError {}
+		interface Unauthorized {}
 
 		/**
 		 * Augment `402` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/402
 		 */
-		interface PaymentRequired extends AnyHttpError {}
+		interface PaymentRequired {}
 
 		/**
 		 * Augment `403` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403
 		 */
-		interface Forbidden extends AnyHttpError {}
+		interface Forbidden {}
 
 		/**
 		 * Augment `404` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404
 		 */
-		interface NotFound extends AnyHttpError {}
+		interface NotFound {}
 
 		/**
 		 * Augment `405` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/405
 		 */
-		interface MethodNotAllowed extends AnyHttpError {}
+		interface MethodNotAllowed {}
 
 		/**
 		 * Augment `406` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/406
 		 */
-		interface NotAcceptable extends AnyHttpError {}
+		interface NotAcceptable {}
 
 		/**
 		 * Augment `407` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/407
 		 */
-		interface ProxyAuthenticationRequired extends AnyHttpError {}
+		interface ProxyAuthenticationRequired {}
 
 		/**
 		 * Augment `408` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/408
 		 */
-		interface RequestTimeout extends AnyHttpError {}
+		interface RequestTimeout {}
 
 		/**
 		 * Augment `409` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/409
 		 */
-		interface Conflict extends AnyHttpError {}
+		interface Conflict {}
 
 		/**
 		 * Augment `410` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/410
 		 */
-		interface Gone extends AnyHttpError {}
+		interface Gone {}
 
 		/**
 		 * Augment `411` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/411
 		 */
-		interface LengthRequired extends AnyHttpError {}
+		interface LengthRequired {}
 
 		/**
 		 * Augment `412` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/412
 		 */
-		interface PreconditionFailed extends AnyHttpError {}
+		interface PreconditionFailed {}
 
 		/**
 		 * Augment `413` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413
 		 */
-		interface PayloadTooLarge extends AnyHttpError {}
+		interface PayloadTooLarge {}
 
 		/**
 		 * Augment `414` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/414
 		 */
-		interface URITooLong extends AnyHttpError {}
+		interface URITooLong {}
 
 		/**
 		 * Augment `415` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/415
 		 */
-		interface UnsupportedMediaType extends AnyHttpError {}
+		interface UnsupportedMediaType {}
 
 		/**
 		 * Augment `416` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/416
 		 */
-		interface RequestedRangeNotSatisfiable extends AnyHttpError {}
+		interface RequestedRangeNotSatisfiable {}
 
 		/**
 		 * Augment `417` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/417
 		 */
-		interface ExpectationFailed extends AnyHttpError {}
+		interface ExpectationFailed {}
 
 		/**
 		 * Augment `418` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418
 		 */
-		interface ImATeapot extends AnyHttpError {}
+		interface ImATeapot {}
 
 		/**
 		 * Augment `421` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/421
 		 */
-		interface MisdirectedRequest extends AnyHttpError {}
+		interface MisdirectedRequest {}
 
 		/**
 		 * Augment `422` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/422
 		 */
-		interface UnprocessableEntity extends AnyHttpError {}
+		interface UnprocessableEntity {}
 
 		/**
 		 * Augment `423` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/423
 		 */
-		interface Locked extends AnyHttpError {}
+		interface Locked {}
 
 		/**
 		 * Augment `424` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/424
 		 */
-		interface FailedDependency extends AnyHttpError {}
+		interface FailedDependency {}
 
 		/**
 		 * Augment `425` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/425
 		 */
-		interface UnorderedCollection extends AnyHttpError {}
+		interface UnorderedCollection {}
 
 		/**
 		 * Augment `426` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/426
 		 */
-		interface UpgradeRequired extends AnyHttpError {}
+		interface UpgradeRequired {}
 
 		/**
 		 * Augment `428` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/428
 		 */
-		interface PreconditionRequired extends AnyHttpError {}
+		interface PreconditionRequired {}
 
 		/**
 		 * Augment `429` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429
 		 */
-		interface TooManyRequests extends AnyHttpError {}
+		interface TooManyRequests {}
 
 		/**
 		 * Augment `431` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/431
 		 */
-		interface RequestHeaderFieldsTooLarge extends AnyHttpError {}
+		interface RequestHeaderFieldsTooLarge {}
 
 		/**
 		 * Augment `451` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/451
 		 */
-		interface UnavailableForLegalReasons extends AnyHttpError {}
+		interface UnavailableForLegalReasons {}
 
 		/**
 		 * Augment `500` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
 		 */
-		interface InternalServerError extends AnyHttpError {}
+		interface InternalServerError {}
 
 		/**
 		 * Augment `501` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/501
 		 */
-		interface NotImplemented extends AnyHttpError {}
+		interface NotImplemented {}
 
 		/**
 		 * Augment `502` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/502
 		 */
-		interface BadGateway extends AnyHttpError {}
+		interface BadGateway {}
 
 		/**
 		 * Augment `503` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503
 		 */
-		interface ServiceUnavailable extends AnyHttpError {}
+		interface ServiceUnavailable {}
 
 		/**
 		 * Augment `504` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
 		 */
-		interface GatewayTimeout extends AnyHttpError {}
+		interface GatewayTimeout {}
 
 		/**
 		 * Augment `505` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/505
 		 */
-		interface HTTPVersionNotSupported extends AnyHttpError {}
+		interface HTTPVersionNotSupported {}
 
 		/**
 		 * Augment `506` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/506
 		 */
-		interface VariantAlsoNegotiates extends AnyHttpError {}
+		interface VariantAlsoNegotiates {}
 
 		/**
 		 * Augment `507` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/507
 		 */
-		interface InsufficientStorage extends AnyHttpError {}
+		interface InsufficientStorage {}
 
 		/**
 		 * Augment `508` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/508
 		 */
-		interface LoopDetected extends AnyHttpError {}
+		interface LoopDetected {}
 
 		/**
 		 * Augment `510` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/510
 		 */
-		interface NotExtended extends AnyHttpError {}
+		interface NotExtended {}
 
 		/**
 		 * Augment `511` error.
 		 *
 		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/511
 		 */
-		interface NetworkAuthenticationRequired extends AnyHttpError {}
+		interface NetworkAuthenticationRequired {}
 	}
 }

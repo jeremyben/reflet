@@ -96,6 +96,25 @@ function setHeader(name: ResponseHeader, value: string) {
 }
 ```
 
+### Augmentations
+
+If your application has custom headers, you can augment the union type _(but not directly the enum value)_
+with the dedicated global namespace `RefletHttp`:
+
+```ts
+declare global {
+  namespace RefletHttp {
+    interface RequestHeader {
+      XCustom: 'x-custom'
+    }
+
+    interface ResponseHeader {
+      XCustom: 'x-custom'
+    }
+  }
+}
+```
+
 ## Error 💢
 
 ### Usage
@@ -153,13 +172,13 @@ The compiler is okay with both. 👌
 
 By default, the only parameter you can pass besides the status code is `message?: string`. You might want your error objects to have more details.
 
-A dedicated global namespace `RefletHttpError` gives the possibility, for each different status, to change the optional `message` parameter to a required `data` object parameter. This object's properties will be **attached** to the resulting error (at runtime **and** compile time).
+The global namespace `RefletHttp` gives the possibility, for each different status, to change the optional `message` parameter to a required `data` object parameter. This object's properties will be **attached** to the resulting error (at runtime **and** compile time).
 
 ```ts
 export {} // necessary to be in a module file
 
 declare global {
-  namespace RefletHttpError {
+  namespace RefletHttp {
     interface Forbidden {
       access: 'read' | 'create' | 'update' | 'delete'
       target: string
@@ -183,18 +202,16 @@ throw HttpError.MethodNotAllowed({ headers: { allow: ['GET'] } })
 
 Every known HTTP error is available for augmentation under its own name: [List of HTTP errors](#list-of-http-errors).
 
-_If you want to augment every HTTP error at once, use the `AnyHttpError` interface._
+#### Constraints
 
-#### Constraint
-
-With the `Constraint` interface, you can:
+With the `ErrorConstraint` interface, you can:
 
 - Whitelist the errors you application uses.
 
 ```ts
 declare global {
-  namespace RefletHttpError {
-    interface Constraint {
+  namespace RefletHttp {
+    interface ErrorConstraint {
       status: 400 | 401 | 403 | 404 | 405 | 422 | 500
       // or widen to all numbers with `status: number`
     }
@@ -206,8 +223,8 @@ declare global {
 
 ```ts
 declare global {
-  namespace RefletHttpError {
-    interface Constraint {
+  namespace RefletHttp {
+    interface ErrorConstraint {
       constructor: false
     }
   }
@@ -223,8 +240,8 @@ If you define a `message` property with different type than `string`, like so:
 
 ```ts
 declare global {
-  namespace RefletHttpError {
-    interface AnyHttpError {
+  namespace RefletHttp {
+    interface BadRequest {
       message: Record<string, any>
     }
   }
