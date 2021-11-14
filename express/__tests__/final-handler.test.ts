@@ -16,8 +16,8 @@ describe('final handler', () => {
 		finalHandler({
 			sendAsJson: 'from-response-type',
 			log: 'always',
-			revealErrorMessage: '4xx',
-			revealErrorName: 'always',
+			exposeMessage: '4xx',
+			exposeName: 'always',
 			cleanStatusAndHeaders: true,
 			notFoundHandler: true,
 		})

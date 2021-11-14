@@ -978,8 +978,8 @@ register(app, [ThingRouter])
 app.use(finalHandler({
   sendAsJson: 'from-response-type',
   log: '5xx',
-  revealErrorMessage: '4xx', 
-  revealErrorName: 'always',
+  exposeMessage: '4xx', 
+  exposeName: 'always',
   cleanStatusAndHeaders: true,
   notFoundHandler: true
 }))
@@ -1033,7 +1033,7 @@ finalHandler({
 })
 ```
 
-##### `revealErrorMessage`, `revealErrorName`
+##### `exposeMessage`, `exposeName`
 
 Error `message` and `name` are not serialized by default. These options make `message` or `name` enumerable so they can be serialized.
 
