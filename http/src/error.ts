@@ -59,7 +59,17 @@ class HttpError<S extends _HttpError.Status | OriginalErrorStatus> extends Error
 				? proxyHandler.apply
 				: HttpError
 
-		Error.captureStackTrace(this, constructorOpt)
+		// Handle custom stackTraceLimit for HttpError
+		if (HttpError.stackTraceLimit !== Error.stackTraceLimit) {
+			const stackTraceLimit = Error.stackTraceLimit
+			Error.stackTraceLimit = HttpError.stackTraceLimit
+
+			Error.captureStackTrace(this, constructorOpt)
+
+			Error.stackTraceLimit = stackTraceLimit
+		} else {
+			Error.captureStackTrace(this, constructorOpt)
+		}
 	}
 
 	/**
