@@ -10,9 +10,9 @@ const MetaFieldDiscriminators = Symbol('field-discriminators')
  * @see https://mongoosejs.com/docs/schematypes
  * @public
  */
-export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(
-	field: SchemaTypeOptions<T> | [SchemaTypeOptions<T>]
-): Field.Decorator
+export function Field<T extends Field.SchemaType | [Field.SchemaType] | [[Field.SchemaType]]>(
+	field: Field.Options<T> | [Field.Options<T>]
+): Field.Decorator<T>
 
 /**
  * Defines a SchemaType on a property.
@@ -20,11 +20,13 @@ export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(
  * @public
  */
 // tslint:disable-next-line: unified-signatures - more precise compiler errors
-export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(field: T): Field.Decorator
+export function Field<T extends Field.SchemaType | [Field.SchemaType] | [[Field.SchemaType]]>(
+	field: T
+): Field.Decorator<T>
 
-export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(
-	field: T | SchemaTypeOptions<T> | [SchemaTypeOptions<T>]
-): Field.Decorator {
+export function Field<T extends Field.SchemaType | [Field.SchemaType] | [[Field.SchemaType]]>(
+	field: T | Field.Options<T> | [Field.Options<T>]
+): Field.Decorator<T> {
 	return (target, key) => {
 		const fields = getFields(target.constructor)
 		fields[<string>key] = field as any
@@ -34,11 +36,51 @@ export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(
 
 export namespace Field {
 	/**
+	 * SchemaType.
+	 * @see https://mongoosejs.com/docs/schematypes.html#what-is-a-schematype
+	 * @public
+	 */
+	export type SchemaType =
+		| StringConstructor
+		| NumberConstructor
+		| BooleanConstructor
+		| DateConstructor
+		| MapConstructor
+		| typeof Buffer
+		| typeof mongoose.SchemaType
+		| mongoose.Schema
+		| 'ObjectId'
+
+	/**
+	 * SchemaType Options.
+	 * @see https://mongoosejs.com/docs/schematypes.html#schematype-options
+	 * @public
+	 */
+	export type Options<T extends Field.SchemaType | [Field.SchemaType] | [[Field.SchemaType]]> =
+		RefletMongoose.SchemaTypeOptions &
+			CommonOptions<T> &
+			(T extends StringConstructor | typeof mongoose.Schema.Types.String
+				? StringOptions
+				: T extends StringConstructor[] | StringConstructor[][]
+				? ArrayOptions<string>
+				: T extends NumberConstructor | typeof mongoose.Schema.Types.Number
+				? NumberOptions
+				: T extends NumberConstructor[] | NumberConstructor[][]
+				? ArrayOptions<number>
+				: T extends DateConstructor | typeof mongoose.Schema.Types.Date
+				? DateOptions
+				: T extends typeof mongoose.Schema.Types.ObjectId | 'ObjectId'
+				? ObjectIdOptions
+				: T extends MapConstructor
+				? MapOptions
+				: {})
+
+	/**
 	 * Equivalent to `PropertyDecorator`.
 	 * @public
 	 */
-	export type Decorator = PropertyDecorator & {
-		__mongooseField?: never
+	export type Decorator<T> = PropertyDecorator & {
+		__mongooseField?: T
 	}
 
 	/**
@@ -49,7 +91,7 @@ export namespace Field {
 	 * @see https://mongoosejs.com/docs/schematypes
 	 * @public
 	 */
-	export function Nested<T extends SchemaTypeNested | SchemaTypeNested[]>(field: T): Field.Nested.Decorator {
+	export function Nested<T extends Field.Nested.Options | Field.Nested.Options[]>(field: T): Field.Nested.Decorator {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
 			fields[<string>key] = field
@@ -58,6 +100,17 @@ export namespace Field {
 	}
 
 	export namespace Nested {
+		/**
+		 * @public
+		 */
+		export interface Options {
+			[key: string]:
+				| Field.Options<Field.SchemaType | [Field.SchemaType] | [[Field.SchemaType]]>
+				| [Field.Options<Field.SchemaType | [Field.SchemaType] | [[Field.SchemaType]]>]
+				| Field.Nested.Options
+				| Field.Nested.Options[]
+		}
+
 		/**
 		 * Equivalent to `PropertyDecorator`.
 		 * @public
@@ -74,7 +127,7 @@ export namespace Field {
 	export function Schema<T extends ClassType | [ClassType]>(
 		Class: T,
 		options?: Field.Schema.Options
-	): Field.Schema.Decorator {
+	): Field.Schema.Decorator<T> {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
 
@@ -101,8 +154,8 @@ export namespace Field {
 		 * Equivalent to `PropertyDecorator`.
 		 * @public
 		 */
-		export type Decorator = PropertyDecorator & {
-			__mongooseFieldSchema?: never
+		export type Decorator<T> = PropertyDecorator & {
+			__mongooseFieldSchema?: T
 		}
 	}
 
@@ -212,7 +265,7 @@ export namespace Field {
 	export function Ref<T extends Record<string, any>>(
 		ref: Ref<any, T> | [Ref<any, T>],
 		options: Field.Ref.Options = {}
-	): Field.Ref.Decorator {
+	): Field.Ref.Decorator<T> {
 		return (target, key) => {
 			const type = mongoose.Schema.Types.ObjectId
 
@@ -238,8 +291,8 @@ export namespace Field {
 		 * Equivalent to `PropertyDecorator`.
 		 * @public
 		 */
-		export type Decorator = PropertyDecorator & {
-			__mongooseFieldRef?: never
+		export type Decorator<T> = PropertyDecorator & {
+			__mongooseFieldRef?: T
 		}
 	}
 
@@ -297,53 +350,7 @@ export function getDiscriminatorFields(target: object): {
 /**
  * @public
  */
-interface SchemaTypeNested {
-	[key: string]:
-		| SchemaTypeOptions<SchemaType | [SchemaType] | [[SchemaType]]>
-		| [SchemaTypeOptions<SchemaType | [SchemaType] | [[SchemaType]]>]
-		| SchemaTypeNested
-		| SchemaTypeNested[]
-}
-
-/**
- * @public
- */
-type SchemaType =
-	| StringConstructor
-	| NumberConstructor
-	| BooleanConstructor
-	| DateConstructor
-	| MapConstructor
-	| typeof Buffer
-	| typeof mongoose.SchemaType
-	| mongoose.Schema
-	| 'ObjectId'
-
-/**
- * @public
- */
-type SchemaTypeOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]> = RefletMongoose.SchemaTypeOptions &
-	CommonOptions<T> &
-	(T extends StringConstructor | typeof mongoose.Schema.Types.String
-		? StringOptions
-		: T extends StringConstructor[] | StringConstructor[][]
-		? ArrayOptions<string>
-		: T extends NumberConstructor | typeof mongoose.Schema.Types.Number
-		? NumberOptions
-		: T extends NumberConstructor[] | NumberConstructor[][]
-		? ArrayOptions<number>
-		: T extends DateConstructor | typeof mongoose.Schema.Types.Date
-		? DateOptions
-		: T extends typeof mongoose.Schema.Types.ObjectId | 'ObjectId'
-		? ObjectIdOptions
-		: T extends MapConstructor
-		? MapOptions
-		: {})
-
-/**
- * @public
- */
-interface CommonOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]> {
+interface CommonOptions<T extends Field.SchemaType | [Field.SchemaType] | [[Field.SchemaType]]> {
 	/**
 	 * The type to cast this path to.
 	 *
@@ -475,7 +482,7 @@ interface CommonOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]> {
 	 *
 	 * [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-cast)
 	 */
-	cast?: string
+	cast?: ((val: any) => Infer<T>) | string
 }
 
 /**
@@ -653,7 +660,7 @@ interface MapOptions {
 	 *
 	 * [Guide reference](https://mongoosejs.com/docs/schematypes#maps)
 	 */
-	of?: SchemaType
+	of?: Field.SchemaType
 }
 
 /**
