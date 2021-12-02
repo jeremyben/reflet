@@ -126,28 +126,39 @@ export namespace Field {
 	 */
 	export function Schema<T extends ClassType | [ClassType]>(
 		Class: T,
-		options?: Field.Schema.Options
+		options?: Field.Schema.Options<T>
 	): Field.Schema.Decorator<T> {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
 
-			const required = options?.required
+			const type = Array.isArray(Class) ? [schemaFrom(Class[0])] : schemaFrom(Class)
 
-			fields[<string>key] = Array.isArray(Class)
-				? [{ type: schemaFrom(Class[0]), required }]
-				: { type: schemaFrom(Class), required }
+			fields[<string>key] = { type, ...options }
 
 			Reflect.defineMetadata(MetaField, fields, target.constructor)
 		}
 	}
 
 	export namespace Schema {
+		type DefaultType<T extends ClassType | [ClassType]> = T extends [ClassType]
+			? Plain.Partial<InstanceType<T[number]>>[]
+			: T extends ClassType
+			? Plain.Partial<InstanceType<T>>
+			: never
+
 		/**
 		 * @public
 		 */
-		export interface Options {
-			// https://mongoosejs.com/docs/validation.html#required-validators-on-nested-objects
+		export interface Options<T extends ClassType | [ClassType]> {
+			/**
+			 * https://mongoosejs.com/docs/validation.html#required-validators-on-nested-objects
+			 */
 			required?: boolean
+
+			/**
+			 * https://mongoosejs.com/docs/subdocs.html#subdocument-defaults
+			 */
+			default?: DefaultType<T> | ((this: any, doc: any) => DefaultType<T>)
 		}
 
 		/**

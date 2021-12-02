@@ -80,6 +80,9 @@ test('schema with reference', async () => {
 		@Field.Schema(SubSchema, { required: true })
 		sub: SubSchema & mongoose.Types.Subdocument
 
+		@Field.Schema([SubSchema], { default: [{ names: ['arthur'] }] })
+		subs: (SubSchema & mongoose.Types.Subdocument)[]
+
 		@Field(mongoose.Schema.Types.Buffer)
 		buf: mongoose.Types.Buffer
 
@@ -104,7 +107,7 @@ test('schema with reference', async () => {
 	const s = (await S.findOne({ name: 'Jeremy' }))!
 	// console.log(s)
 	// const obj = s.toObject()
-	// console.log('object', obj)
+	// console.log('s-object', JSON.stringify(obj, null, '  '))
 
 	expect(s.srefs[0]._id).toBeInstanceOf(mongoose.Types.ObjectId)
 	expect(s.srefs[0].hello).toBe('hi')
