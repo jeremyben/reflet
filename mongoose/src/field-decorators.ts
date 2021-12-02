@@ -141,12 +141,6 @@ export namespace Field {
 	}
 
 	export namespace Schema {
-		type DefaultType<T extends ClassType | [ClassType]> = T extends [ClassType]
-			? Plain.Partial<InstanceType<T[number]>>[]
-			: T extends ClassType
-			? Plain.Partial<InstanceType<T>>
-			: never
-
 		/**
 		 * @public
 		 */
@@ -159,8 +153,17 @@ export namespace Field {
 			/**
 			 * https://mongoosejs.com/docs/subdocs.html#subdocument-defaults
 			 */
-			default?: DefaultType<T> | ((this: any, doc: any) => DefaultType<T>)
+			default?: Field.Schema.DefaultType<T> | ((this: any, doc: any) => Field.Schema.DefaultType<T>)
 		}
+
+		/**
+		 * @public
+		 */
+		export type DefaultType<T extends ClassType | [ClassType]> = T extends [ClassType]
+			? Plain.Partial<InstanceType<T[number]>>[]
+			: T extends ClassType
+			? Plain.Partial<InstanceType<T>>
+			: never
 
 		/**
 		 * Equivalent to `PropertyDecorator`.
