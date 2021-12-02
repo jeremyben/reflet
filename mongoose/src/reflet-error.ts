@@ -12,6 +12,7 @@ export class RefletMongooseError extends Error {
 		| 'VERSIONKEY_OPTION_CONFLICT'
 		| 'SCHEMA_CALLBACK_MISSING_MODIFIER'
 		| 'SCHEMA_OPTIONS_MISSING_MODIFIER'
+		| 'INVALID_FIELD_TYPE'
 
 	constructor(code: RefletMongooseError['code'], message: string) {
 		super(message)

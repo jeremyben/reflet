@@ -1,6 +1,7 @@
 import * as mongoose from 'mongoose'
 import { ClassType, Plain, PlainKeys, Ref, RefGlobal } from './interfaces'
 import { schemaFrom } from './schema-creation'
+import { RefletMongooseError } from './reflet-error'
 
 const MetaField = Symbol('field')
 const MetaFieldDiscriminators = Symbol('field-discriminators')
@@ -359,6 +360,110 @@ export namespace Field {
 		 */
 		export type Decorator = PropertyDecorator & {
 			__mongooseFieldRefPath?: never
+		}
+	}
+
+	/**
+	 * @public
+	 */
+	export function Enum<T extends string | number, D extends T>(
+		values: T[] extends string[] ? T[] : T[] extends number[] ? T[] : never,
+		options?: Field.Enum.Options<D>
+	): Field.Enum.Decorator {
+		return (target, key) => {
+			if (!Array.isArray(values)) {
+				throw new RefletMongooseError(
+					'INVALID_FIELD_TYPE',
+					`Parameter of @Field.Enum "${target.constructor.name}.${key.toString()}" should be an array`
+				)
+			}
+
+			const type = typeof values[0] === 'string' ? String : typeof values[0] === 'number' ? Number : null
+
+			if (!type) {
+				throw new RefletMongooseError(
+					'INVALID_FIELD_TYPE',
+					`Values of @Field.Enum "${
+						target.constructor.name
+					}.${key.toString()}" should either be strings or numbers`
+				)
+			}
+
+			const fields = getFields(target.constructor)
+
+			fields[<string>key] = { type, enum: values, ...options }
+
+			Reflect.defineMetadata(MetaField, fields, target.constructor)
+		}
+	}
+
+	export namespace Enum {
+		/**
+		 * @public
+		 */
+		export type Options<T extends string | number> = {
+			required?: boolean
+			default?: T | ((this: any, doc: any) => T)
+		}
+
+		/**
+		 * Equivalent to `PropertyDecorator`.
+		 * @public
+		 */
+		export type Decorator = PropertyDecorator & {
+			__mongooseFieldEnum?: never
+		}
+	}
+
+	/**
+	 * @public
+	 */
+	export function ArrayOfEnum<T extends string | number, D extends T>(
+		values: T[] extends string[] ? T[] : T[] extends number[] ? T[] : never,
+		options: Field.ArrayOfEnum.Options<D>
+	): Field.ArrayOfEnum.Decorator {
+		return (target, key) => {
+			if (!Array.isArray(values)) {
+				throw new RefletMongooseError(
+					'INVALID_FIELD_TYPE',
+					`Parameter of @Field.ArrayOfEnum "${target.constructor.name}.${key.toString()}" should be an array`
+				)
+			}
+
+			const type = typeof values[0] === 'string' ? [String] : typeof values[0] === 'number' ? [Number] : null
+
+			if (!type) {
+				throw new RefletMongooseError(
+					'INVALID_FIELD_TYPE',
+					`Values of @Field.ArrayOfEnum "${
+						target.constructor.name
+					}.${key.toString()}" should either be strings or numbers`
+				)
+			}
+
+			const fields = getFields(target.constructor)
+
+			fields[<string>key] = { type, enum: values, ...options }
+
+			Reflect.defineMetadata(MetaField, fields, target.constructor)
+		}
+	}
+
+	export namespace ArrayOfEnum {
+		/**
+		 * @public
+		 */
+		export type Options<T extends string | number> = {
+			required?: boolean
+			default?: T[] | ((this: any, doc: any) => T[])
+		}
+
+		/**
+		 * Equivalent to `PropertyDecorator`.
+		 * @public
+		 */
+		export type Decorator = PropertyDecorator & {
+			__mongooseFieldArrayOfEnum?: never
 		}
 	}
 }

@@ -17,14 +17,10 @@ import { RefletMongooseError } from '../src/reflet-error'
 test('schema with reference', async () => {
 	@SchemaOptions({ _id: false })
 	abstract class SubSchema {
-		@Field({
-			type: [String],
-			default(this: SubSchema, doc: SubSchema) {
-				return ['julia']
-			},
-			enum: ['julia', 'arthur'],
+		@Field.ArrayOfEnum(['jeremy', 'julia', 'arthur'], {
+			default: ['jeremy'],
 		})
-		names: string[]
+		names: ('jeremy' | 'julia' | 'arthur')[]
 	}
 
 	@Model()
