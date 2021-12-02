@@ -152,6 +152,10 @@ function attachNestedDiscriminators<T extends mongoose.Document>(
 			nestedPath.required(true)
 		}
 
+		if (options?.default) {
+			nestedPath.default(options.default)
+		}
+
 		// First go through all the discriminators to set the discriminatorKey
 		// and make sure on the next loop that everyone of them has the same.
 		const discriminatorKey = setNestedDiscriminatorKey(nestedPath, nestedClasses, options?.strict)

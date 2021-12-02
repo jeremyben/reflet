@@ -22,15 +22,15 @@ test('single nested discriminators', async () => {
 
 	@Model()
 	class Shape extends Model.I {
-		@Field.Union(Circle, Square)
+		@Field.Union([Circle, Square], { default: { radius: 5, __t: 'Circle' } })
 		shape: Circle | Square
 
-		constructor(doc?: Plain.Optional<Shape, '_id'>) {
+		constructor(doc?: Plain.Partial<Shape>) {
 			super()
 		}
 	}
 
-	const circle = new Shape({ shape: { __t: 'Circle', radius: 5 } })
+	const circle = new Shape({})
 	const circleObject = circle.toObject()
 	expect(circleObject).toStrictEqual({
 		_id: expect.any(mongoose.Types.ObjectId),
@@ -77,7 +77,7 @@ test('embedded discriminators in arrays', async () => {
 
 	@Model()
 	class Batch extends Model.I {
-		@Field.ArrayOfUnion(Clicked, Purchased)
+		@Field.ArrayOfUnion([Clicked, Purchased], { required: true })
 		events: (Clicked | Purchased)[]
 
 		constructor(doc?: Plain.Optional<Batch, '_id'>) {

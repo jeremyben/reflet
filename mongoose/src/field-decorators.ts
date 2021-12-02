@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose'
-import { ClassType, PlainKeys, Ref, RefGlobal } from './interfaces'
+import { ClassType, Plain, PlainKeys, Ref, RefGlobal } from './interfaces'
 import { schemaFrom } from './schema-creation'
 
 const MetaField = Symbol('field')
@@ -164,10 +164,13 @@ export namespace Field {
 	 * @see https://mongoosejs.com/docs/discriminators#single-nested-discriminators
 	 * @public
 	 */
-	export function Union(classes: ClassType[], options?: Field.Union.Options): Field.Union.Decorator
+	export function Union<T extends ClassType>(
+		classes: T[],
+		options?: Field.Union.Options<InstanceType<T>>
+	): Field.Union.Decorator
 	export function Union(...classes: ClassType[]): Field.Union.Decorator
 	export function Union(
-		...args: ClassType[] | (ClassType[] | Field.Union.Options | undefined)[]
+		...args: ClassType[] | (ClassType[] | Field.Union.Options<any> | undefined)[]
 	): Field.Union.Decorator {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
@@ -177,7 +180,7 @@ export namespace Field {
 			const discriminatorFields = getDiscriminatorFields(target.constructor)
 
 			discriminatorFields[<string>key] = Array.isArray(args[0])
-				? { classes: args[0] as ClassType[], options: args[1] as Field.Union.Options | undefined }
+				? { classes: args[0] as ClassType[], options: args[1] as Field.Union.Options<any> | undefined }
 				: { classes: args as ClassType[] }
 
 			Reflect.defineMetadata(MetaFieldDiscriminators, discriminatorFields, target.constructor)
@@ -188,12 +191,15 @@ export namespace Field {
 		/**
 		 * @public
 		 */
-		export interface Options {
+		export interface Options<T> {
 			/** If `true`, the field itself is required. */
 			required?: boolean
 
 			/** If `true`, the discriminator key in nested schemas is always required and narrowed to its possible values. */
 			strict?: boolean
+
+			// Distributive https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#distributive-conditional-types
+			default?: T extends any ? Plain.Partial<T> : never
 		}
 
 		/**
@@ -210,10 +216,13 @@ export namespace Field {
 	 * @see https://mongoosejs.com/docs/discriminators#embedded-discriminators-in-arrays
 	 * @public
 	 */
-	export function ArrayOfUnion(classes: ClassType[], options?: Field.Union.Options): Field.ArrayOfUnion.Decorator
+	export function ArrayOfUnion<T extends ClassType>(
+		classes: T[],
+		options?: Field.ArrayOfUnion.Options<InstanceType<T>>
+	): Field.ArrayOfUnion.Decorator
 	export function ArrayOfUnion(...classes: ClassType[]): Field.ArrayOfUnion.Decorator
 	export function ArrayOfUnion(
-		...args: ClassType[] | (ClassType[] | Field.Union.Options | undefined)[]
+		...args: ClassType[] | (ClassType[] | Field.ArrayOfUnion.Options<any> | undefined)[]
 	): Field.ArrayOfUnion.Decorator {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
@@ -224,7 +233,7 @@ export namespace Field {
 			const discriminatorArrayFields = getDiscriminatorFields(target.constructor)
 
 			discriminatorArrayFields[<string>key] = Array.isArray(args[0])
-				? { classes: args[0] as ClassType[], options: args[1] as Field.Union.Options | undefined }
+				? { classes: args[0] as ClassType[], options: args[1] as Field.ArrayOfUnion.Options<any> | undefined }
 				: { classes: args as ClassType[] }
 
 			Reflect.defineMetadata(MetaFieldDiscriminators, discriminatorArrayFields, target.constructor)
@@ -232,6 +241,20 @@ export namespace Field {
 	}
 
 	export namespace ArrayOfUnion {
+		/**
+		 * @public
+		 */
+		export interface Options<T> {
+			/** If `true`, the field itself is required. */
+			required?: boolean
+
+			/** If `true`, the discriminator key in nested schemas is always required and narrowed to its possible values. */
+			strict?: boolean
+
+			// Distributive https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#distributive-conditional-types
+			default?: Array<T extends any ? Plain.Partial<T> : never>
+		}
+
 		/**
 		 * Equivalent to `PropertyDecorator`.
 		 * @public
@@ -341,7 +364,7 @@ export function getFields(target: object): mongoose.SchemaDefinition<any> {
  * @internal
  */
 export function getDiscriminatorFields(target: object): {
-	[key: string]: { classes: ClassType[]; options?: Field.Union.Options }
+	[key: string]: { classes: ClassType[]; options?: Field.Union.Options<any> }
 } {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
 	return Object.assign({}, Reflect.getMetadata(MetaFieldDiscriminators, target))
