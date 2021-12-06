@@ -1,4 +1,5 @@
 import * as express from 'express'
+import * as core from 'express-serve-static-core'
 import { RequestHeader } from '@reflet/http'
 import { flatMapFast } from './array-manipulation'
 import { ClassType } from './interfaces'
@@ -13,11 +14,11 @@ const META = Symbol('param')
  * ```ts
  * // Without invokation:
  * ＠Get('/some')
- * get(＠Req req: Request) {}
+ * get(＠Req req: Req) {}
  *
  * // With invokation:
  * ＠Post('/some')
- * create(＠Req() req: Request) {}
+ * create(＠Req() req: Req) {}
  * ```
  * ------
  * @public
@@ -34,6 +35,14 @@ export function Req() {
 	}
 }
 
+export type Req<
+	P = core.ParamsDictionary,
+	ResBody = any,
+	ReqBody = any,
+	ReqQuery = core.Query,
+	Locals extends Record<string, any> = Record<string, any>
+> = express.Request<P, ResBody, ReqBody, ReqQuery, Locals>
+
 export namespace Req {
 	/**
 	 * Equivalent to `ParameterDecorator`.
@@ -49,11 +58,11 @@ export namespace Req {
  * ```ts
  * // Without invokation:
  * ＠Get('/some')
- * get(＠Res res: Response) {}
+ * get(＠Res res: Res) {}
  *
  * // With invokation:
  * ＠Post('/some')
- * create(＠Res() res: Response) {}
+ * create(＠Res() res: Res) {}
  * ```
  * ------
  * @public
@@ -70,6 +79,11 @@ export function Res() {
 	}
 }
 
+export type Res<ResBody = any, Locals extends Record<string, any> = Record<string, any>> = express.Response<
+	ResBody,
+	Locals
+>
+
 export namespace Res {
 	/**
 	 * Equivalent to `ParameterDecorator`.
@@ -85,11 +99,11 @@ export namespace Res {
  * ```ts
  * // Without invokation:
  * ＠Get('/some')
- * get(＠Next next: NextFunction) {}
+ * get(＠Next next: Next) {}
  *
  * // With invokation:
  * ＠Post('/some')
- * create(＠Next() next: NextFunction) {}
+ * create(＠Next() next: Next) {}
  * ```
  * ------
  * @public
@@ -107,6 +121,8 @@ export function Next() {
 		return createParamDecorator((req, res, next?: express.NextFunction) => next!)
 	}
 }
+
+export type Next = express.NextFunction
 
 export namespace Next {
 	/**
@@ -178,11 +194,11 @@ export namespace Body {
  * ```ts
  * // Route parameters object without invokation:
  * ＠Get('/:col/:id')
- * get(＠Params params: { col: string; id: string }) {}
+ * get(＠Params params: Params<'col' | 'id'>) {}
  *
  * // Route parameters object with invokation:
  * ＠Get('/:col/:id')
- * get(＠Params() params: { col: string; id: string }) {}
+ * get(＠Params() params: Params<'col' | 'id'>) {}
  *
  * // Single route parameter:
  * ＠Get('/:col/:id')
@@ -205,6 +221,8 @@ export function Params(nameOrTarget?: string | object, propertyKey?: string | sy
 	}
 }
 
+export type Params<P extends string = string> = Record<P, string>
+
 export namespace Params {
 	/**
 	 * Equivalent to `ParameterDecorator`.
@@ -221,11 +239,11 @@ export namespace Params {
  * ```ts
  * // Query string parameters object without invokation:
  * ＠Get('/search')
- * search(＠Query queries: any) {}
+ * search(＠Query query: Query) {}
  *
  * // Query string parameters object with invokation:
  * ＠Get('/search')
- * search(＠Query() queries: any) {}
+ * search(＠Query() query: Query) {}
  *
  * // Single query string parameter:
  * ＠Get('/search')
@@ -248,6 +266,8 @@ export function Query(fieldOrTarget?: string | object, propertyKey?: string | sy
 	}
 }
 
+export type Query = { [key: string]: undefined | string | string[] | Query | Query[] }
+
 export namespace Query {
 	/**
 	 * Equivalent to `ParameterDecorator`.
@@ -264,11 +284,11 @@ export namespace Query {
  * ```ts
  * // Request headers object without invokation:
  * ＠Get('/some')
- * get(＠Headers headers: IncomingHttpHeaders) {}
+ * get(＠Headers headers: Headers) {}
  *
  * // Request headers object with invokation:
  * ＠Get('/some')
- * get(＠Headers() headers: IncomingHttpHeaders) {}
+ * get(＠Headers() headers: Headers) {}
  *
  * // Single request header:
  * ＠Get('/some')
@@ -290,6 +310,8 @@ export function Headers(nameOrTarget?: string | object, propertyKey?: string | s
 		return createParamDecorator((req) => (subKey ? req.headers[subKey] : req.headers))
 	}
 }
+
+export type Headers = RequestHeader.Record
 
 export namespace Headers {
 	/**

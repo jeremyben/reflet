@@ -29,23 +29,23 @@ describe('basic decorators', () => {
 	@Router('')
 	class FooRouter {
 		@Get()
-		async get(@Headers headers: any, @Headers('via') via: string, @Res res: express.Response) {
+		async get(@Headers headers: any, @Headers('via') via: string, @Res res: Res) {
 			res.send({ via, shared: headers.shared })
 		}
 
 		@Post()
-		post(@Body body: { foo: number }, @Body<{ foo: number }>('foo') foo: number, @Res res: express.Response) {
+		post(@Body body: { foo: number }, @Body<{ foo: number }>('foo') foo: number, @Res res: Res) {
 			res.send({ bar: foo * body.foo })
 		}
 
 		@Patch('/:id')
-		patch(@Params params: any, @Query queries: any, @Res res: express.Response) {
+		patch(@Params params: Params<'id'>, @Query queries: Query, @Res res: Res) {
 			const bar = Number.parseInt(params.id, 10) * 2
 			res.send({ bar, baz: queries.q })
 		}
 
 		@Put('/:id')
-		put(@Params('id') id: string, @Query('q') q: string, @Res res: express.Response) {
+		put(@Params('id') id: string, @Query('q') q: string, @Res res: Res) {
 			const bar = Number.parseInt(id, 10) * 2
 			res.send({ bar, baz: q })
 		}
@@ -85,12 +85,12 @@ describe('custom decorators', () => {
 	@Router('')
 	class FooRouter {
 		@Get()
-		get(@CurrentUser user: object, @Res res: express.Response) {
+		get(@CurrentUser user: object, @Res res: Res) {
 			res.send({ user })
 		}
 
 		@Put()
-		put(@BodyTrimmed('foot') foot: string, @BodyTrimmed('pub') pub: string, @Res res: express.Response) {
+		put(@BodyTrimmed('foot') foot: string, @BodyTrimmed('pub') pub: string, @Res res: Res) {
 			foot = foot + '!'
 			pub = pub + '!'
 			res.send({ foot, pub })
@@ -121,7 +121,7 @@ describe('param middlewares deduplication', () => {
 		class Foo {
 			@Use(express.json())
 			@Post()
-			post(@Body('foo') foo: string, @Body body: any, @Res res: express.Response) {
+			post(@Body('foo') foo: string, @Body body: any, @Res res: Res) {
 				res.send(foo)
 			}
 		}
@@ -139,7 +139,7 @@ describe('param middlewares deduplication', () => {
 
 		class Foo {
 			@Post()
-			post(@BodyTrimmed('foo') fooTrimmed: string, @Body('foo') foo: string, @Res res: express.Response) {
+			post(@BodyTrimmed('foo') fooTrimmed: string, @Body('foo') foo: string, @Res res: Res) {
 				res.send(fooTrimmed)
 			}
 		}
@@ -166,7 +166,7 @@ describe('param middlewares deduplication', () => {
 		@Use(authent)
 		class Bar {
 			@Post('user/:yo')
-			post(@CurrentUser user: User, @Res res: express.Response) {
+			post(@CurrentUser user: User, @Res res: Res) {
 				res.send(user)
 			}
 		}

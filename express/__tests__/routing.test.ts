@@ -23,12 +23,12 @@ describe('basic routing', () => {
 		constructor(private userService: UserService) {}
 
 		@Get()
-		get(@Res res: express.Response) {
+		get(@Res res: Res) {
 			res.send([{ id: 1 }])
 		}
 
 		@Patch('/:id')
-		patch(@Req() req: express.Request<{ id: string }>, @Res() res: express.Response) {
+		patch(@Req() req: Req<{ id: string }>, @Res() res: Res) {
 			const user = this.userService.getUserById(req.params.id)
 			res.send(user)
 		}
@@ -50,7 +50,7 @@ describe('basic routing', () => {
 		}
 
 		@Route.Get('/:id')
-		get(@Res res: express.Response, @Req req: express.Request) {
+		get(@Res res: Res, @Req req: Req) {
 			const id = Number.parseInt(req.params.id, 10)
 			res.send({ id })
 		}
@@ -104,7 +104,7 @@ describe('children routers', () => {
 		@Router('/foo')
 		class FooRouter {
 			@Get()
-			get(@Res res: express.Response) {
+			get(@Res res: Res) {
 				res.send({})
 			}
 		}
@@ -137,7 +137,7 @@ describe('children routers', () => {
 			constructor(private service: UserService) {}
 
 			@Post()
-			post(@Res res: express.Response, @Body() body: any) {
+			post(@Res res: Res, @Body() body: any) {
 				res.send(body === null)
 			}
 		}
@@ -147,7 +147,7 @@ describe('children routers', () => {
 			constructor(private service: UserService) {}
 
 			@Get()
-			get(@Res res: express.Response, @Params { userId, itemId }: { userId: string; itemId: string }) {
+			get(@Res res: Res, @Params { userId, itemId }: Params<'userId' | 'itemId'>) {
 				const userIndex = Number.parseInt(userId, 10)
 				const itemIndex = Number.parseInt(itemId, 10)
 				res.json(this.service.users[userIndex].items[itemIndex])
@@ -174,7 +174,7 @@ describe('children routers', () => {
 		@Router('/bar')
 		class Bar {
 			@Get()
-			get(@Res res: express.Response) {
+			get(@Res res: Res) {
 				res.sendStatus(200)
 			}
 		}
@@ -182,7 +182,7 @@ describe('children routers', () => {
 		@Router.Children(() => [Bar])
 		class Foo {
 			@Get('/foo')
-			get(@Res res: express.Response) {
+			get(@Res res: Res) {
 				res.sendStatus(200)
 			}
 		}

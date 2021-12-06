@@ -412,18 +412,20 @@ You can inject the handler parameters in any order by applying dedicated paramet
 @Router('/things')
 class ThingRouter {
   @Get()
-  list(@Res res: Response, @Next next: NextFunction) {
+  list(@Res res: Res, @Next next: Next) {
     res.send('done')
   }
 
   @Post()
-  create(@Res() res: Response, @Req() req: Request) {
+  create(@Res() res: Res, @Req() req: Req) {
     res.json(req.body)
   }
 }
 ```
 
 You can apply them **with or without invokation**, how flexible is that. 😉
+
+The decorators when used as types, are convenient references to express interfaces (so you don't need to import them).
 
 Looking for other decorators like `@Body` ? [Request properties injection](#request-properties-injection).
 
@@ -554,7 +556,7 @@ Directly inject Request properties (and even their sub-properties) in handler pa
 class UserRouter {
   // Whole params object
   @Get('/users/:userId/things/:thingId')
-  get(@Params params: { userId: string; bookId: string }) {}
+  get(@Params params: Params<'userId' | 'thingId'>) {}
 
   // Specific name
   @Get('/users/:userId/things/:thingId')
@@ -574,7 +576,7 @@ Given the request: `GET http://host/things?size=large&color=green`
 class ThingRouter {
   // Whole query object
   @Get()
-  list(@Query query: { size?: string; color?: string }) {}
+  list(@Query query: Query) {}
 
   // Specific field
   @Get()
@@ -626,7 +628,7 @@ class ThingRouter {
 class ThingRouter {
   // Whole headers object
   @Get()
-  list(@Headers headers: import('@reflet/http').RequestHeader.Record) {}
+  list(@Headers headers: Headers) {}
   
   // Specific header
   @Get()
