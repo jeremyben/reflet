@@ -1,5 +1,5 @@
-import { Model, Field, PreHook, PostHook } from '../src'
 import * as mongoose from 'mongoose'
+import { Model, Field, PreHook, PostHook } from '../src'
 
 const consoleSpy = jest.spyOn(console, 'info').mockImplementation()
 afterEach(() => {
@@ -186,7 +186,7 @@ test('insertMany, find, update, updateMany, count, deleteMany', async () => {
 test('aggregate', async () => {
 	@Model()
 	@PreHook<UserHookA>('aggregate', function (next) {
-		this.project('name -_id')
+		this.project({ _id: false, name: true })
 		next()
 	})
 	@PostHook<UserHookA>('aggregate', function (docs, next) {

@@ -30,12 +30,11 @@
 	"engineStrict": true,
 	"peerDependencies": {
 		"@types/node": ">=10",
-		"mongoose": ">=6",
+		"mongoose": ">=6.1.5",
 		"reflect-metadata": "^0.1.13"
 	},
 	"devDependencies": {
-		"@shelf/jest-mongodb": "^2.1.0",
-		"mongoose": "^6.0.12",
+		"mongoose": "^6.1.6",
 		"mongoose-autopopulate": "^0.16.0"
 	},
 	"scripts": {

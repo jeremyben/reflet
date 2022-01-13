@@ -19,5 +19,3 @@ export { PreHook, PostHook } from './hooks-decorators'
 export { schemaFrom } from './schema-creation'
 
 export { Plain } from './interfaces'
-
-export { PipelineStage } from './pipeline-interface'

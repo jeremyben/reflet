@@ -50,7 +50,7 @@ export function schemaFrom<T extends ClassType>(Class: T): mongoose.Schema<AsDoc
  * @internal
  */
 export function createSchema<T extends ClassType>(target: T, { full }: { full: boolean }) {
-	const fields = getFields(target) as mongoose.SchemaDefinition<{}>
+	const fields = getFields(target) as any
 	const options = mergeSchemaOptionsAndKeys(target)
 
 	const schema = new mongoose.Schema<AsDocument<InstanceType<T>>>(fields, options)

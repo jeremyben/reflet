@@ -10,7 +10,6 @@ import {
 	SchemaCallback,
 	Model,
 	SchemaPlugin,
-	Plain,
 } from '../src'
 import { RefletMongooseError } from '../src/reflet-error'
 

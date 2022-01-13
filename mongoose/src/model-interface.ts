@@ -1,7 +1,6 @@
 import * as mongoose from 'mongoose'
 import * as mongodb from 'mongodb' // tslint:disable-line: no-implicit-dependencies
 import { ClassType, IsAny, Plain, PlainKeys } from './interfaces'
-import { PipelineStage } from './pipeline-interface'
 
 /** @ts-ignore protected */
 type NewDocParameter<T extends ModelI> = IsAny<T['$typeof']> extends true
@@ -25,16 +24,6 @@ export declare abstract class ModelI<C extends ClassType = any> extends (class {
 	 * ⚠️ **Do not use at runtime.**
 	 */
 	protected $typeof?: C
-
-	static aggregate<R>(pipeline?: PipelineStage[], options?: mongodb.AggregateOptions): mongoose.Aggregate<R[]>
-
-	static aggregate<R>(pipeline: PipelineStage[], callback: mongoose.Callback<R[]>): Promise<R[]>
-
-	static aggregate<R>(
-		pipeline: PipelineStage[],
-		options: mongodb.AggregateOptions,
-		callback: mongoose.Callback<R[]>
-	): Promise<R[]>
 
 	static count<T extends ModelI>(callback?: mongoose.Callback<number>): mongoose.Query<number, T>
 

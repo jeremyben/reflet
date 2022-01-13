@@ -32,7 +32,7 @@ export function Model<T extends ModelAny>(collection?: string, connection?: mong
 	return (target) => {
 		const schema = createSchema(target, { full: true })
 
-		const model = connection
+		const model: any = connection
 			? connection.model(target.name, schema, collection)
 			: mongoose.model(target.name, schema, collection)
 
