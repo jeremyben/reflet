@@ -56,7 +56,7 @@
 
 		/* Experimental Options */
 		"experimentalDecorators": true,
-		"emitDecoratorMetadata": true,
+		"emitDecoratorMetadata": false,
 
 		/* Compiler Plugins */
 		"plugins": [

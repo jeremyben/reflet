@@ -24,7 +24,6 @@ The **best** decorators for [node-cron](https://github.com/kelektiv/node-cron). 
 
         ```json
         "experimentalDecorators": true,
-        "emitDecoratorMetadata": true,
         ```
 
     * Install `reflect-metadata` shim.

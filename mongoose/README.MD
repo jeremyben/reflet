@@ -29,7 +29,6 @@ The **best** decorators for [Mongoose](https://mongoosejs.com/). Have a look at 
 
         ```json
         "experimentalDecorators": true,
-        "emitDecoratorMetadata": true,
         ```
 
     * Install `reflect-metadata` shim.

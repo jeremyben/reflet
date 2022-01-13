@@ -26,7 +26,6 @@ The **best** decorators for [Express](https://expressjs.com/). Have a look at [R
 
         ```json
         "experimentalDecorators": true,
-        "emitDecoratorMetadata": true,
         ```
 
     * Install `reflect-metadata` shim.
