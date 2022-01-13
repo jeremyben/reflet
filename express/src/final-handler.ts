@@ -6,7 +6,7 @@ import * as express from 'express'
  * @example
  * ```ts
  * app.use(finalHandler({
- *   sendAsJson: 'always',
+ *   sendAsJson: true,
  *   log: '5xx',
  *   revealErrorMessage: true,
  *   revealErrorName: true,
@@ -56,13 +56,13 @@ export function finalHandler(options: finalHandler.Options): express.ErrorReques
 
 		if (err instanceof Error) {
 			const revealMessage =
-				options.exposeMessage === 'always' || (options.exposeMessage === '4xx' && res.statusCode < 500)
+				options.exposeMessage === true || (options.exposeMessage === '4xx' && res.statusCode < 500)
 
 			if (revealMessage) {
 				Object.defineProperty(err, 'message', { enumerable: true })
 			}
 
-			const revealName = options.exposeName === 'always' || (options.exposeName === '4xx' && res.statusCode < 500)
+			const revealName = options.exposeName === true || (options.exposeName === '4xx' && res.statusCode < 500)
 
 			if (revealName) {
 				// Doesn't work without reassigning value.
@@ -75,16 +75,16 @@ export function finalHandler(options: finalHandler.Options): express.ErrorReques
 		if (options.log) {
 			const logger = options.logger || ((errr) => setImmediate(() => console.error(errr)))
 
-			if (options.log === 'always' || (options.log === '5xx' && res.statusCode >= 500)) {
+			if (options.log === true || (options.log === '5xx' && res.statusCode >= 500)) {
 				logger(err)
 			}
 
-			// no need to handle 'never'
+			// no need to handle false
 		}
 
 		// ─── Json ───
 
-		if (options.sendAsJson === 'always') {
+		if (options.sendAsJson === true) {
 			return res.json(err)
 		}
 
@@ -108,7 +108,7 @@ export function finalHandler(options: finalHandler.Options): express.ErrorReques
 			}
 		}
 
-		// no need to handle 'never'
+		// no need to handle false
 
 		next(err)
 	}
@@ -130,20 +130,20 @@ export namespace finalHandler {
 	export interface Options {
 		/**
 		 * Specifies behavior to use `res.json` to send errors:
-		 * - `'always'`: always send as json.
-		 * - `'never'`: pass the error to `next`.
+		 * - `true`: always send as json.
+		 * - `false`: pass the error to `next`.
 		 * - `'from-response-type'`: looks for a json compatible `Content-Type` on the response (or else pass to `next`)
 		 * - `'from-response-type-or-request'`: if the response doesn't have a `Content-type` header, it looks for  `X-Requested-With` or `Accept` headers on the request (or else pass to `next`)
 		 */
-		sendAsJson: 'always' | 'never' | 'from-response-type' | 'from-response-type-or-request'
+		sendAsJson: boolean | 'from-response-type' | 'from-response-type-or-request'
 
 		/**
 		 * log error:
-		 * - `'always'`: every error
-		 * - `'never'`: none
+		 * - `true`: every error
+		 * - `false`: none
 		 * - `'5xx'`: only server errors
 		 */
-		log?: 'always' | 'never' | '5xx'
+		log?: boolean | '5xx'
 
 		/**
 		 * Custom logger
@@ -155,17 +155,17 @@ export namespace finalHandler {
 		 * Make error `message` enumerable so it can be serialized.
 		 *
 		 * @remarks
-		 * Beware of information leakage with the `'always'` option.
+		 * Beware of information leakage if you pass `true`.
 		 */
-		exposeMessage?: 'always' | 'never' | '4xx'
+		exposeMessage?: boolean | '4xx'
 
 		/**
 		 * Make error `name` enumerable so it can be serialized.
 		 *
 		 * @remarks
-		 * Beware of information leakage with the `'always'` option.
+		 * Beware of information leakage if you pass `true`.
 		 */
-		exposeName?: 'always' | 'never' | '4xx'
+		exposeName?: boolean | '4xx'
 
 		/**
 		 * Remove `status`, `statusCode` or `headers` properties from error object, once they are applied to the response.

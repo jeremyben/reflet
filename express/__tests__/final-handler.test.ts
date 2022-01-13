@@ -15,9 +15,9 @@ describe('final handler', () => {
 	@Catch(
 		finalHandler({
 			sendAsJson: 'from-response-type',
-			log: 'always',
+			log: true,
 			exposeMessage: '4xx',
-			exposeName: 'always',
+			exposeName: true,
 			cleanStatusAndHeaders: true,
 			notFoundHandler: true,
 		})

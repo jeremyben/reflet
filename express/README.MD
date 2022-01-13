@@ -990,7 +990,7 @@ app.use(finalHandler({
   sendAsJson: 'from-response-type',
   log: '5xx',
   exposeMessage: '4xx', 
-  exposeName: 'always',
+  exposeName: '4xx',
   cleanStatusAndHeaders: true,
   notFoundHandler: true
 }))
@@ -1000,9 +1000,9 @@ app.use(finalHandler({
 
 Express default error handler always sends a `text/html` response ([source code](https://github.com/pillarjs/finalhandler/blob/v1.1.2/index.js#L272-L311)). This doesn't go well with today's world of JSON APIs.
 
-* `sendAsJson: 'always'` always sends the error with `res.json`.
+* `sendAsJson: true` always sends the error with `res.json`.
   
-* `sendAsJson: 'never'` sends the error with `res.send` (default).
+* `sendAsJson: false` sends the error with `res.send` (default).
 
 * `sendAsJson: 'from-response-type'` sends the error with `res.json` by looking for `Content-Type` on the response:
 
@@ -1025,8 +1025,8 @@ Express default error handler always sends a `text/html` response ([source code]
 
 ##### `log`
 
-* `log: 'always'` always logs errors.
-* `log: 'never'` never logs errors (default).
+* `log: true` always logs errors.
+* `log: false` never logs errors (default).
 * `log: '5xx'` only logs server errors.
 
 ##### `logger`
@@ -1048,11 +1048,11 @@ finalHandler({
 
 Error `message` and `name` are not serialized by default. These options make `message` or `name` enumerable so they can be serialized.
 
-* `'always'` always reveals the property (beware of information leakage).
-* `'never'` never reveals the property (default).
+* `true` always reveals the property (beware of information leakage).
+* `false` never reveals the property (default).
 * `'4xx'` only reveals the property on client errors.
 
-_`'5xx'` is not available as an option, to avoid information leakage to the client. In that regard, beware of the `'always'` option as well._
+_`'5xx'` is not available as an option, to avoid information leakage to the client. In that regard, beware of passing `true` as well._
 
 ##### `cleanStatusAndHeaders`
 
@@ -1095,8 +1095,8 @@ import { UserRouter } from './user.router'
 @Send({ json: true })
 @Use(express.json(), express.urlencoded())
 @Catch(finalHandler({ 
-  sendAsJson: 'always',
-  log: 'always',
+  sendAsJson: true,
+  log: true,
   notFoundHandler: true,
 }))
 class MyApp extends Application {
