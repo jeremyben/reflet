@@ -153,7 +153,7 @@ export namespace Field {
 			/**
 			 * https://mongoosejs.com/docs/subdocs.html#subdocument-defaults
 			 */
-			default?: Field.Schema.DefaultType<T> | ((this: any, doc: any) => Field.Schema.DefaultType<T>)
+			default?: Field.Schema.DefaultType<T> | null | ((this: any, doc: any) => Field.Schema.DefaultType<T> | null)
 		}
 
 		/**
@@ -214,7 +214,9 @@ export namespace Field {
 			strict?: boolean
 
 			// Distributive https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#distributive-conditional-types
-			default?: T extends any ? Plain.Partial<T> : never
+			default?: T extends any
+				? Plain.Partial<T> | null | ((this: any, doc: any) => Plain.Partial<T> | null)
+				: never
 		}
 
 		/**
@@ -406,7 +408,7 @@ export namespace Field {
 		 */
 		export type Options<T extends string | number> = {
 			required?: boolean
-			default?: T | ((this: any, doc: any) => T)
+			default?: T | null | ((this: any, doc: any) => T | null)
 		}
 
 		/**
@@ -519,7 +521,7 @@ interface CommonOptions<T extends Field.SchemaType | [Field.SchemaType] | [[Fiel
 	 *
 	 * [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-default)
 	 */
-	default?: Infer<T> | ((this: any, doc: any) => Infer<T>)
+	default?: Infer<T> | null | ((this: any, doc: any) => Infer<T> | null)
 
 	/**
 	 * Whether to include or exclude this path by default when loading documents using find(), findOne(), etc.
