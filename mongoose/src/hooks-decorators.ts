@@ -280,7 +280,7 @@ export function PostHook<T extends DocumentAny>(
  */
 export function PostHook<T extends DocumentAny>(
 	method: DocumentMethodOnly | DocumentMayBeQueryMethod | (DocumentMethodOnly | DocumentMayBeQueryMethod)[],
-	callback: (this: T, result: T, next: HookNextFunction) => void
+	callback: (this: T, result: any, next: HookNextFunction) => void
 ): PostHook.Decorator
 
 // 3
@@ -424,12 +424,22 @@ export function PostHook<T extends DocumentAny>(
  * @see https://mongoosejs.com/docs/middleware#post
  * @public
  */
+export function PostHook<T extends DocumentAny>(
+	method: QueryMethodOnly | (QueryMethodOnly | QueryMaybeDocumentMethod)[],
+	callback: (this: mongoose.Query<T, T>, result: any, next: HookNextFunction) => void
+): PostHook.Decorator
+
+// 13
+/**
+ * {@inheritDoc (PostHook:12)}
+ * @public
+ */
 export function PostHook<T extends DocumentAny, TError = any>(
 	method: QueryMethodOnly | (QueryMethodOnly | QueryMaybeDocumentMethod)[],
 	callback: (this: mongoose.Query<T, T>, error: TError, result: null, next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 13
+// 14
 /**
  * Query middleware by default.
  * - [`Query.updateOne()`](https://mongoosejs.com/docs/api#query_Query-updateOne)
@@ -449,9 +459,9 @@ export function PostHook<T extends DocumentAny>(
 	callbackIfOptions?: (this: T, result: T, next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 14
+// 15
 /**
- * {@inheritDoc (PostHook:13)}
+ * {@inheritDoc (PostHook:14)}
  * @public
  */
 export function PostHook<T extends DocumentAny, TError = any>(
@@ -462,7 +472,7 @@ export function PostHook<T extends DocumentAny, TError = any>(
 	callbackIfOptions?: (this: T, error: TError, result: T, next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 15
+// 16
 /**
  * Query middleware by default.
  * - [`Query.deleteOne()`](https://mongoosejs.com/docs/api#query_Query-deleteOne)
@@ -482,9 +492,9 @@ export function PostHook<T extends DocumentAny>(
 	callbackIfOptions?: (this: T, result: T, next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 16
+// 17
 /**
- * {@inheritDoc (PostHook:15)}
+ * {@inheritDoc (PostHook:16)}
  * @public
  */
 export function PostHook<T extends DocumentAny, TError = any>(
@@ -495,7 +505,7 @@ export function PostHook<T extends DocumentAny, TError = any>(
 	callbackIfOptions?: (this: T, error: TError, result: T, next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 17
+// 18
 /**
  * Model middleware.
  * - [`Model.insertMany()`](https://mongoosejs.com/docs/api#model_Model.insertMany)
@@ -509,9 +519,9 @@ export function PostHook<T extends DocumentAny>(
 	callback: (this: mongoose.Model<AsDocument<T>>, results: T[], next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 18
+// 19
 /**
- * {@inheritDoc (PostHook:17)}
+ * {@inheritDoc (PostHook:18)}
  * @public
  */
 export function PostHook<T extends DocumentAny, TError = any>(
@@ -519,7 +529,7 @@ export function PostHook<T extends DocumentAny, TError = any>(
 	callback: (this: mongoose.Model<AsDocument<T>>, error: TError, results: T[], next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 19
+// 20
 /**
  * Aggregate middleware.
  * - [`Model.aggregate()`](https://mongoosejs.com/docs/api#model_Model.aggregate)
@@ -533,9 +543,9 @@ export function PostHook<T extends DocumentAny>(
 	callback: (this: mongoose.Aggregate<T>, results: mongoose.LeanDocument<T>[], next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 20
+// 21
 /**
- * {@inheritDoc (PostHook:19)}
+ * {@inheritDoc (PostHook:20)}
  * @public
  */
 export function PostHook<T extends DocumentAny, TError = any>(
@@ -543,7 +553,7 @@ export function PostHook<T extends DocumentAny, TError = any>(
 	callback: (this: mongoose.Aggregate<T>, error: TError, results: undefined, next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 21
+// 22
 /**
  * Mixed methods middleware.
  *
@@ -569,17 +579,17 @@ export function PostHook<T extends DocumentAny, TError = any>(
  */
 export function PostHook<T extends DocumentAny>(
 	method: RegExp | (DocumentMethod | QueryMethod | AggregateMethod | ModelMethod)[],
-	callback: (this: unknown, result: unknown, next: HookNextFunction) => void
+	callback: (this: any, result: any, next: HookNextFunction) => void
 ): PreHook.Decorator
 
-// 22
+// 23
 /**
- * {@inheritDoc (PostHook:21)}
+ * {@inheritDoc (PostHook:22)}
  * @public
  */
 export function PostHook<T extends DocumentAny, TError = any>(
 	method: RegExp | (DocumentMethod | QueryMethod | AggregateMethod | ModelMethod)[],
-	callback: (this: unknown, error: TError, result: unknown, next: HookNextFunction) => void
+	callback: (this: any, error: TError, result: any, next: HookNextFunction) => void
 ): PreHook.Decorator
 
 // Implementation
