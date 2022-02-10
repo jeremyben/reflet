@@ -7,5 +7,5 @@
 
 * Reflet/mongoose requires Typescript 4.2 at least.
 
-* `PopulateVirtual` decorator has been renamed to `Virtual`.
-  Its generics' order have also been switched: `Virtual<Local, Foreign>` instead of `Virtual<Foreign, Local>`
+* `PopulateVirtual` decorator has been renamed to `Virtual.Populate`.
+  Its generics' order have also been switched: `Virtual.Populate<Local, Foreign>` instead of `Virtual.Populate<Foreign, Local>`

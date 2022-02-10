@@ -269,7 +269,7 @@ declare global {
 		interface SchemaTypeOptions {}
 
 		/**
-		 * Open interface to extend `@Virtual` options.
+		 * Open interface to extend `@Virtual.Populate` options.
 		 * Useful for global plugins.
 		 * @public
 		 */

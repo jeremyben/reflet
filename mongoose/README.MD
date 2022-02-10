@@ -15,7 +15,7 @@ The **best** decorators for [Mongoose](https://mongoosejs.com/). Have a look at 
 * [Hooks](#hooks)
 * [Model discriminators](#model-discriminators)
 * [Embedded discriminators](#embedded-discriminators)
-* [Populated virtuals](#populated-virtuals)
+* [Virtuals](#virtuals)
 * [Plain helper](#plain-helper)
 * [Augmentations](#augmentations)
 
@@ -788,10 +788,38 @@ const batch = new Batch({
 })
 ```
 
-## Populated virtuals
+## Virtuals
 
-> 🔦 `@Virtual(options)`<br>
+> 🔦 `@Virtual`<br>
+> 💫 Related Mongoose method: [`schema.virtual`](https://mongoosejs.com/docs/guide.html#virtuals)
+
+`@Virtual` helps you define a writable [virtual property](https://mongoosejs.com/docs/guide.html#virtuals) (both a getter and a setter), which is properly serialized with `toJson: { virtuals: true }`, and not saved to the database.<br>_Can be used with or without invokation._
+
+```ts
+@Model()
+@SchemaOptions({ 
+  toObject: { virtuals: true },
+  toJson: { virtuals: true }
+})
+class S3File extends Model.I {
+  @Field(String)
+  key: string
+
+  @Virtual
+  url: string
+}
+
+const photo = await S3File.findOne({ key })
+photo.url = await getSignedUrl(photo.key)
+res.send(photo)
+```
+
+### Populated virtuals
+
+> 🔦 `@Virtual.Populate(options)`<br>
 > 💫 Related Mongoose method: [`schema.virtual`](https://mongoosejs.com/docs/populate#populate-virtuals)
+
+`@Virtual.Populate` helps you define [populate virtuals](https://mongoosejs.com/docs/populate#populate-virtuals).
 
 ```ts
 @Model()
@@ -812,7 +840,7 @@ class Band extends Model.I {
   @Field(String)
   name: string
 
-  @Virtual<Band, Person>({
+  @Virtual.Populate<Band, Person>({
     ref: 'Person',
     foreignField: 'band',
     localField: 'name'
