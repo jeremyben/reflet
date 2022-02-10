@@ -59,7 +59,7 @@ The **best** decorators for [Mongoose](https://mongoosejs.com/). Have a look at 
     import { Model, Field } from '@reflet/mongoose'
 
     @Model()
-    export class User extends Model.Interface {
+    export class User extends Model.I {
       static findByEmail(email) {
         return this.findOne({ email });
       }
@@ -202,9 +202,17 @@ const user = await User.create({
 <tbody>
 </table>
 
+⚠️ `@Model` should always be at the top of your class decorators. _Why? Because decorators are executed bottom to top, so if `@Model` directly compiles your class into a Mongooose Model, other class decorators won't be properly applied. Reflet will warn you with its own decorators._
+
+#### Correct model and document interface
+
 Your class needs to inherit a special empty class, **`Model.Interface`** or **`Model.I`**, to have Mongoose document properties and methods.
 
-⚠️ `@Model` should always be at the top of your class decorators. _Why? Because decorators are executed bottom to top, so if `@Model` directly compiles your class into a Mongooose Model, other class decorators won't be properly applied. Reflet will warn you with its own decorators._
+##### To callback or not to callback
+
+🗣️ To vastly simplify compiler hints, inherited **static methods don't have callback signatures**. You can still use callback style within `.exec()`.
+
+If you actually need callback signatures within static methods, please inherit from empty class **`Model.InterfaceWithCallback`** or **`Model.ICb`**, which is on par with underlying mongoose typings.
 
 #### Custom collection name
 

@@ -9,3 +9,6 @@
 
 * `PopulateVirtual` decorator has been renamed to `Virtual.Populate`.
   Its generics' order have also been switched: `Virtual.Populate<Local, Foreign>` instead of `Virtual.Populate<Foreign, Local>`
+
+* Static methods of `Model.I` and `Model.interface` no longer have callback signatures.
+  Use `Model.ICb` or `Model.interfaceWithCallback` to use callbacks within static methods calls.
