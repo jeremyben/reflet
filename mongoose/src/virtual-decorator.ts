@@ -39,24 +39,28 @@ export function Virtual(target?: string | Object, key?: string | symbol): any {
 	// https://github.com/wycats/javascript-decorators/issues/18
 
 	if (target && key) {
+		const hiddenProp = Symbol(<string>key)
+
 		return <TypedPropertyDescriptor<any>>{
 			set: function (value) {
-				;(this as any)[`____${<string>key}`] = value
+				;(this as any)[hiddenProp] = value
 			},
 			get: function () {
-				return (this as any)[`____${<string>key}`]
+				return (this as any)[hiddenProp]
 			},
 			enumerable: true,
 			configurable: true,
 		}
 	} else {
 		return (target: Object, keyy: string) => {
+			const hiddenProp = Symbol(keyy)
+
 			return <TypedPropertyDescriptor<any>>{
 				set: function (value) {
-					;(this as any)[`____${keyy}`] = value
+					;(this as any)[hiddenProp] = value
 				},
 				get: function () {
-					return (this as any)[`____${keyy}`]
+					return (this as any)[hiddenProp]
 				},
 				enumerable: true,
 				configurable: true,
