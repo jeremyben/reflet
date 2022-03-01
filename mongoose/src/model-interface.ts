@@ -115,7 +115,7 @@ export declare abstract class ModelI<C extends ClassType = any> extends (class {
 		filter?: mongoose.FilterQuery<T>
 	): mongoose.Query<T[K][], T>
 
-	static exists<T extends ModelI>(this: ClassType<T>, filter: mongoose.FilterQuery<T>): Promise<boolean>
+	static exists<T extends ModelI>(this: ClassType<T>, filter: mongoose.FilterQuery<T>): Promise<Pick<T, '_id'>>
 
 	static find<T extends ModelI>(
 		this: ClassType<T>,
@@ -295,7 +295,6 @@ export declare abstract class ModelICb<C extends ClassType = any> extends (class
 		options?: mongoose.SaveOptions
 	): Promise<T[]>
 
-	// todo: remove callback signature ?
 	static create<T extends ModelICb>(
 		this: ClassType<T>,
 		docs: NewDocParameter<T>[],
@@ -305,10 +304,8 @@ export declare abstract class ModelICb<C extends ClassType = any> extends (class
 	// must be after signature with array
 	static create<T extends ModelICb>(this: ClassType<T>, doc: NewDocParameter<T>): Promise<T>
 
-	// todo: remove rest signature (confuses the compiler) ?
 	static create<T extends ModelICb>(this: ClassType<T>, ...docs: NewDocParameter<T>[]): Promise<T[]>
 
-	// todo: remove callback signature ?
 	static create<T extends ModelICb>(this: ClassType<T>, doc: NewDocParameter<T>, callback: mongoose.Callback<T>): void
 
 	static deleteMany<T extends ModelICb>(
@@ -318,7 +315,6 @@ export declare abstract class ModelICb<C extends ClassType = any> extends (class
 		callback?: mongoose.CallbackWithoutResult
 	): mongoose.Query<mongodb.DeleteResult, T>
 
-	// todo: remove callback signature without options ?
 	static deleteMany<T extends ModelICb>(
 		this: ClassType<T>,
 		filter: mongoose.FilterQuery<T>,
@@ -332,7 +328,6 @@ export declare abstract class ModelICb<C extends ClassType = any> extends (class
 		callback?: mongoose.CallbackWithoutResult
 	): mongoose.Query<mongodb.DeleteResult, T>
 
-	// todo: remove callback signature without options ?
 	static deleteOne<T extends ModelICb>(
 		this: ClassType<T>,
 		filter: mongoose.FilterQuery<T>,
@@ -414,13 +409,12 @@ export declare abstract class ModelICb<C extends ClassType = any> extends (class
 		callback?: mongoose.Callback<number>
 	): mongoose.Query<T[K][], T>
 
-	static exists<T extends ModelICb>(this: ClassType<T>, filter: mongoose.FilterQuery<T>): Promise<boolean>
+	static exists<T extends ModelICb>(this: ClassType<T>, filter: mongoose.FilterQuery<T>): Promise<Pick<T, '_id'>>
 
-	// todo: remove callback signature ?
 	static exists<T extends ModelICb>(
 		this: ClassType<T>,
 		filter: mongoose.FilterQuery<T>,
-		callback: mongoose.Callback<boolean>
+		callback: mongoose.Callback<Pick<T, '_id'>>
 	): void
 
 	static find<T extends ModelICb>(
@@ -475,7 +469,6 @@ export declare abstract class ModelICb<C extends ClassType = any> extends (class
 		callback?: (err: mongoose.CallbackError, doc: T | null, res: any) => void
 	): mongoose.Query<T | null, T>
 
-	// todo: remove callback signature without options ?
 	static findByIdAndUpdate<T extends ModelICb>(
 		this: ClassType<T>,
 		id: mongodb.ObjectId | string,
