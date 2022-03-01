@@ -79,7 +79,7 @@ export declare abstract class ModelI<C extends ClassType = any> extends (class {
 		this: ClassType<T>,
 		docs: NewDocParameter<T>[],
 		options: mongoose.InsertManyOptions & { rawResult: true }
-	): Promise<mongoose.InsertManyResult>
+	): Promise<mongoose.InsertManyResult<T>>
 
 	static insertMany<T extends ModelI>(
 		this: ClassType<T>,
@@ -361,7 +361,7 @@ export declare abstract class ModelICb<C extends ClassType = any> extends (class
 		docs: NewDocParameter<T>[],
 		options: mongoose.InsertManyOptions & { rawResult: true },
 		callback?: mongoose.Callback<T[]>
-	): Promise<mongoose.InsertManyResult>
+	): Promise<mongoose.InsertManyResult<T>>
 
 	static insertMany<T extends ModelICb>(
 		this: ClassType<T>,
@@ -375,7 +375,7 @@ export declare abstract class ModelICb<C extends ClassType = any> extends (class
 		doc: NewDocParameter<T>,
 		options: mongoose.InsertManyOptions & { rawResult: true },
 		callback?: (error: any, doc: T) => void
-	): Promise<mongoose.InsertManyResult>
+	): Promise<mongoose.InsertManyResult<T>>
 
 	static insertMany<T extends ModelICb>(
 		this: ClassType<T>,
