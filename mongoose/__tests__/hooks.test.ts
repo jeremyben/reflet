@@ -121,7 +121,7 @@ test('insertMany, find, update, updateMany, count, deleteMany', async () => {
 		next()
 	})
 	@PostHook<UserHookIFUUCD>('insertMany', (docs, next) => {
-		console.info('post-insertMany', docs[0])
+		postInsertManyFirstResult = docs[0]
 		next()
 	})
 	@PostHook<UserHookIFUUCD>('find', (docs, next) => {
@@ -137,7 +137,7 @@ test('insertMany, find, update, updateMany, count, deleteMany', async () => {
 		next()
 	})
 	@PostHook<UserHookIFUUCD>('updateMany', (result, next) => {
-		console.info('post-updateMany', result)
+		postUpdateManyResult = result
 		next()
 	})
 	@PostHook<UserHookIFUUCD>('count', (result, next) => {
@@ -145,7 +145,7 @@ test('insertMany, find, update, updateMany, count, deleteMany', async () => {
 		next()
 	})
 	@PostHook<UserHookIFUUCD>('deleteMany', (result, next) => {
-		console.info('post-deleteMany', result)
+		postDeleteManyResult = result
 		next()
 	})
 	@PostHook<UserHookIFUUCD, Error>('deleteMany', (error, result, next) => {
@@ -156,6 +156,10 @@ test('insertMany, find, update, updateMany, count, deleteMany', async () => {
 		@Field({ type: String, required: true })
 		name: string
 	}
+
+	let postInsertManyFirstResult
+	let postDeleteManyResult
+	let postUpdateManyResult
 
 	await UserHookIFUUCD.insertMany([{ name: 'jeremy' }, { name: 'julia' }])
 	await UserHookIFUUCD.find({})
@@ -173,13 +177,13 @@ test('insertMany, find, update, updateMany, count, deleteMany', async () => {
 	} catch (error) {} // tslint:disable-line: no-empty
 
 	expect(consoleSpy).toBeCalledWith('pre-insertMany', UserHookIFUUCD.modelName)
-	expect(consoleSpy).toBeCalledWith('post-insertMany', expect.objectContaining({ name: 'jeremy' }))
+	expect(postInsertManyFirstResult).toMatchObject({ name: 'jeremy' })
 	expect(consoleSpy).toBeCalledWith('post-find', 2)
 	expect(consoleSpy).toBeCalledWith('post-update', 1)
 	expect(consoleSpy).toBeCalledWith('post-find-error', expect.any(Error), null)
-	expect(consoleSpy).toBeCalledWith('post-updateMany', expect.objectContaining({ matchedCount: 2, modifiedCount: 2 }))
+	expect(postUpdateManyResult).toMatchObject({ matchedCount: 2, modifiedCount: 2 })
 	expect(consoleSpy).toBeCalledWith('post-count', 2)
-	expect(consoleSpy).toBeCalledWith('post-deleteMany', { deletedCount: 2 })
+	expect(postDeleteManyResult).toMatchObject({ deletedCount: 2 })
 	expect(consoleSpy).toBeCalledWith('post-deleteMany-error', expect.any(Error), null)
 })
 

@@ -21,6 +21,7 @@ test('single nested discriminators', async () => {
 	}
 
 	@Model()
+	@SchemaOptions({ minimize: false })
 	class Shape extends Model.I {
 		@Field.Union([Circle, Square], { default: { radius: 5, __t: 'Circle' } })
 		shape: Circle | Square
