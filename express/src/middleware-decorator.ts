@@ -1,5 +1,4 @@
-import { concatPrependFast } from './array-manipulation'
-import { ClassType, Decorator, Handler } from './interfaces'
+import { Decorator, ClassType, Handler } from './interfaces'
 
 const META = Symbol('use')
 
@@ -32,13 +31,15 @@ export function Use<Req extends {}>(...middlewares: Handler<Req>[]): Decorator.U
 	return (target, key, descriptor) => {
 		// Method middleware
 		if (key) {
-			concatPrependFast(Reflect.getOwnMetadata(META, target, key) || [], middlewares)
-			Reflect.defineMetadata(META, middlewares, target, key)
+			const existingMiddlewares = Reflect.getOwnMetadata(META, target, key) || []
+			// prepend
+			Reflect.defineMetadata(META, middlewares.concat(existingMiddlewares), target, key)
 		}
 		// Class middleware
 		else {
-			concatPrependFast(Reflect.getOwnMetadata(META, (target as Function).prototype) || [], middlewares)
-			Reflect.defineMetadata(META, middlewares, (target as Function).prototype)
+			const existingMiddlewares = Reflect.getOwnMetadata(META, (target as Function).prototype) || []
+			// prepend
+			Reflect.defineMetadata(META, middlewares.concat(existingMiddlewares), (target as Function).prototype)
 		}
 	}
 }
