@@ -878,7 +878,7 @@ class PeopleRouter {
 
 #### Make exceptions
 
-> 🔦 `@Send.Dont()`
+> 🔦 `@Send.Dont`
 
 You need to take full control back in one of your methods ? Apply `Send.Dont` to exclude a method from `Send` behavior.
 
@@ -891,7 +891,7 @@ class ThingRouter {
     return db.collection('things').find({})
   }
 
-  @Send.Dont()
+  @Send.Dont
   @Post()
   create(@Res res: Response) {
     res.write('complex')

@@ -247,7 +247,7 @@ describe('class decorator', () => {
 			return 'bar'
 		}
 
-		@Send.Dont()
+		@Send.Dont
 		@Put()
 		async put() {
 			return 'bar'

@@ -89,10 +89,17 @@ export namespace Send {
 	 * ------
 	 * @public
 	 */
-	export function Dont(): Send.Dont.Decorator {
-		return (target, key, descriptor) => {
-			if (key) Reflect.defineMetadata(META, null, target, key)
-			else Reflect.defineMetadata(META, null, (target as Function).prototype)
+	export function Dont(): Send.Dont.Decorator
+	export function Dont(...args: Parameters<Send.Dont.Decorator>): void
+	export function Dont(targetMaybe?: any, keyMaybe?: any): Send.Dont.Decorator | void {
+		if (targetMaybe) {
+			if (keyMaybe) Reflect.defineMetadata(META, null, targetMaybe, keyMaybe)
+			else Reflect.defineMetadata(META, null, (targetMaybe as Function).prototype)
+		} else {
+			return (target, key, descriptor) => {
+				if (key) Reflect.defineMetadata(META, null, target, key)
+				else Reflect.defineMetadata(META, null, (target as Function).prototype)
+			}
 		}
 	}
 
