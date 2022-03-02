@@ -1,5 +1,5 @@
 import * as express from 'express'
-import { ClassType, Registration, IsAny } from './interfaces'
+import { ClassType, Registration, IsAny, ClassOrMethodDecorator } from './interfaces'
 
 const META = Symbol('router')
 
@@ -9,6 +9,7 @@ const META = Symbol('router')
 type RouterMeta = {
 	path: string | RegExp | typeof DYNAMIC_PATH | null
 	options?: express.RouterOptions
+	scopedMiddlewares?: boolean
 	children?: Registration[] | ((...deps: any[]) => Registration[])
 	childrenDeps?: any[]
 }
@@ -154,6 +155,119 @@ export namespace Router {
 	}
 
 	/**
+	 * Middlewares applied to the router will be scoped to its own routes, independently of its path.
+	 *
+	 * @remarks
+	 * Express isolates routers by their path, so if two routers share the same path, they will share middlewares.
+	 * This decorator prevents this by applying middlewares directly to the routes instead of the router.
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Router('/foo')
+	 * ＠Router.ScopeMiddlewares
+	 * ＠Use(authenticate)
+	 * class FooSecret {
+	 *   ＠Get()
+	 *   getSecret(req: Request, res: Response, next: NextFunction) {}
+	 * }
+	 *
+	 * ＠Router('/foo')
+	 * class FooPublic {
+	 *   ＠Get()
+	 *   getPublic(req: Request, res: Response, next: NextFunction) {}
+	 * }
+	 * ```
+	 * ------
+	 * @public
+	 */
+	export function ScopedMiddlewares(): ScopedMiddlewares.Decorator
+	export function ScopedMiddlewares(...args: Parameters<ScopedMiddlewares.Decorator>): void
+	export function ScopedMiddlewares(targetMaybe?: Function): ScopedMiddlewares.Decorator | void {
+		if (targetMaybe) {
+			const existingRouterMeta = extractRouterMeta(targetMaybe)
+
+			if (existingRouterMeta) {
+				existingRouterMeta.scopedMiddlewares = true
+			} else {
+				const newRouterMeta: RouterMeta = {
+					path: null,
+					scopedMiddlewares: true,
+				}
+
+				defineRouterMeta(newRouterMeta, targetMaybe)
+			}
+		} else {
+			return (target) => {
+				const existingRouterMeta = extractRouterMeta(target)
+
+				if (existingRouterMeta) {
+					existingRouterMeta.scopedMiddlewares = true
+				} else {
+					const newRouterMeta: RouterMeta = {
+						path: null,
+						scopedMiddlewares: true,
+					}
+
+					defineRouterMeta(newRouterMeta, target)
+				}
+			}
+		}
+	}
+
+	export namespace ScopedMiddlewares {
+		/**
+		 * Remove `Router.ScopedMiddlewares` behavior on a specific router, when applied globally to the app.
+		 */
+		export function Dont(): ScopedMiddlewares.Dont.Decorator
+		export function Dont(...args: Parameters<ScopedMiddlewares.Dont.Decorator>): void
+		export function Dont(targetMaybe?: any, keyMaybe?: any): ScopedMiddlewares.Dont.Decorator | void {
+			if (targetMaybe) {
+				const existingRouterMeta = extractRouterMeta(targetMaybe)
+
+				if (existingRouterMeta) {
+					existingRouterMeta.scopedMiddlewares = false
+				} else {
+					const newRouterMeta: RouterMeta = {
+						path: null,
+						scopedMiddlewares: false,
+					}
+
+					defineRouterMeta(newRouterMeta, targetMaybe)
+				}
+			} else {
+				return (target) => {
+					const existingRouterMeta = extractRouterMeta(target)
+
+					if (existingRouterMeta) {
+						existingRouterMeta.scopedMiddlewares = false
+					} else {
+						const newRouterMeta: RouterMeta = {
+							path: null,
+							scopedMiddlewares: false,
+						}
+
+						defineRouterMeta(newRouterMeta, target)
+					}
+				}
+			}
+		}
+
+		export namespace Dont {
+			/**
+			 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
+			 * @public
+			 */
+			export type Decorator = ClassDecorator & { __expressScopeMiddlewaresDont?: never }
+		}
+
+		/**
+		 * Equivalent to `ClassDecorator`.
+		 * @public
+		 */
+		export type Decorator = ClassDecorator & { __expressRouterScopeMiddlewares?: never }
+	}
+
+	/**
 	 * Equivalent to `ClassDecorator`.
 	 * @public
 	 */
@@ -169,8 +283,22 @@ export const DYNAMIC_PATH = Symbol('dynamic-path')
 /**
  * @internal
  */
-export function extractRouterMeta(target: ClassType | Function): RouterMeta | undefined {
-	return Reflect.getOwnMetadata(META, target.prototype)
+export function extractRouterMeta(target: ClassType | Function, appClass?: ClassType): RouterMeta | undefined {
+	const appMeta: Pick<RouterMeta, 'scopedMiddlewares'> | undefined = appClass
+		? Reflect.getOwnMetadata(META, (appClass as Function).prototype)
+		: undefined
+
+	const routerMeta: RouterMeta | undefined = Reflect.getOwnMetadata(META, target.prototype)
+
+	if (!appMeta || !routerMeta) {
+		return routerMeta
+	}
+
+	if (routerMeta.scopedMiddlewares == null && appMeta.scopedMiddlewares != null) {
+		routerMeta.scopedMiddlewares = appMeta.scopedMiddlewares
+	}
+
+	return routerMeta
 }
 
 /**

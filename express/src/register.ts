@@ -82,7 +82,7 @@ function registerRouter(
 	const routerClass = isClass(router) ? router : (routerInstance.constructor as ClassType)
 
 	// Must be after instanciation to properly retrieve child routers from metadata.
-	const routerMeta = extractRouterMeta(routerClass)
+	const routerMeta = extractRouterMeta(routerClass, appClass)
 
 	if (!routerMeta || routerMeta.path == null) {
 		throw new RefletExpressError(
@@ -104,8 +104,10 @@ function registerRouter(
 	// Apply shared middlewares to the router instance
 	// or to each of the routes if the class is attached on the base app.
 
-	for (const mware of sharedMwares) {
-		appInstance.use(wrapAsync(mware))
+	if (!routerMeta.scopedMiddlewares) {
+		for (const mware of sharedMwares) {
+			appInstance.use(wrapAsync(mware))
+		}
 	}
 
 	for (const { path, method, key } of routes) {
@@ -122,10 +124,12 @@ function registerRouter(
 
 		appInstance[method](
 			path,
+			routerMeta.scopedMiddlewares ? sharedMwares.map(wrapAsync) : [],
 			routeMwares.map(wrapAsync),
 			paramsMwares.map(wrapAsync),
 			handler,
-			routeErrHandlers.map(wrapAsyncError)
+			routeErrHandlers.map(wrapAsyncError),
+			routerMeta.scopedMiddlewares ? sharedErrHandlers.map(wrapAsyncError) : []
 		)
 	}
 
@@ -144,8 +148,10 @@ function registerRouter(
 		}
 	}
 
-	for (const errHandler of sharedErrHandlers) {
-		appInstance.use(wrapAsyncError(errHandler))
+	if (!routerMeta.scopedMiddlewares) {
+		for (const errHandler of sharedErrHandlers) {
+			appInstance.use(wrapAsyncError(errHandler))
+		}
 	}
 
 	const routerPath = routerMeta.path === DYNAMIC_PATH ? constrainedPath! : routerMeta.path

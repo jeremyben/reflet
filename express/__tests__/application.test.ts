@@ -1,6 +1,6 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
-import { Application, Catch, Get, Router, Send, Use } from '../src'
+import { Application, Catch, Get, Post, Router, Send, Use } from '../src'
 import { getGlobalMiddlewares } from '../src/register'
 import { log } from '../../testing/tools'
 
@@ -133,4 +133,63 @@ describe('inherit application class', () => {
 		const res = await rq.get('/foo')
 		expect(res.text).toBe('yolo')
 	})
+})
+
+test('router scope middlewares', async () => {
+	const UseSome = Use((req, res, next) => {
+		req.body.data += 1
+		next()
+	})
+
+	const UseOther = Use((req, res, next) => {
+		req.body.data += 10
+		next()
+	})
+
+	@Router('/')
+	@UseSome
+	class One {
+		@Post('/1')
+		getTwo(req: express.Request, res: express.Response) {
+			return { foo: req.body.data }
+		}
+	}
+
+	@Router('/')
+	@Router.ScopedMiddlewares.Dont
+	@UseOther
+	class Two {
+		@Post('/2')
+		getTwo(req: express.Request, res: express.Response) {
+			return { foo: req.body.data }
+		}
+	}
+
+	@Router('/')
+	class Three {
+		@Post('/3')
+		getTwo(req: express.Request, res: express.Response) {
+			return { foo: req.body.data }
+		}
+	}
+
+	@Send({ json: true })
+	@Use(express.json())
+	@Router.ScopedMiddlewares
+	class App extends Application {}
+
+	const app = new App().register([One, Two, Three])
+	const rq = supertest(app)
+
+	const res1 = await rq.post('/1').send({ data: 1 })
+	expect(res1.status).toBe(200)
+	expect(res1.body).toEqual({ foo: 2 })
+
+	const res2 = await rq.post('/2').send({ data: 1 })
+	expect(res2.status).toBe(200)
+	expect(res2.body).toEqual({ foo: 11 })
+
+	const res3 = await rq.post('/3').send({ data: 10 })
+	expect(res3.status).toBe(200)
+	expect(res3.body).toEqual({ foo: 20 })
 })
