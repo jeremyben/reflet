@@ -1,6 +1,6 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
-import { Application, Catch, Get, Post, Router, Send, Use } from '../src'
+import { Application, Catch, Get, Post, Router, ScopedMiddlewares, Send, Use } from '../src'
 import { getGlobalMiddlewares } from '../src/register'
 import { log } from '../../testing/tools'
 
@@ -156,7 +156,7 @@ test('router scope middlewares', async () => {
 	}
 
 	@Router('/')
-	@Router.ScopedMiddlewares.Dont
+	@ScopedMiddlewares.Dont
 	@UseOther
 	class Two {
 		@Post('/2')
@@ -175,7 +175,7 @@ test('router scope middlewares', async () => {
 
 	@Send({ json: true })
 	@Use(express.json())
-	@Router.ScopedMiddlewares
+	@ScopedMiddlewares
 	class App extends Application {}
 
 	const app = new App().register([One, Two, Three])

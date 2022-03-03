@@ -506,15 +506,15 @@ Successive `Use` will be applied in the order they are written, even though deco
 
 ### Scoped router middlewares
 
-> 🔦 `@Router.ScopedMiddlewares`
+> 🔦 `@ScopedMiddlewares`
 
 Express does not isolate middlewares of routers that share the same path ([related issue](https://github.com/expressjs/express/issues/2760)).
 
-If you wish to circumvent this default behavior, add `Router.ScopedMiddlewares` decorator to a router, to scope its middlewares (and its error handlers) to its routes only.
+If you wish to circumvent this default behavior, add `ScopedMiddlewares` decorator to a router, to scope its middlewares (and its error handlers) to its routes only.
 
 ```ts
 @Router('/foo')
-@Router.ScopedMiddlewares
+@ScopedMiddlewares
 @Use(authenticate)
 class FooSecret {
   @Get()
@@ -1108,7 +1108,7 @@ app.listen(3000)
 ```
 
 Not much for now, but you can extend this class and use all the decorators, as if they were global :
-Routes will be attached at the root, and middlewares, error handlers, `Send` options, and `Router.ScopedMiddlewares`, will be shared globally !
+Routes will be attached at the root, and middlewares, error handlers, `Send` options, and `ScopedMiddlewares`, will be shared globally !
 
 ```ts
 import * as express from 'express'

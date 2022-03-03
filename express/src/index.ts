@@ -1,6 +1,6 @@
 export { register } from './register'
 
-export { Router } from './router-decorator'
+export { Router, ScopedMiddlewares } from './router-decorator'
 
 export { Route, Get, Post, Put, Patch, Delete } from './route-decorators'
 

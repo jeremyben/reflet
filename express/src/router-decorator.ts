@@ -15,6 +15,12 @@ type RouterMeta = {
 }
 
 /**
+ * Token to use in place of `Router` path parameter, signaling that the path is defined at registration.
+ * @internal
+ */
+export const DYNAMIC_PATH = Symbol('dynamic-path')
+
+/**
  * Attaches an express Router to a class.
  *
  * The routes will be attached to the router at its root `path`.
@@ -155,36 +161,57 @@ export namespace Router {
 	}
 
 	/**
-	 * Middlewares applied to the router will be scoped to its own routes, independently of its path.
-	 *
-	 * @remarks
-	 * Express isolates routers by their path, so if two routers share the same path, they will share middlewares.
-	 * This decorator prevents this by applying middlewares directly to the routes instead of the router.
-	 *
-	 * @example
-	 * ```ts
-	 * ＠Router('/foo')
-	 * ＠Router.ScopeMiddlewares
-	 * ＠Use(authenticate)
-	 * class FooSecret {
-	 *   ＠Get()
-	 *   getSecret(req: Request, res: Response, next: NextFunction) {}
-	 * }
-	 *
-	 * ＠Router('/foo')
-	 * class FooPublic {
-	 *   ＠Get()
-	 *   getPublic(req: Request, res: Response, next: NextFunction) {}
-	 * }
-	 * ```
-	 * ------
+	 * Equivalent to `ClassDecorator`.
 	 * @public
 	 */
-	export function ScopedMiddlewares(): ScopedMiddlewares.Decorator
-	export function ScopedMiddlewares(...args: Parameters<ScopedMiddlewares.Decorator>): void
-	export function ScopedMiddlewares(targetMaybe?: Function): ScopedMiddlewares.Decorator | void {
-		if (targetMaybe) {
-			const existingRouterMeta = extractRouterMeta(targetMaybe)
+	export type Decorator = ClassDecorator & { __expressRouter?: never }
+}
+
+/**
+ * Middlewares applied to the router will be scoped to its own routes, independently of its path.
+ *
+ * @remarks
+ * Express isolates routers by their path, so if two routers share the same path, they will share middlewares.
+ * This decorator prevents this by applying middlewares directly to the routes instead of the router.
+ *
+ * @example
+ * ```ts
+ * ＠Router('/foo')
+ * ＠ScopedMiddlewares
+ * ＠Use(authenticate)
+ * class FooSecret {
+ *   ＠Get()
+ *   getSecret(req: Request, res: Response, next: NextFunction) {}
+ * }
+ *
+ * ＠Router('/foo')
+ * class FooPublic {
+ *   ＠Get()
+ *   getPublic(req: Request, res: Response, next: NextFunction) {}
+ * }
+ * ```
+ * ------
+ * @public
+ */
+export function ScopedMiddlewares(): ScopedMiddlewares.Decorator
+export function ScopedMiddlewares(...args: Parameters<ScopedMiddlewares.Decorator>): void
+export function ScopedMiddlewares(targetMaybe?: Function): ScopedMiddlewares.Decorator | void {
+	if (targetMaybe) {
+		const existingRouterMeta = extractRouterMeta(targetMaybe)
+
+		if (existingRouterMeta) {
+			existingRouterMeta.scopedMiddlewares = true
+		} else {
+			const newRouterMeta: RouterMeta = {
+				path: null,
+				scopedMiddlewares: true,
+			}
+
+			defineRouterMeta(newRouterMeta, targetMaybe)
+		}
+	} else {
+		return (target) => {
+			const existingRouterMeta = extractRouterMeta(target)
 
 			if (existingRouterMeta) {
 				existingRouterMeta.scopedMiddlewares = true
@@ -194,35 +221,35 @@ export namespace Router {
 					scopedMiddlewares: true,
 				}
 
+				defineRouterMeta(newRouterMeta, target)
+			}
+		}
+	}
+}
+
+export namespace ScopedMiddlewares {
+	/**
+	 * Remove `ScopedMiddlewares` behavior on a specific router, when applied globally to the app.
+	 */
+	export function Dont(): ScopedMiddlewares.Dont.Decorator
+	export function Dont(...args: Parameters<ScopedMiddlewares.Dont.Decorator>): void
+	export function Dont(targetMaybe?: any, keyMaybe?: any): ScopedMiddlewares.Dont.Decorator | void {
+		if (targetMaybe) {
+			const existingRouterMeta = extractRouterMeta(targetMaybe)
+
+			if (existingRouterMeta) {
+				existingRouterMeta.scopedMiddlewares = false
+			} else {
+				const newRouterMeta: RouterMeta = {
+					path: null,
+					scopedMiddlewares: false,
+				}
+
 				defineRouterMeta(newRouterMeta, targetMaybe)
 			}
 		} else {
 			return (target) => {
 				const existingRouterMeta = extractRouterMeta(target)
-
-				if (existingRouterMeta) {
-					existingRouterMeta.scopedMiddlewares = true
-				} else {
-					const newRouterMeta: RouterMeta = {
-						path: null,
-						scopedMiddlewares: true,
-					}
-
-					defineRouterMeta(newRouterMeta, target)
-				}
-			}
-		}
-	}
-
-	export namespace ScopedMiddlewares {
-		/**
-		 * Remove `Router.ScopedMiddlewares` behavior on a specific router, when applied globally to the app.
-		 */
-		export function Dont(): ScopedMiddlewares.Dont.Decorator
-		export function Dont(...args: Parameters<ScopedMiddlewares.Dont.Decorator>): void
-		export function Dont(targetMaybe?: any, keyMaybe?: any): ScopedMiddlewares.Dont.Decorator | void {
-			if (targetMaybe) {
-				const existingRouterMeta = extractRouterMeta(targetMaybe)
 
 				if (existingRouterMeta) {
 					existingRouterMeta.scopedMiddlewares = false
@@ -232,53 +259,26 @@ export namespace Router {
 						scopedMiddlewares: false,
 					}
 
-					defineRouterMeta(newRouterMeta, targetMaybe)
-				}
-			} else {
-				return (target) => {
-					const existingRouterMeta = extractRouterMeta(target)
-
-					if (existingRouterMeta) {
-						existingRouterMeta.scopedMiddlewares = false
-					} else {
-						const newRouterMeta: RouterMeta = {
-							path: null,
-							scopedMiddlewares: false,
-						}
-
-						defineRouterMeta(newRouterMeta, target)
-					}
+					defineRouterMeta(newRouterMeta, target)
 				}
 			}
 		}
+	}
 
-		export namespace Dont {
-			/**
-			 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
-			 * @public
-			 */
-			export type Decorator = ClassDecorator & { __expressScopeMiddlewaresDont?: never }
-		}
-
+	export namespace Dont {
 		/**
 		 * Equivalent to `ClassDecorator`.
 		 * @public
 		 */
-		export type Decorator = ClassDecorator & { __expressRouterScopeMiddlewares?: never }
+		export type Decorator = ClassDecorator & { __expressScopedMiddlewaresDont?: never }
 	}
 
 	/**
 	 * Equivalent to `ClassDecorator`.
 	 * @public
 	 */
-	export type Decorator = ClassDecorator & { __expressRouter?: never }
+	export type Decorator = ClassDecorator & { __expressScopedMiddlewares?: never }
 }
-
-/**
- * Token to use in place of `Router` path parameter, signaling that the path is defined at registration.
- * @internal
- */
-export const DYNAMIC_PATH = Symbol('dynamic-path')
 
 /**
  * @internal

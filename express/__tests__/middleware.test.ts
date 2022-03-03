@@ -1,6 +1,6 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
-import { register, Get, Post, Put, Use, Catch, Router, Body } from '../src'
+import { register, Get, Post, Put, Use, Catch, Router, Body, ScopedMiddlewares } from '../src'
 import { log } from '../../testing/tools'
 
 describe('middlewares', () => {
@@ -85,7 +85,7 @@ test('router scoped middlewares', async () => {
 	@Use(express.json())
 	@UseSome
 	@Router('/foo')
-	@Router.ScopedMiddlewares()
+	@ScopedMiddlewares()
 	class Foo1 {
 		@Post('/1')
 		getTwo(req: express.Request, res: express.Response) {
