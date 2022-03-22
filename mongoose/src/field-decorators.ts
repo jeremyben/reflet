@@ -824,7 +824,7 @@ type Infer<T> = T extends NumberConstructor | typeof mongoose.Schema.Types.Numbe
 	? Infer<U>[]
 	: T extends [[infer V]]
 	? Infer<V>[][]
-	: Object
+	: any
 
 /**
  * @public
