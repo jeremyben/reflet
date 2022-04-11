@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.6.1](https://github.com/jeremyben/reflet/tree/master/express/compare/@reflet/express@1.6.0...@reflet/express@1.6.1) (2022-04-11)
+
+
+### Bug Fixes
+
+* **express:** bug with mutated middewares reference in Use decorator ([f77bbfd](https://github.com/jeremyben/reflet/tree/master/express/commit/f77bbfd))
+
+
+
+
+
 # [1.6.0](https://github.com/jeremyben/reflet/tree/master/express/compare/@reflet/express@1.5.3...@reflet/express@1.6.0) (2021-08-05)
 
 
