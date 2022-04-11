@@ -7,10 +7,8 @@ import * as express from 'express'
  * ```ts
  * app.use(finalHandler({
  *   sendAsJson: true,
+ *   exposeInJson: ['name', 'message'],
  *   log: '5xx',
- *   revealErrorMessage: true,
- *   revealErrorName: true,
- *   cleanStatusAndHeaders: true,
  *   notFoundHandler: true,
  * }))
  * ```
@@ -44,32 +42,6 @@ export function finalHandler(options: finalHandler.Options): express.ErrorReques
 			res.set(err.headers)
 		}
 
-		// ─── Clean ───
-
-		if (options.cleanStatusAndHeaders && !!err && typeof err === 'object') {
-			if (err.status) delete err.status
-			if (err.statusCode) delete err.statusCode
-			if (err.headers) delete err.headers
-		}
-
-		// ─── Reveal ───
-
-		if (err instanceof Error) {
-			const revealMessage =
-				options.exposeMessage === true || (options.exposeMessage === '4xx' && res.statusCode < 500)
-
-			if (revealMessage) {
-				Object.defineProperty(err, 'message', { enumerable: true })
-			}
-
-			const revealName = options.exposeName === true || (options.exposeName === '4xx' && res.statusCode < 500)
-
-			if (revealName) {
-				// Doesn't work without reassigning value.
-				Object.defineProperty(err, 'name', { enumerable: true, value: err.name })
-			}
-		}
-
 		// ─── Log ───
 
 		if (options.log) {
@@ -85,7 +57,7 @@ export function finalHandler(options: finalHandler.Options): express.ErrorReques
 		// ─── Json ───
 
 		if (options.sendAsJson === true) {
-			return res.json(err)
+			return res.json(marshalError(err, res, options.exposeInJson))
 		}
 
 		if (options.sendAsJson === 'from-response-type') {
@@ -94,7 +66,7 @@ export function finalHandler(options: finalHandler.Options): express.ErrorReques
 			const definitelyJson = /(.*[^\w\s]|^)json(; ?charset.*)?$/m.test(responseType)
 
 			if (definitelyJson) {
-				return res.json(err)
+				return res.json(marshalError(err, res, options.exposeInJson))
 			}
 		}
 
@@ -104,7 +76,7 @@ export function finalHandler(options: finalHandler.Options): express.ErrorReques
 			const probablyJson = !responseType && (req.xhr || (!!req.get('Accept') && !!req.accepts('json')))
 
 			if (definitelyJson || probablyJson) {
-				return res.json(err)
+				return res.json(marshalError(err, res, options.exposeInJson))
 			}
 		}
 
@@ -130,15 +102,35 @@ export namespace finalHandler {
 	export interface Options {
 		/**
 		 * Specifies behavior to use `res.json` to send errors:
+		 *
 		 * - `true`: always send as json.
-		 * - `false`: pass the error to `next`.
+		 * - `false`: pass directly the error to `next`.
 		 * - `'from-response-type'`: looks for a json compatible `Content-Type` on the response (or else pass to `next`)
 		 * - `'from-response-type-or-request'`: if the response doesn't have a `Content-type` header, it looks for  `X-Requested-With` or `Accept` headers on the request (or else pass to `next`)
 		 */
 		sendAsJson: boolean | 'from-response-type' | 'from-response-type-or-request'
 
 		/**
+		 * Exposes error properties in serialized json:
+		 *
+		 * - `true`: exposes all properties (stack included, beware of information leakage !), _default in development_.
+		 * - `false`: exposes nothing (empty object), _default in production_.
+		 * - array of strings: whitelists specifics properties.
+		 *
+		 * You can pass a function with the status code as parameter for more conditional whitelisting.
+		 *
+		 * @default
+		 * false // in production (NODE_ENV === 'production')
+		 * true // in other environments
+		 *
+		 * @remark
+		 * Only applied when the error is sent as json.
+		 */
+		exposeInJson?: boolean | ErrorProps[] | ((statusCode: number) => boolean | ErrorProps[])
+
+		/**
 		 * log error:
+		 *
 		 * - `true`: every error
 		 * - `false`: none
 		 * - `'5xx'`: only server errors
@@ -152,27 +144,6 @@ export namespace finalHandler {
 		logger?: (err: any) => any
 
 		/**
-		 * Make error `message` enumerable so it can be serialized.
-		 *
-		 * @remarks
-		 * Beware of information leakage if you pass `true`.
-		 */
-		exposeMessage?: boolean | '4xx'
-
-		/**
-		 * Make error `name` enumerable so it can be serialized.
-		 *
-		 * @remarks
-		 * Beware of information leakage if you pass `true`.
-		 */
-		exposeName?: boolean | '4xx'
-
-		/**
-		 * Remove `status`, `statusCode` or `headers` properties from error object, once they are applied to the response.
-		 */
-		cleanStatusAndHeaders?: boolean
-
-		/**
 		 * Defines the handler when the route is not found:
 		 *
 		 * - switch to `true` to apply a basic handler throwing a `404` error
@@ -181,6 +152,12 @@ export namespace finalHandler {
 		notFoundHandler?: boolean | express.RequestHandler
 	}
 }
+
+/**
+ * @public
+ */
+// https://github.com/microsoft/TypeScript/issues/29729
+type ErrorProps = 'name' | 'message' | 'stack' | (string & Record<never, never>)
 
 /**
  * @see https://github.com/pillarjs/finalhandler/blob/v1.1.2/index.js#L113-L115
@@ -227,4 +204,45 @@ function getStatusFromErrorProps(err: any): number | undefined {
 	}
 
 	return undefined
+}
+
+/**
+ * @internal
+ */
+function marshalError(err: any, res: express.Response, exposeProps: finalHandler.Options['exposeInJson']) {
+	if (!err || typeof err !== 'object') {
+		return err
+	}
+
+	const props =
+		exposeProps === undefined
+			? process.env.NODE_ENV !== 'production'
+			: typeof exposeProps === 'function'
+			? exposeProps(res.statusCode)
+			: exposeProps
+
+	if (props === true) {
+		const obj = { ...err }
+
+		// Copy non-enumerable properties
+		if ('message' in err) obj.message = err.message
+		if ('name' in err) obj.name = err.name
+		if ('stack' in err) obj.stack = err.stack
+
+		return obj
+	} else if (props === false) {
+		return {}
+	} else if (Array.isArray(props)) {
+		const obj: Record<string, any> = {}
+
+		for (const prop of props) {
+			if (prop in err) {
+				obj[prop] = err[prop]
+			}
+		}
+
+		return obj
+	} else {
+		return err
+	}
 }

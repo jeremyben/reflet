@@ -1012,9 +1012,6 @@ register(app, [ThingRouter])
 app.use(finalHandler({
   sendAsJson: 'from-response-type',
   log: '5xx',
-  exposeMessage: '4xx', 
-  exposeName: '4xx',
-  cleanStatusAndHeaders: true,
   notFoundHandler: true
 }))
 ```
@@ -1046,6 +1043,31 @@ Express default error handler always sends a `text/html` response ([source code]
     throw Error('Nope') // Content-Type: 'application/json'
     ```
 
+##### `exposeInJson`
+
+By default, Error `message` and `name` are not serialized to json.
+
+With this option, you can either hide all error properties or expose some of them in the json response:
+
+- `true`: exposes all properties (stack included, beware of information leakage !), _default in development_.
+- `false`: exposes nothing (empty object), _default in production `NODE_ENV === 'production'`_.
+- array of strings: whitelists specifics properties.
+
+You can pass a function with the status code as parameter for more conditional whitelisting:
+
+```ts
+finalHandler({
+  sendAsJson: true,
+  exposeInJson(statusCode) {
+    // expose all properties in development
+    if (process.env !== 'production') return true
+
+    // expose only some properties of client errors in production
+    return statusCode < 500 ? ['message', 'data'] : false
+  }
+})
+```
+
 ##### `log`
 
 * `log: true` always logs errors.
@@ -1066,20 +1088,6 @@ finalHandler({
   logger: logger.error, 
 })
 ```
-
-##### `exposeMessage`, `exposeName`
-
-Error `message` and `name` are not serialized by default. These options make `message` or `name` enumerable so they can be serialized.
-
-* `true` always reveals the property (beware of information leakage).
-* `false` never reveals the property (default).
-* `'4xx'` only reveals the property on client errors.
-
-_`'5xx'` is not available as an option, to avoid information leakage to the client. In that regard, beware of passing `true` as well._
-
-##### `cleanStatusAndHeaders`
-
-This option deletes any `status`, `statusCode`, and `headers` properties from the error object after they have been applied to the response.
 
 ##### `notFoundHandler`
 
