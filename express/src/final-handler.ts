@@ -58,24 +58,20 @@ export function finalHandler(options: finalHandler.Options): express.ErrorReques
 
 		if (options.sendAsJson === true) {
 			return res.json(marshalError(err, res, options.exposeInJson))
-		}
-
-		if (options.sendAsJson === 'from-response-type') {
+		} else if (options.sendAsJson === 'from-response-type') {
 			const responseType = res.get('Content-Type')
-			// https://regex101.com/r/oBuEQY/4
-			const definitelyJson = /(.*[^\w\s]|^)json(; ?charset.*)?$/m.test(responseType)
+			// https://regex101.com/r/noMxut/1
+			const jsonInferredFromResponse = /^application\/(\S+\+|)json/m.test(responseType)
 
-			if (definitelyJson) {
+			if (jsonInferredFromResponse) {
 				return res.json(marshalError(err, res, options.exposeInJson))
 			}
-		}
-
-		if (options.sendAsJson === 'from-response-type-or-request') {
+		} else if (options.sendAsJson === 'from-response-type-or-request') {
 			const responseType = res.get('Content-Type')
-			const definitelyJson = /(.*[^\w\s]|^)json(; ?charset.*)?$/m.test(responseType)
-			const probablyJson = !responseType && (req.xhr || (!!req.get('Accept') && !!req.accepts('json')))
+			const jsonInferredFromResponse = /^application\/(\S+\+|)json/m.test(responseType)
+			const jsonInferredFromRequest = !responseType && (req.xhr || (!!req.get('Accept') && !!req.accepts('json')))
 
-			if (definitelyJson || probablyJson) {
+			if (jsonInferredFromResponse || jsonInferredFromRequest) {
 				return res.json(marshalError(err, res, options.exposeInJson))
 			}
 		}

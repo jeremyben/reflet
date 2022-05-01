@@ -42,7 +42,7 @@ describe('final handler', () => {
 	const app = new App().register()
 	const rq = supertest(app)
 
-	test('json error, clean status and headers', async () => {
+	test('json error', async () => {
 		const res = await rq.get('/foo')
 
 		expect(res.status).toBe(400)
