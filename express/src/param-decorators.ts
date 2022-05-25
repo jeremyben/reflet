@@ -347,7 +347,7 @@ export namespace Headers {
  * // Advanced decorator (with option and middleware):
  * const BodyTrimmed = (key: string) => createParamDecorator(
  *   (req) => req.body[key].trim(),
- *   [{ handler: express.json(), dedupeByReference: true, dedupeByName: true }]
+ *   [{ handler: express.json(), dedupe: true }]
  * )
  * class Foo {
  *   ＠Post('/message')

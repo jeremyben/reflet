@@ -351,7 +351,7 @@ _Also possible with child routers._
 
 ##### Plain express routers
 
-To be able to progressively switch to Reflet, you can still register your plain express routers, with the help of the previous `path` property:
+To be able to progressively switch to Reflet, you can still register your plain express routers, with the help of the previous path tuple:
 
 ```ts
 @Router('/decorated')
@@ -386,18 +386,12 @@ class ItemRouter {
 }
 
 @Router('/foo')
-class FooRouter {
-  constructor() {
-    register(this, [['/items', ItemRouter]])
-  }
-}
+@Router.Children(() => [['/items', ItemRouter]])
+class FooRouter {}
 
 @Router('/bar')
-class BarRouter {
-  constructor() {
-    register(this, [['/elements', ItemRouter]])
-  }
-}
+@Router.Children(() => [['/elements', ItemRouter]])
+class BarRouter {}
 ```
 
 ### Handler parameters injection
@@ -1022,7 +1016,7 @@ Express default error handler always sends a `text/html` response ([source code]
 
 * `sendAsJson: true` always sends the error with `res.json`.
   
-* `sendAsJson: false` sends the error with `res.send` (default).
+* `sendAsJson: false` passes the error to `next` to be handled by express final handler (default).
 
 * `sendAsJson: 'from-response-type'` sends the error with `res.json` by looking for `Content-Type` on the response:
 
