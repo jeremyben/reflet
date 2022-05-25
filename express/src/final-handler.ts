@@ -16,14 +16,14 @@ import * as express from 'express'
  * @public
  */
 export function finalHandler(options: finalHandler.Options): express.ErrorRequestHandler {
-	const finalErrorHandler: express.ErrorRequestHandler = (err, req, res, next) => {
+	const finalErrorHandler: express.ErrorRequestHandler = (error, req, res, next) => {
 		if (res.headersSent) {
-			return next(err)
+			return next(error)
 		}
 
 		// ─── Status ───
 
-		const errorStatus = getStatusFromErrorProps(err)
+		const errorStatus = getStatusFromErrorProps(error)
 
 		if (errorStatus) {
 			res.status(errorStatus)
@@ -38,17 +38,17 @@ export function finalHandler(options: finalHandler.Options): express.ErrorReques
 
 		// ─── Headers ───
 
-		if (!!err && !!err.headers && typeof err.headers === 'object') {
-			res.set(err.headers)
+		if (!!error && !!error.headers && typeof error.headers === 'object') {
+			res.set(error.headers)
 		}
 
 		// ─── Log ───
 
 		if (options.log) {
-			const logger = options.logger || ((errr) => setImmediate(() => console.error(errr)))
+			const logger = options.logger || ((err) => setImmediate(() => console.error(err)))
 
 			if (options.log === true || (options.log === '5xx' && res.statusCode >= 500)) {
-				logger(err)
+				logger(error)
 			}
 
 			// no need to handle false
@@ -57,14 +57,14 @@ export function finalHandler(options: finalHandler.Options): express.ErrorReques
 		// ─── Json ───
 
 		if (options.sendAsJson === true) {
-			return res.json(marshalError(err, res, options.exposeInJson))
+			return res.json(marshalError(error, res, options.exposeInJson))
 		} else if (options.sendAsJson === 'from-response-type') {
 			const responseType = res.get('Content-Type')
 			// https://regex101.com/r/noMxut/1
 			const jsonInferredFromResponse = /^application\/(\S+\+|)json/m.test(responseType)
 
 			if (jsonInferredFromResponse) {
-				return res.json(marshalError(err, res, options.exposeInJson))
+				return res.json(marshalError(error, res, options.exposeInJson))
 			}
 		} else if (options.sendAsJson === 'from-response-type-or-request') {
 			const responseType = res.get('Content-Type')
@@ -72,21 +72,30 @@ export function finalHandler(options: finalHandler.Options): express.ErrorReques
 			const jsonInferredFromRequest = !responseType && (req.xhr || (!!req.get('Accept') && !!req.accepts('json')))
 
 			if (jsonInferredFromResponse || jsonInferredFromRequest) {
-				return res.json(marshalError(err, res, options.exposeInJson))
+				return res.json(marshalError(error, res, options.exposeInJson))
 			}
 		}
 
 		// no need to handle false
 
-		next(err)
+		next(error)
 	}
 
 	if (!options.notFoundHandler) {
 		return finalErrorHandler
 	}
 
+	const notFoundStatus = typeof options.notFoundHandler === 'number' ? options.notFoundHandler : 404
+
+	// https://github.com/pillarjs/finalhandler/blob/v1.1.2/index.js#L113-L115
 	const notFoundHandlerr: express.RequestHandler =
-		typeof options.notFoundHandler === 'function' ? options.notFoundHandler : notFoundHandler
+		typeof options.notFoundHandler === 'function'
+			? options.notFoundHandler
+			: function notFoundHandler(req: express.Request, res: express.Response, next: express.NextFunction) {
+					res.status(notFoundStatus)
+					const notFoundError = new RouteNotFoundError(`Cannot ${req.method} ${req.baseUrl}${req.path}`)
+					next(notFoundError)
+			  }
 
 	return [notFoundHandlerr, finalErrorHandler] as any
 }
@@ -142,10 +151,11 @@ export namespace finalHandler {
 		/**
 		 * Defines the handler when the route is not found:
 		 *
-		 * - switch to `true` to apply a basic handler throwing a `404` error
-		 * - or declare your own handler
+		 * - switch to `true` to apply a basic handler throwing a `404` error.
+		 * - switch to a number to apply the same basic handler with a custom status code.
+		 * - or declare your own handler.
 		 */
-		notFoundHandler?: boolean | express.RequestHandler
+		notFoundHandler?: boolean | number | express.RequestHandler
 	}
 }
 
@@ -154,16 +164,6 @@ export namespace finalHandler {
  */
 // https://github.com/microsoft/TypeScript/issues/29729
 type ErrorProps = 'name' | 'message' | 'stack' | (string & Record<never, never>)
-
-/**
- * @see https://github.com/pillarjs/finalhandler/blob/v1.1.2/index.js#L113-L115
- * @internal
- */
-function notFoundHandler(req: express.Request, res: express.Response, next: express.NextFunction) {
-	res.status(404)
-	const notFoundError = new RouteNotFoundError(`Cannot ${req.method} ${req.baseUrl}${req.path}`)
-	next(notFoundError)
-}
 
 /**
  * @internal

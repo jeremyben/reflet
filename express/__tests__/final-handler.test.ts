@@ -17,7 +17,7 @@ describe('final handler', () => {
 				return ['name', 'message']
 			},
 			log: true,
-			notFoundHandler: true,
+			notFoundHandler: 400,
 		})
 	)
 	class App extends Application {
@@ -63,7 +63,7 @@ describe('final handler', () => {
 	test('default not found error', async () => {
 		const res = await rq.get('/bar/baz')
 
-		expect(res.status).toBe(404)
+		expect(res.status).toBe(400)
 		expect(res.type).toBe('text/html')
 		expect(res.text).toContain('RouteNotFoundError: Cannot GET /bar/baz')
 		// expect(res.body).toEqual({ name: 'RouteNotFoundError', message: 'Cannot GET /bar/baz' })

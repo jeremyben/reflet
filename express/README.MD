@@ -1088,6 +1088,7 @@ finalHandler({
 Like the error handler, Express default route handler always sends a `text/html` response when the route is not found.
 
 * `notFoundHandler: true` defines a default handler similar to the Express one, with a 404 status, but compatible with json.
+* `notFoundHandler: <number>` defines the same default handler, with a custom status code.
 * `notFoundHandler: (req, res, next) => {}` lets you define your own.
 
 ## Application class
