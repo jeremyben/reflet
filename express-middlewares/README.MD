@@ -222,7 +222,7 @@ Use **[`ResponseHeader` enum](../http/README.md#header-)** from `@reflet/http` f
 ### Append header value
 
 > 🔦 `@UseResponseHeader.Append(header, value)`<br>
-> 💫 Related Express method: [`res.set`](https://expressjs.com/en/4x/api.html#res.append)
+> 💫 Related Express method: [`res.append`](https://expressjs.com/en/4x/api.html#res.append)
 
 Appends the specified `value` to the HTTP response header `field`. If the header is not already set, it creates the header with the specified `value`.
 
