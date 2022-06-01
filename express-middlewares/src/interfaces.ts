@@ -49,27 +49,21 @@ export interface ResponseSafe
 	> {}
 
 /**
- * Remove methods sending the response or modifying its headers.
+ * Only readonly properties and methods from response.
  * @public
  */
-export interface ResponseReadonly
-	extends Omit<
-		ResponseSafe,
-		| 'status'
-		| 'set'
-		| 'header'
-		| 'append'
-		| 'type'
-		| 'contentType'
-		| 'location'
-		| 'links'
-		| 'vary'
-		| 'cookie'
-		| 'clearCookie'
-		| 'attachment'
-		| 'addTrailers'
-		| 'removeHeader'
-		| 'setHeader'
-		| 'setTimeout'
-		| 'setDefaultEncoding'
-	> {}
+export type ResponseReadonly = Pick<
+	express.Response,
+	| 'statusCode'
+	| 'statusMessage'
+	| 'locals'
+	| 'charset'
+	| 'headersSent'
+	| 'getHeader'
+	| 'getHeaders'
+	| 'getHeaderNames'
+	| 'hasHeader'
+	| 'finished'
+	| 'writableEnded'
+	| 'writableFinished'
+>
