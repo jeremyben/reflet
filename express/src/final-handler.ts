@@ -1,4 +1,5 @@
 import * as express from 'express'
+import { ResponseReadonly } from './interfaces'
 
 /**
  * Final error handler to apply globally on the app, to be able to send errors as `json`.
@@ -6,8 +7,8 @@ import * as express from 'express'
  * @example
  * ```ts
  * app.use(finalHandler({
- *   sendAsJson: true,
- *   exposeInJson: ['name', 'message'],
+ *   json: true,
+ *   expose: ['name', 'message'],
  *   log: '5xx',
  *   notFoundHandler: true,
  * }))
@@ -45,40 +46,42 @@ export function finalHandler(options: finalHandler.Options): express.ErrorReques
 		// ─── Log ───
 
 		if (options.log) {
-			const logger = options.logger || ((err) => setImmediate(() => console.error(err)))
-
-			if (options.log === true || (options.log === '5xx' && res.statusCode >= 500)) {
-				logger(error)
+			if (typeof options.log === 'function') {
+				options.log(error, req, res)
+			} else if (options.log === true || (options.log === '5xx' && res.statusCode >= 500)) {
+				setImmediate(() => console.error(error))
 			}
-
-			// no need to handle false
 		}
+
+		// ─── Expose ───
+
+		const marshalledError = marshalError(error, res, options.expose)
 
 		// ─── Json ───
 
-		if (options.sendAsJson === true) {
-			return res.json(marshalError(error, res, options.exposeInJson))
-		} else if (options.sendAsJson === 'from-response-type') {
+		if (options.json === true) {
+			return res.json(marshalledError)
+		} else if (options.json === 'from-response-type') {
 			const responseType = res.get('Content-Type')
 			// https://regex101.com/r/noMxut/1
 			const jsonInferredFromResponse = /^application\/(\S+\+|)json/m.test(responseType)
 
 			if (jsonInferredFromResponse) {
-				return res.json(marshalError(error, res, options.exposeInJson))
+				return res.json(marshalledError)
 			}
-		} else if (options.sendAsJson === 'from-response-type-or-request') {
+		} else if (options.json === 'from-response-type-or-request') {
 			const responseType = res.get('Content-Type')
 			const jsonInferredFromResponse = /^application\/(\S+\+|)json/m.test(responseType)
 			const jsonInferredFromRequest = !responseType && (req.xhr || (!!req.get('Accept') && !!req.accepts('json')))
 
 			if (jsonInferredFromResponse || jsonInferredFromRequest) {
-				return res.json(marshalError(error, res, options.exposeInJson))
+				return res.json(marshalledError)
 			}
 		}
 
-		// no need to handle false
+		// ─── Html ───
 
-		next(error)
+		next(marshalledError)
 	}
 
 	if (!options.notFoundHandler) {
@@ -113,25 +116,19 @@ export namespace finalHandler {
 		 * - `'from-response-type'`: looks for a json compatible `Content-Type` on the response (or else pass to `next`)
 		 * - `'from-response-type-or-request'`: if the response doesn't have a `Content-type` header, it looks for  `X-Requested-With` or `Accept` headers on the request (or else pass to `next`)
 		 */
-		sendAsJson: boolean | 'from-response-type' | 'from-response-type-or-request'
+		json: boolean | 'from-response-type' | 'from-response-type-or-request'
 
 		/**
-		 * Exposes error properties in serialized json:
+		 * Exposes error properties to client:
 		 *
-		 * - `true`: exposes all properties (stack included, beware of information leakage !), _default in development_.
-		 * - `false`: exposes nothing (empty object), _default in production_.
-		 * - array of strings: whitelists specifics properties.
+		 * - `true`: exposes all properties (stack included, beware of information leakage !).
+		 * - `false`: exposes nothing (empty object).
+		 * - `string[]`: whitelists specific error properties.
+		 * - `(status) => boolean | string[]`: flexible whitelisting.
 		 *
 		 * You can pass a function with the status code as parameter for more conditional whitelisting.
-		 *
-		 * @default
-		 * false // in production (NODE_ENV === 'production')
-		 * true // in other environments
-		 *
-		 * @remark
-		 * Only applied when the error is sent as json.
 		 */
-		exposeInJson?: boolean | ErrorProps[] | ((statusCode: number) => boolean | ErrorProps[])
+		expose: boolean | ErrorProps[] | Exposer
 
 		/**
 		 * log error:
@@ -139,14 +136,9 @@ export namespace finalHandler {
 		 * - `true`: every error
 		 * - `false`: none
 		 * - `'5xx'`: only server errors
+		 * - `(err, req, res) => void`: flexible logging
 		 */
-		log?: boolean | '5xx'
-
-		/**
-		 * Custom logger
-		 * @default console.error
-		 */
-		logger?: (err: any) => any
+		log?: boolean | '5xx' | Logger
 
 		/**
 		 * Defines the handler when the route is not found:
@@ -157,13 +149,23 @@ export namespace finalHandler {
 		 */
 		notFoundHandler?: boolean | number | express.RequestHandler
 	}
-}
 
-/**
- * @public
- */
-// https://github.com/microsoft/TypeScript/issues/29729
-type ErrorProps = 'name' | 'message' | 'stack' | (string & Record<never, never>)
+	/**
+	 * @public
+	 */
+	export type Exposer = (statusCode: number) => boolean | ErrorProps[]
+
+	/**
+	 * @public
+	 */
+	export type Logger = (err: any, req: express.Request, readonlyRes: ResponseReadonly) => void
+
+	/**
+	 * @public
+	 */
+	// https://github.com/microsoft/TypeScript/issues/29729
+	export type ErrorProps = 'name' | 'message' | 'stack' | (string & Record<never, never>)
+}
 
 /**
  * @internal
@@ -205,40 +207,53 @@ function getStatusFromErrorProps(err: any): number | undefined {
 /**
  * @internal
  */
-function marshalError(err: any, res: express.Response, exposeProps: finalHandler.Options['exposeInJson']) {
+function marshalError(err: any, res: express.Response, expose: finalHandler.Options['expose']) {
 	if (!err || typeof err !== 'object') {
 		return err
 	}
 
-	const props =
-		exposeProps === undefined
-			? process.env.NODE_ENV !== 'production'
-			: typeof exposeProps === 'function'
-			? exposeProps(res.statusCode)
-			: exposeProps
+	const exposeProps = typeof expose === 'function' ? expose(res.statusCode) : expose
 
-	if (props === true) {
+	if (exposeProps === true) {
 		const obj = { ...err }
 
-		// Copy non-enumerable properties
+		// Copy non-enumerable error properties
 		if ('message' in err) obj.message = err.message
 		if ('name' in err) obj.name = err.name
 		if ('stack' in err) obj.stack = err.stack
+		if ('cause' in err) obj.cause = err.cause
+
+		// Copy serializing methods
+		if ('toString' in err) {
+			Object.defineProperty(obj, 'toString', { value: err.toString, enumerable: false })
+		}
+		if ('toJSON' in err) {
+			Object.defineProperty(obj, 'toJSON', { value: err.toJSON, enumerable: false })
+		}
 
 		return obj
-	} else if (props === false) {
-		return {}
-	} else if (Array.isArray(props)) {
+	} else if (Array.isArray(exposeProps)) {
 		const obj: Record<string, any> = {}
 
-		for (const prop of props) {
+		for (const prop of exposeProps) {
 			if (prop in err) {
 				obj[prop] = err[prop]
 			}
 		}
 
+		// Copy serializing methods as well
+		if ('toString' in err) {
+			Object.defineProperty(obj, 'toString', { value: err.toString, enumerable: false })
+		}
+		if ('toJSON' in err) {
+			Object.defineProperty(obj, 'toJSON', { value: err.toJSON, enumerable: false })
+		}
+
 		return obj
 	} else {
-		return err
+		// avoid [Object object] when serializing to html
+		const obj = Object.create({ toString: () => '' })
+
+		return obj
 	}
 }

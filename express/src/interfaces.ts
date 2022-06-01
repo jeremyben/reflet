@@ -91,6 +91,26 @@ export interface Handler<Req extends {} = {}> {
 	): any
 }
 
+/**
+ * Only readonly properties and methods from response.
+ * @public
+ */
+export type ResponseReadonly = Pick<
+	express.Response,
+	| 'statusCode'
+	| 'statusMessage'
+	| 'locals'
+	| 'charset'
+	| 'headersSent'
+	| 'getHeader'
+	| 'getHeaders'
+	| 'getHeaderNames'
+	| 'hasHeader'
+	| 'finished'
+	| 'writableEnded'
+	| 'writableFinished'
+>
+
 declare module 'express' {
 	export interface Application {
 		_router: _Router

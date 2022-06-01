@@ -1004,21 +1004,21 @@ const app = express()
 register(app, [ThingRouter])
 
 app.use(finalHandler({
-  sendAsJson: 'from-response-type',
+  json: 'from-response-type',
   log: '5xx',
   notFoundHandler: true
 }))
 ```
 
-##### `sendAsJson`
+##### `json`
 
 Express default error handler always sends a `text/html` response ([source code](https://github.com/pillarjs/finalhandler/blob/v1.1.2/index.js#L272-L311)). This doesn't go well with today's world of JSON APIs.
 
-* `sendAsJson: true` always sends the error with `res.json`.
+* `json: true` always sends the error with `res.json`.
   
-* `sendAsJson: false` passes the error to `next` to be handled by express final handler (default).
+* `json: false` passes the error to `next` to be handled by express final handler (default).
 
-* `sendAsJson: 'from-response-type'` sends the error with `res.json` by looking for `Content-Type` on the response:
+* `json: 'from-response-type'` sends the error with `res.json` by looking for `Content-Type` on the response:
 
     ```ts
     res.type('json')
@@ -1026,7 +1026,7 @@ Express default error handler always sends a `text/html` response ([source code]
     throw Error('Nope') // Content-Type: 'application/json'
     ```
 
-* `sendAsJson: 'from-response-type-or-request'` first looks for `Content-Type` on the response, or infers it from `X-Requested-With` or `Accept` headers on the request:
+* `json: 'from-response-type-or-request'` first looks for `Content-Type` on the response, or infers it from `X-Requested-With` or `Accept` headers on the request:
 
     ```http
     GET http://host/foo
@@ -1037,51 +1037,60 @@ Express default error handler always sends a `text/html` response ([source code]
     throw Error('Nope') // Content-Type: 'application/json'
     ```
 
-##### `exposeInJson`
+##### `expose`
 
 By default, Error `message` and `name` are not serialized to json.
 
-With this option, you can either hide all error properties or expose some of them in the json response:
+With this option, you can either hide all error properties or expose some of them in the serialized response:
 
-- `true`: exposes all properties (stack included, beware of information leakage !), _default in development_.
-- `false`: exposes nothing (empty object), _default in production `NODE_ENV === 'production'`_.
-- array of strings: whitelists specifics properties.
-
-You can pass a function with the status code as parameter for more conditional whitelisting:
+* `true`: exposes all properties (stack included, beware of information leakage !).
+* `false`: exposes nothing (empty object).
+* `string[]`: whitelists specifics properties.
+* `(status) => boolean | string[]`: function for more conditional whitelisting:
 
 ```ts
 finalHandler({
-  sendAsJson: true,
-  exposeInJson(statusCode) {
-    // expose all properties in development
-    if (process.env !== 'production') return true
+  json: true,
+  expose(status) {
+    // expose all properties in non production environment
+    if (process.env !== 'production') {
+      return true
+    }
 
     // expose only some properties of client errors in production
-    return statusCode < 500 ? ['message', 'data'] : false
+    if (status < 500) {
+      return ['message', 'code', 'data']
+    } else {
+      return false
+    }
   }
 })
 ```
 
 ##### `log`
 
-* `log: true` always logs errors.
-* `log: false` never logs errors (default).
-* `log: '5xx'` only logs server errors.
+* `log: true` always logs errors (with `console.error`).
+* `log: false` never logs errors, _default_.
+* `log: '5xx'` only logs server errors (with `console.error`).
+* If you need the flexibility to log more infos or use a dedicated logger other that `console.error`, you can pass a function like so:
 
-##### `logger`
-
-By default, errors are logged to `stderr` with `console.error`.
-
-You can bind a custom logger like [winston](https://github.com/winstonjs/winston) or [pino](https://github.com/pinojs/pino):
 ```ts
 import * as pino from "pino";
 const logger = pino()
 
 finalHandler({
-  log: '5xx',
-  logger: logger.error, 
+  log(err, req, res) {
+    logger.error({
+      err,
+      status: res.statusCode,
+      path: req.url,
+      timestamp: new Date().toISOString(),
+    })
+  },
 })
 ```
+
+_The response object type only exposes safe properties, so you don't send the response by accident._
 
 ##### `notFoundHandler`
 
@@ -1122,7 +1131,7 @@ import { UserRouter } from './user.router'
 @Use(express.json(), express.urlencoded())
 @Router.ScopedMiddlewares
 @Catch(finalHandler({ 
-  sendAsJson: true,
+  json: true,
   log: true,
   notFoundHandler: true,
 }))
