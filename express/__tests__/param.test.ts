@@ -76,7 +76,10 @@ describe('basic decorators', () => {
 
 describe('custom decorators', () => {
 	const CurrentUser = createParamDecorator((req: express.Request & { user?: any }) => req.user)
+
 	const BodyTrimmed = (subKey: string) => createParamDecorator((req) => req.body[subKey].trim(), [express.json()])
+
+	const SendResponse = createParamDecorator((req, res) => res.send.bind(res))
 
 	@Use((req: express.Request & { user?: any }, res, next) => {
 		req.user = { id: 1, name: 'jeremy' }
@@ -85,15 +88,15 @@ describe('custom decorators', () => {
 	@Router('')
 	class FooRouter {
 		@Get()
-		get(@CurrentUser user: object, @Res res: Res) {
-			res.send({ user })
+		get(@CurrentUser user: object, @SendResponse send: Res['send']) {
+			send({ user })
 		}
 
 		@Put()
-		put(@BodyTrimmed('foot') foot: string, @BodyTrimmed('pub') pub: string, @Res res: Res) {
+		put(@BodyTrimmed('foot') foot: string, @BodyTrimmed('pub') pub: string, @SendResponse send: Res['send']) {
 			foot = foot + '!'
 			pub = pub + '!'
-			res.send({ foot, pub })
+			send({ foot, pub })
 		}
 	}
 
