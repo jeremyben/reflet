@@ -128,7 +128,7 @@ export namespace finalHandler {
 		 *
 		 * You can pass a function with the status code as parameter for more conditional whitelisting.
 		 */
-		expose: boolean | ErrorProps[] | Exposer
+		expose: boolean | finalHandler.ErrorProps[] | finalHandler.Exposer
 
 		/**
 		 * log error:
@@ -138,7 +138,7 @@ export namespace finalHandler {
 		 * - `'5xx'`: only server errors
 		 * - `(err, req, res) => void`: flexible logging
 		 */
-		log?: boolean | '5xx' | Logger
+		log?: boolean | '5xx' | finalHandler.Logger
 
 		/**
 		 * Defines the handler when the route is not found:
@@ -153,7 +153,7 @@ export namespace finalHandler {
 	/**
 	 * @public
 	 */
-	export type Exposer = (statusCode: number) => boolean | ErrorProps[]
+	export type Exposer = (statusCode: number) => boolean | finalHandler.ErrorProps[]
 
 	/**
 	 * @public

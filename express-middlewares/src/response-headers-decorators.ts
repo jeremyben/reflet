@@ -71,13 +71,13 @@ export namespace UseType {
 	 * @public
 	 */
 	export type CommonType =
-		| CommonType.Application
-		| CommonType.Text
-		| CommonType.Font
-		| CommonType.Image
-		| CommonType.Video
-		| CommonType.Audio
-		| CommonType.Extension
+		| UseType.CommonType.Application
+		| UseType.CommonType.Text
+		| UseType.CommonType.Font
+		| UseType.CommonType.Image
+		| UseType.CommonType.Video
+		| UseType.CommonType.Audio
+		| UseType.CommonType.Extension
 
 	export namespace CommonType {
 		export type Application =
