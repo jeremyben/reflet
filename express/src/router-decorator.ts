@@ -77,7 +77,6 @@ export namespace Router {
 	 * @public
 	 */
 	export function Children<T extends ClassType = any>(
-		// tslint:disable-next-line: no-shadowed-variable
 		register: (...deps: IsAny<T> extends true ? unknown[] : ConstructorParameters<T>) => Registration[]
 	): Router.Children.Decorator {
 		return (target) => {

@@ -376,7 +376,7 @@ function createHandler(
 
 			// Readable stream
 			if (isReadableStream(value)) {
-				return value.pipe(res as any)
+				return value.pipe(res)
 			}
 
 			// Response object itself
@@ -388,7 +388,7 @@ function createHandler(
 
 				// The response will try to send itself, which will cause a cryptic error
 				// ('TypeError: Converting circular structure to JSON')
-				return next(Error('Cannot send the whole Response object.')) as any
+				return next(Error('Cannot send the whole Response object.'))
 			}
 
 			if (json) {
