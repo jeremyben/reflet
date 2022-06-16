@@ -91,7 +91,7 @@ describe('handle return value', () => {
 	test('response object', async () => {
 		const res = await rq.put('').accept('json')
 		expect(res.status).toBe(500)
-		expect(res.text).toMatch('Response')
+		expect(res.text).toMatch('RefletExpressError')
 	})
 })
 
@@ -270,7 +270,7 @@ describe('class decorator', () => {
 		expect(res.body).toEqual('bar')
 	})
 
-	test('send exception', async () => {
-		expect(rq.put('/').timeout(200)).rejects.toThrow(/Timeout/)
+	test('dont send', async () => {
+		expect(rq.put('/').timeout(150)).rejects.toThrow(/Timeout/)
 	})
 })

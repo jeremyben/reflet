@@ -11,6 +11,7 @@ export class RefletExpressError extends Error {
 		| 'MULTIPLE_PARAMETER_DECORATORS'
 		| 'INVALID_ROUTE_TYPE'
 		| 'INVALID_EXPRESS_APP'
+		| 'RESPONSE_OBJECT_SENT'
 
 	constructor(code: RefletExpressError['code'], message: string) {
 		super(message)
