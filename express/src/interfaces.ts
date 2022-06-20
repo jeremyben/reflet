@@ -20,6 +20,23 @@ export type PropertyOrMethodDecorator = (
 ) => any
 
 /**
+ * @public
+ */
+export type ClassOrTypedMethodDecorator<T> = <TFunction extends Function>(
+	target: Object | TFunction,
+	propertyKey?: string | symbol,
+	descriptor?: MethodDescriptorReturn<T>
+) => TFunction extends Function ? any : MethodDescriptorReturn<T> | void
+
+/**
+ * {@linkcode TypedPropertyDescriptor}
+ * @public
+ */
+interface MethodDescriptorReturn<T> {
+	value?: (...args: any[]) => T
+}
+
+/**
  * Defines a class type. Does the opposite of built-in `InstanceType`.
  * @public
  */

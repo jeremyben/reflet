@@ -1,7 +1,7 @@
 import * as express from 'express'
 import { wrapAsync, wrapAsyncError } from './async-wrapper'
 import { ClassType, Registration } from './interfaces'
-import { isPromise, isReadableStream, isClass, isExpressApp, isExpressRouter, isAsyncFunction } from './type-guards'
+import { isPromise, isClass, isExpressApp, isExpressRouter, isAsyncFunction } from './type-guards'
 
 // Extractors
 import { DYNAMIC_PATH, extractRouterMeta } from './router-decorator'
@@ -9,7 +9,7 @@ import { extractRoutes } from './route-decorators'
 import { extractMiddlewares } from './middleware-decorator'
 import { extractErrorHandlers } from './error-handler-decorator'
 import { extractParams, extractParamsMiddlewares } from './param-decorators'
-import { extractSend, Send } from './send-decorator'
+import { extractSendHandler } from './send-decorator'
 import { ApplicationMeta, extractApplicationClass } from './application-class'
 import { RefletExpressError } from './reflet-error'
 
@@ -321,7 +321,7 @@ function createHandler(
 	key: string | symbol,
 	appClass?: ClassType
 ): express.Handler {
-	const sendOptions = extractSend(routerClass, key, appClass)
+	const sendHandler = extractSendHandler(routerClass, key, appClass)
 
 	// get from the instance instead of the prototype, so this can be a function property and not only a method.
 	const fn = routerInstance[key] as Function
@@ -340,64 +340,27 @@ function createHandler(
 
 		// Handle or bypass sending the method's result according to @Send decorator,
 		// if the response has already been sent to the client, we also bypass.
-		if (!sendOptions || res.headersSent) {
-			// We only use the async modifier in this case to decide to catch async errors.
+		if (!sendHandler || res.headersSent) {
+			// We only use the async modifier in this case to decide to catch async errors, for performance.
 			// If the user ever decides to return a promise in a non-async method while not using @Send,
 			// it won't catch its errors, but that's an unlikely edge case.
 			return isAsync ? (result as Promise<any>).catch(next) : result
 		}
 
 		if (isPromise(result)) {
-			return result.then((value) => sendResponse(value, sendOptions, codePath, res, next)).catch(next)
+			return result
+				.then((value) => {
+					return sendHandler(value, { req, res, next })
+				})
+				.catch(next)
 		} else {
-			return sendResponse(result, sendOptions, codePath, res, next)
+			try {
+				const sendResult = sendHandler(result, { req, res, next })
+				return isPromise(sendResult) ? sendResult.catch(next) : sendResult
+			} catch (error) {
+				next(error)
+			}
 		}
-	}
-}
-
-/**
- * @internal
- */
-function sendResponse(
-	value: any,
-	options: Send.Options,
-	codePath: string,
-	res: express.Response,
-	next: express.NextFunction
-) {
-	// Default status
-	if (options.status) {
-		res.status(options.status)
-	}
-
-	// Undefined and null status
-	if (value === undefined && options.undefinedStatus) {
-		res.status(options.undefinedStatus)
-	} else if (value === null && options.nullStatus) {
-		res.status(options.nullStatus)
-	}
-
-	// Readable stream
-	if (isReadableStream(value)) {
-		return value.pipe(res)
-	}
-
-	// Response object itself
-	if (value === res) {
-		// A stream is piping to the response so we let it go
-		if (res.listenerCount('unpipe') > 0) {
-			return res
-		}
-
-		// The response will try to send itself, which will cause a cryptic error
-		// ('TypeError: Converting circular structure to JSON')
-		return next(new RefletExpressError('RESPONSE_OBJECT_SENT', `Cannot send the response object in "${codePath}".`))
-	}
-
-	if (options.json) {
-		return res.json(value)
-	} else {
-		return res.send(value)
 	}
 }
 

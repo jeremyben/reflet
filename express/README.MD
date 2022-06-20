@@ -771,7 +771,7 @@ get() {
 }
 ```
 
-By the way, you can still use the Response object to send your data, and Reflet will figure that it has already been sent. 😉
+You can still use the Response object to send your data, and Reflet will figure that it has already been sent. 😉
 
 ### Async and stream support
 
@@ -848,48 +848,29 @@ get() {
 }
 ```
 
-### Change response status
-
-> 🔦 `@Send({ status: XXX, undefinedStatus: XXX, nullStatus: XXX })`<br>
-> 💫 Related Express method: [`res.status`](https://expressjs.com/en/4x/api.html#res.status)
-
-By default in Node.js, HTTP response status code is set to `200`. To set another code:
+### Custom handler
 
 ```ts
-@Send({ status: 201 })
-@Post('/me')
-create() {
-  return { name: 'Jeremy' } // 201 status
+@Send<string>((data, { res }) => {
+  res.json({ name: data })
+})
+@Get('/me')
+get() {
+  return 'Jeremy' 
 }
 ```
-
-You can conditionaly set status for `undefined` and `null` values:
-
-```ts
-@Send({ nullStatus: 205, undefinedStatus: 404 })
-@Get('/things')
-list() {
-  if (conditionA) return // 404 status
-  if (conditionB) return null // 205 status
-  return {} // 200 status
-}
-```
-
-##### 💡 Tip
-
-Use **[`SuccessStatus` enum](../http/README.md#status-)**  from `@reflet/http` for an even better developer experience.
 
 ### Share and override
 
-Decorate classes with specific `Send` options so they act as a base for methods' `Send` options.
+Decorate a class with `Send` to apply its behavior to all its methods. You override the behavior on a method level.
 
 ```ts
-@Send({ json: true, status: 100 })
+@Send({ json: true })
 class PeopleRouter {
-  @Send({ status: 200 }) // extends class send options
+  @Send({ json: false }) // override class send options
   @Get('/me')
   get() {
-    return 'Jeremy' // 200 status, Content-Type: 'application/json'
+    return 'Jeremy' // Content-Type: 'text/html'
   }
 }
 ```

@@ -18,6 +18,19 @@
 * `DontSend` decorator was deprecated and has been removed.
   Use `Send.Dont` decorator instead.
 
+* `Send` decorator no longer have the following options: `status`, `nullStatus`, `undefinedStatus`.
+  Use `UseStatus` from "@reflet/http" for `status`.
+  For `nullStatus` and `undefinedStatus`, define a custom send handler to accomplish the same task:
+  ```ts
+  @Send((data, { res }) => {
+    if (data === undefined) res.status(404)
+    if (data === null) res.status(204)
+
+    if (data instanceof stream.Readable) data.pipe(res)
+    else res.send(data)
+  })
+  ```
+
 * `Controllers` array interface was _unwrapped_ and renamed to `Registration`. Use it as `Registration[]`.
 
 * Path constraints on routers are no longer an object with a `path` and a `router` properties, but a tuple.

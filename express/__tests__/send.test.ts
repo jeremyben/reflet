@@ -1,7 +1,7 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
 import { createReadStream, readFileSync } from 'fs'
-import { register, Router, Get, Put, Post, Patch, Delete, Res, Params, Send } from '../src'
+import { register, Router, Get, Put, Post, Patch, Delete, Res, Params, Send, Route } from '../src'
 import { log } from '../../testing/tools'
 
 describe('handle return value', () => {
@@ -43,6 +43,14 @@ describe('handle return value', () => {
 		@Put()
 		async put(@Res res: express.Response) {
 			return res
+		}
+
+		@Send<Promise<string>>((data, { res }) => {
+			res.status(201).json({ hello: data })
+		})
+		@Route.Options()
+		async options(@Res res: express.Response) {
+			return 'world'
 		}
 	}
 
@@ -93,41 +101,12 @@ describe('handle return value', () => {
 		expect(res.status).toBe(500)
 		expect(res.text).toMatch('RefletExpressError')
 	})
-})
 
-describe('specific status', () => {
-	@Router('/')
-	class FooRouter {
-		@Send({ status: 201, undefinedStatus: 404, nullStatus: 204 })
-		@Put('/:type')
-		async put(@Params('type') type: 'null' | 'undefined') {
-			if (type === 'null') return null
-			if (type === 'undefined') return
-
-			return { foo: 3 }
-		}
-	}
-
-	const app = express()
-	const rq = supertest(app)
-	register(app, [FooRouter])
-
-	test('success', async () => {
-		const res = await rq.put('/yolo')
+	test('custom handler', async () => {
+		const res = await rq.options('')
 		expect(res.status).toBe(201)
-		expect(res.body).toEqual({ foo: 3 })
-	})
-
-	test('undefined', async () => {
-		const res = await rq.put('/undefined')
-		expect(res.status).toBe(404)
-		expect(res.text).toEqual('')
-	})
-
-	test('null', async () => {
-		const res = await rq.put('/null')
-		expect(res.status).toBe(204)
-		expect(res.text).toEqual('')
+		expect(res.type).toBe('application/json')
+		expect(res.body).toEqual({ hello: 'world' })
 	})
 })
 
@@ -146,7 +125,7 @@ describe('streams', () => {
 			return createReadStream(__filename)
 		}
 
-		@Send({ status: 201 })
+		@Send()
 		@Post()
 		async post(@Res res: express.Response) {
 			const readable = createReadStream(__filename)
@@ -173,7 +152,7 @@ describe('streams', () => {
 
 	test('streaming response object', async () => {
 		const res = await rq.post('')
-		expect(res.status).toBe(201)
+		expect(res.status).toBe(200)
 		expect(res.header['transfer-encoding']).toBe('chunked')
 		expect(res.text).toContain(thisFile)
 	})
@@ -182,7 +161,7 @@ describe('streams', () => {
 describe('buffers', () => {
 	@Router('/')
 	class FooRouter {
-		@Send({ status: 201 })
+		@Send()
 		@Get()
 		get() {
 			return readFileSync(__filename)
@@ -205,7 +184,7 @@ describe('buffers', () => {
 
 	test('file buffer', async () => {
 		const res = await rq.get('')
-		expect(res.status).toBe(201)
+		expect(res.status).toBe(200)
 		expect(res.type).toBe('application/octet-stream')
 		expect(res.body).toBeInstanceOf(Buffer)
 	})
@@ -230,7 +209,7 @@ describe('class decorator', () => {
 	const JsonRouter = (path: string | RegExp): Router.Decorator & Send.Decorator => {
 		return (target) => {
 			Router(path)(target as Function)
-			Send({ json: true, undefinedStatus: 404 })(target)
+			Send({ json: true })(target)
 		}
 	}
 
@@ -241,7 +220,7 @@ describe('class decorator', () => {
 			return 'bar'
 		}
 
-		@Send({ status: 201 })
+		@Send({ json: false })
 		@Post()
 		post() {
 			return 'bar'
@@ -263,11 +242,11 @@ describe('class decorator', () => {
 		expect(res.body).toEqual('bar')
 	})
 
-	test('extend class options with method options', async () => {
+	test('override class options with method options', async () => {
 		const res = await rq.post('/')
-		expect(res.status).toBe(201)
-		expect(res.type).toBe('application/json')
-		expect(res.body).toEqual('bar')
+		expect(res.status).toBe(200)
+		expect(res.type).toBe('text/html')
+		expect(res.text).toEqual('bar')
 	})
 
 	test('dont send', async () => {
