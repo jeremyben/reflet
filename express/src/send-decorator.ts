@@ -3,7 +3,7 @@ import { ClassType, ClassOrMethodDecorator, ClassOrTypedMethodDecorator } from '
 import { isReadableStream } from './type-guards'
 import { RefletExpressError } from './reflet-error'
 
-const META_SEND = Symbol('send')
+const METAKEY_SEND = Symbol('send')
 
 /**
  * Tells express to handle the method's return value and send it.
@@ -58,9 +58,9 @@ export function Send(optionsOrHandler: Send.Options | Send.Handler<any> = {}): S
 				: handleWithSendMethod
 
 		if (key) {
-			Reflect.defineMetadata(META_SEND, sendHandler, target, key)
+			Reflect.defineMetadata(METAKEY_SEND, sendHandler, target, key)
 		} else {
-			Reflect.defineMetadata(META_SEND, sendHandler, (target as Function).prototype)
+			Reflect.defineMetadata(METAKEY_SEND, sendHandler, (target as Function).prototype)
 		}
 	}
 }
@@ -116,12 +116,12 @@ export namespace Send {
 	export function Dont(...args: Parameters<Send.Dont.Decorator>): void
 	export function Dont(targetMaybe?: any, keyMaybe?: any): Send.Dont.Decorator | void {
 		if (targetMaybe) {
-			if (keyMaybe) Reflect.defineMetadata(META_SEND, null, targetMaybe, keyMaybe)
-			else Reflect.defineMetadata(META_SEND, null, (targetMaybe as Function).prototype)
+			if (keyMaybe) Reflect.defineMetadata(METAKEY_SEND, null, targetMaybe, keyMaybe)
+			else Reflect.defineMetadata(METAKEY_SEND, null, (targetMaybe as Function).prototype)
 		} else {
 			return (target, key, descriptor) => {
-				if (key) Reflect.defineMetadata(META_SEND, null, target, key)
-				else Reflect.defineMetadata(META_SEND, null, (target as Function).prototype)
+				if (key) Reflect.defineMetadata(METAKEY_SEND, null, target, key)
+				else Reflect.defineMetadata(METAKEY_SEND, null, (target as Function).prototype)
 			}
 		}
 	}
@@ -145,7 +145,7 @@ export function extractSendHandler(
 ): Send.Handler<any> | null | undefined {
 	// Send decorator on method
 	const methodSendHandler: Send.Handler<any> | null | undefined = Reflect.getOwnMetadata(
-		META_SEND,
+		METAKEY_SEND,
 		target.prototype,
 		key
 	)
@@ -155,7 +155,10 @@ export function extractSendHandler(
 	}
 
 	// Send decorator on router
-	const routerSendHandler: Send.Handler<any> | null | undefined = Reflect.getOwnMetadata(META_SEND, target.prototype)
+	const routerSendHandler: Send.Handler<any> | null | undefined = Reflect.getOwnMetadata(
+		METAKEY_SEND,
+		target.prototype
+	)
 
 	if (routerSendHandler !== undefined) {
 		return routerSendHandler
@@ -163,7 +166,7 @@ export function extractSendHandler(
 
 	// No Send decorator on method or router
 	const appSendHandler: Send.Handler<any> | undefined = appClass
-		? Reflect.getOwnMetadata(META_SEND, appClass.prototype)
+		? Reflect.getOwnMetadata(METAKEY_SEND, appClass.prototype)
 		: undefined
 
 	return appSendHandler

@@ -5,7 +5,7 @@ import { flatMapFast } from './array-manipulation'
 import { ClassType } from './interfaces'
 import { RefletExpressError } from './reflet-error'
 
-const META = Symbol('param')
+const METAKEY_PARAM = Symbol('param')
 
 /**
  * Injects Request object in the method's parameters.
@@ -362,7 +362,7 @@ export function createParamDecorator<T = any>(
 	use?: createParamDecorator.Middleware[]
 ): createParamDecorator.Decorator {
 	return (target, key, index) => {
-		const params: createParamDecorator.Options[] = Reflect.getOwnMetadata(META, target, key) || []
+		const params: createParamDecorator.Options[] = Reflect.getOwnMetadata(METAKEY_PARAM, target, key) || []
 
 		if (params[index]) {
 			const codePath = `${target.constructor.name}.${key.toString()}`
@@ -374,7 +374,7 @@ export function createParamDecorator<T = any>(
 		}
 
 		params[index] = { mapper, use }
-		Reflect.defineMetadata(META, params, target, key)
+		Reflect.defineMetadata(METAKEY_PARAM, params, target, key)
 	}
 }
 
@@ -412,7 +412,7 @@ export function extractParams(
 	key: string | symbol,
 	{ req, res, next }: { req: express.Request; res: express.Response; next: express.NextFunction }
 ): any[] {
-	const params: createParamDecorator.Options[] = Reflect.getOwnMetadata(META, target.prototype, key) || []
+	const params: createParamDecorator.Options[] = Reflect.getOwnMetadata(METAKEY_PARAM, target.prototype, key) || []
 
 	// No decorator found in the method: simply return the original arguments in the original order
 	if (!params.length) return [req, res, next]
@@ -444,7 +444,7 @@ export function extractParamsMiddlewares(
 	key: string | symbol,
 	alreadyMwares: express.RequestHandler[][]
 ): express.RequestHandler[] {
-	const params: createParamDecorator.Options[] = Reflect.getOwnMetadata(META, target.prototype, key) || []
+	const params: createParamDecorator.Options[] = Reflect.getOwnMetadata(METAKEY_PARAM, target.prototype, key) || []
 	if (!params.length) return []
 
 	const paramMwares: express.RequestHandler[] = []

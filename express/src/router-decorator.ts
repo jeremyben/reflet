@@ -1,12 +1,12 @@
 import * as express from 'express'
-import { ClassType, Registration, IsAny, ClassOrMethodDecorator } from './interfaces'
+import { ClassType, Registration, IsAny } from './interfaces'
 
-const META = Symbol('router')
+const METAKEY_ROUTER = Symbol('router')
 
 /**
  * @internal
  */
-type RouterMeta = {
+export type RouterMeta = {
 	path: string | RegExp | typeof DYNAMIC_PATH | null
 	options?: express.RouterOptions
 	scopedMiddlewares?: boolean
@@ -284,10 +284,10 @@ export namespace ScopedMiddlewares {
  */
 export function extractRouterMeta(target: ClassType | Function, appClass?: ClassType): RouterMeta | undefined {
 	const appMeta: Pick<RouterMeta, 'scopedMiddlewares'> | undefined = appClass
-		? Reflect.getOwnMetadata(META, (appClass as Function).prototype)
+		? Reflect.getOwnMetadata(METAKEY_ROUTER, (appClass as Function).prototype)
 		: undefined
 
-	const routerMeta: RouterMeta | undefined = Reflect.getOwnMetadata(META, target.prototype)
+	const routerMeta: RouterMeta | undefined = Reflect.getOwnMetadata(METAKEY_ROUTER, target.prototype)
 
 	if (!appMeta || !routerMeta) {
 		return routerMeta
@@ -305,5 +305,5 @@ export function extractRouterMeta(target: ClassType | Function, appClass?: Class
  */
 function defineRouterMeta(routerMeta: RouterMeta, target: ClassType | Function): void {
 	// Attached to the prototype, because the constructor might be replaced with a proxy.
-	Reflect.defineMetadata(META, routerMeta, target.prototype)
+	Reflect.defineMetadata(METAKEY_ROUTER, routerMeta, target.prototype)
 }

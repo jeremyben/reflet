@@ -1,6 +1,6 @@
 import { ClassOrMethodDecorator, ClassType, Handler } from './interfaces'
 
-const META = Symbol('use')
+const METAKEY_USE = Symbol('use')
 
 /**
  * Applies middlewares on a single route when applied to a method, or on multipe routes when applied to a class.
@@ -31,15 +31,15 @@ export function Use<Req extends {}>(...middlewares: Handler<Req>[]): Use.Decorat
 	return (target, key, descriptor) => {
 		// Method middleware
 		if (key) {
-			const existingMiddlewares = Reflect.getOwnMetadata(META, target, key) || []
+			const existingMiddlewares = Reflect.getOwnMetadata(METAKEY_USE, target, key) || []
 			// prepend
-			Reflect.defineMetadata(META, middlewares.concat(existingMiddlewares), target, key)
+			Reflect.defineMetadata(METAKEY_USE, middlewares.concat(existingMiddlewares), target, key)
 		}
 		// Class middleware
 		else {
-			const existingMiddlewares = Reflect.getOwnMetadata(META, (target as Function).prototype) || []
+			const existingMiddlewares = Reflect.getOwnMetadata(METAKEY_USE, (target as Function).prototype) || []
 			// prepend
-			Reflect.defineMetadata(META, middlewares.concat(existingMiddlewares), (target as Function).prototype)
+			Reflect.defineMetadata(METAKEY_USE, middlewares.concat(existingMiddlewares), (target as Function).prototype)
 		}
 	}
 }
@@ -57,7 +57,7 @@ export namespace Use {
  */
 export function extractMiddlewares(target: ClassType | Function, key?: string | symbol): Handler[] {
 	// Method middlewares
-	if (key) return Reflect.getOwnMetadata(META, target.prototype, key) || []
+	if (key) return Reflect.getOwnMetadata(METAKEY_USE, target.prototype, key) || []
 	// Class middlewares
-	return Reflect.getOwnMetadata(META, target.prototype) || []
+	return Reflect.getOwnMetadata(METAKEY_USE, target.prototype) || []
 }

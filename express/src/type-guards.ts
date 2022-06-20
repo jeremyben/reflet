@@ -33,7 +33,7 @@ export function isClass(obj: object): obj is ClassType {
 
 /**
  * Checks if given object is a Readable Stream or Readable Stream-like.
- * @see https://nodejs.org/api/stream.html#stream_class_stream_readable
+ * @see https://nodejs.org/api/stream.html#class-streamreadable
  * @internal
  */
 export function isReadableStream(obj: any): obj is Readable {
@@ -49,7 +49,7 @@ export function isReadableStream(obj: any): obj is Readable {
 
 /**
  * Checks if given object is a Writable Stream or Writable Stream-like.
- * @see https://nodejs.org/api/stream.html#stream_class_stream_writable
+ * @see https://nodejs.org/api/stream.html#class-streamwritable
  * @internal
  */
 export function isWritableStream(obj: any): obj is Writable {

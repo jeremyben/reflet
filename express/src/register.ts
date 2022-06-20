@@ -4,7 +4,7 @@ import { ClassType, Registration } from './interfaces'
 import { isPromise, isClass, isExpressApp, isExpressRouter, isAsyncFunction } from './type-guards'
 
 // Extractors
-import { DYNAMIC_PATH, extractRouterMeta } from './router-decorator'
+import { DYNAMIC_PATH, extractRouterMeta, RouterMeta } from './router-decorator'
 import { extractRoutes } from './route-decorators'
 import { extractMiddlewares } from './middleware-decorator'
 import { extractErrorHandlers } from './error-handler-decorator'
@@ -249,11 +249,7 @@ function isPathRouterTuple(registration: object): registration is [path: string 
 /**
  * @internal
  */
-function checkPathConstraint(
-	constrainedPath: string | RegExp | null,
-	router: Exclude<ReturnType<typeof extractRouterMeta>, undefined>,
-	routerClass: ClassType
-) {
+function checkPathConstraint(constrainedPath: string | RegExp | null, router: RouterMeta, routerClass: ClassType) {
 	if (router.path === DYNAMIC_PATH) {
 		if (constrainedPath === null) {
 			throw new RefletExpressError(

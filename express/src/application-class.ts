@@ -11,7 +11,7 @@ export type ApplicationMeta = {
 	registered: boolean
 }
 
-const META = Symbol('application')
+const METAKEY_APPLICATION = Symbol('application')
 
 export interface Application extends express.Application {}
 
@@ -57,7 +57,7 @@ export class Application {
 			class: this.constructor as ClassType,
 			registered: false,
 		}
-		Reflect.defineMetadata(META, metadata, app)
+		Reflect.defineMetadata(METAKEY_APPLICATION, metadata, app)
 
 		return app as unknown as this
 	}
@@ -105,5 +105,5 @@ function mixinApplication(target: express.Application, source: Function) {
  * @internal
  */
 export function extractApplicationClass(target: object): ApplicationMeta | undefined {
-	return Reflect.getMetadata(META, target)
+	return Reflect.getMetadata(METAKEY_APPLICATION, target)
 }
