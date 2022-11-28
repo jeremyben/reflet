@@ -1,6 +1,6 @@
 import { request, IncomingMessage } from 'http'
 import * as express from 'express'
-import { HttpError, Status } from '../src'
+import { defineCustomErrors, HttpError, Status } from '../src'
 
 test('name', () => {
 	const teapot = HttpError(Status.Error.ImATeapot)
@@ -13,12 +13,25 @@ test('name', () => {
 
 test('inheritance', () => {
 	const unauthorized: HttpError<401> = HttpError.Unauthorized('Get out')
-	const forbidden: HttpError.Forbidden = new HttpError(403, 'Wrong door')
+	const forbidden: HttpError<403> = new HttpError(403, 'Wrong door')
 
 	expect(unauthorized).toBeInstanceOf(HttpError)
 	expect(unauthorized).toBeInstanceOf(Error)
 	expect(forbidden).toBeInstanceOf(HttpError)
 	expect(forbidden).toBeInstanceOf(Error)
+})
+
+test('static methods', () => {
+	const generic = new Error('generic') as any
+	generic.statusCode = 400
+
+	expect(HttpError.isInstance(generic, [400, 405])).toBe(false)
+
+	const forbidden = new HttpError(403)
+	expect(HttpError.isInstance(forbidden, 403)).toBe(true)
+
+	const status = HttpError.getStatus({}, generic, { status: 200 })
+	expect(status).toBe(400)
 })
 
 test('remove call from stack trace', function checkStack() {
@@ -32,9 +45,10 @@ test('remove call from stack trace', function checkStack() {
 	expect(linesFromCall[1]).toContain(checkStack.name)
 })
 
-test('custom data', () => {
-	const params: HttpError.BadRequest.Parameter = { message: { foo: 'bar' }, code: 1 }
+test('custom params', () => {
+	const params: HttpError.Param<400> = { message: { foo: 'bar' }, code: 1 }
 	const err = HttpError.BadRequest(params)
+
 	expect(err.message).toBe('{"foo":"bar"}')
 	expect(err.code).toBe(1)
 })
@@ -45,7 +59,7 @@ test('enumerability', () => {
 	const props = Object.getOwnPropertyNames(err).reduce((acc, prop) => {
 		;(acc as any)[prop] = Object.getOwnPropertyDescriptor(err, prop)
 		return acc
-	}, <Record<keyof HttpError.BadRequest, PropertyDescriptor>>{})
+	}, <Record<keyof HttpError<400>, PropertyDescriptor>>{})
 
 	expect(props.name.enumerable).toBe(false)
 	expect(props.message.enumerable).toBe(false)
@@ -53,6 +67,19 @@ test('enumerability', () => {
 	expect(props.status.enumerable).toBe(true)
 
 	expect(JSON.parse(JSON.stringify(err))).toStrictEqual({ status: 400 })
+})
+
+test('custom errors', () => {
+	defineCustomErrors({ 299: 'Aborted', 420: 'EnhanceYourCalm' })
+
+	const e420 = HttpError.EnhanceYourCalm('foo')
+	expect(e420.name).toBe('EnhanceYourCalm')
+	expect(e420.status).toBe(420)
+
+	const e299 = new HttpError(299, { data: 'bar' })
+	expect(e299.name).toBe('Aborted')
+	expect(e299.status).toBe(299)
+	expect(e299.data).toBe('bar')
 })
 
 test('express default error handling', (done) => {
@@ -81,27 +108,29 @@ test('express default error handling', (done) => {
 declare global {
 	namespace RefletHttp {
 		interface ErrorConstraint {
-			status: number
-			// constructor: false
+			status: 299 | 420 | 400 | 401 | 403 | 405 | 418 | 500
 		}
 
-		interface Errors {
-			420: EnhanceYourCalm
+		interface CustomErrors {
+			299: 'Aborted'
+			420: 'EnhanceYourCalm'
 		}
 
-		interface EnhanceYourCalm {}
-
-		interface BadRequest {
-			/** comment */
-			message: { foo: string }
-			code?: number
-		}
-
-		interface MethodNotAllowed {
-			message?: string
-			headers: {
-				allow: ('GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE')[]
+		interface ErrorParams {
+			400: {
+				/** test comment */
+				message: { foo: string }
+				code?: number
 			}
+
+			405: {
+				message?: string
+				headers: {
+					allow: ('GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE')[]
+				}
+			}
+
+			299: { data: string }
 		}
 	}
 }

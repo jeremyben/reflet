@@ -6,7 +6,7 @@ Built with a simple and discoverable API surface, for a great developper experie
 * [Getting started](#getting-started)
 * [Status 🎰](#status-)
 * [Header 📰](#header-)
-* [Error 💢](#error-)
+* [HttpError 💢](#httperror-)
 
 ## Getting started
 
@@ -31,17 +31,19 @@ res.sendStatus(Status.Created)
 
 ### Enums
 
-`Status` enum is composed of the following exported enums:
+`Status` enum has every status and also the following sub enums:
 
-- `InformationStatus` for **1xx** responses.
-- `SuccessStatus` for **2xx** responses.
-- `RedirectionStatus` for **3xx** responses.
-- `ErrorStatus` for **4xx** and **5xx** responses.
+- `Information` for **1xx** responses.
+- `Success` for **2xx** responses.
+- `Redirection` for **3xx** responses.
+- `ClientError` for **4xx** responses.
+- `ServerError` for **5xx** responses.
+- `Error` for **4xx** and **5xx** responses.
 
 ```ts
-import { ErrorStatus, HttpError } from '@reflet/http'
+import { Status, HttpError } from '@reflet/http'
 
-throw HttpError(ErrorStatus.Forbidden)
+throw HttpError(Status.ClientError.Forbidden)
 ```
 
 _These enums are actually object litterals with a `const` assertion.`_
@@ -51,9 +53,9 @@ _These enums are actually object litterals with a `const` assertion.`_
 When use as a type, each category is a union of corresponding status codes.
 
 ```ts
-import { RedirectionStatus } from '@reflet/http'
+import { Status } from '@reflet/http'
 
-function redirect(status: RedirectionStatus, url: string) {
+function redirect(status: Status.Redirection, url: string) {
   // ...
 }
 ```
@@ -115,7 +117,7 @@ declare global {
 }
 ```
 
-## Error 💢
+## HttpError 💢
 
 ### Usage
 
@@ -204,9 +206,7 @@ Every known HTTP error is available for augmentation under its own name: [List o
 
 #### Constraints
 
-With the `ErrorConstraint` interface, you can:
-
-- Whitelist the errors you application uses.
+With the `ErrorConstraint` interface, you can whitelist the errors you application uses.
 
 ```ts
 declare global {
@@ -217,21 +217,6 @@ declare global {
     }
   }
 }
-```
-
-- Force usage of static methods.
-
-```ts
-declare global {
-  namespace RefletHttp {
-    interface ErrorConstraint {
-      constructor: false
-    }
-  }
-}
-
-HttpError(400) // Compile time error
-HttpError.BadRequest() // Ok
 ```
 
 #### `message` property stringification

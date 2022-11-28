@@ -1,8 +1,64 @@
 /**
+ * @public
+ */
+const OriginalErrors = <const>{
+	// Client errors
+	400: 'BadRequest',
+	401: 'Unauthorized',
+	402: 'PaymentRequired',
+	403: 'Forbidden',
+	404: 'NotFound',
+	405: 'MethodNotAllowed',
+	406: 'NotAcceptable',
+	407: 'ProxyAuthenticationRequired',
+	408: 'RequestTimeout',
+	409: 'Conflict',
+	410: 'Gone',
+	411: 'LengthRequired',
+	412: 'PreconditionFailed',
+	413: 'PayloadTooLarge',
+	414: 'URITooLong',
+	415: 'UnsupportedMediaType',
+	416: 'RequestedRangeNotSatisfiable',
+	417: 'ExpectationFailed',
+	418: 'ImATeapot',
+	421: 'MisdirectedRequest',
+	422: 'UnprocessableEntity',
+	423: 'Locked',
+	424: 'FailedDependency',
+	425: 'UnorderedCollection',
+	426: 'UpgradeRequired',
+	428: 'PreconditionRequired',
+	429: 'TooManyRequests',
+	431: 'RequestHeaderFieldsTooLarge',
+	451: 'UnavailableForLegalReasons',
+
+	// Server errors
+	500: 'InternalServerError',
+	501: 'NotImplemented',
+	502: 'BadGateway',
+	503: 'ServiceUnavailable',
+	504: 'GatewayTimeout',
+	505: 'HTTPVersionNotSupported',
+	506: 'VariantAlsoNegotiates',
+	507: 'InsufficientStorage',
+	508: 'LoopDetected',
+	510: 'NotExtended',
+	511: 'NetworkAuthenticationRequired',
+}
+
+type OriginalErrors = typeof OriginalErrors
+
+/**
+ * @public
+ */
+const protectedProperties = ['__proto__', 'constructor', 'prototype', 'name', 'status', 'stack']
+
+/**
  * HTTP centric error inherited from the native Error constructor.
  * @public
  */
-class HttpError<S extends _HttpError.Status | OriginalErrorStatus> extends Error {
+class HttpError<S extends _HttpError.Status> extends Error {
 	/**
 	 * HTTP status code.
 	 */
@@ -12,17 +68,21 @@ class HttpError<S extends _HttpError.Status | OriginalErrorStatus> extends Error
 	 * Name inferred from status code.
 	 * https://www.w3.org/Protocols/rfc2616/rfc2616-sec6.html#sec6.1.1
 	 */
-	readonly name: S extends OriginalErrorStatus ? typeof HttpError.names[S] : 'HttpError'
+	readonly name: S extends keyof OriginalErrors
+		? OriginalErrors[S]
+		: S extends keyof RefletHttp.CustomErrors
+		? RefletHttp.CustomErrors[S]
+		: 'HttpError'
 
 	constructor(
 		// Only way to make an argument either required or optional without overloading (which does not work properly without `new` keyword)
-		...args: keyof RefletHttp.Errors[S] extends undefined
+		...args: keyof RefletHttp.ErrorParams[S] extends undefined
 			? [status: S, message?: string]
-			: [status: S, data: RefletHttp.Errors[S]]
+			: [status: S, data: RefletHttp.ErrorParams[S]]
 	) {
 		super(typeof args[1] === 'string' ? args[1] : '')
 
-		this.name = (<any>HttpError.names)[args[0]] || this.constructor.name
+		this.name = (<any>OriginalErrors)[args[0]] || this.constructor.name
 		Object.defineProperty(this, 'name', { enumerable: false }) // keep the original configuration of Error.
 
 		this.status = args[0]
@@ -32,8 +92,13 @@ class HttpError<S extends _HttpError.Status | OriginalErrorStatus> extends Error
 			const data: Record<string, any> = args[1]
 
 			for (const key in data) {
+				if (!Object.prototype.hasOwnProperty.call(data, key)) continue
+
 				// Prevent prototype pollution or overwriting important properties.
-				if (!data.hasOwnProperty(key) || protectedProperties.includes(<any>key)) {
+				if (protectedProperties.includes(key)) {
+					console.warn(
+						`RefletHttpWarning: [HttpError] "${key}" from params of the ${this.status} error is a protected property and cannot be applied.`
+					)
 					continue
 				}
 
@@ -44,7 +109,7 @@ class HttpError<S extends _HttpError.Status | OriginalErrorStatus> extends Error
 
 					super.message = message // attach to parent to keep message non-enumerable.
 				} else {
-					this[key as 'toString'] = data[key]
+					this[<keyof this>key] = data[key]
 				}
 			}
 		}
@@ -75,12 +140,43 @@ class HttpError<S extends _HttpError.Status | OriginalErrorStatus> extends Error
 	/**
 	 * Type guard to ensure the error object is an instance of HttpError and has specific status.
 	 */
-	static is<S extends _HttpError.Status>(error: unknown, status?: S): error is _HttpError<S> {
-		if (status != null) {
-			return error instanceof HttpError && error.status === status
+	static isInstance<S extends _HttpError.Status>(err: unknown, status?: S | S[]): err is _HttpError<S> {
+		if (status == null) {
+			return err instanceof HttpError
 		}
 
-		return error instanceof HttpError
+		if (Array.isArray(status)) {
+			return err instanceof HttpError && status.some((s) => err.status === s)
+		}
+
+		return err instanceof HttpError && err.status === status
+	}
+
+	/**
+	 * Retrieves error status code from generic objects if any has one between 400 and 599.
+	 * Looks for `status` or `statusCode` property.
+	 *
+	 * Useful to get status code from either error object or response object:
+	 * ```ts
+	 * const statusCode = HttpError.getStatus(err, res) || 500
+	 * ```
+	 */
+	static getStatus(...objs: unknown[]): number | undefined {
+		for (const obj of objs as any[]) {
+			if (!obj || typeof obj !== 'object') {
+				continue
+			}
+
+			if (typeof obj.status === 'number' && obj.status >= 400 && obj.status < 600) {
+				return obj.status
+			}
+
+			if (typeof obj.statusCode === 'number' && obj.statusCode >= 400 && obj.statusCode < 600) {
+				return obj.statusCode
+			}
+		}
+
+		return undefined
 	}
 
 	// static [Symbol.hasInstance](obj: any) {
@@ -90,460 +186,450 @@ class HttpError<S extends _HttpError.Status | OriginalErrorStatus> extends Error
 	// 	return false
 	// }
 
-	static names = {
-		// Client errors
-		400: <const>'BadRequest',
-		401: <const>'Unauthorized',
-		402: <const>'PaymentRequired',
-		403: <const>'Forbidden',
-		404: <const>'NotFound',
-		405: <const>'MethodNotAllowed',
-		406: <const>'NotAcceptable',
-		407: <const>'ProxyAuthenticationRequired',
-		408: <const>'RequestTimeout',
-		409: <const>'Conflict',
-		410: <const>'Gone',
-		411: <const>'LengthRequired',
-		412: <const>'PreconditionFailed',
-		413: <const>'PayloadTooLarge',
-		414: <const>'URITooLong',
-		415: <const>'UnsupportedMediaType',
-		416: <const>'RequestedRangeNotSatisfiable',
-		417: <const>'ExpectationFailed',
-		418: <const>'ImATeapot',
-		421: <const>'MisdirectedRequest',
-		422: <const>'UnprocessableEntity',
-		423: <const>'Locked',
-		424: <const>'FailedDependency',
-		425: <const>'UnorderedCollection',
-		426: <const>'UpgradeRequired',
-		428: <const>'PreconditionRequired',
-		429: <const>'TooManyRequests',
-		431: <const>'RequestHeaderFieldsTooLarge',
-		451: <const>'UnavailableForLegalReasons',
-
-		// Server errors
-		500: <const>'InternalServerError',
-		501: <const>'NotImplemented',
-		502: <const>'BadGateway',
-		503: <const>'ServiceUnavailable',
-		504: <const>'GatewayTimeout',
-		505: <const>'HTTPVersionNotSupported',
-		506: <const>'VariantAlsoNegotiates',
-		507: <const>'InsufficientStorage',
-		508: <const>'LoopDetected',
-		510: <const>'NotExtended',
-		511: <const>'NetworkAuthenticationRequired',
-	}
-
 	/**
 	 * `400`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
 	 */
-	static BadRequest(...args: ErrorParams<400>) {
+	// @ts-ignore
+	static BadRequest(...args: ErrParams<400>): _HttpError<400> {
 		const error = new (HttpError as any)(400, args[0], Caller.Direct)
-		return error as _HttpError<400>
+		return error
 	}
 
 	/**
 	 * `401`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
 	 */
-	static Unauthorized(...args: ErrorParams<401>) {
+	// @ts-ignore
+	static Unauthorized(...args: ErrParams<401>): _HttpError<401> {
 		const error = new (HttpError as any)(401, args[0], Caller.Direct)
-		return error as _HttpError<401>
+		return error
 	}
 
 	/**
 	 * `402`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/402
 	 */
-	static PaymentRequired(...args: ErrorParams<402>) {
+	// @ts-ignore
+	static PaymentRequired(...args: ErrParams<402>): _HttpError<402> {
 		const error = new (HttpError as any)(402, args[0], Caller.Direct)
-		return error as _HttpError<402>
+		return error
 	}
 
 	/**
 	 * `403`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403
 	 */
-	static Forbidden(...args: ErrorParams<403>) {
+	// @ts-ignore
+	static Forbidden(...args: ErrParams<403>): _HttpError<403> {
 		const error = new (HttpError as any)(403, args[0], Caller.Direct)
-		return error as _HttpError<403>
+		return error
 	}
 
 	/**
 	 * `404`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404
 	 */
-	static NotFound(...args: ErrorParams<404>) {
+	// @ts-ignore
+	static NotFound(...args: ErrParams<404>): _HttpError<404> {
 		const error = new (HttpError as any)(404, args[0], Caller.Direct)
-		return error as _HttpError<404>
+		return error
 	}
 
 	/**
 	 * `405`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/405
 	 */
-	static MethodNotAllowed(...args: ErrorParams<405>) {
+	// @ts-ignore
+	static MethodNotAllowed(...args: ErrParams<405>): _HttpError<405> {
 		const error = new (HttpError as any)(405, args[0], Caller.Direct)
-		return error as _HttpError<405>
+		return error
 	}
 
 	/**
 	 * `406`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/406
 	 */
-	static NotAcceptable(...args: ErrorParams<406>) {
+	// @ts-ignore
+	static NotAcceptable(...args: ErrParams<406>): _HttpError<406> {
 		const error = new (HttpError as any)(406, args[0], Caller.Direct)
-		return error as _HttpError<406>
+		return error
 	}
 
 	/**
 	 * `407`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/407
 	 */
-	static ProxyAuthenticationRequired(...args: ErrorParams<407>) {
+	// @ts-ignore
+	static ProxyAuthenticationRequired(...args: ErrParams<407>): _HttpError<407> {
 		const error = new (HttpError as any)(407, args[0], Caller.Direct)
-		return error as _HttpError<407>
+		return error
 	}
 
 	/**
 	 * `408`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/408
 	 */
-	static RequestTimeout(...args: ErrorParams<408>) {
+	// @ts-ignore
+	static RequestTimeout(...args: ErrParams<408>): _HttpError<408> {
 		const error = new (HttpError as any)(408, args[0], Caller.Direct)
-		return error as _HttpError<408>
+		return error
 	}
 
 	/**
 	 * `409`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/409
 	 */
-	static Conflict(...args: ErrorParams<409>) {
+	// @ts-ignore
+	static Conflict(...args: ErrParams<409>): _HttpError<409> {
 		const error = new (HttpError as any)(409, args[0], Caller.Direct)
-		return error as _HttpError<409>
+		return error
 	}
 
 	/**
 	 * `410`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/410
 	 */
-	static Gone(...args: ErrorParams<410>) {
+	// @ts-ignore
+	static Gone(...args: ErrParams<410>): _HttpError<410> {
 		const error = new (HttpError as any)(410, args[0], Caller.Direct)
-		return error as _HttpError<410>
+		return error
 	}
 
 	/**
 	 * `411`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/411
 	 */
-	static LengthRequired(...args: ErrorParams<411>) {
+	// @ts-ignore
+	static LengthRequired(...args: ErrParams<411>): _HttpError<411> {
 		const error = new (HttpError as any)(411, args[0], Caller.Direct)
-		return error as _HttpError<411>
+		return error
 	}
 
 	/**
 	 * `412`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/412
 	 */
-	static PreconditionFailed(...args: ErrorParams<412>) {
+	// @ts-ignore
+	static PreconditionFailed(...args: ErrParams<412>): _HttpError<412> {
 		const error = new (HttpError as any)(412, args[0], Caller.Direct)
-		return error as _HttpError<412>
+		return error
 	}
 
 	/**
 	 * `413`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413
 	 */
-	static PayloadTooLarge(...args: ErrorParams<413>) {
+	// @ts-ignore
+	static PayloadTooLarge(...args: ErrParams<413>): _HttpError<413> {
 		const error = new (HttpError as any)(413, args[0], Caller.Direct)
-		return error as _HttpError<413>
+		return error
 	}
 
 	/**
 	 * `414`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/414
 	 */
-	static URITooLong(...args: ErrorParams<414>) {
+	// @ts-ignore
+	static URITooLong(...args: ErrParams<414>): _HttpError<414> {
 		const error = new (HttpError as any)(414, args[0], Caller.Direct)
-		return error as _HttpError<414>
+		return error
 	}
 
 	/**
 	 * `415`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/415
 	 */
-	static UnsupportedMediaType(...args: ErrorParams<415>) {
+	// @ts-ignore
+	static UnsupportedMediaType(...args: ErrParams<415>): _HttpError<415> {
 		const error = new (HttpError as any)(415, args[0], Caller.Direct)
-		return error as _HttpError<415>
+		return error
 	}
 
 	/**
 	 * `416`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/416
 	 */
-	static RequestedRangeNotSatisfiable(...args: ErrorParams<416>) {
+	// @ts-ignore
+	static RequestedRangeNotSatisfiable(...args: ErrParams<416>): _HttpError<416> {
 		const error = new (HttpError as any)(416, args[0], Caller.Direct)
-		return error as _HttpError<416>
+		return error
 	}
 
 	/**
 	 * `417`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/417
 	 */
-	static ExpectationFailed(...args: ErrorParams<417>) {
+	// @ts-ignore
+	static ExpectationFailed(...args: ErrParams<417>): _HttpError<417> {
 		const error = new (HttpError as any)(417, args[0], Caller.Direct)
-		return error as _HttpError<417>
+		return error
 	}
 
 	/**
 	 * `418`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418
 	 */
-	static ImATeapot(...args: ErrorParams<418>) {
+	// @ts-ignore
+	static ImATeapot(...args: ErrParams<418>): _HttpError<418> {
 		const error = new (HttpError as any)(418, args[0], Caller.Direct)
-		return error as _HttpError<418>
+		return error
 	}
 
 	/**
 	 * `421`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/421
 	 */
-	static MisdirectedRequest(...args: ErrorParams<421>) {
+	// @ts-ignore
+	static MisdirectedRequest(...args: ErrParams<421>): _HttpError<421> {
 		const error = new (HttpError as any)(421, args[0], Caller.Direct)
-		return error as _HttpError<421>
+		return error
 	}
 
 	/**
 	 * `422`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/422
 	 */
-	static UnprocessableEntity(...args: ErrorParams<422>) {
+	// @ts-ignore
+	static UnprocessableEntity(...args: ErrParams<422>): _HttpError<422> {
 		const error = new (HttpError as any)(422, args[0], Caller.Direct)
-		return error as _HttpError<422>
+		return error
 	}
 
 	/**
 	 * `423`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/423
 	 */
-	static Locked(...args: ErrorParams<423>) {
+	// @ts-ignore
+	static Locked(...args: ErrParams<423>): _HttpError<423> {
 		const error = new (HttpError as any)(423, args[0], Caller.Direct)
-		return error as _HttpError<423>
+		return error
 	}
 
 	/**
 	 * `424`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/424
 	 */
-	static FailedDependency(...args: ErrorParams<424>) {
+	// @ts-ignore
+	static FailedDependency(...args: ErrParams<424>): _HttpError<424> {
 		const error = new (HttpError as any)(424, args[0], Caller.Direct)
-		return error as _HttpError<424>
+		return error
 	}
 
 	/**
 	 * `425`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/425
 	 */
-	static UnorderedCollection(...args: ErrorParams<425>) {
+	// @ts-ignore
+	static UnorderedCollection(...args: ErrParams<425>): _HttpError<425> {
 		const error = new (HttpError as any)(425, args[0], Caller.Direct)
-		return error as _HttpError<425>
+		return error
 	}
 
 	/**
 	 * `426`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/426
 	 */
-	static UpgradeRequired(...args: ErrorParams<426>) {
+	// @ts-ignore
+	static UpgradeRequired(...args: ErrParams<426>): _HttpError<426> {
 		const error = new (HttpError as any)(426, args[0], Caller.Direct)
-		return error as _HttpError<426>
+		return error
 	}
 
 	/**
 	 * `428`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/428
 	 */
-	static PreconditionRequired(...args: ErrorParams<428>) {
+	// @ts-ignore
+	static PreconditionRequired(...args: ErrParams<428>): _HttpError<428> {
 		const error = new (HttpError as any)(428, args[0], Caller.Direct)
-		return error as _HttpError<428>
+		return error
 	}
 
 	/**
 	 * `429`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429
 	 */
-	static TooManyRequests(...args: ErrorParams<429>) {
+	// @ts-ignore
+	static TooManyRequests(...args: ErrParams<429>): _HttpError<429> {
 		const error = new (HttpError as any)(429, args[0], Caller.Direct)
-		return error as _HttpError<429>
+		return error
 	}
 
 	/**
 	 * `431`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/431
 	 */
-	static RequestHeaderFieldsTooLarge(...args: ErrorParams<431>) {
+	// @ts-ignore
+	static RequestHeaderFieldsTooLarge(...args: ErrParams<431>): _HttpError<431> {
 		const error = new (HttpError as any)(431, args[0], Caller.Direct)
-		return error as _HttpError<431>
+		return error
 	}
 
 	/**
 	 * `451`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/451
 	 */
-	static UnavailableForLegalReasons(...args: ErrorParams<451>) {
+	// @ts-ignore
+	static UnavailableForLegalReasons(...args: ErrParams<451>): _HttpError<451> {
 		const error = new (HttpError as any)(451, args[0], Caller.Direct)
-		return error as _HttpError<451>
+		return error
 	}
 
 	/**
 	 * `500`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
 	 */
-	static InternalServerError(...args: ErrorParams<500>) {
+	// @ts-ignore
+	static InternalServerError(...args: ErrParams<500>): _HttpError<500> {
 		const error = new (HttpError as any)(500, args[0], Caller.Direct)
-		return error as _HttpError<500>
+		return error
 	}
 
 	/**
 	 * `501`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/501
 	 */
-	static NotImplemented(...args: ErrorParams<501>) {
+	// @ts-ignore
+	static NotImplemented(...args: ErrParams<501>): _HttpError<501> {
 		const error = new (HttpError as any)(501, args[0], Caller.Direct)
-		return error as _HttpError<501>
+		return error
 	}
 
 	/**
 	 * `502`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/502
 	 */
-	static BadGateway(...args: ErrorParams<502>) {
+	// @ts-ignore
+	static BadGateway(...args: ErrParams<502>): _HttpError<502> {
 		const error = new (HttpError as any)(502, args[0], Caller.Direct)
-		return error as _HttpError<502>
+		return error
 	}
 
 	/**
 	 * `503`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503
 	 */
-	static ServiceUnavailable(...args: ErrorParams<503>) {
+	// @ts-ignore
+	static ServiceUnavailable(...args: ErrParams<503>): _HttpError<503> {
 		const error = new (HttpError as any)(503, args[0], Caller.Direct)
-		return error as _HttpError<503>
+		return error
 	}
 
 	/**
 	 * `504`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
 	 */
-	static GatewayTimeout(...args: ErrorParams<504>) {
+	// @ts-ignore
+	static GatewayTimeout(...args: ErrParams<504>): _HttpError<504> {
 		const error = new (HttpError as any)(504, args[0], Caller.Direct)
-		return error as _HttpError<504>
+		return error
 	}
 
 	/**
 	 * `505`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/505
 	 */
-	static HTTPVersionNotSupported(...args: ErrorParams<505>) {
+	// @ts-ignore
+	static HTTPVersionNotSupported(...args: ErrParams<505>): _HttpError<505> {
 		const error = new (HttpError as any)(505, args[0], Caller.Direct)
-		return error as _HttpError<505>
+		return error
 	}
 
 	/**
 	 * `506`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/506
 	 */
-	static VariantAlsoNegotiates(...args: ErrorParams<506>) {
+	// @ts-ignore
+	static VariantAlsoNegotiates(...args: ErrParams<506>): _HttpError<506> {
 		const error = new (HttpError as any)(506, args[0], Caller.Direct)
-		return error as _HttpError<506>
+		return error
 	}
 
 	/**
 	 * `507`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/507
 	 */
-	static InsufficientStorage(...args: ErrorParams<507>) {
+	// @ts-ignore
+	static InsufficientStorage(...args: ErrParams<507>): _HttpError<507> {
 		const error = new (HttpError as any)(507, args[0], Caller.Direct)
-		return error as _HttpError<507>
+		return error
 	}
 
 	/**
 	 * `508`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/508
 	 */
-	static LoopDetected(...args: ErrorParams<508>) {
+	// @ts-ignore
+	static LoopDetected(...args: ErrParams<508>): _HttpError<508> {
 		const error = new (HttpError as any)(508, args[0], Caller.Direct)
-		return error as _HttpError<508>
+		return error
 	}
 
 	/**
 	 * `510`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/510
 	 */
-	static NotExtended(...args: ErrorParams<510>) {
+	// @ts-ignore
+	static NotExtended(...args: ErrParams<510>): _HttpError<510> {
 		const error = new (HttpError as any)(510, args[0], Caller.Direct)
-		return error as _HttpError<510>
+		return error
 	}
 
 	/**
 	 * `511`
 	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/511
 	 */
-	static NetworkAuthenticationRequired(...args: ErrorParams<511>) {
+	// @ts-ignore
+	static NetworkAuthenticationRequired(...args: ErrParams<511>): _HttpError<511> {
 		const error = new (HttpError as any)(511, args[0], Caller.Direct)
-		return error as _HttpError<511>
+		return error
 	}
 }
 
 /**
  * @public
  */
-const protectedProperties = <const>['__proto__', 'constructor', 'prototype', 'name', 'status', 'stack']
+type ErrParams<S extends _HttpError.Status> = keyof RefletHttp.ErrorParams[S] extends undefined
+	? [message?: string]
+	: [data: RefletHttp.ErrorParams[S]]
 
 /**
  * @public
  */
-type OriginalErrorStatus = keyof typeof HttpError.names
+type StaticCustomErrors = {
+	[K in RefletHttp.CustomErrors[keyof RefletHttp.CustomErrors]]: (
+		...args: ErrParams<CustomStatus<K>>
+	) => _HttpError<CustomStatus<K>>
+}
 
 /**
  * @public
  */
-interface HttpErrorStatic extends Pick<typeof HttpError, _HttpError.Name | keyof typeof Error | 'is' | 'names'> {}
+type CustomStatus<V extends RefletHttp.CustomErrors[keyof RefletHttp.CustomErrors]> = {
+	[K in keyof RefletHttp.CustomErrors]: RefletHttp.CustomErrors[K] extends V ? K : never
+}[keyof RefletHttp.CustomErrors]
 
 /**
  * @public
  */
-interface HttpErrorConstructor {
+interface HttpErrorConstructor
+	extends Pick<
+		typeof HttpError & StaticCustomErrors,
+		_HttpError.Name | keyof typeof Error | 'isInstance' | 'getStatus'
+	> {
 	new <S extends _HttpError.Status>(
-		...args: keyof RefletHttp.Errors[S] extends undefined
+		...args: keyof RefletHttp.ErrorParams[S] extends undefined
 			? [status: S, message?: string]
-			: [status: S, data: RefletHttp.Errors[S]]
+			: [status: S, data: RefletHttp.ErrorParams[S]]
 	): _HttpError<S>
 
 	<S extends _HttpError.Status>(
-		...args: keyof RefletHttp.Errors[S] extends undefined
+		...args: keyof RefletHttp.ErrorParams[S] extends undefined
 			? [status: S, message?: string]
-			: [status: S, data: RefletHttp.Errors[S]]
+			: [status: S, data: RefletHttp.ErrorParams[S]]
 	): _HttpError<S>
 }
-
-/**
- * @public
- */
-type ErrorParams<S extends _HttpError.Status | OriginalErrorStatus> = keyof RefletHttp.Errors[S] extends undefined
-	? [message?: string]
-	: [data: RefletHttp.Errors[S]]
-
-/**
- * @public
- */
-type Augmented<S extends _HttpError.Status | OriginalErrorStatus> = RefletHttp.Errors[S] extends {
-	message?: any
-}
-	? Omit<RefletHttp.Errors[S], 'message'>
-	: RefletHttp.Errors[S]
 
 /**
  * @internal
@@ -584,392 +670,30 @@ const proxyHandler: ProxyHandler<new (...args: any[]) => any> = {
  * @class
  * @public
  */
-const _HttpError: RefletHttp.ErrorConstraint extends { constructor: false }
-	? HttpErrorStatic
-	: HttpErrorConstructor & HttpErrorStatic = new Proxy<any>(HttpError, proxyHandler)
+const _HttpError: HttpErrorConstructor = new Proxy<any>(HttpError, proxyHandler)
 
-type _HttpError<S extends _HttpError.Status> = HttpError<S> & Augmented<S>
+type _HttpError<S extends _HttpError.Status> = HttpError<S> & Omit<RefletHttp.ErrorParams[S], 'message'>
 
 namespace _HttpError {
 	/**
 	 * Available status codes.
 	 */
-	export type Status = RefletHttp.ErrorConstraint extends { status: infer S }
-		? S extends number
-			? S
-			: never
-		: OriginalErrorStatus
+	export type Status = RefletHttp.ErrorConstraint extends { status: infer S extends number }
+		? S
+		: keyof OriginalErrors | keyof RefletHttp.CustomErrors
 
 	/**
 	 * Available error names.
 	 */
-	export type Name = typeof HttpError.names[Extract<OriginalErrorStatus, _HttpError.Status>]
+	export type Name =
+		| OriginalErrors[Extract<keyof OriginalErrors, _HttpError.Status>]
+		| RefletHttp.CustomErrors[Extract<keyof RefletHttp.CustomErrors, _HttpError.Status>]
 
 	/**
 	 * Parameter for a specific error status.
 	 * _Useful if the error interface has been augmented._
 	 */
-	export type Parameter<S extends _HttpError.Status> = ErrorParams<S>[0]
-
-	/**
-	 * `400`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
-	 */
-	export type BadRequest = _HttpError<400>
-	export namespace BadRequest {
-		export type Parameter = ErrorParams<400>[0]
-	}
-
-	/**
-	 * `401`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
-	 */
-	export type Unauthorized = _HttpError<401>
-	export namespace Unauthorized {
-		export type Parameter = ErrorParams<401>[0]
-	}
-
-	/**
-	 * `402`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/402
-	 */
-	export type PaymentRequired = _HttpError<402>
-	export namespace PaymentRequired {
-		export type Parameter = ErrorParams<402>[0]
-	}
-
-	/**
-	 * `403`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403
-	 */
-	export type Forbidden = _HttpError<403>
-	export namespace Forbidden {
-		export type Parameter = ErrorParams<403>[0]
-	}
-
-	/**
-	 * `404`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404
-	 */
-	export type NotFound = _HttpError<404>
-	export namespace NotFound {
-		export type Parameter = ErrorParams<404>[0]
-	}
-
-	/**
-	 * `405`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/405
-	 */
-	export type MethodNotAllowed = _HttpError<405>
-	export namespace MethodNotAllowed {
-		export type Parameter = ErrorParams<405>[0]
-	}
-
-	/**
-	 * `406`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/406
-	 */
-	export type NotAcceptable = _HttpError<406>
-	export namespace NotAcceptable {
-		export type Parameter = ErrorParams<406>[0]
-	}
-
-	/**
-	 * `407`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/407
-	 */
-	export type ProxyAuthenticationRequired = _HttpError<407>
-	export namespace ProxyAuthenticationRequired {
-		export type Parameter = ErrorParams<407>[0]
-	}
-
-	/**
-	 * `408`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/408
-	 */
-	export type RequestTimeout = _HttpError<408>
-	export namespace RequestTimeout {
-		export type Parameter = ErrorParams<408>[0]
-	}
-
-	/**
-	 * `409`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/409
-	 */
-	export type Conflict = _HttpError<409>
-	export namespace Conflict {
-		export type Parameter = ErrorParams<409>[0]
-	}
-
-	/**
-	 * `410`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/410
-	 */
-	export type Gone = _HttpError<410>
-	export namespace Gone {
-		export type Parameter = ErrorParams<410>[0]
-	}
-
-	/**
-	 * `411`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/411
-	 */
-	export type LengthRequired = _HttpError<411>
-	export namespace LengthRequired {
-		export type Parameter = ErrorParams<411>[0]
-	}
-
-	/**
-	 * `412`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/412
-	 */
-	export type PreconditionFailed = _HttpError<412>
-	export namespace PreconditionFailed {
-		export type Parameter = ErrorParams<412>[0]
-	}
-
-	/**
-	 * `413`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413
-	 */
-	export type PayloadTooLarge = _HttpError<413>
-	export namespace PayloadTooLarge {
-		export type Parameter = ErrorParams<413>[0]
-	}
-
-	/**
-	 * `414`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/414
-	 */
-	export type URITooLong = _HttpError<414>
-	export namespace URITooLong {
-		export type Parameter = ErrorParams<414>[0]
-	}
-
-	/**
-	 * `415`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/415
-	 */
-	export type UnsupportedMediaType = _HttpError<415>
-	export namespace UnsupportedMediaType {
-		export type Parameter = ErrorParams<415>[0]
-	}
-
-	/**
-	 * `416`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/416
-	 */
-	export type RequestedRangeNotSatisfiable = _HttpError<416>
-	export namespace RequestedRangeNotSatisfiable {
-		export type Parameter = ErrorParams<416>[0]
-	}
-
-	/**
-	 * `417`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/417
-	 */
-	export type ExpectationFailed = _HttpError<417>
-	export namespace ExpectationFailed {
-		export type Parameter = ErrorParams<417>[0]
-	}
-
-	/**
-	 * `418`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418
-	 */
-	export type ImATeapot = _HttpError<418>
-	export namespace ImATeapot {
-		export type Parameter = ErrorParams<418>[0]
-	}
-
-	/**
-	 * `421`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/421
-	 */
-	export type MisdirectedRequest = _HttpError<421>
-	export namespace MisdirectedRequest {
-		export type Parameter = ErrorParams<421>[0]
-	}
-
-	/**
-	 * `422`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/422
-	 */
-	export type UnprocessableEntity = _HttpError<422>
-	export namespace UnprocessableEntity {
-		export type Parameter = ErrorParams<422>[0]
-	}
-
-	/**
-	 * `423`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/423
-	 */
-	export type Locked = _HttpError<423>
-	export namespace Locked {
-		export type Parameter = ErrorParams<423>[0]
-	}
-
-	/**
-	 * `424`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/424
-	 */
-	export type FailedDependency = _HttpError<424>
-	export namespace FailedDependency {
-		export type Parameter = ErrorParams<424>[0]
-	}
-
-	/**
-	 * `425`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/425
-	 */
-	export type UnorderedCollection = _HttpError<425>
-	export namespace UnorderedCollection {
-		export type Parameter = ErrorParams<425>[0]
-	}
-
-	/**
-	 * `426`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/426
-	 */
-	export type UpgradeRequired = _HttpError<426>
-	export namespace UpgradeRequired {
-		export type Parameter = ErrorParams<426>[0]
-	}
-
-	/**
-	 * `428`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/428
-	 */
-	export type PreconditionRequired = _HttpError<428>
-	export namespace PreconditionRequired {
-		export type Parameter = ErrorParams<428>[0]
-	}
-
-	/**
-	 * `429`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429
-	 */
-	export type TooManyRequests = _HttpError<429>
-	export namespace TooManyRequests {
-		export type Parameter = ErrorParams<429>[0]
-	}
-
-	/**
-	 * `431`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/431
-	 */
-	export type RequestHeaderFieldsTooLarge = _HttpError<431>
-	export namespace RequestHeaderFieldsTooLarge {
-		export type Parameter = ErrorParams<431>[0]
-	}
-
-	/**
-	 * `451`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/451
-	 */
-	export type UnavailableForLegalReasons = _HttpError<451>
-	export namespace UnavailableForLegalReasons {
-		export type Parameter = ErrorParams<451>[0]
-	}
-
-	/**
-	 * `500`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
-	 */
-	export type InternalServerError = _HttpError<500>
-	export namespace InternalServerError {
-		export type Parameter = ErrorParams<500>[0]
-	}
-
-	/**
-	 * `501`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/501
-	 */
-	export type NotImplemented = _HttpError<501>
-	export namespace NotImplemented {
-		export type Parameter = ErrorParams<501>[0]
-	}
-
-	/**
-	 * `502`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/502
-	 */
-	export type BadGateway = _HttpError<502>
-	export namespace BadGateway {
-		export type Parameter = ErrorParams<502>[0]
-	}
-
-	/**
-	 * `503`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503
-	 */
-	export type ServiceUnavailable = _HttpError<503>
-	export namespace ServiceUnavailable {
-		export type Parameter = ErrorParams<503>[0]
-	}
-
-	/**
-	 * `504`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
-	 */
-	export type GatewayTimeout = _HttpError<504>
-	export namespace GatewayTimeout {
-		export type Parameter = ErrorParams<504>[0]
-	}
-
-	/**
-	 * `505`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/505
-	 */
-	export type HTTPVersionNotSupported = _HttpError<505>
-	export namespace HTTPVersionNotSupported {
-		export type Parameter = ErrorParams<505>[0]
-	}
-
-	/**
-	 * `506`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/506
-	 */
-	export type VariantAlsoNegotiates = _HttpError<506>
-	export namespace VariantAlsoNegotiates {
-		export type Parameter = ErrorParams<506>[0]
-	}
-
-	/**
-	 * `507`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/507
-	 */
-	export type InsufficientStorage = _HttpError<507>
-	export namespace InsufficientStorage {
-		export type Parameter = ErrorParams<507>[0]
-	}
-
-	/**
-	 * `508`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/508
-	 */
-	export type LoopDetected = _HttpError<508>
-	export namespace LoopDetected {
-		export type Parameter = ErrorParams<508>[0]
-	}
-
-	/**
-	 * `510`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/510
-	 */
-	export type NotExtended = _HttpError<510>
-	export namespace NotExtended {
-		export type Parameter = ErrorParams<510>[0]
-	}
-
-	/**
-	 * `511`
-	 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/511
-	 */
-	export type NetworkAuthenticationRequired = _HttpError<511>
-	export namespace NetworkAuthenticationRequired {
-		export type Parameter = ErrorParams<511>[0]
-	}
+	export type Param<S extends _HttpError.Status> = ErrParams<S>[0]
 }
 
 export { _HttpError as HttpError }
@@ -977,14 +701,13 @@ export { _HttpError as HttpError }
 declare global {
 	namespace RefletHttp {
 		/**
-		 * Whitelist or widen status codes, and forbid the use of the `HttpError` constructor (only allow static methods).
+		 * Whitelist or widen status codes.
 		 * @example
 		 * ```ts
 		 * declare global {
 		 *   namespace RefletHttp {
 		 *     interface ErrorConstraint {
 		 *       status: 400 | 401 | 403 | 404 | 405 | 422 | 500
-		 *       constructor: false
 		 *     }
 		 *   }
 		 * }
@@ -992,7 +715,6 @@ declare global {
 		 */
 		interface ErrorConstraint {
 			// status: number
-			// constructor: never
 		}
 
 		/**
@@ -1001,343 +723,91 @@ declare global {
 		 * ```ts
 		 * declare global {
 		 *   namespace RefletHttp {
-		 *     interface ErrorConstraint {
-		 *       status: number
-		 *     }
+		 *     interface ErrorParams {
+		 *       405: {
+		 *         message?: string
+		 *         headers: {
+		 *           allow: ('GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE')[]
+		 *         }
+		 *       }
 		 *
-		 *     interface Errors {
-		 *       420: EnhanceYourCalm
-		 *     }
-		 *
-		 *     interface EnhanceYourCalm {
-		 *       title: string
-		 *       message: string
+		 *       429: {
+		 *         message?: string
+		 *         headers: {
+		 *           'retry-after': number
+		 *         }
+		 *       }
 		 *     }
 		 *   }
 		 * }
 		 * ```
 		 */
-		interface Errors extends Record<_HttpError.Status | OriginalErrorStatus, {}> {
-			400: BadRequest
-			401: Unauthorized
-			402: PaymentRequired
-			403: Forbidden
-			404: NotFound
-			405: MethodNotAllowed
-			406: NotAcceptable
-			407: ProxyAuthenticationRequired
-			408: RequestTimeout
-			409: Conflict
-			410: Gone
-			411: LengthRequired
-			412: PreconditionFailed
-			413: PayloadTooLarge
-			414: URITooLong
-			415: UnsupportedMediaType
-			416: RequestedRangeNotSatisfiable
-			417: ExpectationFailed
-			418: ImATeapot
-			421: MisdirectedRequest
-			423: Locked
-			424: FailedDependency
-			425: UnorderedCollection
-			426: UpgradeRequired
-			428: PreconditionRequired
-			429: TooManyRequests
-			431: RequestHeaderFieldsTooLarge
-			451: UnavailableForLegalReasons
+		interface ErrorParams extends Record<_HttpError.Status, {}> {}
 
-			500: InternalServerError
-			501: NotImplemented
-			502: BadGateway
-			503: ServiceUnavailable
-			504: GatewayTimeout
-			505: HTTPVersionNotSupported
-			506: VariantAlsoNegotiates
-			507: InsufficientStorage
-			508: LoopDetected
-			510: NotExtended
-			511: NetworkAuthenticationRequired
+		/**
+		 * Whitelist or widen status codes.
+		 * @example
+		 * ```ts
+		 * declare global {
+		 *   namespace RefletHttp {
+		 *     interface CustomErrors {
+		 *       299: 'Aborted'
+		 *       420: 'EnhanceYourCalm'
+		 *     }
+		 *   }
+		 * }
+		 * ```
+		 */
+		interface CustomErrors {}
+	}
+}
+
+export function defineCustomErrors(errors: RefletHttp.CustomErrors) {
+	for (const status in errors) {
+		if (!Object.prototype.hasOwnProperty.call(errors, status)) continue
+
+		if (status in OriginalErrors) {
+			console.warn(`RefletHttpWarning: [HttpError] Status "${status}" already exists and cannot be redefined.`)
+			continue
 		}
 
-		/**
-		 * Augment `400` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
-		 */
-		interface BadRequest {}
+		const statusNum = Number(status)
 
-		/**
-		 * Augment `401` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
-		 */
-		interface Unauthorized {}
+		if (Number.isNaN(statusNum)) {
+			console.warn(`RefletHttpWarning: [HttpError] Custom status "${status}" should be a numeric value.`)
+			continue
+		}
 
-		/**
-		 * Augment `402` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/402
-		 */
-		interface PaymentRequired {}
+		const name = (errors as any)[status]
 
-		/**
-		 * Augment `403` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403
-		 */
-		interface Forbidden {}
+		if (typeof name !== 'string') {
+			console.warn(`RefletHttpWarning: [HttpError] Name for custom status "${status}" should be a string.`)
+			continue
+		}
 
-		/**
-		 * Augment `404` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404
-		 */
-		interface NotFound {}
+		const existing = Object.values(OriginalErrors)
 
-		/**
-		 * Augment `405` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/405
-		 */
-		interface MethodNotAllowed {}
+		if (existing.includes(name as any)) {
+			console.warn(
+				`RefletHttpWarning: [HttpError] Name "${name}" for custom status "${status}" already exists and cannot be redefined.`
+			)
+			continue
+		}
 
-		/**
-		 * Augment `406` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/406
-		 */
-		interface NotAcceptable {}
+		if (name in HttpError) {
+			console.warn(
+				`RefletHttpWarning: [HttpError] Name "${name}" for custom status "${status}" would overwrite existing static property.`
+			)
+			continue
+		}
 
-		/**
-		 * Augment `407` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/407
-		 */
-		interface ProxyAuthenticationRequired {}
+		;(OriginalErrors as any)[statusNum] = name
 
-		/**
-		 * Augment `408` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/408
-		 */
-		interface RequestTimeout {}
-
-		/**
-		 * Augment `409` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/409
-		 */
-		interface Conflict {}
-
-		/**
-		 * Augment `410` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/410
-		 */
-		interface Gone {}
-
-		/**
-		 * Augment `411` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/411
-		 */
-		interface LengthRequired {}
-
-		/**
-		 * Augment `412` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/412
-		 */
-		interface PreconditionFailed {}
-
-		/**
-		 * Augment `413` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413
-		 */
-		interface PayloadTooLarge {}
-
-		/**
-		 * Augment `414` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/414
-		 */
-		interface URITooLong {}
-
-		/**
-		 * Augment `415` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/415
-		 */
-		interface UnsupportedMediaType {}
-
-		/**
-		 * Augment `416` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/416
-		 */
-		interface RequestedRangeNotSatisfiable {}
-
-		/**
-		 * Augment `417` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/417
-		 */
-		interface ExpectationFailed {}
-
-		/**
-		 * Augment `418` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/418
-		 */
-		interface ImATeapot {}
-
-		/**
-		 * Augment `421` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/421
-		 */
-		interface MisdirectedRequest {}
-
-		/**
-		 * Augment `422` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/422
-		 */
-		interface UnprocessableEntity {}
-
-		/**
-		 * Augment `423` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/423
-		 */
-		interface Locked {}
-
-		/**
-		 * Augment `424` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/424
-		 */
-		interface FailedDependency {}
-
-		/**
-		 * Augment `425` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/425
-		 */
-		interface UnorderedCollection {}
-
-		/**
-		 * Augment `426` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/426
-		 */
-		interface UpgradeRequired {}
-
-		/**
-		 * Augment `428` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/428
-		 */
-		interface PreconditionRequired {}
-
-		/**
-		 * Augment `429` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429
-		 */
-		interface TooManyRequests {}
-
-		/**
-		 * Augment `431` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/431
-		 */
-		interface RequestHeaderFieldsTooLarge {}
-
-		/**
-		 * Augment `451` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/451
-		 */
-		interface UnavailableForLegalReasons {}
-
-		/**
-		 * Augment `500` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
-		 */
-		interface InternalServerError {}
-
-		/**
-		 * Augment `501` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/501
-		 */
-		interface NotImplemented {}
-
-		/**
-		 * Augment `502` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/502
-		 */
-		interface BadGateway {}
-
-		/**
-		 * Augment `503` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503
-		 */
-		interface ServiceUnavailable {}
-
-		/**
-		 * Augment `504` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
-		 */
-		interface GatewayTimeout {}
-
-		/**
-		 * Augment `505` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/505
-		 */
-		interface HTTPVersionNotSupported {}
-
-		/**
-		 * Augment `506` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/506
-		 */
-		interface VariantAlsoNegotiates {}
-
-		/**
-		 * Augment `507` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/507
-		 */
-		interface InsufficientStorage {}
-
-		/**
-		 * Augment `508` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/508
-		 */
-		interface LoopDetected {}
-
-		/**
-		 * Augment `510` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/510
-		 */
-		interface NotExtended {}
-
-		/**
-		 * Augment `511` error.
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/511
-		 */
-		interface NetworkAuthenticationRequired {}
+		Object.defineProperty(HttpError, name, {
+			value(...args: any[]) {
+				const error = new (HttpError as any)(statusNum, args[0], Caller.Direct)
+				return error
+			},
+		})
 	}
 }
