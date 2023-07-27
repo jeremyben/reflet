@@ -242,7 +242,7 @@ export namespace VersionKey {
  * Then assign custom keys to schema options.
  * @internal
  */
-export function mergeSchemaOptionsAndKeys(target: ClassType): mongoose.SchemaOptions | undefined {
+export function mergeSchemaOptionsAndKeys(target: ClassType): mongoose.SchemaOptions<any> | undefined {
 	let options = getSchemaOptions(target)
 	const keys = getSchemaOptionsKeys(target)
 

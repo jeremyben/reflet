@@ -1,7 +1,7 @@
 import * as mongoose from 'mongoose'
 import * as mongodb from 'mongodb'
 import { checkDecoratorsOrder } from './check-decorator-order'
-import { AsDocument, ClassType, DocumentAny } from './interfaces'
+import { AsDocument, ClassType, DocumentAny, Plain } from './interfaces'
 
 //
 // ────────────────────────────────────────────────────────────────────────────
@@ -31,7 +31,6 @@ export function PreHook<T extends DocumentAny>(
  * Document middleware.
  * - [`Document.validate()`](https://mongoosejs.com/docs/api/document#document_Document-validate)
  * - [`Document.save()`](https://mongoosejs.com/docs/api/document#document_Document-save)
- * - [`Document.remove()`](https://mongoosejs.com/docs/api#model_Model.remove)
  *
  * @remarks
  * - `create()` function fires `'save'` hooks.
@@ -42,37 +41,8 @@ export function PreHook<T extends DocumentAny>(
  * @public
  */
 export function PreHook<T extends DocumentAny>(
-	method: DocumentMethodOnly | DocumentMayBeQueryMethod | (DocumentMethodOnly | DocumentMayBeQueryMethod)[],
+	method: DocumentMethodOnly | DocumentMethodOnly[],
 	callback: (this: T, next: HookNextFunction) => void
-): PreHook.Decorator
-
-// 3
-/**
- * Document middleware by default.
- * - [`Document.remove()`](https://mongoosejs.com/docs/api#model_Model.remove)
- *
- * Can be registered as a query middleware with `{ query: true }` option.
- * - [`Query.remove()`](https://mongoosejs.com/docs/api/query#query_Query-remove)
- *
- * ---
- * @see https://mongoosejs.com/docs/middleware#pre
- * @public
- */
-export function PreHook<T extends DocumentAny>(
-	method: DocumentMayBeQueryMethod,
-	options: { query: true; document: false },
-	callback: (this: mongoose.Query<T, T>, next: HookNextFunction) => void
-): PreHook.Decorator
-
-// 4
-/**
- * {@inheritDoc (PreHook:3)}
- * @public
- */
-export function PreHook<T extends DocumentAny>(
-	method: DocumentMayBeQueryMethod,
-	options: { query: true; document?: true },
-	callback: (this: T | mongoose.Query<T, T>, next: HookNextFunction) => void
 ): PreHook.Decorator
 
 // 5
@@ -279,7 +249,7 @@ export function PostHook<T extends DocumentAny>(
  * @public
  */
 export function PostHook<T extends DocumentAny>(
-	method: DocumentMethodOnly | DocumentMayBeQueryMethod | (DocumentMethodOnly | DocumentMayBeQueryMethod)[],
+	method: DocumentMethodOnly | DocumentMethodOnly[],
 	callback: (this: T, result: any, next: HookNextFunction) => void
 ): PostHook.Decorator
 
@@ -289,48 +259,8 @@ export function PostHook<T extends DocumentAny>(
  * @public
  */
 export function PostHook<T extends DocumentAny, TError = any>(
-	method: DocumentMethodOnly | DocumentMayBeQueryMethod | (DocumentMethodOnly | DocumentMayBeQueryMethod)[],
+	method: DocumentMethodOnly | DocumentMethodOnly[],
 	callback: (this: T, error: TError, result: null, next: HookNextFunction) => void
-): PostHook.Decorator
-
-// 4
-/**
- * Document middleware by default.
- * - [`Document.remove()`](https://mongoosejs.com/docs/api#model_Model.remove)
- *
- * Can be registered as a query middleware with `{ query: true }` option.
- * - [`Query.remove()`](https://mongoosejs.com/docs/api/query#query_Query-remove)
- *
- * ---
- * @see https://mongoosejs.com/docs/middleware#post
- * @public
- */
-export function PostHook<T extends DocumentAny>(
-	method: DocumentMayBeQueryMethod,
-	options: { query: true; document: false },
-	callback: (this: mongoose.Query<T, T>, result: mongodb.DeleteResult, next: HookNextFunction) => void
-): PostHook.Decorator
-
-// 5
-/**
- * {@inheritDoc (PostHook:4)}
- * @public
- */
-export function PostHook<T extends DocumentAny>(
-	method: DocumentMayBeQueryMethod,
-	options: { query: true; document?: true },
-	callback: (this: T | mongoose.Query<T, T>, result: T | mongodb.DeleteResult, next: HookNextFunction) => void
-): PostHook.Decorator
-
-// 6
-/**
- * {@inheritDoc (PostHook:4)}
- * @public
- */
-export function PostHook<T extends DocumentAny, TError = any>(
-	method: DocumentMayBeQueryMethod,
-	options: { query: true; document?: boolean },
-	callback: (this: T | mongoose.Query<T, T>, error: TError, result: null, next: HookNextFunction) => void
 ): PostHook.Decorator
 
 // 7
@@ -436,7 +366,7 @@ export function PostHook<T extends DocumentAny>(
  */
 export function PostHook<T extends DocumentAny, TError = any>(
 	method: QueryMethodOnly | (QueryMethodOnly | QueryMaybeDocumentMethod)[],
-	callback: (this: mongoose.Query<T, T>, error: TError, result: null, next: HookNextFunction) => void
+	callback: (this: mongoose.Query<T, T>, error: TError, result: undefined, next: HookNextFunction) => void
 ): PostHook.Decorator
 
 // 14
@@ -540,7 +470,7 @@ export function PostHook<T extends DocumentAny, TError = any>(
  */
 export function PostHook<T extends DocumentAny>(
 	method: AggregateMethod,
-	callback: (this: mongoose.Aggregate<T>, results: mongoose.LeanDocument<T>[], next: HookNextFunction) => void
+	callback: (this: mongoose.Aggregate<T>, results: Plain<T>[], next: HookNextFunction) => void
 ): PostHook.Decorator
 
 // 21
@@ -550,7 +480,7 @@ export function PostHook<T extends DocumentAny>(
  */
 export function PostHook<T extends DocumentAny, TError = any>(
 	method: AggregateMethod,
-	callback: (this: mongoose.Aggregate<T>, error: TError, results: undefined, next: HookNextFunction) => void
+	callback: (this: mongoose.Aggregate<T>, error: TError, results: null, next: HookNextFunction) => void
 ): PostHook.Decorator
 
 // 22
@@ -653,7 +583,7 @@ type Hook = {
 /**
  * @public
  */
-type DocumentMethod = 'validate' | 'save' | 'remove' | 'updateOne' | 'deleteOne'
+type DocumentMethod = 'validate' | 'save' | 'updateOne' | 'deleteOne'
 
 /**
  * @public
@@ -667,8 +597,6 @@ type QueryMethod =
 	| 'findOneAndDelete'
 	| 'findOneAndRemove'
 	| 'findOneAndUpdate'
-	| 'remove'
-	| 'update'
 	| 'updateOne'
 	| 'updateMany'
 
@@ -681,11 +609,6 @@ type DocumentMethodOnly = Exclude<DocumentMethod, QueryMethod>
  * @public
  */
 type QueryMethodOnly = Exclude<QueryMethod, DocumentMethod>
-
-/**
- * @public
- */
-type DocumentMayBeQueryMethod = 'remove'
 
 /**
  * @public

@@ -46,12 +46,12 @@ test('init, validate, save, findOne, remove', async () => {
 		console.info('post-findOne', doc)
 		next()
 	})
-	@PreHook<UserHookIVSFR>('remove', { query: true }, function (next) {
-		console.info('pre-remove', this.constructor.name)
+	@PreHook<UserHookIVSFR>('deleteOne', function (next) {
+		console.info('pre-deleteOne', this.constructor.name)
 		next()
 	})
-	@PostHook<UserHookIVSFR>('remove', { query: true, document: false }, function (result, next) {
-		console.info('post-remove', result.deletedCount)
+	@PostHook<UserHookIVSFR>('deleteOne', function (result, next) {
+		console.info('post-deleteOne', result.deletedCount)
 		next()
 	})
 	class UserHookIVSFR extends Model.Interface {
@@ -61,8 +61,8 @@ test('init, validate, save, findOne, remove', async () => {
 
 	await UserHookIVSFR.create({ name: 'jeremy' })
 	const user = await UserHookIVSFR.findOne({ name: 'jeremy' })
-	// await user?.remove()
-	await UserHookIVSFR.remove({ name: 'jeremy' })
+	// await user?.deleteOne()
+	await UserHookIVSFR.deleteOne({ name: 'jeremy' })
 
 	try {
 		await UserHookIVSFR.create({ name: ['jeremy'] as any }) // will error out
@@ -76,8 +76,8 @@ test('init, validate, save, findOne, remove', async () => {
 	expect(consoleSpy).toBeCalledWith('post-save', true)
 	expect(consoleSpy).toBeCalledWith('pre-findOne', 'Query')
 	expect(consoleSpy).toBeCalledWith('post-findOne', expect.objectContaining({ name: 'jeremy' }))
-	expect(consoleSpy).toBeCalledWith('pre-remove', 'Query')
-	expect(consoleSpy).toBeCalledWith('post-remove', 1)
+	expect(consoleSpy).toBeCalledWith('pre-deleteOne', 'Query')
+	expect(consoleSpy).toBeCalledWith('post-deleteOne', 1)
 	expect(consoleSpy).toBeCalledWith('post-validate-error', expect.any(Error), null)
 })
 
@@ -117,7 +117,7 @@ test('updateOne, deleteOne', async () => {
 test('insertMany, find, update, updateMany, count, deleteMany', async () => {
 	@Model()
 	@PreHook<UserHookIFUUCD>('insertMany', function (next) {
-		console.info('pre-insertMany', this.modelName)
+		console.info('pre-insertMany', UserHookIFUUCD.modelName)
 		next()
 	})
 	@PostHook<UserHookIFUUCD>('insertMany', (docs, next) => {
@@ -132,7 +132,7 @@ test('insertMany, find, update, updateMany, count, deleteMany', async () => {
 		console.info('post-find-error', error, docs)
 		next()
 	})
-	@PostHook<UserHookIFUUCD>('update', (result, next) => {
+	@PostHook<UserHookIFUUCD>('updateOne', (result, next) => {
 		console.info('post-update', result.modifiedCount)
 		next()
 	})
@@ -163,7 +163,7 @@ test('insertMany, find, update, updateMany, count, deleteMany', async () => {
 
 	await UserHookIFUUCD.insertMany([{ name: 'jeremy' }, { name: 'julia' }])
 	await UserHookIFUUCD.find({})
-	await UserHookIFUUCD.update({ name: 'jeremy' }, { name: 'arthur' })
+	await UserHookIFUUCD.updateOne({ name: 'jeremy' }, { name: 'arthur' })
 	await UserHookIFUUCD.updateMany({ name: { $in: ['julia', 'arthur'] } }, { name: 'marc' })
 	await UserHookIFUUCD.count({ name: 'marc' })
 	await UserHookIFUUCD.deleteMany({ name: 'marc' })
@@ -180,11 +180,11 @@ test('insertMany, find, update, updateMany, count, deleteMany', async () => {
 	expect(postInsertManyFirstResult).toMatchObject({ name: 'jeremy' })
 	expect(consoleSpy).toBeCalledWith('post-find', 2)
 	expect(consoleSpy).toBeCalledWith('post-update', 1)
-	expect(consoleSpy).toBeCalledWith('post-find-error', expect.any(Error), null)
+	expect(consoleSpy).toBeCalledWith('post-find-error', expect.any(Error), undefined)
 	expect(postUpdateManyResult).toMatchObject({ matchedCount: 2, modifiedCount: 2 })
 	expect(consoleSpy).toBeCalledWith('post-count', 2)
 	expect(postDeleteManyResult).toMatchObject({ deletedCount: 2 })
-	expect(consoleSpy).toBeCalledWith('post-deleteMany-error', expect.any(Error), null)
+	expect(consoleSpy).toBeCalledWith('post-deleteMany-error', expect.any(Error), undefined)
 })
 
 test('aggregate', async () => {
@@ -214,7 +214,7 @@ test('aggregate', async () => {
 		await UserHookA.aggregate([{ $match: { name: { $or: ['jeremy'] } } }]) // will error out
 	} catch (error) {} // tslint:disable-line: no-empty
 
-	expect(consoleSpy).toBeCalledWith('post-aggregate-error', expect.any(Error), undefined)
+	expect(consoleSpy).toBeCalledWith('post-aggregate-error', expect.any(Error), null)
 })
 
 test('mixed hooks', async () => {

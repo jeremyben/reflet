@@ -63,10 +63,21 @@ export type PlainKeys<T> = {
 /**
  * @public
  */
-type _Plain<T> = mongoose.LeanDocument<{
-	[P in PlainKeys<T>]: T[P]
-}>
-
+type _Plain<T> = {
+	[K in Exclude<PlainKeys<T>, undefined>]: T[K] extends mongoose.Document | mongoose.Types.Subdocument
+		? _Plain<T[K]>
+		: T[K] extends mongoose.Types.DocumentArray<infer U>
+		? _Plain<U>[]
+		: T[K] extends mongoose.Types.Array<infer U>
+		? U[]
+		: T[K] extends (infer U & mongoose.Document)[] // Must also constraint to mongoose.document to avoid problems with regular arrays
+		? _Plain<U>[]
+		: T[K] extends mongoose.Types.Map<infer V>
+		? Map<string, V>
+		: T[K] extends mongoose.Types.Buffer
+		? mongodb.Binary
+		: T[K]
+}
 /**
  * Omits Mongoose properties (except `_id`) and all methods.
  *

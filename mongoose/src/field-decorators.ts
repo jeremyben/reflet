@@ -351,8 +351,8 @@ export namespace Field {
 			const fields = getFields(target.constructor)
 
 			fields[<string>key] = Array.isArray(refPath)
-				? [{ type, refPath: refPath[0], ...(options as {}) }]
-				: { type, refPath, ...(options as {}) }
+				? [{ type, refPath: refPath[0] as string, ...(options as {}) }]
+				: { type, refPath: refPath as string, ...(options as {}) }
 
 			Reflect.defineMetadata(MetaField, fields, target.constructor)
 		}

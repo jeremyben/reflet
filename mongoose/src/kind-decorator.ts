@@ -1,4 +1,5 @@
 import * as mongoose from 'mongoose'
+import { ModelAny } from './interfaces'
 import { RefletMongooseError } from './reflet-error'
 
 const MetaKind = Symbol('kind')
@@ -75,8 +76,8 @@ export function assignModelKindKey({
 	discriminatorModel,
 }: {
 	kindKey: string | undefined
-	rootModel: mongoose.Model<mongoose.Document>
-	discriminatorModel: mongoose.Model<mongoose.Document>
+	rootModel: ModelAny
+	discriminatorModel: ModelAny
 }): void {
 	const providedDiscriminatorKey = (rootModel.schema as SchemaFix)._userProvidedOptions.discriminatorKey
 	const providedKindKey: string | undefined = (rootModel as any)[MetaKind]

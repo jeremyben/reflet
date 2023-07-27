@@ -51,11 +51,7 @@ test('virtual populate', async () => {
 	type NewTrack = Plain<Track, { Optional: '_id' }>
 
 	@Model()
-	class Track extends Model.I {
-		static create(doc: NewTrack, options?: mongoose.SaveOptions): Promise<Track>
-		// @ts-ignore implementation
-		static create(docs: NewTrack[]): Promise<Track[]>
-
+	class Track extends Model.I<typeof Track> {
 		@Field(String)
 		title: string
 
@@ -67,11 +63,7 @@ test('virtual populate', async () => {
 	type NewBand = Plain<Band, { Optional: '_id' }>
 
 	@Model()
-	class Band extends Model.I {
-		static create(doc: NewBand, options?: mongoose.SaveOptions): Promise<Band>
-		// @ts-ignore implementation
-		static create(docs: NewBand[]): Promise<Band[]>
-
+	class Band extends Model.I<typeof Band> {
 		@Field(String)
 		lead: string
 

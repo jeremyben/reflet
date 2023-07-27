@@ -208,12 +208,6 @@ const user = await User.create({
 
 Your class needs to inherit a special empty class, **`Model.Interface`** or **`Model.I`**, to have Mongoose document properties and methods.
 
-##### To callback or not to callback
-
-🗣️ To vastly simplify compiler hints, inherited **static methods don't have callback signatures**. You can still use callback style within `.exec()`.
-
-If you actually need callback signatures within static methods, please inherit from empty class **`Model.InterfaceWithCallback`** or **`Model.ICb`**, which is on par with underlying mongoose typings.
-
 #### Custom collection name
 
 By default, Mongoose automatically creates a collection named as the plural, lowercased version of your model name. You can customize the collection name, with the first argument:

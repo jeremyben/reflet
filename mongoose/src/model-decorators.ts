@@ -2,7 +2,7 @@ import * as mongoose from 'mongoose'
 import { createSchema } from './schema-creation'
 import { registerModelDecorator } from './check-decorator-order'
 import { getKind, assignModelKindKey } from './kind-decorator'
-import { ModelI, ModelICb } from './model-interface'
+import { ModelI } from './model-interface'
 import { RefletMongooseError } from './reflet-error'
 import { ClassType, ModelAny } from './interfaces'
 
@@ -130,28 +130,6 @@ export namespace Model {
 	 */
 	export const I = Interface
 	export type I<T extends ClassType = any> = ModelI<T>
-
-	/**
-	 * Dummy class to extend from, to get all the (narrowed) types from mongoose Model and Document.
-	 *
-	 * Static methods have callback signatures.
-	 *
-	 * @abstract
-	 * @public
-	 */
-	export const InterfaceWithCallback = class {} as unknown as typeof ModelICb
-	export type InterfaceWithCallback<T extends ClassType = any> = ModelICb<T>
-
-	/**
-	 * Dummy class to extend from, to get all the (narrowed) types from mongoose Model and Document.
-	 *
-	 * Static methods have callback signatures.
-	 *
-	 * @abstract
-	 * @public
-	 */
-	export const ICb = class {} as unknown as typeof ModelICb
-	export type ICb<T extends ClassType = any> = ModelICb<T>
 
 	/**
 	 * Equivalent to `ClassDecorator`.

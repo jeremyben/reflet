@@ -176,7 +176,7 @@ export namespace Virtual {
 			perDocumentLimit?: number
 
 			options?: Omit<mongoose.QueryOptions, 'sort' | 'lean'> & {
-				sort?: string | Record<keyof mongoose.LeanDocument<Foreign>, -1 | 1>
+				sort?: string | Record<PlainKeys<Foreign>, -1 | 1>
 				lean?: boolean
 			}
 		}
