@@ -1,12 +1,10 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
 import { register, Router, Get, Post, Patch, Route, Res, Req, Use, Params, Body } from '../src'
-import { RefletExpressError } from '../src/reflet-error'
+import { type RefletExpressError } from '../src/reflet-error'
 import { log } from '../../testing/tools'
 
 describe('basic routing', () => {
-	const PostAndPut = (path: string | RegExp) => Route(['post', 'put'], path)
-
 	class UserService {
 		private users = [
 			{ id: '1', name: 'Jeremy' },
@@ -22,7 +20,7 @@ describe('basic routing', () => {
 	class UserRouter {
 		constructor(private userService: UserService) {}
 
-		@Get()
+		@Get('/all')
 		get(@Res res: Res) {
 			res.send([{ id: 1 }])
 		}
@@ -33,8 +31,8 @@ describe('basic routing', () => {
 			res.send(user)
 		}
 
-		@PostAndPut('/me')
-		async post(req: express.Request, res: express.Response, next: express.NextFunction) {
+		@Route(['POST', 'PUT'], '/me')
+		async postput(req: express.Request, res: express.Response, next: express.NextFunction) {
 			await new Promise((resolve) => setTimeout(resolve, 20))
 			res.send({ id: 3 })
 		}
@@ -44,7 +42,7 @@ describe('basic routing', () => {
 	class MessageRouter {
 		prop = 1
 
-		@Route('options', '')
+		@Route('OPTIONS', '')
 		options = (req: express.Request, res: express.Response, next: express.NextFunction) => {
 			res.send([{ id: this.prop }])
 		}
@@ -59,7 +57,7 @@ describe('basic routing', () => {
 	const rq = supertest(register(express(), [new UserRouter(new UserService()), new MessageRouter()]))
 
 	test('@Get with Router', async () => {
-		const res = await rq.get('/user')
+		const res = await rq.get('/user/all')
 		expect(res.status).toBe(200)
 		expect(res.body).toEqual([{ id: 1 }])
 	})

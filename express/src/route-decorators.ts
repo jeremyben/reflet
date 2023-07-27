@@ -7,7 +7,7 @@ const METAKEY_ROUTE = Symbol('route')
  */
 type RouteMeta = {
 	readonly path: string | RegExp
-	readonly method: Route.Method
+	readonly method: Lowercase<Route.Method>
 	readonly key: string | symbol
 }
 
@@ -114,10 +114,10 @@ export function Route(method: Route.Method | Route.Method[], path: string | RegE
 
 		if (Array.isArray(method)) {
 			for (const methodd of method) {
-				routes.push({ path, method: methodd, key })
+				routes.push({ path, method: methodd.toLowerCase() as Lowercase<Route.Method>, key })
 			}
 		} else {
-			routes.push({ path, method, key })
+			routes.push({ path, method: method.toLowerCase() as Lowercase<Route.Method>, key })
 		}
 
 		Reflect.defineMetadata(METAKEY_ROUTE, routes, target)
@@ -252,6 +252,30 @@ export namespace Route {
 		| 'unlock'
 		| 'unsubscribe'
 		| 'all'
+		| 'CHECKOUT'
+		| 'COPY'
+		| 'DELETE'
+		| 'GET'
+		| 'HEAD'
+		| 'LOCK'
+		| 'MERGE'
+		| 'MKACTIVITY'
+		| 'MKCOL'
+		| 'MOVE'
+		| 'M-SEARCH'
+		| 'NOTIFY'
+		| 'OPTIONS'
+		| 'PATCH'
+		| 'POST'
+		| 'PURGE'
+		| 'PUT'
+		| 'REPORT'
+		| 'SEARCH'
+		| 'SUBSCRIBE'
+		| 'TRACE'
+		| 'UNLOCK'
+		| 'UNSUBSCRIBE'
+		| 'ALL'
 
 	/**
 	 * Equivalent to an union of `MethodDecorator` and `ProperyDecorator`.
