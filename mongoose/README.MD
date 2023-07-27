@@ -49,7 +49,7 @@ The **best** decorators for [Mongoose](https://mongoosejs.com/). Have a look at 
 2. Install the package along with peer dependencies.
 
     ```sh
-    yarn add @reflet/mongoose mongoose && yarn add -D @types/mongoose @types/node
+    yarn add @reflet/mongoose mongoose
     ```
 
 3. Create your decorated models.

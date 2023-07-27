@@ -112,8 +112,6 @@ export namespace Model {
 	/**
 	 * Dummy class to extend from, to get all the (narrowed) types from mongoose Model and Document.
 	 *
-	 * Static methods dont' have callback signatures, to simplify compiler hints.
-	 *
 	 * @abstract
 	 * @public
 	 */
@@ -122,8 +120,6 @@ export namespace Model {
 
 	/**
 	 * Dummy class to extend from, to get all the (narrowed) types from mongoose Model and Document.
-	 *
-	 * Static methods dont' have callback signatures, to simplify compiler hints.
 	 *
 	 * @abstract
 	 * @public
