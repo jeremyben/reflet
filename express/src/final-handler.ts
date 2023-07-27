@@ -62,7 +62,7 @@ export function finalHandler(options: finalHandler.Options): express.ErrorReques
 		if (options.json === true) {
 			return res.json(marshalledError)
 		} else if (options.json === 'from-response-type') {
-			const responseType = res.get('Content-Type')
+			const responseType = res.get('Content-Type')!
 			// https://regex101.com/r/noMxut/1
 			const jsonInferredFromResponse = /^application\/(\S+\+|)json/m.test(responseType)
 
@@ -70,7 +70,7 @@ export function finalHandler(options: finalHandler.Options): express.ErrorReques
 				return res.json(marshalledError)
 			}
 		} else if (options.json === 'from-response-type-or-request') {
-			const responseType = res.get('Content-Type')
+			const responseType = res.get('Content-Type')!
 			const jsonInferredFromResponse = /^application\/(\S+\+|)json/m.test(responseType)
 			const jsonInferredFromRequest = !responseType && (req.xhr || (!!req.get('Accept') && !!req.accepts('json')))
 

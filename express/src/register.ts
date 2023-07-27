@@ -344,18 +344,14 @@ function createHandler(
 		}
 
 		if (isPromise(result)) {
-			return result
-				.then((value) => {
-					return sendHandler(value, { req, res, next })
-				})
-				.catch(next)
-		} else {
-			try {
-				const sendResult = sendHandler(result, { req, res, next })
-				return isPromise(sendResult) ? sendResult.catch(next) : sendResult
-			} catch (error) {
-				next(error)
-			}
+			return result.then((value) => sendHandler(value, { req, res, next })).catch(next)
+		}
+
+		try {
+			const sendResult = sendHandler(result, { req, res, next })
+			return isPromise(sendResult) ? sendResult.catch(next) : sendResult
+		} catch (error) {
+			next(error)
 		}
 	}
 }

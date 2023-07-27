@@ -25,8 +25,9 @@ type RouteMeta = {
  * ------
  * @public
  */
-export const Get = (path: string | RegExp = '') => Route('get', path)
-
+export function Get(path: string | RegExp = ''): Route.Decorator {
+	return Route('get', path)
+}
 /**
  * Routes HTTP `POST` requests.
  * @param path - path for which the decorated class method is invoked.
@@ -41,7 +42,9 @@ export const Get = (path: string | RegExp = '') => Route('get', path)
  * ------
  * @public
  */
-export const Post = (path: string | RegExp = '') => Route('post', path)
+export function Post(path: string | RegExp = ''): Route.Decorator {
+	return Route('post', path)
+}
 
 /**
  * Routes HTTP `PUT` requests.
@@ -57,7 +60,9 @@ export const Post = (path: string | RegExp = '') => Route('post', path)
  * ------
  * @public
  */
-export const Put = (path: string | RegExp = '') => Route('put', path)
+export function Put(path: string | RegExp = ''): Route.Decorator {
+	return Route('put', path)
+}
 
 /**
  * Routes HTTP `PATCH` requests.
@@ -73,7 +78,9 @@ export const Put = (path: string | RegExp = '') => Route('put', path)
  * ------
  * @public
  */
-export const Patch = (path: string | RegExp = '') => Route('patch', path)
+export function Patch(path: string | RegExp = ''): Route.Decorator {
+	return Route('patch', path)
+}
 
 /**
  * Routes HTTP `DELETE` requests.
@@ -89,7 +96,9 @@ export const Patch = (path: string | RegExp = '') => Route('patch', path)
  * ------
  * @public
  */
-export const Delete = (path: string | RegExp = '') => Route('delete', path)
+export function Delete(path: string | RegExp = ''): Route.Decorator {
+	return Route('delete', path)
+}
 
 /**
  * Routes an HTTP request.
@@ -118,30 +127,101 @@ export function Route(method: Route.Method | Route.Method[], path: string | RegE
 /* istanbul ignore next */
 // tslint:disable: no-shadowed-variable
 export namespace Route {
-	export const Get = (path: string | RegExp = '') => Route('get', path)
-	export const Post = (path: string | RegExp = '') => Route('post', path)
-	export const Put = (path: string | RegExp = '') => Route('put', path)
-	export const Patch = (path: string | RegExp = '') => Route('patch', path)
-	export const Delete = (path: string | RegExp = '') => Route('delete', path)
-	export const Head = (path: string | RegExp = '') => Route('head', path)
-	export const Options = (path: string | RegExp = '') => Route('options', path)
-	export const Trace = (path: string | RegExp = '') => Route('trace', path)
-	export const Notify = (path: string | RegExp = '') => Route('notify', path)
-	export const Subscribe = (path: string | RegExp = '') => Route('subscribe', path)
-	export const Unsubscribe = (path: string | RegExp = '') => Route('unsubscribe', path)
-	export const Purge = (path: string | RegExp = '') => Route('purge', path)
-	export const Checkout = (path: string | RegExp = '') => Route('checkout', path)
-	export const Move = (path: string | RegExp = '') => Route('move', path)
-	export const Copy = (path: string | RegExp = '') => Route('copy', path)
-	export const Merge = (path: string | RegExp = '') => Route('merge', path)
-	export const Report = (path: string | RegExp = '') => Route('report', path)
-	export const MSearch = (path: string | RegExp = '') => Route('m-search', path)
-	export const Mkactivity = (path: string | RegExp = '') => Route('mkactivity', path)
-	export const Mkcol = (path: string | RegExp = '') => Route('mkcol', path)
-	export const Search = (path: string | RegExp = '') => Route('search', path)
-	export const Lock = (path: string | RegExp = '') => Route('lock', path)
-	export const Unlock = (path: string | RegExp = '') => Route('unlock', path)
-	export const All = (path: string | RegExp = '') => Route('all', path)
+	export function Get(path: string | RegExp = ''): Route.Decorator {
+		return Route('get', path)
+	}
+
+	export function Post(path: string | RegExp = ''): Route.Decorator {
+		return Route('post', path)
+	}
+
+	export function Put(path: string | RegExp = ''): Route.Decorator {
+		return Route('put', path)
+	}
+
+	export function Patch(path: string | RegExp = ''): Route.Decorator {
+		return Route('patch', path)
+	}
+
+	export function Delete(path: string | RegExp = ''): Route.Decorator {
+		return Route('delete', path)
+	}
+
+	export function Head(path: string | RegExp = ''): Route.Decorator {
+		return Route('head', path)
+	}
+
+	export function Options(path: string | RegExp = ''): Route.Decorator {
+		return Route('options', path)
+	}
+
+	export function Trace(path: string | RegExp = ''): Route.Decorator {
+		return Route('trace', path)
+	}
+
+	export function Notify(path: string | RegExp = ''): Route.Decorator {
+		return Route('notify', path)
+	}
+
+	export function Subscribe(path: string | RegExp = ''): Route.Decorator {
+		return Route('subscribe', path)
+	}
+
+	export function Unsubscribe(path: string | RegExp = ''): Route.Decorator {
+		return Route('unsubscribe', path)
+	}
+
+	export function Purge(path: string | RegExp = ''): Route.Decorator {
+		return Route('purge', path)
+	}
+
+	export function Checkout(path: string | RegExp = ''): Route.Decorator {
+		return Route('checkout', path)
+	}
+
+	export function Move(path: string | RegExp = ''): Route.Decorator {
+		return Route('move', path)
+	}
+
+	export function Copy(path: string | RegExp = ''): Route.Decorator {
+		return Route('copy', path)
+	}
+
+	export function Merge(path: string | RegExp = ''): Route.Decorator {
+		return Route('merge', path)
+	}
+
+	export function Report(path: string | RegExp = ''): Route.Decorator {
+		return Route('report', path)
+	}
+
+	export function MSearch(path: string | RegExp = ''): Route.Decorator {
+		return Route('m-search', path)
+	}
+
+	export function Mkactivity(path: string | RegExp = ''): Route.Decorator {
+		return Route('mkactivity', path)
+	}
+
+	export function Mkcol(path: string | RegExp = ''): Route.Decorator {
+		return Route('mkcol', path)
+	}
+
+	export function Search(path: string | RegExp = ''): Route.Decorator {
+		return Route('search', path)
+	}
+
+	export function Lock(path: string | RegExp = ''): Route.Decorator {
+		return Route('lock', path)
+	}
+
+	export function Unlock(path: string | RegExp = ''): Route.Decorator {
+		return Route('unlock', path)
+	}
+
+	export function All(path: string | RegExp = ''): Route.Decorator {
+		return Route('all', path)
+	}
 
 	/**
 	 * @see http://expressjs.com/en/4x/api.html#routing-methods
