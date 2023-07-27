@@ -29,8 +29,7 @@
 	},
 	"engineStrict": true,
 	"peerDependencies": {
-		"@types/node": ">=14",
-		"mongoose": ">=6.1.5",
+		"mongoose": ">=7",
 		"reflect-metadata": "^0.1.13"
 	},
 	"devDependencies": {
