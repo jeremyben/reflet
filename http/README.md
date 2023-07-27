@@ -204,6 +204,24 @@ throw HttpError.MethodNotAllowed({ headers: { allow: ['GET'] } })
 
 Every known HTTP error is available for augmentation under its own name: [List of HTTP errors](#list-of-http-errors).
 
+#### Custom Errors
+
+Use both the `CustomErrors` interface and the `defineCustomErrors` function to create new static methods associated with their status.
+
+```ts
+declare global {
+  namespace RefletHttp {
+    interface CustomErrors {
+      299: 'Aborted'
+      420: 'EnhanceYourCalm'
+    }
+  }
+}
+
+// You must define the new errors at runtime, in order for the static methods to exist.
+defineCustomErrors({ 299: 'Aborted', 420: 'EnhanceYourCalm' })
+```
+
 #### Constraints
 
 With the `ErrorConstraint` interface, you can whitelist the errors you application uses.

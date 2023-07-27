@@ -745,7 +745,9 @@ declare global {
 		interface ErrorParams extends Record<_HttpError.Status, {}> {}
 
 		/**
-		 * Whitelist or widen status codes.
+		 * Adds custom errors, with their own static method.
+		 * You must then call `defineCustomErrors` in order to use the new static methods.
+		 *
 		 * @example
 		 * ```ts
 		 * declare global {
@@ -756,6 +758,8 @@ declare global {
 		 *     }
 		 *   }
 		 * }
+		 *
+		 * defineCustomErrors({ 299: 'Aborted', 420: 'EnhanceYourCalm' })
 		 * ```
 		 */
 		interface CustomErrors {}
