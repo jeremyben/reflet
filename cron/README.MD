@@ -29,7 +29,7 @@ The **best** decorators for [node-cron](https://github.com/kelektiv/node-cron). 
     * Install `reflect-metadata` shim.
 
         ```sh
-        yarn add reflect-metadata
+        npm i reflect-metadata
         ```
 
     * Import the shim in your program before everything else.
@@ -44,7 +44,8 @@ The **best** decorators for [node-cron](https://github.com/kelektiv/node-cron). 
 2. Install the package along with peer dependencies.
 
     ```sh
-    yarn add @reflet/cron cron && yarn add -D @types/cron @types/node
+    npm i @reflet/cron cron
+    npm i -D @types/cron
     ```
 
 3. Create cron jobs.

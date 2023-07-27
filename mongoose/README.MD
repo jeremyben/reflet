@@ -34,7 +34,7 @@ The **best** decorators for [Mongoose](https://mongoosejs.com/). Have a look at 
     * Install `reflect-metadata` shim.
 
         ```sh
-        yarn add reflect-metadata
+        npm i reflect-metadata
         ```
 
     * Import the shim in your program before everything else.
@@ -49,7 +49,7 @@ The **best** decorators for [Mongoose](https://mongoosejs.com/). Have a look at 
 2. Install the package along with peer dependencies.
 
     ```sh
-    yarn add @reflet/mongoose mongoose
+    npm i @reflet/mongoose mongoose
     ```
 
 3. Create your decorated models.

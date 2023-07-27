@@ -13,8 +13,7 @@ Built with a simple and discoverable API surface, for a great developper experie
 _Requires at least typescript 4.0._
 
 ```sh
-yarn add @reflet/http
-npm install @reflet/http
+npm i @reflet/http
 ```
 
 ## Status 🎰

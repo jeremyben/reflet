@@ -31,7 +31,7 @@ The **best** decorators for [Express](https://expressjs.com/). Have a look at [R
     * Install `reflect-metadata` shim.
 
         ```sh
-        yarn add reflect-metadata
+        npm i reflect-metadata
         ```
 
     * Import the shim in your program before everything else.
@@ -46,8 +46,8 @@ The **best** decorators for [Express](https://expressjs.com/). Have a look at [R
 2. Install the package along with peer dependencies.
 
     ```sh
-    yarn add @reflet/express @reflet/http express
-    yarn add -D @types/express @types/node
+    npm i @reflet/express @reflet/http express
+    npm i -D @types/express
     ```
 
 3. Create your decorated routing routers.

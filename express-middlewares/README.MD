@@ -23,7 +23,7 @@ Convenient middleware decorators to use with [Reflet/express](../express).
 2. Install the package.
 
     ```sh
-    yarn add @reflet/express-middlewares
+    npm i @reflet/express-middlewares
     ```
 
 3. Apply middleware decorators on routers or specific routes.
