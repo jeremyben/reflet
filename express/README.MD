@@ -852,6 +852,9 @@ get() {
 
 ```ts
 @Send<string>((data, { res }) => {
+  if (data === undefined) res.status(404)
+  if (data === null) res.status(204)
+  
   res.json({ name: data })
 })
 @Get('/me')
