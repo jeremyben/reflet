@@ -1,6 +1,9 @@
 
 # `@reflet/cron` 🌠
 
+> [!WARNING]  
+> This package is outdated. It will be updated again when the cron package reaches v3.
+
 The **best** decorators for [node-cron](https://github.com/kelektiv/node-cron). Have a look at [Reflet's philosophy](../README.MD#Philosophy-).
 
 * [Getting started](#getting-started)
