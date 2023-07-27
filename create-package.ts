@@ -24,11 +24,11 @@ const PACKAGE_JSON = {
 		access: 'public',
 	},
 	engines: {
-		node: '>=8.10',
+		node: '>=14',
 	},
 	engineStrict: true,
 	peerDependencies: {
-		'@types/node': '>=8',
+		'@types/node': '>=14',
 		'reflect-metadata': '^0.1.13',
 	},
 	devDependencies: {},
@@ -107,7 +107,7 @@ export function ${PascalPkgName}Method(options?: any): MethodDecorator {
 /** 
  * @internal
  */
-export function get${PascalPkgName}Methods(target: object): any[] {
+export function get${PascalPkgName}Methods(target: Function): any[] {
 	return Reflect.getMetadata(Meta, target.prototype)
 }
 `
@@ -138,7 +138,7 @@ import { get${PascalPkgName}ClassOptions } from './class-decorator'
 /** 
  * @public
  */
-export function create(target: Function & { prototype: any }) {
+export function create(target: Function) {
 	const props = get${PascalPkgName}Props(target)
 	const methods = get${PascalPkgName}Methods(target)
 	const classOptions = get${PascalPkgName}ClassOptions(target)
