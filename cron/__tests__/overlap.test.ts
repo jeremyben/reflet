@@ -24,10 +24,12 @@ test('prevent one-second overlap', async () => {
 })
 
 describe.skip('redlock', () => {
-	const redisClient = redis.createClient()
-
 	const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation()
+	let redisClient: redis.RedisClient
 
+	beforeAll(() => {
+		redisClient = redis.createClient()
+	})
 	afterEach(() => consoleWarnSpy.mockClear())
 	afterAll(() => {
 		consoleWarnSpy.mockRestore()
