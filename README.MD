@@ -119,7 +119,7 @@ NPM ecosystem got a bad rep by encouraging intricate third-party dependencies fo
 
 Reflet modules fully **own** their codebase. No direct third-party dependencies, only peer ones.
 
-_e.g. [Reflet/express](./express) only asks for the necessary **peer** dependencies: `express`, `@types/express`, `@reflet/http`, `reflect-metadata`._
+_e.g. [Reflet/express](./express) only asks for the necessary **peer** dependencies: `express`, `@types/express`, `@reflet/http`._
 
 ### Integration-tested
 

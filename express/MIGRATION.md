@@ -40,3 +40,5 @@
   Use the signature `(myMapper, [{ handler: myMiddleware, dedupe: true }])` instead of `(myMapper, myMiddleware, true)`.
 
 * "@reflet/http" is now a required peer dependency.
+  
+* "reflect-metadata" is no longer needed as a peer dependency.

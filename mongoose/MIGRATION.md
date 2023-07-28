@@ -11,3 +11,6 @@
   Its generics' order have also been switched: `Virtual.Populate<Local, Foreign>` instead of `Virtual.Populate<Foreign, Local>`
 
 * Static methods of `Model.I` and `Model.interface` no longer have callback signatures.
+
+* "reflect-metadata" is no longer needed as a peer dependency.
+  

@@ -24,30 +24,11 @@ The **best** decorators for [Mongoose](https://mongoosejs.com/). Have a look at 
 
 ## Getting started
 
-1. <details>
-    <summary>Make sure you have decorators enabled. (click for details)</summary>
-    <p>
+1. Enable experimental decorators in TypeScript compiler options.<br>_No need to install "reflect-metadata"._
 
-    * Enable them in your TypeScript compiler options.
-
-        ```json
-        "experimentalDecorators": true,
-        ```
-
-    * Install `reflect-metadata` shim.
-
-        ```sh
-        npm i reflect-metadata
-        ```
-
-    * Import the shim in your program before everything else.
-
-        ```ts
-        import 'reflect-metadata'
-        ```
-
-    </p>
-    </details>
+    ```json
+    "experimentalDecorators": true,
+    ```
 
 2. Install the package along with peer dependencies.
 
