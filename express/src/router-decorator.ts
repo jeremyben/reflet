@@ -1,5 +1,6 @@
 import * as express from 'express'
 import { ClassType, Registration, IsAny } from './interfaces'
+import { defineMetadata, getOwnMetadata } from './metadata-map'
 
 const METAKEY_ROUTER = Symbol('router')
 
@@ -284,10 +285,10 @@ export namespace ScopedMiddlewares {
  */
 export function extractRouterMeta(target: ClassType | Function, appClass?: ClassType): RouterMeta | undefined {
 	const appMeta: Pick<RouterMeta, 'scopedMiddlewares'> | undefined = appClass
-		? Reflect.getOwnMetadata(METAKEY_ROUTER, (appClass as Function).prototype)
+		? getOwnMetadata(METAKEY_ROUTER, (appClass as Function).prototype)
 		: undefined
 
-	const routerMeta: RouterMeta | undefined = Reflect.getOwnMetadata(METAKEY_ROUTER, target.prototype)
+	const routerMeta: RouterMeta | undefined = getOwnMetadata(METAKEY_ROUTER, target.prototype)
 
 	if (!appMeta || !routerMeta) {
 		return routerMeta
@@ -305,5 +306,5 @@ export function extractRouterMeta(target: ClassType | Function, appClass?: Class
  */
 function defineRouterMeta(routerMeta: RouterMeta, target: ClassType | Function): void {
 	// Attached to the prototype, because the constructor might be replaced with a proxy.
-	Reflect.defineMetadata(METAKEY_ROUTER, routerMeta, target.prototype)
+	defineMetadata(METAKEY_ROUTER, routerMeta, target.prototype)
 }

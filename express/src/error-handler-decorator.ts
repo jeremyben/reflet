@@ -1,5 +1,6 @@
 import * as express from 'express'
 import { ClassOrMethodDecorator, ClassType } from './interfaces'
+import { getMetadata, defineMetadata, getOwnMetadata } from './metadata-map'
 
 const METAKEY_CATCH = Symbol('catch')
 
@@ -33,16 +34,16 @@ export function Catch<T = any>(
 	return (target, key, descriptor) => {
 		// Method
 		if (key) {
-			const handlers: express.ErrorRequestHandler[] = Reflect.getMetadata(METAKEY_CATCH, target, key) || []
+			const handlers: express.ErrorRequestHandler[] = getMetadata(METAKEY_CATCH, target, key) || []
 			handlers.unshift(errorHandler)
-			Reflect.defineMetadata(METAKEY_CATCH, handlers, target, key)
+			defineMetadata(METAKEY_CATCH, handlers, target, key)
 		}
 		// Class
 		else {
 			const handlers: express.ErrorRequestHandler[] =
-				Reflect.getMetadata(METAKEY_CATCH, (target as Function).prototype) || []
+				getMetadata(METAKEY_CATCH, (target as Function).prototype) || []
 			handlers.unshift(errorHandler)
-			Reflect.defineMetadata(METAKEY_CATCH, handlers, (target as Function).prototype)
+			defineMetadata(METAKEY_CATCH, handlers, (target as Function).prototype)
 		}
 	}
 }
@@ -64,7 +65,7 @@ export function extractErrorHandlers(
 	key?: string | symbol
 ): express.ErrorRequestHandler[] {
 	// Method
-	if (key) return Reflect.getOwnMetadata(METAKEY_CATCH, target.prototype, key) || []
+	if (key) return getOwnMetadata(METAKEY_CATCH, target.prototype, key) || []
 	// Class
-	return Reflect.getOwnMetadata(METAKEY_CATCH, target.prototype) || []
+	return getOwnMetadata(METAKEY_CATCH, target.prototype) || []
 }

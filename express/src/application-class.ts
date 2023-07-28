@@ -2,6 +2,7 @@ import * as express from 'express'
 import { register } from './register'
 import { ClassType, Registration } from './interfaces'
 import { RefletExpressError } from './reflet-error'
+import { defineMetadata, getMetadata } from './metadata-map'
 
 /**
  * @internal
@@ -57,7 +58,7 @@ export class Application {
 			class: this.constructor as ClassType,
 			registered: false,
 		}
-		Reflect.defineMetadata(METAKEY_APPLICATION, metadata, app)
+		defineMetadata(METAKEY_APPLICATION, metadata, app)
 
 		return app as unknown as this
 	}
@@ -105,5 +106,5 @@ function mixinApplication(target: express.Application, source: Function) {
  * @internal
  */
 export function extractApplicationClass(target: object): ApplicationMeta | undefined {
-	return Reflect.getMetadata(METAKEY_APPLICATION, target)
+	return getMetadata(METAKEY_APPLICATION, target)
 }

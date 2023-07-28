@@ -4,6 +4,7 @@ import { RequestHeader } from '@reflet/http'
 import { flatMapFast } from './array-manipulation'
 import { ClassType } from './interfaces'
 import { RefletExpressError } from './reflet-error'
+import { getOwnMetadata, defineMetadata } from './metadata-map'
 
 const METAKEY_PARAM = Symbol('param')
 
@@ -362,10 +363,10 @@ export function createParamDecorator<T = any>(
 	use?: createParamDecorator.Middleware[]
 ): createParamDecorator.Decorator {
 	return (target, key, index) => {
-		const params: createParamDecorator.Options[] = Reflect.getOwnMetadata(METAKEY_PARAM, target, key) || []
+		const params: createParamDecorator.Options[] = getOwnMetadata(METAKEY_PARAM, target, key!) || []
 
 		if (params[index]) {
-			const codePath = `${target.constructor.name}.${key.toString()}`
+			const codePath = `${target.constructor.name}.${String(key)}`
 
 			throw new RefletExpressError(
 				'MULTIPLE_PARAMETER_DECORATORS',
@@ -374,7 +375,7 @@ export function createParamDecorator<T = any>(
 		}
 
 		params[index] = { mapper, use }
-		Reflect.defineMetadata(METAKEY_PARAM, params, target, key)
+		defineMetadata(METAKEY_PARAM, params, target, key!)
 	}
 }
 
@@ -412,7 +413,7 @@ export function extractParams(
 	key: string | symbol,
 	{ req, res, next }: { req: express.Request; res: express.Response; next: express.NextFunction }
 ): any[] {
-	const params: createParamDecorator.Options[] = Reflect.getOwnMetadata(METAKEY_PARAM, target.prototype, key) || []
+	const params: createParamDecorator.Options[] = getOwnMetadata(METAKEY_PARAM, target.prototype, key) || []
 
 	// No decorator found in the method: simply return the original arguments in the original order
 	if (!params.length) return [req, res, next]
@@ -444,7 +445,7 @@ export function extractParamsMiddlewares(
 	key: string | symbol,
 	alreadyMwares: express.RequestHandler[][]
 ): express.RequestHandler[] {
-	const params: createParamDecorator.Options[] = Reflect.getOwnMetadata(METAKEY_PARAM, target.prototype, key) || []
+	const params: createParamDecorator.Options[] = getOwnMetadata(METAKEY_PARAM, target.prototype, key) || []
 	if (!params.length) return []
 
 	const paramMwares: express.RequestHandler[] = []

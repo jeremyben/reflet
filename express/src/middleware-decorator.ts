@@ -1,4 +1,5 @@
 import { ClassOrMethodDecorator, ClassType, Handler } from './interfaces'
+import { defineMetadata, getOwnMetadata } from './metadata-map'
 
 const METAKEY_USE = Symbol('use')
 
@@ -31,15 +32,15 @@ export function Use<Req extends {}>(...middlewares: Handler<Req>[]): Use.Decorat
 	return (target, key, descriptor) => {
 		// Method middleware
 		if (key) {
-			const existingMiddlewares = Reflect.getOwnMetadata(METAKEY_USE, target, key) || []
+			const existingMiddlewares = getOwnMetadata(METAKEY_USE, target, key) || []
 			// prepend
-			Reflect.defineMetadata(METAKEY_USE, middlewares.concat(existingMiddlewares), target, key)
+			defineMetadata(METAKEY_USE, middlewares.concat(existingMiddlewares), target, key)
 		}
 		// Class middleware
 		else {
-			const existingMiddlewares = Reflect.getOwnMetadata(METAKEY_USE, (target as Function).prototype) || []
+			const existingMiddlewares = getOwnMetadata(METAKEY_USE, (target as Function).prototype) || []
 			// prepend
-			Reflect.defineMetadata(METAKEY_USE, middlewares.concat(existingMiddlewares), (target as Function).prototype)
+			defineMetadata(METAKEY_USE, middlewares.concat(existingMiddlewares), (target as Function).prototype)
 		}
 	}
 }
@@ -57,7 +58,7 @@ export namespace Use {
  */
 export function extractMiddlewares(target: ClassType | Function, key?: string | symbol): Handler[] {
 	// Method middlewares
-	if (key) return Reflect.getOwnMetadata(METAKEY_USE, target.prototype, key) || []
+	if (key) return getOwnMetadata(METAKEY_USE, target.prototype, key) || []
 	// Class middlewares
-	return Reflect.getOwnMetadata(METAKEY_USE, target.prototype) || []
+	return getOwnMetadata(METAKEY_USE, target.prototype) || []
 }
