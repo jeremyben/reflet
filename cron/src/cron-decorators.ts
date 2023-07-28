@@ -7,10 +7,11 @@ import {
 	RetryOptions,
 	RedisLockOption,
 } from './interfaces'
+import { defineMetadata, getOwnMetadata } from './metadata-map'
 
 /* istanbul ignore file - lots of branches with no logic */
 
-const META: Partial<Record<keyof JobParameters, symbol>> = {
+const META = {
 	cronTime: Symbol('cron-time'),
 	onComplete: Symbol('cron-oncomplete'),
 	runOnInit: Symbol('cron-runoninit'),
@@ -22,7 +23,7 @@ const META: Partial<Record<keyof JobParameters, symbol>> = {
 	preventOverlap: Symbol('cron-preventoverlap'),
 	retry: Symbol('cron-retry'),
 	passCurrentJob: Symbol('current-job'),
-}
+} satisfies Partial<Record<keyof JobParameters, symbol>>
 
 /**
  * The time to fire off your job.
@@ -46,7 +47,7 @@ const META: Partial<Record<keyof JobParameters, symbol>> = {
  */
 export function Cron(cronTime: string | Date): MethodDecorator {
 	return (target, key, descriptor) => {
-		Reflect.defineMetadata(META.cronTime, cronTime, target, key)
+		defineMetadata(META.cronTime, cronTime, target, key)
 	}
 }
 
@@ -58,8 +59,8 @@ export namespace Cron {
 	 */
 	export function OnComplete(onComplete: () => void): ClassOrMethodDecorator {
 		return (target, key, descriptor) => {
-			if (key) Reflect.defineMetadata(META.onComplete, onComplete, target, key)
-			else Reflect.defineMetadata(META.onComplete, onComplete, target)
+			if (key) defineMetadata(META.onComplete, onComplete, target, key)
+			else defineMetadata(META.onComplete, onComplete, target)
 		}
 	}
 
@@ -84,13 +85,13 @@ export namespace Cron {
 	export function RunOnInit(): ClassOrMethodDecorator
 	export function RunOnInit(target?: object, key?: string | symbol): ClassOrMethodDecorator | void {
 		if (arguments.length && (typeof target === 'function' || typeof target === 'object')) {
-			if (key) Reflect.defineMetadata(META.runOnInit, true, target, key)
-			else Reflect.defineMetadata(META.runOnInit, true, target)
+			if (key) defineMetadata(META.runOnInit, true, target, key)
+			else defineMetadata(META.runOnInit, true, target)
 		} else {
 			// tslint:disable-next-line: no-shadowed-variable
 			return (target, key, descriptor) => {
-				if (key) Reflect.defineMetadata(META.runOnInit, true, target, key)
-				else Reflect.defineMetadata(META.runOnInit, true, target)
+				if (key) defineMetadata(META.runOnInit, true, target, key)
+				else defineMetadata(META.runOnInit, true, target)
 			}
 		}
 	}
@@ -108,11 +109,11 @@ export namespace Cron {
 			descriptor?: TypedPropertyDescriptor<any>
 		): void | MethodDecorator {
 			if (arguments.length === 3 && typeof target === 'object') {
-				Reflect.defineMetadata(META.runOnInit, false, target, key!)
+				defineMetadata(META.runOnInit, false, target, key!)
 			} else {
 				// tslint:disable-next-line: no-shadowed-variable
 				return (target, key, descriptor) => {
-					Reflect.defineMetadata(META.runOnInit, false, target, key)
+					defineMetadata(META.runOnInit, false, target, key)
 				}
 			}
 		}
@@ -141,13 +142,13 @@ export namespace Cron {
 	export function Start(): ClassOrMethodDecorator
 	export function Start(target?: object, key?: string | symbol): ClassOrMethodDecorator | void {
 		if (arguments.length && (typeof target === 'function' || typeof target === 'object')) {
-			if (key) Reflect.defineMetadata(META.start, true, target, key)
-			else Reflect.defineMetadata(META.start, true, target)
+			if (key) defineMetadata(META.start, true, target, key)
+			else defineMetadata(META.start, true, target)
 		} else {
 			// tslint:disable-next-line: no-shadowed-variable
 			return (target, key, descriptor) => {
-				if (key) Reflect.defineMetadata(META.start, true, target, key)
-				else Reflect.defineMetadata(META.start, true, target)
+				if (key) defineMetadata(META.start, true, target, key)
+				else defineMetadata(META.start, true, target)
 			}
 		}
 	}
@@ -165,11 +166,11 @@ export namespace Cron {
 			descriptor?: TypedPropertyDescriptor<any>
 		): void | MethodDecorator {
 			if (arguments.length === 3 && typeof target === 'object') {
-				Reflect.defineMetadata(META.start, false, target, key!)
+				defineMetadata(META.start, false, target, key!)
 			} else {
 				// tslint:disable-next-line: no-shadowed-variable
 				return (target, key, descriptor) => {
-					Reflect.defineMetadata(META.start, false, target, key)
+					defineMetadata(META.start, false, target, key)
 				}
 			}
 		}
@@ -194,8 +195,8 @@ export namespace Cron {
 	 */
 	export function TimeZone(timezone: Zone): ClassOrMethodDecorator {
 		return (target, key, descriptor) => {
-			if (key) Reflect.defineMetadata(META.timeZone, timezone, target, key)
-			else Reflect.defineMetadata(META.timeZone, timezone, target)
+			if (key) defineMetadata(META.timeZone, timezone, target, key)
+			else defineMetadata(META.timeZone, timezone, target)
 		}
 	}
 
@@ -218,8 +219,8 @@ export namespace Cron {
 	 */
 	export function UtcOffset(offset: Offset | number): ClassOrMethodDecorator {
 		return (target, key, descriptor) => {
-			if (key) Reflect.defineMetadata(META.utcOffset, offset, target, key)
-			else Reflect.defineMetadata(META.utcOffset, offset, target)
+			if (key) defineMetadata(META.utcOffset, offset, target, key)
+			else defineMetadata(META.utcOffset, offset, target)
 		}
 	}
 
@@ -245,13 +246,13 @@ export namespace Cron {
 	export function UnrefTimeout(): ClassOrMethodDecorator
 	export function UnrefTimeout(target?: object, key?: string | symbol): ClassOrMethodDecorator | void {
 		if (arguments.length && (typeof target === 'function' || typeof target === 'object')) {
-			if (key) Reflect.defineMetadata(META.unrefTimeout, true, target, key)
-			else Reflect.defineMetadata(META.unrefTimeout, true, target)
+			if (key) defineMetadata(META.unrefTimeout, true, target, key)
+			else defineMetadata(META.unrefTimeout, true, target)
 		} else {
 			// tslint:disable-next-line: no-shadowed-variable
 			return (target, key, descriptor) => {
-				if (key) Reflect.defineMetadata(META.unrefTimeout, true, target, key)
-				else Reflect.defineMetadata(META.unrefTimeout, true, target)
+				if (key) defineMetadata(META.unrefTimeout, true, target, key)
+				else defineMetadata(META.unrefTimeout, true, target)
 			}
 		}
 	}
@@ -269,11 +270,11 @@ export namespace Cron {
 			descriptor?: TypedPropertyDescriptor<any>
 		): void | MethodDecorator {
 			if (arguments.length === 3 && typeof target === 'object') {
-				Reflect.defineMetadata(META.unrefTimeout, false, target, key!)
+				defineMetadata(META.unrefTimeout, false, target, key!)
 			} else {
 				// tslint:disable-next-line: no-shadowed-variable
 				return (target, key, descriptor) => {
-					Reflect.defineMetadata(META.unrefTimeout, false, target, key)
+					defineMetadata(META.unrefTimeout, false, target, key)
 				}
 			}
 		}
@@ -299,8 +300,8 @@ export namespace Cron {
 	 */
 	export function Catch<T = unknown>(errorHandler: (error: T) => void): ClassOrMethodDecorator {
 		return (target, key, descriptor) => {
-			if (key) Reflect.defineMetadata(META.catchError, errorHandler, target, key)
-			else Reflect.defineMetadata(META.catchError, errorHandler, target)
+			if (key) defineMetadata(META.catchError, errorHandler, target, key)
+			else defineMetadata(META.catchError, errorHandler, target)
 		}
 	}
 
@@ -319,8 +320,8 @@ export namespace Cron {
 	 */
 	export function Retry(options: RetryOptions): ClassOrMethodDecorator {
 		return (target, key, descriptor) => {
-			if (key) Reflect.defineMetadata(META.retry, options, target, key)
-			else Reflect.defineMetadata(META.retry, options, target)
+			if (key) defineMetadata(META.retry, options, target, key)
+			else defineMetadata(META.retry, options, target)
 		}
 	}
 
@@ -343,13 +344,13 @@ export namespace Cron {
 	export function PreventOverlap(): ClassOrMethodDecorator
 	export function PreventOverlap(target?: object, key?: string | symbol): ClassOrMethodDecorator | void {
 		if (arguments.length && (typeof target === 'function' || typeof target === 'object')) {
-			if (key) Reflect.defineMetadata(META.preventOverlap, true, target, key)
-			else Reflect.defineMetadata(META.preventOverlap, true, target)
+			if (key) defineMetadata(META.preventOverlap, true, target, key)
+			else defineMetadata(META.preventOverlap, true, target)
 		} else {
 			// tslint:disable-next-line: no-shadowed-variable
 			return (target, key, descriptor) => {
-				if (key) Reflect.defineMetadata(META.preventOverlap, true, target, key)
-				else Reflect.defineMetadata(META.preventOverlap, true, target)
+				if (key) defineMetadata(META.preventOverlap, true, target, key)
+				else defineMetadata(META.preventOverlap, true, target)
 			}
 		}
 	}
@@ -383,8 +384,8 @@ export namespace Cron {
 			return (target, key, descriptor) => {
 				const redlocker: RedisLockOption = { type: 'redis', lock }
 
-				if (key) Reflect.defineMetadata(META.preventOverlap, redlocker, target, key)
-				else Reflect.defineMetadata(META.preventOverlap, redlocker, target)
+				if (key) defineMetadata(META.preventOverlap, redlocker, target, key)
+				else defineMetadata(META.preventOverlap, redlocker, target)
 			}
 		}
 
@@ -400,11 +401,11 @@ export namespace Cron {
 			descriptor?: TypedPropertyDescriptor<any>
 		): void | MethodDecorator {
 			if (arguments.length === 3 && typeof target === 'object') {
-				Reflect.defineMetadata(META.preventOverlap, false, target, key!)
+				defineMetadata(META.preventOverlap, false, target, key!)
 			} else {
 				// tslint:disable-next-line: no-shadowed-variable
 				return (target, key, descriptor) => {
-					Reflect.defineMetadata(META.preventOverlap, false, target, key)
+					defineMetadata(META.preventOverlap, false, target, key)
 				}
 			}
 		}
@@ -431,27 +432,27 @@ export namespace Cron {
 	): ClassOrMethodDecorator {
 		return (target, key, descriptor) => {
 			if (key) {
-				if (options.onComplete) Reflect.defineMetadata(META.onComplete, options.onComplete, target, key)
-				if (options.start) Reflect.defineMetadata(META.start, options.start, target, key)
-				if (options.runOnInit) Reflect.defineMetadata(META.runOnInit, options.runOnInit, target, key)
-				if (options.timeZone) Reflect.defineMetadata(META.timeZone, options.timeZone, target, key)
-				if (options.utcOffset) Reflect.defineMetadata(META.utcOffset, options.utcOffset, target, key)
-				if (options.unrefTimeout) Reflect.defineMetadata(META.unrefTimeout, options.unrefTimeout, target, key)
-				if (options.retry) Reflect.defineMetadata(META.retry, options.retry, target, key)
+				if (options.onComplete) defineMetadata(META.onComplete, options.onComplete, target, key)
+				if (options.start) defineMetadata(META.start, options.start, target, key)
+				if (options.runOnInit) defineMetadata(META.runOnInit, options.runOnInit, target, key)
+				if (options.timeZone) defineMetadata(META.timeZone, options.timeZone, target, key)
+				if (options.utcOffset) defineMetadata(META.utcOffset, options.utcOffset, target, key)
+				if (options.unrefTimeout) defineMetadata(META.unrefTimeout, options.unrefTimeout, target, key)
+				if (options.retry) defineMetadata(META.retry, options.retry, target, key)
 				if (options.preventOverlap) {
-					Reflect.defineMetadata(META.preventOverlap, options.preventOverlap, target, key)
+					defineMetadata(META.preventOverlap, options.preventOverlap, target, key)
 				}
-				if (options.catchError) Reflect.defineMetadata(META.catchError, options.catchError, target, key)
+				if (options.catchError) defineMetadata(META.catchError, options.catchError, target, key)
 			} else {
-				if (options.onComplete) Reflect.defineMetadata(META.onComplete, options.onComplete, target)
-				if (options.start) Reflect.defineMetadata(META.start, options.start, target)
-				if (options.runOnInit) Reflect.defineMetadata(META.runOnInit, options.runOnInit, target)
-				if (options.timeZone) Reflect.defineMetadata(META.timeZone, options.timeZone, target)
-				if (options.utcOffset) Reflect.defineMetadata(META.utcOffset, options.utcOffset, target)
-				if (options.unrefTimeout) Reflect.defineMetadata(META.unrefTimeout, options.unrefTimeout, target)
-				if (options.retry) Reflect.defineMetadata(META.retry, options.retry, target)
-				if (options.preventOverlap) Reflect.defineMetadata(META.preventOverlap, options.preventOverlap, target)
-				if (options.catchError) Reflect.defineMetadata(META.catchError, options.catchError, target)
+				if (options.onComplete) defineMetadata(META.onComplete, options.onComplete, target)
+				if (options.start) defineMetadata(META.start, options.start, target)
+				if (options.runOnInit) defineMetadata(META.runOnInit, options.runOnInit, target)
+				if (options.timeZone) defineMetadata(META.timeZone, options.timeZone, target)
+				if (options.utcOffset) defineMetadata(META.utcOffset, options.utcOffset, target)
+				if (options.unrefTimeout) defineMetadata(META.unrefTimeout, options.unrefTimeout, target)
+				if (options.retry) defineMetadata(META.retry, options.retry, target)
+				if (options.preventOverlap) defineMetadata(META.preventOverlap, options.preventOverlap, target)
+				if (options.catchError) defineMetadata(META.catchError, options.catchError, target)
 			}
 		}
 	}
@@ -476,11 +477,11 @@ export function CurrentJob(...args: Parameters<ParameterDecorator>): void
 export function CurrentJob(): ParameterDecorator
 export function CurrentJob(target?: object, key?: string | symbol, index?: number): ParameterDecorator | void {
 	if (arguments.length && typeof index === 'number') {
-		Reflect.defineMetadata(META.passCurrentJob, true, target!, key!)
+		defineMetadata(META.passCurrentJob, true, target!, key!)
 	} else {
 		// tslint:disable-next-line: no-shadowed-variable
 		return (target, key, index) => {
-			Reflect.defineMetadata(META.passCurrentJob, true, target, key)
+			defineMetadata(META.passCurrentJob, true, target, key)
 		}
 	}
 }
@@ -493,6 +494,6 @@ export function extract<T extends Exclude<keyof JobParameters, 'onTick'>>(
 	target: ClassType,
 	methodKey?: string
 ): JobParameters[T] {
-	if (methodKey) return Reflect.getOwnMetadata(META[parameter], target.prototype, methodKey)
-	return Reflect.getOwnMetadata(META[parameter], target)
+	if (methodKey) return getOwnMetadata(META[parameter], target.prototype, methodKey)
+	return getOwnMetadata(META[parameter], target)
 }
