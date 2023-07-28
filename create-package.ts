@@ -29,7 +29,6 @@ const PACKAGE_JSON = {
 	engineStrict: true,
 	peerDependencies: {
 		'@types/node': '>=14',
-		'reflect-metadata': '^0.1.13',
 	},
 	devDependencies: {},
 	scripts: {

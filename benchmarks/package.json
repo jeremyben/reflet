@@ -17,6 +17,7 @@
 		"autocannon": "^4.6.0",
 		"class-transformer": "^0.2.3",
 		"class-validator": "^0.12.2",
+		"reflect-metadata": "^0.1.13",
 		"routing-controllers": "^0.8.1",
 		"rxjs": "^6.5.5"
 	}
