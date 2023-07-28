@@ -2,6 +2,7 @@ import * as mongoose from 'mongoose'
 import { ClassType, Plain, PlainKeys, Ref, RefGlobal } from './interfaces'
 import { schemaFrom } from './schema-creation'
 import { RefletMongooseError } from './reflet-error'
+import { defineMetadata, getMetadata } from './metadata-map'
 
 const MetaField = Symbol('field')
 const MetaFieldDiscriminators = Symbol('field-discriminators')
@@ -31,7 +32,7 @@ export function Field<T extends Field.SchemaType | [Field.SchemaType] | [[Field.
 	return (target, key) => {
 		const fields = getFields(target.constructor)
 		fields[<string>key] = field as any
-		Reflect.defineMetadata(MetaField, fields, target.constructor)
+		defineMetadata(MetaField, fields, target.constructor)
 	}
 }
 
@@ -96,7 +97,7 @@ export namespace Field {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
 			fields[<string>key] = field
-			Reflect.defineMetadata(MetaField, fields, target.constructor)
+			defineMetadata(MetaField, fields, target.constructor)
 		}
 	}
 
@@ -136,7 +137,7 @@ export namespace Field {
 
 			fields[<string>key] = { type, ...options }
 
-			Reflect.defineMetadata(MetaField, fields, target.constructor)
+			defineMetadata(MetaField, fields, target.constructor)
 		}
 	}
 
@@ -191,14 +192,14 @@ export namespace Field {
 			const fields = getFields(target.constructor)
 			// We must remove _id from the base schema or `{ _id: false }` won't do anything on the discriminator schema (_id is still there by default).
 			fields[<string>key] = new mongoose.Schema({}, { _id: false })
-			Reflect.defineMetadata(MetaField, fields, target.constructor)
+			defineMetadata(MetaField, fields, target.constructor)
 			const discriminatorFields = getDiscriminatorFields(target.constructor)
 
 			discriminatorFields[<string>key] = Array.isArray(args[0])
 				? { classes: args[0] as ClassType[], options: args[1] as Field.Union.Options<any> | undefined }
 				: { classes: args as ClassType[] }
 
-			Reflect.defineMetadata(MetaFieldDiscriminators, discriminatorFields, target.constructor)
+			defineMetadata(MetaFieldDiscriminators, discriminatorFields, target.constructor)
 		}
 	}
 
@@ -245,7 +246,7 @@ export namespace Field {
 			const fields = getFields(target.constructor)
 			// We must remove _id from the base schema or `{ _id: false }` won't do anything on the discriminator schema (_id is still there by default).
 			fields[<string>key] = [new mongoose.Schema({}, { _id: false })]
-			Reflect.defineMetadata(MetaField, fields, target.constructor)
+			defineMetadata(MetaField, fields, target.constructor)
 
 			const discriminatorArrayFields = getDiscriminatorFields(target.constructor)
 
@@ -253,7 +254,7 @@ export namespace Field {
 				? { classes: args[0] as ClassType[], options: args[1] as Field.ArrayOfUnion.Options<any> | undefined }
 				: { classes: args as ClassType[] }
 
-			Reflect.defineMetadata(MetaFieldDiscriminators, discriminatorArrayFields, target.constructor)
+			defineMetadata(MetaFieldDiscriminators, discriminatorArrayFields, target.constructor)
 		}
 	}
 
@@ -315,7 +316,7 @@ export namespace Field {
 				? [{ type, ref: ref[0], ...(options as {}) }]
 				: { type, ref, ...(options as {}) }
 
-			Reflect.defineMetadata(MetaField, fields, target.constructor)
+			defineMetadata(MetaField, fields, target.constructor)
 		}
 	}
 
@@ -354,7 +355,7 @@ export namespace Field {
 				? [{ type, refPath: refPath[0] as string, ...(options as {}) }]
 				: { type, refPath: refPath as string, ...(options as {}) }
 
-			Reflect.defineMetadata(MetaField, fields, target.constructor)
+			defineMetadata(MetaField, fields, target.constructor)
 		}
 	}
 
@@ -398,7 +399,7 @@ export namespace Field {
 
 			fields[<string>key] = { type, enum: values, ...options }
 
-			Reflect.defineMetadata(MetaField, fields, target.constructor)
+			defineMetadata(MetaField, fields, target.constructor)
 		}
 	}
 
@@ -450,7 +451,7 @@ export namespace Field {
 
 			fields[<string>key] = { type, enum: values, ...options }
 
-			Reflect.defineMetadata(MetaField, fields, target.constructor)
+			defineMetadata(MetaField, fields, target.constructor)
 		}
 	}
 
@@ -478,7 +479,7 @@ export namespace Field {
  */
 export function getFields(target: object): mongoose.SchemaDefinition<any> {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
-	return Object.assign({}, Reflect.getMetadata(MetaField, target))
+	return Object.assign({}, getMetadata(MetaField, target))
 }
 
 /**
@@ -488,7 +489,7 @@ export function getDiscriminatorFields(target: object): {
 	[key: string]: { classes: ClassType[]; options?: Field.Union.Options<any> }
 } {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
-	return Object.assign({}, Reflect.getMetadata(MetaFieldDiscriminators, target))
+	return Object.assign({}, getMetadata(MetaFieldDiscriminators, target))
 }
 
 /**

@@ -1,5 +1,6 @@
 import { RefletMongooseError } from './reflet-error'
 import { ModelAny } from './interfaces'
+import { defineMetadata, getOwnMetadata } from './metadata-map'
 
 const MetaModel = Symbol('model')
 
@@ -7,7 +8,7 @@ const MetaModel = Symbol('model')
  * @internal
  */
 export function registerModelDecorator(model: ModelAny, type: 'Model' | 'Model.Discriminator') {
-	Reflect.defineMetadata(MetaModel, type, model)
+	defineMetadata(MetaModel, type, model)
 }
 
 /**
@@ -15,7 +16,7 @@ export function registerModelDecorator(model: ModelAny, type: 'Model' | 'Model.D
  * @internal
  */
 export function checkDecoratorsOrder(target: object): void {
-	const appliedModelDecorator = Reflect.getOwnMetadata(MetaModel, target)
+	const appliedModelDecorator = getOwnMetadata(MetaModel, target)
 
 	if (appliedModelDecorator) {
 		throw new RefletMongooseError(

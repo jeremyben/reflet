@@ -2,6 +2,7 @@ import * as mongoose from 'mongoose'
 import { checkDecoratorsOrder } from './check-decorator-order'
 import { ClassType, DocumentAny } from './interfaces'
 import { RefletMongooseError } from './reflet-error'
+import { defineMetadata, getMetadata } from './metadata-map'
 
 const MetaSchemaCallback = Symbol('schema-callback')
 
@@ -40,7 +41,7 @@ export function SchemaCallback<T extends DocumentAny>(
 			)
 		}
 
-		Reflect.defineMetadata(MetaSchemaCallback, callback, target)
+		defineMetadata(MetaSchemaCallback, callback, target)
 	}
 }
 
@@ -62,7 +63,7 @@ export namespace SchemaCallback {
 				)
 			}
 
-			Reflect.defineMetadata(MetaSchemaCallback, callback, target)
+			defineMetadata(MetaSchemaCallback, callback, target)
 		}
 	}
 
@@ -90,5 +91,5 @@ export function applySchemaCallback(schema: mongoose.Schema<any>, target: ClassT
  * @internal
  */
 function getSchemaCallback(target: Function): ((s: mongoose.Schema) => void) | undefined {
-	return Reflect.getMetadata(MetaSchemaCallback, target)
+	return getMetadata(MetaSchemaCallback, target)
 }

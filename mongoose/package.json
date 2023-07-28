@@ -29,8 +29,7 @@
 	},
 	"engineStrict": true,
 	"peerDependencies": {
-		"mongoose": ">=7",
-		"reflect-metadata": "^0.1.13"
+		"mongoose": ">=7"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "^17.6.7",

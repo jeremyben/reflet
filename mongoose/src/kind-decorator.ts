@@ -1,6 +1,7 @@
 import * as mongoose from 'mongoose'
 import { ModelAny } from './interfaces'
 import { RefletMongooseError } from './reflet-error'
+import { defineMetadata, getMetadata } from './metadata-map'
 
 const MetaKind = Symbol('kind')
 
@@ -40,10 +41,10 @@ export function Kind(valueOrTarget?: string | Object, key?: string | symbol) {
 				)
 			}
 
-			Reflect.defineMetadata(MetaKind, [keyy, valueOrTarget], target.constructor)
+			defineMetadata(MetaKind, [keyy, valueOrTarget], target.constructor)
 		}
 	} else {
-		return Reflect.defineMetadata(MetaKind, [key, undefined], valueOrTarget!.constructor)
+		return defineMetadata(MetaKind, [key, undefined], valueOrTarget!.constructor)
 	}
 }
 
@@ -63,7 +64,7 @@ export { Kind as DiscriminatorKey }
  * @internal
  */
 export function getKind(target: object): [string?, string?] {
-	return Reflect.getMetadata(MetaKind, target) || []
+	return getMetadata(MetaKind, target) || []
 }
 
 /**

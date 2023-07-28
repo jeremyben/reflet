@@ -1,6 +1,7 @@
 import * as mongoose from 'mongoose'
 import { checkDecoratorsOrder } from './check-decorator-order'
 import { ClassType, DocumentAny } from './interfaces'
+import { defineMetadata, getMetadata } from './metadata-map'
 
 const MetaSchemaPlugin = Symbol('schema-plugin')
 
@@ -23,7 +24,7 @@ export function SchemaPlugin<T extends DocumentAny, O = any>(
 		checkDecoratorsOrder(target)
 		const plugins = getPlugins(target)
 		plugins.unshift({ fn, options })
-		Reflect.defineMetadata(MetaSchemaPlugin, plugins, target)
+		defineMetadata(MetaSchemaPlugin, plugins, target)
 	}
 }
 
@@ -57,7 +58,7 @@ export function applyPlugins(schema: mongoose.Schema<any>, target: ClassType) {
  */
 function getPlugins(target: Function): PluginMeta[] {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
-	return (Reflect.getMetadata(MetaSchemaPlugin, target) || []).slice()
+	return (getMetadata(MetaSchemaPlugin, target) || []).slice()
 }
 
 /**

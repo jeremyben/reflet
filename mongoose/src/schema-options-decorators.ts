@@ -2,6 +2,7 @@ import * as mongoose from 'mongoose'
 import { checkDecoratorsOrder } from './check-decorator-order'
 import { RefletMongooseError } from './reflet-error'
 import { ClassType } from './interfaces'
+import { defineMetadata, getMetadata } from './metadata-map'
 
 const MetaSchemaOptions = Symbol('schema-options')
 const MetaSchemaOptionsKeys = Symbol('schema-options-keys')
@@ -33,7 +34,7 @@ export function SchemaOptions(options: mongoose.SchemaOptions): SchemaOptions.De
 			)
 		}
 
-		Reflect.defineMetadata(MetaSchemaOptions, options, target)
+		defineMetadata(MetaSchemaOptions, options, target)
 	}
 }
 
@@ -60,12 +61,12 @@ export namespace SchemaOptions {
 
 			if (parentOrSiblingOptions) {
 				const mergedOptions = assignDeep({}, parentOrSiblingOptions, options)
-				Reflect.defineMetadata(MetaSchemaOptions, mergedOptions, target)
+				defineMetadata(MetaSchemaOptions, mergedOptions, target)
 			} else {
 				console.warn(
 					`RefletMongooseWarning: No need to use @SchemaOptions.Merge on "${target.name}", simply use @SchemaOptions.`
 				)
-				Reflect.defineMetadata(MetaSchemaOptions, options, target)
+				defineMetadata(MetaSchemaOptions, options, target)
 			}
 		}
 	}
@@ -86,7 +87,7 @@ export namespace SchemaOptions {
 				)
 			}
 
-			Reflect.defineMetadata(MetaSchemaOptions, options, target)
+			defineMetadata(MetaSchemaOptions, options, target)
 		}
 	}
 
@@ -160,7 +161,7 @@ type SchemaOptionsKeysMeta = Partial<{
 export function CreatedAt(target: Object, key: string | symbol): ReturnType<CreatedAt.Decorator> {
 	const schemaKeys = getSchemaOptionsKeys(target.constructor)
 	schemaKeys.CreatedAt = key as string
-	Reflect.defineMetadata(MetaSchemaOptionsKeys, schemaKeys, target.constructor)
+	defineMetadata(MetaSchemaOptionsKeys, schemaKeys, target.constructor)
 }
 
 export namespace CreatedAt {
@@ -193,7 +194,7 @@ export namespace CreatedAt {
 export function UpdatedAt(target: Object, key: string | symbol): ReturnType<UpdatedAt.Decorator> {
 	const schemaKeys = getSchemaOptionsKeys(target.constructor)
 	schemaKeys.UpdatedAt = key as string
-	Reflect.defineMetadata(MetaSchemaOptionsKeys, schemaKeys, target.constructor)
+	defineMetadata(MetaSchemaOptionsKeys, schemaKeys, target.constructor)
 }
 
 export namespace UpdatedAt {
@@ -224,7 +225,7 @@ export namespace UpdatedAt {
 export function VersionKey(target: Object, key: string | symbol): ReturnType<VersionKey.Decorator> {
 	const schemaKeys = getSchemaOptionsKeys(target.constructor)
 	schemaKeys.VersionKey = key as string
-	Reflect.defineMetadata(MetaSchemaOptionsKeys, schemaKeys, target.constructor)
+	defineMetadata(MetaSchemaOptionsKeys, schemaKeys, target.constructor)
 }
 
 export namespace VersionKey {
@@ -337,7 +338,7 @@ export function mergeSchemaOptionsAndKeys(target: ClassType): mongoose.SchemaOpt
  * @internal
  */
 function getSchemaOptions(target: Function): mongoose.SchemaOptions | undefined {
-	return Reflect.getMetadata(MetaSchemaOptions, target)
+	return getMetadata(MetaSchemaOptions, target)
 }
 
 /**
@@ -345,5 +346,5 @@ function getSchemaOptions(target: Function): mongoose.SchemaOptions | undefined 
  */
 function getSchemaOptionsKeys(target: Function): SchemaOptionsKeysMeta {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
-	return Object.assign({}, Reflect.getMetadata(MetaSchemaOptionsKeys, target))
+	return Object.assign({}, getMetadata(MetaSchemaOptionsKeys, target))
 }

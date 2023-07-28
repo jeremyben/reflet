@@ -1,6 +1,7 @@
 import * as mongoose from 'mongoose'
 import { checkDecoratorsOrder } from './check-decorator-order'
 import { ClassType, PlainKeys } from './interfaces'
+import { defineMetadata, getMetadata } from './metadata-map'
 
 const MetaSchemaIndex = Symbol('schema-index')
 
@@ -18,7 +19,7 @@ export function SchemaIndex<T extends Record<string, any>>(
 
 		const indexes = getIndexes(target)
 		indexes.unshift({ index: index as mongoose.IndexDefinition, options })
-		Reflect.defineMetadata(MetaSchemaIndex, indexes, target)
+		defineMetadata(MetaSchemaIndex, indexes, target)
 	}
 }
 
@@ -50,7 +51,7 @@ export function applyIndexes(schema: mongoose.Schema<any>, target: ClassType) {
  */
 function getIndexes(target: Function): IndexMeta[] {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
-	return (Reflect.getMetadata(MetaSchemaIndex, target) || []).slice()
+	return (getMetadata(MetaSchemaIndex, target) || []).slice()
 }
 
 /**

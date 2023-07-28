@@ -2,6 +2,7 @@ import * as mongoose from 'mongoose'
 import * as mongodb from 'mongodb'
 import { checkDecoratorsOrder } from './check-decorator-order'
 import { AsDocument, ClassType, DocumentAny, Plain } from './interfaces'
+import { defineMetadata, getMetadata } from './metadata-map'
 
 //
 // ────────────────────────────────────────────────────────────────────────────
@@ -177,7 +178,7 @@ export function PreHook(
 		checkDecoratorsOrder(target)
 		const preHooks = getPreHooks(target)
 		preHooks.unshift({ method, callbackOrOptions, callbackIfOptions })
-		Reflect.defineMetadata(MetaPreHook, preHooks, target)
+		defineMetadata(MetaPreHook, preHooks, target)
 	}
 }
 
@@ -207,7 +208,7 @@ export function applyPreHooks(schema: mongoose.Schema<any>, target: ClassType): 
  */
 function getPreHooks(target: Function): Hook[] {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
-	return (Reflect.getMetadata(MetaPreHook, target) || []).slice()
+	return (getMetadata(MetaPreHook, target) || []).slice()
 }
 
 //
@@ -532,7 +533,7 @@ export function PostHook(
 		checkDecoratorsOrder(target)
 		const postHooks = getPostHooks(target)
 		postHooks.unshift({ method, callbackOrOptions, callbackIfOptions })
-		Reflect.defineMetadata(MetaPostHook, postHooks, target)
+		defineMetadata(MetaPostHook, postHooks, target)
 	}
 }
 
@@ -562,7 +563,7 @@ export function applyPostHooks(schema: mongoose.Schema<any>, target: ClassType):
  */
 function getPostHooks(target: Function): Hook[] {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
-	return (Reflect.getMetadata(MetaPostHook, target) || []).slice()
+	return (getMetadata(MetaPostHook, target) || []).slice()
 }
 
 //

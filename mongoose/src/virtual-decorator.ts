@@ -1,5 +1,6 @@
 import * as mongoose from 'mongoose'
 import { PlainKeys, Ref } from './interfaces'
+import { defineMetadata, getMetadata } from './metadata-map'
 
 const MetaVirtualPopulate = Symbol('virtual-populate')
 
@@ -112,7 +113,7 @@ export namespace Virtual {
 		return (target, key) => {
 			const fields = getVirtualPopulates(target.constructor)
 			fields[<string>key] = options
-			Reflect.defineMetadata(MetaVirtualPopulate, fields, target.constructor)
+			defineMetadata(MetaVirtualPopulate, fields, target.constructor)
 		}
 	}
 
@@ -217,5 +218,5 @@ export function attachVirtualPopulates(schema: mongoose.Schema<any>, target: obj
  */
 function getVirtualPopulates(target: object): Record<string, Virtual.Populate.Options<any, any>> {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
-	return Object.assign({}, Reflect.getMetadata(MetaVirtualPopulate, target))
+	return Object.assign({}, getMetadata(MetaVirtualPopulate, target))
 }
