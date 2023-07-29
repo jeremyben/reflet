@@ -1,13 +1,14 @@
-import { ClassType, RoutingMethod, Decorator } from './interfaces'
+import { ClassType, PropertyOrMethodDecorator } from './interfaces'
+import { getOwnMetadata, defineMetadata } from './metadata-map'
 
-const META = Symbol('route')
+const METAKEY_ROUTE = Symbol('route')
 
 /**
  * @internal
  */
 type RouteMeta = {
 	readonly path: string | RegExp
-	readonly method: RoutingMethod
+	readonly method: Lowercase<Route.Method>
 	readonly key: string | symbol
 }
 
@@ -25,8 +26,9 @@ type RouteMeta = {
  * ------
  * @public
  */
-export const Get = (path: string | RegExp = '') => Method('get', path)
-
+export function Get(path: string | RegExp = ''): Route.Decorator {
+	return Route('get', path)
+}
 /**
  * Routes HTTP `POST` requests.
  * @param path - path for which the decorated class method is invoked.
@@ -41,7 +43,9 @@ export const Get = (path: string | RegExp = '') => Method('get', path)
  * ------
  * @public
  */
-export const Post = (path: string | RegExp = '') => Method('post', path)
+export function Post(path: string | RegExp = ''): Route.Decorator {
+	return Route('post', path)
+}
 
 /**
  * Routes HTTP `PUT` requests.
@@ -57,7 +61,9 @@ export const Post = (path: string | RegExp = '') => Method('post', path)
  * ------
  * @public
  */
-export const Put = (path: string | RegExp = '') => Method('put', path)
+export function Put(path: string | RegExp = ''): Route.Decorator {
+	return Route('put', path)
+}
 
 /**
  * Routes HTTP `PATCH` requests.
@@ -73,7 +79,9 @@ export const Put = (path: string | RegExp = '') => Method('put', path)
  * ------
  * @public
  */
-export const Patch = (path: string | RegExp = '') => Method('patch', path)
+export function Patch(path: string | RegExp = ''): Route.Decorator {
+	return Route('patch', path)
+}
 
 /**
  * Routes HTTP `DELETE` requests.
@@ -89,7 +97,9 @@ export const Patch = (path: string | RegExp = '') => Method('patch', path)
  * ------
  * @public
  */
-export const Delete = (path: string | RegExp = '') => Method('delete', path)
+export function Delete(path: string | RegExp = ''): Route.Decorator {
+	return Route('delete', path)
+}
 
 /**
  * Routes an HTTP request.
@@ -98,48 +108,181 @@ export const Delete = (path: string | RegExp = '') => Method('delete', path)
  * @see https://expressjs.com/en/4x/api.html#app.METHOD
  * @public
  */
-export function Method<T extends RoutingMethod>(method: T | T[], path: string | RegExp): Decorator.Route<T> {
+export function Route(method: Route.Method | Route.Method[], path: string | RegExp): Route.Decorator {
 	return (target, key, descriptor) => {
 		// Attach routes to class instead of methods to extract and traverse all of them at once
-		const routes: RouteMeta[] = Reflect.getOwnMetadata(META, target) || []
+		const routes: RouteMeta[] = getOwnMetadata(METAKEY_ROUTE, target) || []
 
 		if (Array.isArray(method)) {
-			for (const method_ of method) routes.push({ path, method: method_, key })
+			for (const methodd of method) {
+				routes.push({ path, method: methodd.toLowerCase() as Lowercase<Route.Method>, key })
+			}
 		} else {
-			routes.push({ path, method, key })
+			routes.push({ path, method: method.toLowerCase() as Lowercase<Route.Method>, key })
 		}
 
-		Reflect.defineMetadata(META, routes, target)
+		defineMetadata(METAKEY_ROUTE, routes, target)
 	}
 }
 
 /* istanbul ignore next */
 // tslint:disable: no-shadowed-variable
-export namespace Method {
-	export const Get = (path: string | RegExp = '') => Method('get', path)
-	export const Post = (path: string | RegExp = '') => Method('post', path)
-	export const Put = (path: string | RegExp = '') => Method('put', path)
-	export const Patch = (path: string | RegExp = '') => Method('patch', path)
-	export const Delete = (path: string | RegExp = '') => Method('delete', path)
-	export const Head = (path: string | RegExp = '') => Method('head', path)
-	export const Options = (path: string | RegExp = '') => Method('options', path)
-	export const Trace = (path: string | RegExp = '') => Method('trace', path)
-	export const Notify = (path: string | RegExp = '') => Method('notify', path)
-	export const Subscribe = (path: string | RegExp = '') => Method('subscribe', path)
-	export const Unsubscribe = (path: string | RegExp = '') => Method('unsubscribe', path)
-	export const Purge = (path: string | RegExp = '') => Method('purge', path)
-	export const Checkout = (path: string | RegExp = '') => Method('checkout', path)
-	export const Move = (path: string | RegExp = '') => Method('move', path)
-	export const Copy = (path: string | RegExp = '') => Method('copy', path)
-	export const Merge = (path: string | RegExp = '') => Method('merge', path)
-	export const Report = (path: string | RegExp = '') => Method('report', path)
-	export const MSearch = (path: string | RegExp = '') => Method('m-search', path)
-	export const Mkactivity = (path: string | RegExp = '') => Method('mkactivity', path)
-	export const Mkcol = (path: string | RegExp = '') => Method('mkcol', path)
-	export const Search = (path: string | RegExp = '') => Method('search', path)
-	export const Lock = (path: string | RegExp = '') => Method('lock', path)
-	export const Unlock = (path: string | RegExp = '') => Method('unlock', path)
-	export const All = (path: string | RegExp = '') => Method('all', path)
+export namespace Route {
+	export function Get(path: string | RegExp = ''): Route.Decorator {
+		return Route('get', path)
+	}
+
+	export function Post(path: string | RegExp = ''): Route.Decorator {
+		return Route('post', path)
+	}
+
+	export function Put(path: string | RegExp = ''): Route.Decorator {
+		return Route('put', path)
+	}
+
+	export function Patch(path: string | RegExp = ''): Route.Decorator {
+		return Route('patch', path)
+	}
+
+	export function Delete(path: string | RegExp = ''): Route.Decorator {
+		return Route('delete', path)
+	}
+
+	export function Head(path: string | RegExp = ''): Route.Decorator {
+		return Route('head', path)
+	}
+
+	export function Options(path: string | RegExp = ''): Route.Decorator {
+		return Route('options', path)
+	}
+
+	export function Trace(path: string | RegExp = ''): Route.Decorator {
+		return Route('trace', path)
+	}
+
+	export function Notify(path: string | RegExp = ''): Route.Decorator {
+		return Route('notify', path)
+	}
+
+	export function Subscribe(path: string | RegExp = ''): Route.Decorator {
+		return Route('subscribe', path)
+	}
+
+	export function Unsubscribe(path: string | RegExp = ''): Route.Decorator {
+		return Route('unsubscribe', path)
+	}
+
+	export function Purge(path: string | RegExp = ''): Route.Decorator {
+		return Route('purge', path)
+	}
+
+	export function Checkout(path: string | RegExp = ''): Route.Decorator {
+		return Route('checkout', path)
+	}
+
+	export function Move(path: string | RegExp = ''): Route.Decorator {
+		return Route('move', path)
+	}
+
+	export function Copy(path: string | RegExp = ''): Route.Decorator {
+		return Route('copy', path)
+	}
+
+	export function Merge(path: string | RegExp = ''): Route.Decorator {
+		return Route('merge', path)
+	}
+
+	export function Report(path: string | RegExp = ''): Route.Decorator {
+		return Route('report', path)
+	}
+
+	export function MSearch(path: string | RegExp = ''): Route.Decorator {
+		return Route('m-search', path)
+	}
+
+	export function Mkactivity(path: string | RegExp = ''): Route.Decorator {
+		return Route('mkactivity', path)
+	}
+
+	export function Mkcol(path: string | RegExp = ''): Route.Decorator {
+		return Route('mkcol', path)
+	}
+
+	export function Search(path: string | RegExp = ''): Route.Decorator {
+		return Route('search', path)
+	}
+
+	export function Lock(path: string | RegExp = ''): Route.Decorator {
+		return Route('lock', path)
+	}
+
+	export function Unlock(path: string | RegExp = ''): Route.Decorator {
+		return Route('unlock', path)
+	}
+
+	export function All(path: string | RegExp = ''): Route.Decorator {
+		return Route('all', path)
+	}
+
+	/**
+	 * @see http://expressjs.com/en/4x/api.html#routing-methods
+	 * @public
+	 */
+	export type Method =
+		| 'checkout'
+		| 'copy'
+		| 'delete'
+		| 'get'
+		| 'head'
+		| 'lock'
+		| 'merge'
+		| 'mkactivity'
+		| 'mkcol'
+		| 'move'
+		| 'm-search'
+		| 'notify'
+		| 'options'
+		| 'patch'
+		| 'post'
+		| 'purge'
+		| 'put'
+		| 'report'
+		| 'search'
+		| 'subscribe'
+		| 'trace'
+		| 'unlock'
+		| 'unsubscribe'
+		| 'all'
+		| 'CHECKOUT'
+		| 'COPY'
+		| 'DELETE'
+		| 'GET'
+		| 'HEAD'
+		| 'LOCK'
+		| 'MERGE'
+		| 'MKACTIVITY'
+		| 'MKCOL'
+		| 'MOVE'
+		| 'M-SEARCH'
+		| 'NOTIFY'
+		| 'OPTIONS'
+		| 'PATCH'
+		| 'POST'
+		| 'PURGE'
+		| 'PUT'
+		| 'REPORT'
+		| 'SEARCH'
+		| 'SUBSCRIBE'
+		| 'TRACE'
+		| 'UNLOCK'
+		| 'UNSUBSCRIBE'
+		| 'ALL'
+
+	/**
+	 * Equivalent to an union of `MethodDecorator` and `ProperyDecorator`.
+	 * @public
+	 */
+	export type Decorator = PropertyOrMethodDecorator & { __expressRoute?: never }
 }
 
 /**
@@ -147,12 +290,5 @@ export namespace Method {
  * @internal
  */
 export function extractRoutes(target: ClassType): RouteMeta[] {
-	return Reflect.getOwnMetadata(META, target.prototype) || []
-}
-
-/**
- * @internal
- */
-export function hasRoutes(target: ClassType): boolean {
-	return Reflect.hasOwnMetadata(META, target.prototype)
+	return getOwnMetadata(METAKEY_ROUTE, target.prototype) || []
 }

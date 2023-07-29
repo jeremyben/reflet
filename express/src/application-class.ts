@@ -1,6 +1,8 @@
 import * as express from 'express'
 import { register } from './register'
-import { ClassType, Controllers } from './interfaces'
+import { ClassType, Registration } from './interfaces'
+import { RefletExpressError } from './reflet-error'
+import { defineMetadata, getMetadata } from './metadata-map'
 
 /**
  * @internal
@@ -10,7 +12,7 @@ export type ApplicationMeta = {
 	registered: boolean
 }
 
-const META = Symbol('application')
+const METAKEY_APPLICATION = Symbol('application')
 
 export interface Application extends express.Application {}
 
@@ -31,7 +33,7 @@ export interface Application extends express.Application {}
  * }
  *
  * ＠Router('/foo')
- * class FooController {
+ * class FooRouter {
  *   ＠Get()
  *   list() {
  *     return db.collection('foo').find({})
@@ -39,7 +41,7 @@ export interface Application extends express.Application {}
  * }
  *
  * const app = new App()
- * app.register([FooController])
+ * app.register([FooRouter])
  * app.listen(3000)
  * ```
  * ------
@@ -56,13 +58,13 @@ export class Application {
 			class: this.constructor as ClassType,
 			registered: false,
 		}
-		Reflect.defineMetadata(META, metadata, app)
+		defineMetadata(METAKEY_APPLICATION, metadata, app)
 
 		return app as unknown as this
 	}
 
-	register(controllers: Controllers = []) {
-		register(this, controllers)
+	register(routers: Registration[] = []) {
+		register(this, routers)
 
 		return this
 	}
@@ -86,7 +88,13 @@ function mixinApplication(target: express.Application, source: Function) {
 
 		for (const key of keys) {
 			if (key === 'constructor') continue
-			if (key in target) throw Error(`Cannot overwrite "${key}" on express application.`)
+
+			if (key in target) {
+				throw new RefletExpressError(
+					'EXPRESS_PROPERTY_PROTECTED',
+					`Cannot overwrite "${key}" on express application.`
+				)
+			}
 
 			const descriptor = Object.getOwnPropertyDescriptor(proto.prototype, key)!
 			Object.defineProperty(target, key, descriptor)
@@ -98,5 +106,5 @@ function mixinApplication(target: express.Application, source: Function) {
  * @internal
  */
 export function extractApplicationClass(target: object): ApplicationMeta | undefined {
-	return Reflect.getMetadata(META, target)
+	return getMetadata(METAKEY_APPLICATION, target)
 }

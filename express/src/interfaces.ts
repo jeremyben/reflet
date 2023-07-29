@@ -2,150 +2,18 @@ import * as express from 'express'
 import * as core from 'express-serve-static-core'
 
 /**
- * Exported decorators interfaces.
- * Branded as distinct symbols for the dedicated linter and the compiler API.
  * @public
  */
-export namespace Decorator {
-	/**
-	 * Used for `@Router` decorator.
-	 * Equivalent to `ClassDecorator`.
-	 * @public
-	 */
-	export type Router = ClassDecorator & { __expressRouter?: never }
-
-	/**
-	 * Used for `@Router.Children` decorator.
-	 * Equivalent to `ClassDecorator`.
-	 * @public
-	 */
-	export type RouterChildren = ClassDecorator & { __expressRouterChildren?: never }
-
-	/**
-	 * Used for `@Get, @Post, @Put, @Patch, @Delete, @Method` decorators.
-	 * Equivalent to `MethodDecorator`.
-	 * @public
-	 */
-	export type Route<T extends RoutingMethod> = PropertyOrMethodDecorator & { __expressRoute?: T }
-
-	/**
-	 * Used for `createParamDecorator`.
-	 * Equivalent to `ParameterDecorator`.
-	 * @public
-	 */
-	export type HandlerParameter = ParameterDecorator & { __expressHandlerParameter?: never }
-
-	/**
-	 * Used for `@Req` decorator.
-	 * Equivalent to `ParameterDecorator`.
-	 * @public
-	 */
-	export type Req = ParameterDecorator & { __expressReq?: never; __expressHandlerParameter?: never }
-
-	/**
-	 * Used for `@Res` decorator.
-	 * Equivalent to `ParameterDecorator`.
-	 * @public
-	 */
-	export type Res = ParameterDecorator & { __expressRes?: never; __expressHandlerParameter?: never }
-
-	/**
-	 * Used for `@Next` decorator.
-	 * Equivalent to `ParameterDecorator`.
-	 * @public
-	 */
-	export type Next = ParameterDecorator & { __expressNext?: never; __expressHandlerParameter?: never }
-
-	/**
-	 * Used for `@Body` decorator.
-	 * Equivalent to `ParameterDecorator`.
-	 * @public
-	 */
-	export type Body = ParameterDecorator & { __expressBody?: never; __expressHandlerParameter?: never }
-
-	/**
-	 * Used for `@Params` decorator.
-	 * Equivalent to `ParameterDecorator`.
-	 * @public
-	 */
-	export type Params = ParameterDecorator & { __expressParams?: never; __expressHandlerParameter?: never }
-
-	/**
-	 * Used for `@Query` decorator.
-	 * Equivalent to `ParameterDecorator`.
-	 * @public
-	 */
-	export type Query = ParameterDecorator & { __expressQuery?: never; __expressHandlerParameter?: never }
-
-	/**
-	 * Used for `@Headers` decorator.
-	 * Equivalent to `ParameterDecorator`.
-	 * @public
-	 */
-	export type Headers = ParameterDecorator & { __expressHeaders?: never; __expressHandlerParameter?: never }
-
-	/**
-	 * Used for `@Use` decorator.
-	 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
-	 * @public
-	 */
-	export type Use<T extends ClassOrMethodUnion = 'class|method'> = ClassOrMethodDecorator<T> & {
-		__expressUse?: never
-	}
-
-	/**
-	 * Used for `@Catch` decorator.
-	 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
-	 * @public
-	 */
-	export type Catch<T extends ClassOrMethodUnion = 'class|method'> = ClassOrMethodDecorator<T> & {
-		__expressCatch?: never
-	}
-
-	/**
-	 * Used for `@Send` decorator.
-	 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
-	 * @public
-	 */
-	export type Send<T extends ClassOrMethodUnion = 'class|method'> = ClassOrMethodDecorator<T> & {
-		__expressSend?: never
-	}
-
-	/**
-	 * Used for `@Send.Dont` decorator.
-	 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
-	 * @public
-	 */
-	export type DontSend<T extends ClassOrMethodUnion = 'class|method'> = ClassOrMethodDecorator<T> & {
-		__expressDontSend?: never
-	}
-}
+export type ClassOrMethodDecorator = <TFunction extends Function>(
+	target: TFunction | Object,
+	propertyKey?: string | symbol,
+	descriptor?: TypedPropertyDescriptor<any>
+) => any
 
 /**
  * @public
  */
-type ClassOrMethodUnion = 'class' | 'method' | 'class|method'
-
-/**
- * Generic decorator type to choose beetween `ClassDecorator`, `MethodDecorator`, or both.
- * @public
- */
-type ClassOrMethodDecorator<T extends ClassOrMethodUnion = 'class|method'> = T extends 'class'
-	? ClassDecorator
-	: T extends 'method'
-	? MethodDecorator
-	: T extends 'class|method'
-	? <TFunction extends Function>(
-			target: TFunction | Object,
-			propertyKey?: string | symbol,
-			descriptor?: TypedPropertyDescriptor<any>
-	  ) => any
-	: never
-
-/**
- * @public
- */
-type PropertyOrMethodDecorator = (
+export type PropertyOrMethodDecorator = (
 	target: Object,
 	propertyKey: string | symbol,
 	descriptor?: TypedPropertyDescriptor<any>
@@ -154,11 +22,18 @@ type PropertyOrMethodDecorator = (
 /**
  * @public
  */
-type TypedDescriptor<T> = {
-	enumerable?: boolean
-	configurable?: boolean
-	writable?: boolean
-	value?: T
+export type ClassOrTypedMethodDecorator<T> = <TFunction extends Function>(
+	target: Object | TFunction,
+	propertyKey?: string | symbol,
+	descriptor?: MethodDescriptorReturn<T>
+) => TFunction extends Function ? any : MethodDescriptorReturn<T> | void
+
+/**
+ * {@linkcode TypedPropertyDescriptor}
+ * @public
+ */
+interface MethodDescriptorReturn<T> {
+	value?: (...args: any[]) => T
 }
 
 /**
@@ -168,31 +43,46 @@ type TypedDescriptor<T> = {
 export type ClassType = new (...args: any[]) => any
 
 /**
- * @public
- */
-export type ObjectInstance = object & {
-	[Symbol.hasInstance]?(value: any): never // not a function
-	[Symbol.iterator]?(): never // not an array
-}
-
-/**
  * @example
  * ```ts
- * const controllers: Controllers = [
- *   { path: '/foo', router: Foo },
- *   { path: '/bar', router: Bar },
+ * const routers: Registration[] = [
+ *   ['/foo', Foo],
+ *   ['/bar', Bar],
  *   new Baz(),
  * ]
- * register(app, controllers)
+ * register(app, routers)
  * ```
  * ------
  * @public
  */
-export type Controllers = (
-	| (new () => any)
-	| ObjectInstance
-	| { path: string | RegExp; router: (new () => any) | ObjectInstance | express.IRouter }
-)[]
+export type Registration = Registration.Class | Registration.Instance | Registration.Tuple
+
+export namespace Registration {
+	/**
+	 * @public
+	 */
+	export type Class = new () => any
+
+	/**
+	 * @public
+	 */
+	export type Instance = object & NotFunction & NotArray
+
+	/**
+	 * @public
+	 */
+	export type Tuple = [path: string | RegExp, router: Registration.Class | Registration.Instance | express.IRouter]
+}
+
+/**
+ * @public
+ */
+type NotFunction = { bind?(): never } | { call?(): never } | { apply?(): never }
+
+/**
+ * @public
+ */
+type NotArray = { push?(): never } | { pop?(): never } | { shift?(): never } | { unshift?(): never }
 
 /**
  * @public
@@ -219,105 +109,24 @@ export interface Handler<Req extends {} = {}> {
 }
 
 /**
- * Request headers union.
+ * Only readonly properties and methods from response.
  * @public
  */
-export type RequestHeaderName =
-	| 'access-control-request-headers'
-	| 'access-control-request-method'
-	| 'origin'
-	| 'authorization'
-	| 'proxy-authorization'
-	| 'accept'
-	| 'accept-charset'
-	| 'accept-encoding'
-	| 'accept-language'
-	| 'cache-control'
-	| 'pragma'
-	| 'te'
-	| 'from'
-	| 'host'
-	| 'referer'
-	| 'user-agent'
-	| 'expect'
-	| 'max-forwards'
-	| 'forwarded'
-	| 'x-forwarded-for'
-	| 'x-forwarded-host'
-	| 'x-forwarded-proto'
-	| 'via'
-	| 'if-match'
-	| 'if-none-match'
-	| 'if-modified-since'
-	| 'if-unmodified-since'
-	| 'range'
-	| 'if-range'
-	| 'cookie'
-	| 'dnt'
-	| 'connection'
-	| 'keep-alive'
-	| 'content-disposition'
-	| 'upgrade-insecure-requests'
-	| 'x-requested-with'
-	| 'x-csrf-token'
-	| 'save-data'
-	| 'warning'
-	| 'date'
-	| 'upgrade'
-	| 'x-http-method-override'
-	| 'http2-settings'
-	| 'content-length'
-	| 'content-type'
-	| 'content-md5'
-
-/**
- * @see http://expressjs.com/en/4x/api.html#routing-methods
- * @public
- */
-export type RoutingMethod =
-	| 'checkout'
-	| 'copy'
-	| 'delete'
-	| 'get'
-	| 'head'
-	| 'lock'
-	| 'merge'
-	| 'mkactivity'
-	| 'mkcol'
-	| 'move'
-	| 'm-search'
-	| 'notify'
-	| 'options'
-	| 'patch'
-	| 'post'
-	| 'purge'
-	| 'put'
-	| 'report'
-	| 'search'
-	| 'subscribe'
-	| 'trace'
-	| 'unlock'
-	| 'unsubscribe'
-	| 'all'
-
-/**
- * @public
- */
-export type StatusCode =
-	| StatusCode.Information
-	| StatusCode.Success
-	| StatusCode.Redirection
-	| StatusCode.ClientError
-	| StatusCode.ServerError
-
-export namespace StatusCode {
-	export type Information = 100 | 101 | 102 | 103
-	export type Success = 200 | 201 | 202 | 203 | 204 | 205 | 206 | 207 | 208 | 226
-	export type Redirection = 300 | 301 | 302 | 303 | 304 | 307 | 308
-	// prettier-ignore
-	export type ClientError = 400 | 401 | 402 | 403 | 404 | 405 | 406 | 407 | 408 | 409 | 410 | 411 | 412 | 413 | 414 | 415 | 416 | 417 | 418 | 421 | 422 | 423 | 424 | 425 | 426 | 428 | 429 | 431 | 451
-	export type ServerError = 500 | 501 | 502 | 503 | 504 | 505 | 506 | 507 | 508 | 510 | 511
-}
+export type ResponseReadonly = Pick<
+	express.Response,
+	| 'statusCode'
+	| 'statusMessage'
+	| 'locals'
+	| 'charset'
+	| 'headersSent'
+	| 'getHeader'
+	| 'getHeaders'
+	| 'getHeaderNames'
+	| 'hasHeader'
+	| 'finished'
+	| 'writableEnded'
+	| 'writableFinished'
+>
 
 declare module 'express' {
 	export interface Application {
@@ -349,7 +158,7 @@ declare module 'express' {
 
 	type LayerRoute = {
 		path: string
-		methods: { [key in RoutingMethod]?: true }
+		methods: { [method: string]: true }
 		stack: {
 			handle: import('express').RequestHandler
 			name: string
@@ -357,7 +166,7 @@ declare module 'express' {
 			path: string | undefined
 			keys: { name: string; optional: boolean; offset: number }[]
 			regexp: RegExp
-			method: RoutingMethod
+			method: string
 		}[]
 	}
 }

@@ -1,17 +1,25 @@
 import * as mongoose from 'mongoose'
-import { Field, SchemaOptions, schemaFrom, VersionKey, CreatedAt, UpdatedAt, SchemaCallback, Model } from '../src'
+import autopopulate = require('mongoose-autopopulate')
+import {
+	Field,
+	SchemaOptions,
+	schemaFrom,
+	VersionKey,
+	CreatedAt,
+	UpdatedAt,
+	SchemaCallback,
+	Model,
+	SchemaPlugin,
+} from '../src'
+import { RefletMongooseError } from '../src/reflet-error'
 
 test('schema with reference', async () => {
 	@SchemaOptions({ _id: false })
 	abstract class SubSchema {
-		@Field({
-			type: [String],
-			default(this: SubSchema, doc: SubSchema) {
-				return ['julia']
-			},
-			enum: ['julia', 'arthur'],
+		@Field.ArrayOfEnum(['jeremy', 'julia', 'arthur'], {
+			default: ['jeremy'],
 		})
-		names: string[]
+		names: ('jeremy' | 'julia' | 'arthur')[]
 	}
 
 	@Model()
@@ -29,6 +37,7 @@ test('schema with reference', async () => {
 		toJSON: { getters: true },
 		toObject: { getters: true },
 	})
+	@SchemaPlugin<S, { functions: string[] }>(autopopulate as any, { functions: ['findOne'] })
 	@SchemaCallback<S>((schema) => schema.index({ name: 1, numbers: -1 }))
 	class S extends Model.I {
 		@Field({
@@ -47,12 +56,7 @@ test('schema with reference', async () => {
 		})
 		numbers: number[][]
 
-		@Field([
-			{
-				type: mongoose.Schema.Types.ObjectId,
-				ref: SReference,
-			},
-		])
+		@Field.Ref([SReference], { autopopulate: true })
 		srefs: mongoose.Types.DocumentArray<SReference>
 
 		@Field.Nested({
@@ -68,8 +72,11 @@ test('schema with reference', async () => {
 			a: { b: { c: string } }[]
 		}
 
-		@Field.Schema(SubSchema)
+		@Field.Schema(SubSchema, { required: true })
 		sub: SubSchema & mongoose.Types.Subdocument
+
+		@Field.Schema([SubSchema], { default: [{ names: ['arthur'] }] })
+		subs: (SubSchema & mongoose.Types.Subdocument)[]
 
 		@Field(mongoose.Schema.Types.Buffer)
 		buf: mongoose.Types.Buffer
@@ -92,9 +99,10 @@ test('schema with reference', async () => {
 		dec: mongoose.Types.Decimal128.fromString('13'),
 	})
 
-	const s = (await S.findOne({ name: 'Jeremy' }).populate('srefs'))!
+	const s = (await S.findOne({ name: 'Jeremy' }))!
 	// console.log(s)
-	// console.log('object', s.toObject())
+	// const obj = s.toObject()
+	// console.log('s-object', JSON.stringify(obj, null, '  '))
 
 	expect(s.srefs[0]._id).toBeInstanceOf(mongoose.Types.ObjectId)
 	expect(s.srefs[0].hello).toBe('hi')
@@ -103,8 +111,10 @@ test('schema with reference', async () => {
 })
 
 describe('timestamps', () => {
+	const code: RefletMongooseError['code'] = 'TIMESTAMP_OPTION_CONFLICT'
+
 	test('without schema options', async () => {
-		class TS {
+		abstract class TS {
 			@Field(String)
 			name: string
 
@@ -164,7 +174,7 @@ describe('timestamps', () => {
 			_updated: Date
 		}
 
-		expect(() => schemaFrom(TS2)).toThrowError(/cannot overwrite/)
+		expect(() => schemaFrom(TS2)).toThrow(expect.objectContaining({ code }))
 
 		@SchemaOptions({ timestamps: { createdAt: 'created', updatedAt: 'updated' } })
 		class TS2b {
@@ -178,7 +188,7 @@ describe('timestamps', () => {
 			_updated: Date
 		}
 
-		expect(() => schemaFrom(TS2b)).toThrowError(/cannot overwrite/)
+		expect(() => schemaFrom(TS2b)).toThrow(expect.objectContaining({ code }))
 	})
 
 	test('keys are defined whereas option is false', async () => {
@@ -194,7 +204,7 @@ describe('timestamps', () => {
 			updatedAt: Date
 		}
 
-		expect(() => schemaFrom(TS3)).toThrowError(/cannot overwrite/)
+		expect(() => schemaFrom(TS3)).toThrow(expect.objectContaining({ code }))
 
 		@SchemaOptions({ timestamps: { createdAt: false } })
 		class TS3b {
@@ -205,11 +215,13 @@ describe('timestamps', () => {
 			createdAt: Date
 		}
 
-		expect(() => schemaFrom(TS3b)).toThrowError(/cannot overwrite/)
+		expect(() => schemaFrom(TS3b)).toThrow(expect.objectContaining({ code }))
 	})
 })
 
 describe('versionKey', () => {
+	const code: RefletMongooseError['code'] = 'VERSIONKEY_OPTION_CONFLICT'
+
 	test('without schema options', async () => {
 		class VK {
 			@Field(String)
@@ -233,7 +245,7 @@ describe('versionKey', () => {
 			version: number
 		}
 
-		expect(() => schemaFrom(VK1)).toThrowError(/cannot overwrite/)
+		expect(() => schemaFrom(VK1)).toThrow(expect.objectContaining({ code }))
 	})
 
 	test('key is defined and option is false', async () => {
@@ -246,6 +258,23 @@ describe('versionKey', () => {
 			version: number
 		}
 
-		expect(() => schemaFrom(VK2)).toThrowError(/cannot overwrite/)
+		expect(() => schemaFrom(VK2)).toThrow(expect.objectContaining({ code }))
 	})
 })
+
+declare global {
+	/**
+	 * Namespace dedicated to application-specific declaration merging.
+	 * @public
+	 */
+	namespace RefletMongoose {
+		/**
+		 * Open interface to extend `@Field` SchemaType options.
+		 * Useful for global plugins.
+		 * @public
+		 */
+		interface SchemaTypeOptions {
+			autopopulate?: boolean
+		}
+	}
+}

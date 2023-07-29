@@ -42,7 +42,7 @@
 		// "paths": {},
 		// "rootDirs": [],
 		// "typeRoots": ["node_modules/@types"],
-		"types": ["reflect-metadata", "@types/jest", "@types/node"],
+		"types": ["@types/jest", "@types/node"],
 		// "allowSyntheticDefaultImports": false,
 		// "esModuleInterop": false,
 		// "preserveSymlinks": true,
@@ -56,7 +56,7 @@
 
 		/* Experimental Options */
 		"experimentalDecorators": true,
-		"emitDecoratorMetadata": true,
+		"emitDecoratorMetadata": false,
 
 		/* Compiler Plugins */
 		"plugins": [

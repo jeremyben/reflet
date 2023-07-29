@@ -1,15 +1,57 @@
 import * as mongoose from 'mongoose'
-import { Field, PopulateVirtual, Model, SchemaOptions, Plain } from '../src'
+import { Field, Virtual, Model, SchemaOptions, Plain } from '../src'
+
+test('virtual prop', async () => {
+	@Model()
+	@SchemaOptions({
+		toObject: { virtuals: true },
+		toJSON: { virtuals: true },
+	})
+	class VirtualProp extends Model.I {
+		@Field(String)
+		name: string
+
+		@Virtual
+		age: number
+
+		inv: number
+	}
+
+	const doc = new VirtualProp()
+	doc.name = 'test'
+	doc.age = 1
+	doc.inv = 2
+
+	expect(doc).toHaveProperty('age')
+	expect(doc).toHaveProperty('inv')
+
+	const saved = await doc.save()
+
+	expect(saved).toMatchObject({ age: 1, inv: 2 })
+
+	const retrieved = await VirtualProp.findById(saved._id)
+
+	expect(retrieved!.age).toBeUndefined()
+
+	retrieved!.age = 6
+	retrieved!.inv = 8
+
+	expect(retrieved).toMatchObject({ age: 6, inv: 8 })
+
+	const plain = retrieved!.toObject()
+	expect(plain).toMatchObject({ age: 6 })
+	expect(plain).not.toMatchObject({ inv: 8 })
+
+	const json = retrieved!.toJSON()
+	expect(json).toMatchObject({ age: 6 })
+	expect(json).not.toMatchObject({ inv: 8 })
+})
 
 test('virtual populate', async () => {
 	type NewTrack = Plain<Track, { Optional: '_id' }>
 
 	@Model()
-	class Track extends Model.I {
-		static create(doc: NewTrack, options?: mongoose.SaveOptions): Promise<Track>
-		// @ts-ignore implementation
-		static create(docs: NewTrack[]): Promise<Track[]>
-
+	class Track extends Model.I<typeof Track> {
 		@Field(String)
 		title: string
 
@@ -21,11 +63,7 @@ test('virtual populate', async () => {
 	type NewBand = Plain<Band, { Optional: '_id' }>
 
 	@Model()
-	class Band extends Model.I {
-		static create(doc: NewBand, options?: mongoose.SaveOptions): Promise<Band>
-		// @ts-ignore implementation
-		static create(docs: NewBand[]): Promise<Band[]>
-
+	class Band extends Model.I<typeof Band> {
 		@Field(String)
 		lead: string
 
@@ -42,8 +80,8 @@ test('virtual populate', async () => {
 		@Field([mongoose.Schema.Types.ObjectId])
 		trackIds: mongoose.Types.ObjectId[]
 
-		@PopulateVirtual<Track, Album>({
-			ref: Track,
+		@Virtual.Populate<Album, Track>({
+			ref: 'Track',
 			foreignField: '_id',
 			localField: 'trackIds',
 		})
@@ -52,8 +90,8 @@ test('virtual populate', async () => {
 		@Field({ type: mongoose.Schema.Types.ObjectId, required: true })
 		bandId: mongoose.Types.ObjectId
 
-		@PopulateVirtual<Band, Album>({
-			ref: Band,
+		@Virtual.Populate<Album, Band>({
+			ref: 'Band',
 			foreignField: '_id',
 			localField: 'bandId',
 			justOne: true,
@@ -73,7 +111,7 @@ test('virtual populate', async () => {
 	const band = await Band.create({ lead: 'Jeremy' })
 	const album = await new Album({ trackIds: tracks.map((t) => t._id), bandId: band._id }).save()
 
-	await album.populate('tracks band').execPopulate()
+	await album.populate('tracks band')
 
 	expect(album.bandId.equals(album.band?._id)).toBe(true)
 	expect(album.band?.lead).toBe('Jeremy')

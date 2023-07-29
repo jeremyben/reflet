@@ -5,6 +5,9 @@
 [![functions coverage](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/jeremyben/reflet/master/mongoose/coverage-summary.json&label=functions&query=total.functions.pct&color=brightgreen&suffix=%&logo=jest)](./coverage-summary.json)
 [![branches coverage](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/jeremyben/reflet/master/mongoose/coverage-summary.json&label=branches&query=total.branches.pct&color=brightgreen&suffix=%&logo=jest)](./coverage-summary.json)
 
+> [!IMPORTANT]  
+> Upgrade from **v1** to **v2** : [Migration guide](../mongoose/MIGRATION.md)
+
 The **best** decorators for [Mongoose](https://mongoosejs.com/). Have a look at [Reflet's philosophy](../README.MD#Philosophy-).
 
 * [Getting started](#getting-started)
@@ -15,42 +18,22 @@ The **best** decorators for [Mongoose](https://mongoosejs.com/). Have a look at 
 * [Hooks](#hooks)
 * [Model discriminators](#model-discriminators)
 * [Embedded discriminators](#embedded-discriminators)
-* [Populate virtuals](#populate-virtuals)
+* [Virtuals](#virtuals)
 * [Plain helper](#plain-helper)
 * [Augmentations](#augmentations)
 
 ## Getting started
 
-1. <details>
-    <summary>Make sure you have decorators enabled. (click for details)</summary>
-    <p>
+1. Enable experimental decorators in TypeScript compiler options.<br>_No need to install "reflect-metadata"._
 
-    * Enable them in your TypeScript compiler options.
-
-        ```json
-        "experimentalDecorators": true,
-        "emitDecoratorMetadata": true,
-        ```
-
-    * Install `reflect-metadata` shim.
-
-        ```sh
-        yarn add reflect-metadata
-        ```
-
-    * Import the shim in your program before everything else.
-
-        ```ts
-        import 'reflect-metadata'
-        ```
-
-    </p>
-    </details>
+    ```json
+    "experimentalDecorators": true,
+    ```
 
 2. Install the package along with peer dependencies.
 
     ```sh
-    yarn add @reflet/mongoose mongoose && yarn add -D @types/mongoose @types/node
+    npm i @reflet/mongoose mongoose
     ```
 
 3. Create your decorated models.
@@ -60,7 +43,7 @@ The **best** decorators for [Mongoose](https://mongoosejs.com/). Have a look at 
     import { Model, Field } from '@reflet/mongoose'
 
     @Model()
-    export class User extends Model.Interface {
+    export class User extends Model.I {
       static findByEmail(email) {
         return this.findOne({ email });
       }
@@ -203,9 +186,11 @@ const user = await User.create({
 <tbody>
 </table>
 
-Your class needs to inherit a special empty class, **`Model.Interface`** or **`Model.I`**, to have Mongoose document properties and methods.
-
 ⚠️ `@Model` should always be at the top of your class decorators. _Why? Because decorators are executed bottom to top, so if `@Model` directly compiles your class into a Mongooose Model, other class decorators won't be properly applied. Reflet will warn you with its own decorators._
+
+#### Correct model and document interface
+
+Your class needs to inherit a special empty class, **`Model.Interface`** or **`Model.I`**, to have Mongoose document properties and methods.
 
 #### Custom collection name
 
@@ -559,6 +544,8 @@ const User = mongoose.model<UserDocument>('User', userSchema)
 
 The `@PreHook` API is a direct wrapper of Mongoose [Schema.pre method](https://mongoosejs.com/docs/api/schema#schema_Schema-pre), you can put in there everything that you used to.
 
+Successive `@PreHook` will be applied in the order they are written, even though decorator functions in JS are executed in a bottom-up way (due to their _wrapping_ nature).
+
 ### Post hook
 
 > 🔦 `@PostHook(method, callback)`<br>
@@ -612,6 +599,8 @@ const User = mongoose.model<UserDocument>('User', userSchema)
 </table>
 
 The `@PostHook` API is a direct wrapper of Mongoose [Schema.post method](https://mongoosejs.com/docs/api/schema#schema_Schema-post), you can put in there everything that you used to.
+
+Successive `@PostHook` will be applied in the order they are written, even though decorator functions in JS are executed in a bottom-up way (due to their _wrapping_ nature).
 
 #### Post error handling middleware
 
@@ -785,10 +774,38 @@ const batch = new Batch({
 })
 ```
 
-## Populate virtuals
+## Virtuals
 
-> 🔦 `@PopulateVirtual(options)`<br>
+> 🔦 `@Virtual`<br>
+> 💫 Related Mongoose method: [`schema.virtual`](https://mongoosejs.com/docs/guide.html#virtuals)
+
+`@Virtual` helps you define a writable [virtual property](https://mongoosejs.com/docs/guide.html#virtuals) (both a getter and a setter), which is properly serialized with `toJson: { virtuals: true }`, and not saved to the database.<br>_Can be used with or without invokation._
+
+```ts
+@Model()
+@SchemaOptions({ 
+  toObject: { virtuals: true },
+  toJson: { virtuals: true }
+})
+class S3File extends Model.I {
+  @Field(String)
+  key: string
+
+  @Virtual
+  url: string
+}
+
+const photo = await S3File.findOne({ key })
+photo.url = await getSignedUrl(photo.key)
+res.send(photo)
+```
+
+### Populated virtuals
+
+> 🔦 `@Virtual.Populate(options)`<br>
 > 💫 Related Mongoose method: [`schema.virtual`](https://mongoosejs.com/docs/populate#populate-virtuals)
+
+`@Virtual.Populate` helps you define [populate virtuals](https://mongoosejs.com/docs/populate#populate-virtuals).
 
 ```ts
 @Model()
@@ -809,7 +826,7 @@ class Band extends Model.I {
   @Field(String)
   name: string
 
-  @PopulateVirtual<Person, Band>({
+  @Virtual.Populate<Band, Person>({
     ref: 'Person',
     foreignField: 'band',
     localField: 'name'
@@ -835,6 +852,22 @@ Reflet provides a generic type to discard Mongoose properties and methods from a
 * `Plain<T, { Omit: keyof T; Optional: keyof T } >`
 
 _These options exist as standalone generics as well: `Plain.Omit<T, keyof T>` and `Plain.Optional<T, keyof T>`._
+
+With this you can narrow the return type of `toObject()` and `toJson()`:
+
+```ts
+const userPlain = user.toObject({ getters: false }) as Plain.Omit<User, 'fullname'>
+```
+
+#### Allow `string` for `ObjectId`
+
+> 🔦 `Plain.AllowString<class, options?>`
+
+When creating or querying documents, you can pass `ObjectId` as `string`. To allow this, Reflet provides a generic type with the same API as `Plain`:
+
+* `Plain.AllowString<T, { Omit: keyof T; Optional: keyof T } >`
+* `Plain.AllowString.Partial<T>`
+* `Plain.AllowString.PartialDeep<T>`
 
 ### One document, multiple shapes
 
@@ -866,18 +899,12 @@ class User extends Model.I {
 This is how you can type `constructor` and `create` parameters:
 
 ```ts
-type NewUser = Plain<User, { Omit: 'fullname' | 'createdAt'; Optional: '_id' | 'activated' }>
+type NewUser = Plain.AllowString<User, { Omit: 'fullname' | 'createdAt'; Optional: '_id' | 'activated' }>
 
 @Model()
-class User extends Model.I  {
-  // ...
-
+class User extends Model.I<typeof User>  {
   // @ts-ignore implementation
-  constructor(user: NewUser)
-  
-  static create(doc: NewUser): Promise<User>
-	// @ts-ignore implementation
-  static create(docs: NewUser[]): Promise<User[]>
+  constructor(doc?: NewUser, strict?: boolean | 'throw')
 }
 
 const user = new User({ firstname: 'John', lastname: 'Doe' })
@@ -885,13 +912,9 @@ await user.save()
 await User.create({ firstname: 'Jeremy', lastname: 'Doe', activated: true })
 ```
 
-_You can safely use ts-ignore to avoid a useless wrapper of `create` or even the `constructor`, the compiler will still check `NewUser` as we need._
+By passing `typeof User` to `Model.I`, Reflet is now able to use the constructor signature to type the following static methods: `create`, `insertMany` and `replaceOne`.
 
-You can also narrow the return type of `toObject()` and `toJson()`:
-
-```ts
-const userPlain = user.toObject({ getters: false }) as Plain.Omit<User, 'fullname'>
-```
+_The compiler checks `NewUser` as we need, so you can safely use ts-ignore on the `constructor` to avoid implementing an empty one (remember that `@Model` will replace it with mongoose Model constructor)._
 
 ## Augmentations
 
@@ -923,6 +946,18 @@ class User extends Model.I {
     autopopulate: true
   })
   company: Company
+}
+```
+
+#### Virtual options
+
+The same can be done with the `@Virtual` decorator:
+
+```ts
+declare global {
+  namespace RefletMongoose {
+    interface VirtualOptions {}
+  }
 }
 ```
 

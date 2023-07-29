@@ -2,8 +2,9 @@ import * as mongoose from 'mongoose'
 import { createSchema } from './schema-creation'
 import { registerModelDecorator } from './check-decorator-order'
 import { getKind, assignModelKindKey } from './kind-decorator'
-import { MongooseModel } from './model-interface'
-import { Decorator, ModelAny } from './interfaces'
+import { ModelI } from './model-interface'
+import { RefletMongooseError } from './reflet-error'
+import { ClassType, ModelAny } from './interfaces'
 
 /**
  * Transforms the decorated class into a mongoose Model.
@@ -17,7 +18,7 @@ import { Decorator, ModelAny } from './interfaces'
  * @example
  * ```ts
  * ＠Model()
- * class User extends Model.I<User> {
+ * class User extends Model.I {
  *   ＠Field({ type: String, required: true })
  *   name: string
  * }
@@ -27,12 +28,13 @@ import { Decorator, ModelAny } from './interfaces'
  * ---
  * @public
  */
-export function Model<T extends ModelAny>(collection?: string, connection?: mongoose.Connection): Decorator.Model<T> {
-	return (Class) => {
-		const schema = createSchema(Class, { full: true })
+export function Model<T extends ModelAny>(collection?: string, connection?: mongoose.Connection): Model.Decorator<T> {
+	return (target) => {
+		const schema = createSchema(target, { full: true })
 
-		if (connection) return connection.model(Class.name, schema, collection)
-		const model = mongoose.model(Class.name, schema, collection)
+		const model: any = connection
+			? connection.model(target.name, schema, collection)
+			: mongoose.model(target.name, schema, collection)
 
 		registerModelDecorator(model, 'Model')
 
@@ -71,24 +73,25 @@ export namespace Model {
 	 * ---
 	 * @public
 	 */
-	export function Discriminator<T extends ModelAny>(rootModel: T): Decorator.ModelDiscriminator<T> {
-		return (Class) => {
+	export function Discriminator<T extends ModelAny>(rootModel: T): Model.Discriminator.Decorator<T> {
+		return (target) => {
 			if (!rootModel.prototype.$isMongooseModelPrototype) {
-				throw Error(
-					`Discriminator "${Class.name}" must have its root model "${rootModel.name}" decorated with @Model.`
+				throw new RefletMongooseError(
+					'MISSING_ROOT_MODEL',
+					`Discriminator "${target.name}" must have its root model "${rootModel.name}" decorated with @Model.`
 				)
 			}
 
-			const [kindKey, kindValue] = getKind(Class)
-			assignModelKindKey({ kindKey, rootModel, discriminatorModel: Class })
+			const [kindKey, kindValue] = getKind(target)
+			assignModelKindKey({ kindKey, rootModel, discriminatorModel: target })
 
 			// If the discriminator class extends the root class, e.g. `class Child extends Root`,
 			// we don't worry about Child inheriting Reflet metadata from Root,
 			// because Root has already been transformed into a Mongoose Model
 			// which does not have any Reflet metadata.
 
-			const schema = createSchema(Class, { full: true })
-			const modelDiscriminator = rootModel.discriminator(Class.name, schema, kindValue)
+			const schema = createSchema(target, { full: true })
+			const modelDiscriminator = rootModel.discriminator(target.name, schema, kindValue)
 
 			registerModelDecorator(modelDiscriminator, 'Model.Discriminator')
 
@@ -96,19 +99,39 @@ export namespace Model {
 		}
 	}
 
-	/**
-	 * Dummy class to extend from, to get all the (narrowed) types from mongoose Model and Document.
-	 * @abstract
-	 * @public
-	 */
-	export const Interface = MongooseModel
-	export type Interface = MongooseModel
+	export namespace Discriminator {
+		/**
+		 * Equivalent to `ClassDecorator`.
+		 * @public
+		 */
+		export type Decorator<T extends ClassType> = ((target: T) => any) & {
+			__mongooseModelDiscriminator?: never
+		}
+	}
 
 	/**
 	 * Dummy class to extend from, to get all the (narrowed) types from mongoose Model and Document.
+	 *
 	 * @abstract
 	 * @public
 	 */
-	export const I = MongooseModel
-	export type I = MongooseModel
+	export const Interface = class {} as unknown as typeof ModelI
+	export type Interface<T extends ClassType = any> = ModelI<T>
+
+	/**
+	 * Dummy class to extend from, to get all the (narrowed) types from mongoose Model and Document.
+	 *
+	 * @abstract
+	 * @public
+	 */
+	export const I = Interface
+	export type I<T extends ClassType = any> = ModelI<T>
+
+	/**
+	 * Equivalent to `ClassDecorator`.
+	 * @public
+	 */
+	export type Decorator<T extends ClassType> = ((target: T) => any) & {
+		__mongooseModel?: never
+	}
 }

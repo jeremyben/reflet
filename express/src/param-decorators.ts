@@ -1,18 +1,12 @@
 import * as express from 'express'
+import * as core from 'express-serve-static-core'
+import { RequestHeader } from '@reflet/http'
 import { flatMapFast } from './array-manipulation'
-import { ClassType, RequestHeaderName, Decorator } from './interfaces'
+import { ClassType } from './interfaces'
+import { RefletExpressError } from './reflet-error'
+import { getOwnMetadata, defineMetadata } from './metadata-map'
 
-const META = Symbol('param')
-
-/**
- * @internal
- */
-type ParamMeta = {
-	readonly index: number
-	readonly mapper: (req: express.Request, res: express.Response, next?: express.NextFunction) => any
-	readonly use?: express.RequestHandler[]
-	readonly dedupeUse?: boolean
-}
+const METAKEY_PARAM = Symbol('param')
 
 /**
  * Injects Request object in the method's parameters.
@@ -21,18 +15,18 @@ type ParamMeta = {
  * ```ts
  * // Without invokation:
  * ＠Get('/some')
- * get(＠Req req: Request) {}
+ * get(＠Req req: Req) {}
  *
  * // With invokation:
  * ＠Post('/some')
- * create(＠Req() req: Request) {}
+ * create(＠Req() req: Req) {}
  * ```
  * ------
  * @public
  */
-export function Req(): Decorator.Req
+export function Req(): Req.Decorator
 
-export function Req(...args: Parameters<Decorator.Req>): void
+export function Req(...args: Parameters<Req.Decorator>): void
 
 export function Req() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
@@ -42,6 +36,22 @@ export function Req() {
 	}
 }
 
+export type Req<
+	P = core.ParamsDictionary,
+	ResBody = any,
+	ReqBody = any,
+	ReqQuery = core.Query,
+	Locals extends Record<string, any> = Record<string, any>
+> = express.Request<P, ResBody, ReqBody, ReqQuery, Locals>
+
+export namespace Req {
+	/**
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Decorator = ParameterDecorator & { __expressReq?: never; __expressHandlerParameter?: never }
+}
+
 /**
  * Inject Response object in the method's parameters.
  * @see https://expressjs.com/en/4x/api.html#res
@@ -49,18 +59,18 @@ export function Req() {
  * ```ts
  * // Without invokation:
  * ＠Get('/some')
- * get(＠Res res: Response) {}
+ * get(＠Res res: Res) {}
  *
  * // With invokation:
  * ＠Post('/some')
- * create(＠Res() res: Response) {}
+ * create(＠Res() res: Res) {}
  * ```
  * ------
  * @public
  */
-export function Res(): Decorator.Res
+export function Res(): Res.Decorator
 
-export function Res(...args: Parameters<Decorator.Res>): void
+export function Res(...args: Parameters<Res.Decorator>): void
 
 export function Res() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
@@ -70,6 +80,19 @@ export function Res() {
 	}
 }
 
+export type Res<ResBody = any, Locals extends Record<string, any> = Record<string, any>> = express.Response<
+	ResBody,
+	Locals
+>
+
+export namespace Res {
+	/**
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Decorator = ParameterDecorator & { __expressRes?: never; __expressHandlerParameter?: never }
+}
+
 /**
  * Injects `next` callback function in the method's parameters.
  * @see https://expressjs.com/en/guide/writing-middleware.html
@@ -77,18 +100,18 @@ export function Res() {
  * ```ts
  * // Without invokation:
  * ＠Get('/some')
- * get(＠Next next: NextFunction) {}
+ * get(＠Next next: Next) {}
  *
  * // With invokation:
  * ＠Post('/some')
- * create(＠Next() next: NextFunction) {}
+ * create(＠Next() next: Next) {}
  * ```
  * ------
  * @public
  */
-export function Next(): Decorator.Next
+export function Next(): Next.Decorator
 
-export function Next(...args: Parameters<Decorator.Next>): void
+export function Next(...args: Parameters<Next.Decorator>): void
 
 export function Next() {
 	if (arguments.length === 3 && typeof arguments[2] === 'number') {
@@ -100,8 +123,21 @@ export function Next() {
 	}
 }
 
+export type Next = express.NextFunction
+
+export namespace Next {
+	/**
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Decorator = ParameterDecorator & { __expressNext?: never; __expressHandlerParameter?: never }
+}
+
 /** default parser middlewares to apply with @Body decorator */
-const bodyParsers = [express.json(), express.urlencoded({ extended: true })]
+const bodyParsers: createParamDecorator.Middleware[] = [
+	{ handler: express.json(), dedupe: true },
+	{ handler: express.urlencoded({ extended: true }), dedupe: true },
+]
 
 /**
  * Injects request body in the method's parameters.
@@ -124,10 +160,10 @@ const bodyParsers = [express.json(), express.urlencoded({ extended: true })]
  * ------
  * @public
  */
-export function Body<T extends object>(key?: keyof T): Decorator.Body
+export function Body<T extends object>(key?: keyof T): Body.Decorator
 // todo: https://codewithstyle.info/Deep-property-access-in-TypeScript/
 
-export function Body(...args: Parameters<Decorator.Body>): void
+export function Body(...args: Parameters<Body.Decorator>): void
 
 export function Body<T extends object>(
 	keyOrTarget?: keyof T | object,
@@ -136,11 +172,19 @@ export function Body<T extends object>(
 ) {
 	if (arguments.length === 3 && typeof keyOrTarget === 'object') {
 		const target = keyOrTarget
-		return createParamDecorator((req) => req.body, bodyParsers, true)(target, propertyKey!, parameterIndex!)
+		return createParamDecorator((req) => req.body, bodyParsers)(target, propertyKey!, parameterIndex!)
 	} else {
 		const subKey = keyOrTarget as keyof T | undefined
-		return createParamDecorator((req) => (subKey ? req.body[subKey] : req.body), bodyParsers, true)
+		return createParamDecorator((req) => (subKey ? req.body[subKey] : req.body), bodyParsers)
 	}
+}
+
+export namespace Body {
+	/**
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Decorator = ParameterDecorator & { __expressBody?: never; __expressHandlerParameter?: never }
 }
 
 /**
@@ -151,11 +195,11 @@ export function Body<T extends object>(
  * ```ts
  * // Route parameters object without invokation:
  * ＠Get('/:col/:id')
- * get(＠Params params: { col: string; id: string }) {}
+ * get(＠Params params: Params<'col' | 'id'>) {}
  *
  * // Route parameters object with invokation:
  * ＠Get('/:col/:id')
- * get(＠Params() params: { col: string; id: string }) {}
+ * get(＠Params() params: Params<'col' | 'id'>) {}
  *
  * // Single route parameter:
  * ＠Get('/:col/:id')
@@ -164,9 +208,9 @@ export function Body<T extends object>(
  * ------
  * @public
  */
-export function Params(name?: string): Decorator.Params
+export function Params(name?: string): Params.Decorator
 
-export function Params(...args: Parameters<Decorator.Params>): void
+export function Params(...args: Parameters<Params.Decorator>): void
 
 export function Params(nameOrTarget?: string | object, propertyKey?: string | symbol, parameterIndex?: number) {
 	if (arguments.length === 3 && typeof nameOrTarget === 'object') {
@@ -178,6 +222,16 @@ export function Params(nameOrTarget?: string | object, propertyKey?: string | sy
 	}
 }
 
+export type Params<P extends string = string> = Record<P, string>
+
+export namespace Params {
+	/**
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Decorator = ParameterDecorator & { __expressParams?: never; __expressHandlerParameter?: never }
+}
+
 /**
  * Injects query string parameters in the method's parameters.
  * @param field - directly injects a value.
@@ -186,11 +240,11 @@ export function Params(nameOrTarget?: string | object, propertyKey?: string | sy
  * ```ts
  * // Query string parameters object without invokation:
  * ＠Get('/search')
- * search(＠Query queries: any) {}
+ * search(＠Query query: Query) {}
  *
  * // Query string parameters object with invokation:
  * ＠Get('/search')
- * search(＠Query() queries: any) {}
+ * search(＠Query() query: Query) {}
  *
  * // Single query string parameter:
  * ＠Get('/search')
@@ -199,9 +253,9 @@ export function Params(nameOrTarget?: string | object, propertyKey?: string | sy
  * ------
  * @public
  */
-export function Query(field?: string): Decorator.Query
+export function Query(field?: string): Query.Decorator
 
-export function Query(...args: Parameters<Decorator.Query>): void
+export function Query(...args: Parameters<Query.Decorator>): void
 
 export function Query(fieldOrTarget?: string | object, propertyKey?: string | symbol, parameterIndex?: number) {
 	if (arguments.length === 3 && typeof fieldOrTarget === 'object') {
@@ -213,19 +267,29 @@ export function Query(fieldOrTarget?: string | object, propertyKey?: string | sy
 	}
 }
 
+export type Query = { [key: string]: undefined | string | string[] | Query | Query[] }
+
+export namespace Query {
+	/**
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Decorator = ParameterDecorator & { __expressQuery?: never; __expressHandlerParameter?: never }
+}
+
 /**
  * Injects request headers object in the method's parameters.
- * @param name - directly injects a specific header.
+ * @param headerName - directly injects a specific header.
  * @see https://nodejs.org/api/http.html#http_message_headers
  * @example
  * ```ts
  * // Request headers object without invokation:
  * ＠Get('/some')
- * get(＠Headers headers: IncomingHttpHeaders) {}
+ * get(＠Headers headers: Headers) {}
  *
  * // Request headers object with invokation:
  * ＠Get('/some')
- * get(＠Headers() headers: IncomingHttpHeaders) {}
+ * get(＠Headers() headers: Headers) {}
  *
  * // Single request header:
  * ＠Get('/some')
@@ -234,11 +298,9 @@ export function Query(fieldOrTarget?: string | object, propertyKey?: string | sy
  * ------
  * @public
  */
-export function Headers<T extends string = RequestHeaderName>(
-	name?: T extends RequestHeaderName ? RequestHeaderName : string
-): Decorator.Headers
+export function Headers(headerName?: RequestHeader): Headers.Decorator
 
-export function Headers(...args: Parameters<Decorator.Headers>): void
+export function Headers(...args: Parameters<Headers.Decorator>): void
 
 export function Headers(nameOrTarget?: string | object, propertyKey?: string | symbol, parameterIndex?: number) {
 	if (arguments.length === 3 && typeof nameOrTarget === 'object') {
@@ -250,12 +312,21 @@ export function Headers(nameOrTarget?: string | object, propertyKey?: string | s
 	}
 }
 
+export type Headers = RequestHeader.Record
+
+export namespace Headers {
+	/**
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Decorator = ParameterDecorator & { __expressHeaders?: never; __expressHandlerParameter?: never }
+}
+
 /**
  * Creates a parameter decorator, to inject anything we want in decorated routes.
  *
  * @param mapper - function that should return the thing we want to inject from the Request object.
- * @param use - adds middlewares to the route if the mapper needs them (_e.g. we need body-parser middlewares to retrieve `req.body`_).
- * @param dedupeUse - marks the middlewares for deduplication based on the function reference and name (_e.g. if 'jsonParser' is already in use locally or globally, it won't be added again_).
+ * @param use - adds middlewares to the route if the mapper needs them (_e.g. we need body-parser middlewares to retrieve `req.body`_). You can pass options to deduplicate middlewares based on the handler function reference or name (_e.g. if 'jsonParser' is already in use locally or globally, it won't be added again_).
  *
  * @remarks
  * We can create decorators with or without options.
@@ -277,8 +348,7 @@ export function Headers(nameOrTarget?: string | object, propertyKey?: string | s
  * // Advanced decorator (with option and middleware):
  * const BodyTrimmed = (key: string) => createParamDecorator(
  *   (req) => req.body[key].trim(),
- *   [express.json()],
- *   true
+ *   [{ handler: express.json(), dedupe: true }]
  * )
  * class Foo {
  *   ＠Post('/message')
@@ -290,15 +360,46 @@ export function Headers(nameOrTarget?: string | object, propertyKey?: string | s
  */
 export function createParamDecorator<T = any>(
 	mapper: (req: express.Request, res: express.Response) => T,
-	use?: express.RequestHandler[],
-	dedupeUse?: boolean
-): Decorator.HandlerParameter {
+	use?: createParamDecorator.Middleware[]
+): createParamDecorator.Decorator {
 	return (target, key, index) => {
-		const params: ParamMeta[] = Reflect.getOwnMetadata(META, target, key) || []
+		const params: createParamDecorator.Options[] = getOwnMetadata(METAKEY_PARAM, target, key!) || []
 
-		params.push({ index, mapper, use, dedupeUse })
-		Reflect.defineMetadata(META, params, target, key)
+		if (params[index]) {
+			const codePath = `${target.constructor.name}.${String(key)}`
+
+			throw new RefletExpressError(
+				'MULTIPLE_PARAMETER_DECORATORS',
+				`Parameter ${index} of "${codePath}" should have a single express decorator.`
+			)
+		}
+
+		params[index] = { mapper, use }
+		defineMetadata(METAKEY_PARAM, params, target, key!)
 	}
+}
+
+export namespace createParamDecorator {
+	/**
+	 * @public
+	 */
+	export type Options = {
+		readonly mapper: (req: express.Request, res: express.Response, next?: express.NextFunction) => any
+		readonly use?: Middleware[]
+	}
+
+	/**
+	 * @public
+	 */
+	export type Middleware =
+		| express.RequestHandler
+		| { handler: express.RequestHandler; dedupe?: boolean | 'by-name' | 'by-reference' }
+
+	/**
+	 * Equivalent to `ParameterDecorator`.
+	 * @public
+	 */
+	export type Decorator = ParameterDecorator & { __expressHandlerParameter?: never }
 }
 
 /**
@@ -312,14 +413,15 @@ export function extractParams(
 	key: string | symbol,
 	{ req, res, next }: { req: express.Request; res: express.Response; next: express.NextFunction }
 ): any[] {
-	const params: ParamMeta[] = Reflect.getOwnMetadata(META, target.prototype, key) || []
+	const params: createParamDecorator.Options[] = getOwnMetadata(METAKEY_PARAM, target.prototype, key) || []
 
 	// No decorator found in the method: simply return the original arguments in the original order
 	if (!params.length) return [req, res, next]
 
 	const args: any[] = []
 
-	for (const { index, mapper } of params) {
+	for (let index = 0; index < params.length; index++) {
+		const { mapper } = params[index]
 		args[index] = mapper(req, res, next)
 	}
 
@@ -343,41 +445,60 @@ export function extractParamsMiddlewares(
 	key: string | symbol,
 	alreadyMwares: express.RequestHandler[][]
 ): express.RequestHandler[] {
-	const params: ParamMeta[] = Reflect.getOwnMetadata(META, target.prototype, key) || []
+	const params: createParamDecorator.Options[] = getOwnMetadata(METAKEY_PARAM, target.prototype, key) || []
 	if (!params.length) return []
 
 	const paramMwares: express.RequestHandler[] = []
 
 	let alreadyNames: string[] = []
 
-	for (const { use, dedupeUse } of params) {
+	for (const { use } of params) {
 		if (!use) continue
 
-		if (dedupeUse && !alreadyNames.length) {
-			// Perform the flatmap only if one of the parameter requires deduplication.
-			alreadyNames = flatMapFast(alreadyMwares, (m) => m.name)
-		}
-
 		for (const mware of use) {
-			// If the same param decorator is used twice, we prevent adding its middlewares twice
-			// whether or not it's marked for dedupe, to do that we simply compare by reference.
-			if (paramMwares.includes(mware)) continue
+			if (typeof mware === 'function') {
+				// If the same param decorator is used twice, we prevent adding its middlewares twice
+				// whether or not it's marked for dedupe, to do that we simply compare by reference.
+				if (paramMwares.includes(mware)) {
+					continue
+				}
 
-			// Dedupe middlewares in upper layers.
-			if (dedupeUse) {
-				const sameRef = alreadyMwares.some((alreadyMware) => alreadyMware.includes(mware))
-				const sameName = !!mware.name && alreadyNames.includes(mware.name)
+				paramMwares.push(mware)
+			} else {
+				if (paramMwares.includes(mware.handler)) {
+					continue
+				}
 
-				// console.log('dedupe:', mware.name, sameRef, sameName)
-				if (sameRef || sameName) continue
+				// Dedupe middlewares in upper layers.
+
+				if (mware.dedupe === true || mware.dedupe === 'by-reference') {
+					const sameRef = alreadyMwares.some((alreadyMware) => alreadyMware.includes(mware.handler))
+					// console.log('dedupe-by-reference:', mware.handler.name, sameRef)
+					if (sameRef) {
+						continue
+					}
+				}
+
+				if (mware.dedupe === true || mware.dedupe === 'by-name') {
+					// Perform the flatmap only if one of the parameter requires deduplication by name.
+					if (!alreadyNames.length) {
+						alreadyNames = flatMapFast(alreadyMwares, (m) => m.name)
+					}
+
+					const sameName = !!mware.handler.name && alreadyNames.includes(mware.handler.name)
+					// console.log('dedupe-by-name:', mware.handler.name, sameName)
+					if (sameName) {
+						continue
+					}
+				}
+
+				paramMwares.push(mware.handler)
 			}
-
-			paramMwares.push(mware)
 
 			// todo?: alreadyNames.push(mware.name)
 			// Should we dedupe by *name* the same middleware on different param decorators ?
 			// Or should we just warn the user of a potential conflict, and suggest to move
-			// the middleware to an explicit place on the controller as an easy fix ?
+			// the middleware to an explicit place on the router as an easy fix ?
 			// See 'param middlewares deduplication' tests.
 		}
 	}

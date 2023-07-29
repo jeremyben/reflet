@@ -1,12 +1,20 @@
 import * as mongoose from 'mongoose'
-import { Field, Model, schemaFrom, Kind, Plain, SchemaOptions, SchemaCallback, PostHook, PreHook } from '../src'
+import {
+	Field,
+	Model,
+	schemaFrom,
+	Kind,
+	Plain,
+	SchemaOptions,
+	SchemaCallback,
+	PostHook,
+	PreHook,
+	SchemaIndex,
+} from '../src'
+import { RefletMongooseError } from '../src/reflet-error'
 
 test('model with custom collection and connection', async () => {
-	const db = mongoose.createConnection(process.env.MONGO_URL!, {
-		useNewUrlParser: true,
-		useUnifiedTopology: true,
-		useCreateIndex: true,
-	})
+	const db = mongoose.createConnection(process.env.MONGO_URL!)
 
 	@Model('people', db)
 	class UserOther extends Model.I {
@@ -52,7 +60,10 @@ test('model with custom collection and connection', async () => {
 
 test('model discriminators', async () => {
 	@Model()
-	class User extends Model.I {
+	@SchemaIndex<User>({ firstname: 1 })
+	class User extends Model.I<typeof User> {
+		_id: mongoose.Types.ObjectId
+
 		@Field({ type: String, required: true })
 		firstname: string
 
@@ -74,7 +85,7 @@ test('model discriminators', async () => {
 			return this.firstname + ' ' + this.lastname
 		}
 
-		constructor(doc?: Plain<User, { Omit: 'fullname'; Optional: '_id' }>) {
+		constructor(doc?: Plain.AllowString<User, { Omit: 'fullname'; Optional: '_id' }>) {
 			super()
 		}
 	}
@@ -87,9 +98,10 @@ test('model discriminators', async () => {
 		@Kind('developer')
 		kind: 'developer'
 
-		constructor(doc?: Plain<Developer, { Omit: 'fullname' | 'kind'; Optional: '_id' }>) {
+		constructor(doc?: Plain.AllowString<Developer, { Omit: 'fullname' | 'kind'; Optional: '_id' }>) {
 			super()
 		}
+		protected $typeof: typeof Developer
 	}
 
 	@Model.Discriminator(User)
@@ -104,16 +116,21 @@ test('model discriminators', async () => {
 			return 'Dr ' + this.firstname + ' ' + this.lastname
 		}
 
-		constructor(doc?: Plain<Doctor, { Omit: 'fullname' | 'kind'; Optional: '_id' }>) {
+		constructor(doc?: Plain.AllowString<Doctor, { Omit: 'fullname' | 'kind'; Optional: '_id' }>) {
 			super()
 		}
+		protected $typeof: typeof Doctor
 	}
 
-	const user = await new User({ firstname: 'Jeremy', lastname: 'Ben' }).save()
+	const user = await User.create({
+		_id: new mongoose.Types.ObjectId().toString(),
+		firstname: 'Jeremy',
+		lastname: 'Ben',
+	})
 	expect(user.fullname).toBe('Jeremy Ben')
 	expect((user as any).kind).toBeUndefined()
 
-	const developer = await new Developer({ firstname: 'Jeremy', lastname: 'Ben', languages: ['JS', 'GO'] }).save()
+	const developer = await Developer.create({ firstname: 'Jeremy', lastname: 'Ben', languages: ['JS', 'GO'] })
 	expect(developer.fullname).toBe('Jeremy Ben')
 	expect(developer.kind).toBe('developer')
 
@@ -124,6 +141,8 @@ test('model discriminators', async () => {
 })
 
 test('model decorator must be at the top', () => {
+	const code: RefletMongooseError['code'] = 'INVALID_DECORATORS_ORDER'
+
 	expect(() => {
 		@SchemaCallback(() => null)
 		@Model()
@@ -131,7 +150,7 @@ test('model decorator must be at the top', () => {
 			@Field(String)
 			name: string
 		}
-	}).toThrowError(/@Model.*WrongSchemaCallbackOrder/)
+	}).toThrow(expect.objectContaining({ code }))
 
 	expect(() => {
 		@PreHook('init', () => undefined)
@@ -140,7 +159,7 @@ test('model decorator must be at the top', () => {
 			@Field(String)
 			name: string
 		}
-	}).toThrowError(/@Model.*WrongPreHookOrder/)
+	}).toThrow(expect.objectContaining({ code }))
 
 	expect(() => {
 		@PostHook('init', () => undefined)
@@ -149,7 +168,7 @@ test('model decorator must be at the top', () => {
 			@Field(String)
 			name: string
 		}
-	}).toThrowError(/@Model.*WrongPostHookOrder/)
+	}).toThrow(expect.objectContaining({ code }))
 
 	expect(() => {
 		@Model()
@@ -165,7 +184,7 @@ test('model decorator must be at the top', () => {
 			@Field(String)
 			name: string
 		}
-	}).toThrowError(/@Model\.Discriminator.*WrongSchemaOptionsOrder/)
+	}).toThrow(expect.objectContaining({ code }))
 
 	expect(() => {
 		@Model()
@@ -181,11 +200,13 @@ test('model decorator must be at the top', () => {
 			@Field(String)
 			name: string
 		}
-	}).not.toThrowError()
+	}).not.toThrow()
 })
 
 describe('model discriminators coercion', () => {
 	test('root model must be decorated', async () => {
+		const code: RefletMongooseError['code'] = 'MISSING_ROOT_MODEL'
+
 		class RootNotDecorated extends Model.I {
 			@Field(String)
 			name: string
@@ -197,10 +218,12 @@ describe('model discriminators coercion', () => {
 				@Field(Number)
 				age: number
 			}
-		}).toThrowError(/decorated/)
+		}).toThrow(expect.objectContaining({ code }))
 	})
 
 	test('siblings should have same kind key', async () => {
+		const code: RefletMongooseError['code'] = 'DISCRIMINATOR_KEY_CONFLICT'
+
 		@Model()
 		class A extends Model.Interface {
 			@Field(String)
@@ -225,10 +248,12 @@ describe('model discriminators coercion', () => {
 				@Kind('c')
 				type: 'c'
 			}
-		}).toThrowError(/sibling/)
+		}).toThrow(expect.objectContaining({ code }))
 	})
 
 	test('kind key should not overwrite options', async () => {
+		const code: RefletMongooseError['code'] = 'DISCRIMINATOR_KEY_CONFLICT'
+
 		@Model()
 		@SchemaOptions({ discriminatorKey: 'kind' })
 		class A1 extends Model.Interface {
@@ -245,6 +270,6 @@ describe('model discriminators coercion', () => {
 				@Kind
 				type: 'B1'
 			}
-		}).toThrowError(/overwrite discriminatorKey/)
+		}).toThrow(expect.objectContaining({ code }))
 	})
 })

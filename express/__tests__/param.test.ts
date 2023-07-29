@@ -1,6 +1,20 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
-import { register, Get, Post, Put, Patch, Use, Res, Body, Params, Headers, Query, createParamDecorator } from '../src'
+import {
+	register,
+	Router,
+	Get,
+	Post,
+	Put,
+	Patch,
+	Use,
+	Res,
+	Body,
+	Params,
+	Headers,
+	Query,
+	createParamDecorator,
+} from '../src'
 import { extractMiddlewares } from '../src/middleware-decorator'
 import { extractParamsMiddlewares } from '../src/param-decorators'
 import { getGlobalMiddlewares } from '../src/register'
@@ -12,31 +26,32 @@ describe('basic decorators', () => {
 		req.headers.shared = 'shared'
 		next()
 	})
-	class Controller {
+	@Router('')
+	class FooRouter {
 		@Get()
-		async get(@Headers headers: any, @Headers('via') via: string, @Res res: express.Response) {
+		async get(@Headers headers: any, @Headers('via') via: string, @Res res: Res) {
 			res.send({ via, shared: headers.shared })
 		}
 
 		@Post()
-		post(@Body body: { foo: number }, @Body<{ foo: number }>('foo') foo: number, @Res res: express.Response) {
+		post(@Body body: { foo: number }, @Body<{ foo: number }>('foo') foo: number, @Res res: Res) {
 			res.send({ bar: foo * body.foo })
 		}
 
 		@Patch('/:id')
-		patch(@Params params: any, @Query queries: any, @Res res: express.Response) {
+		patch(@Params params: Params<'id'>, @Query queries: Query, @Res res: Res) {
 			const bar = Number.parseInt(params.id, 10) * 2
 			res.send({ bar, baz: queries.q })
 		}
 
 		@Put('/:id')
-		put(@Params('id') id: string, @Query('q') q: string, @Res res: express.Response) {
+		put(@Params('id') id: string, @Query('q') q: string, @Res res: Res) {
 			const bar = Number.parseInt(id, 10) * 2
 			res.send({ bar, baz: q })
 		}
 	}
 
-	const rq = supertest(register(express(), [Controller]))
+	const rq = supertest(register(express(), [FooRouter]))
 
 	test('@Headers', async () => {
 		const res = await rq.get('')
@@ -61,27 +76,31 @@ describe('basic decorators', () => {
 
 describe('custom decorators', () => {
 	const CurrentUser = createParamDecorator((req: express.Request & { user?: any }) => req.user)
+
 	const BodyTrimmed = (subKey: string) => createParamDecorator((req) => req.body[subKey].trim(), [express.json()])
+
+	const SendResponse = createParamDecorator((req, res) => res.send.bind(res))
 
 	@Use((req: express.Request & { user?: any }, res, next) => {
 		req.user = { id: 1, name: 'jeremy' }
 		next()
 	})
-	class Controller {
+	@Router('')
+	class FooRouter {
 		@Get()
-		get(@CurrentUser user: object, @Res res: express.Response) {
-			res.send({ user })
+		get(@CurrentUser user: object, @SendResponse send: Res['send']) {
+			send({ user })
 		}
 
 		@Put()
-		put(@BodyTrimmed('foot') foot: string, @BodyTrimmed('pub') pub: string, @Res res: express.Response) {
+		put(@BodyTrimmed('foot') foot: string, @BodyTrimmed('pub') pub: string, @SendResponse send: Res['send']) {
 			foot = foot + '!'
 			pub = pub + '!'
-			res.send({ foot, pub })
+			send({ foot, pub })
 		}
 	}
 
-	const rq = supertest(register(express(), [Controller]))
+	const rq = supertest(register(express(), [FooRouter]))
 
 	test('simple decorator', async () => {
 		const res = await rq.get('')
@@ -105,7 +124,7 @@ describe('param middlewares deduplication', () => {
 		class Foo {
 			@Use(express.json())
 			@Post()
-			post(@Body('foo') foo: string, @Body body: any, @Res res: express.Response) {
+			post(@Body('foo') foo: string, @Body body: any, @Res res: Res) {
 				res.send(foo)
 			}
 		}
@@ -119,11 +138,11 @@ describe('param middlewares deduplication', () => {
 
 	test('body-parsers in different param decorators', async () => {
 		const BodyTrimmed = (subKey: string) =>
-			createParamDecorator((req) => req.body[subKey].trim(), [express.json()], true)
+			createParamDecorator((req) => req.body[subKey].trim(), [{ handler: express.json(), dedupe: 'by-name' }])
 
 		class Foo {
 			@Post()
-			post(@BodyTrimmed('foo') fooTrimmed: string, @Body('foo') foo: string, @Res res: express.Response) {
+			post(@BodyTrimmed('foo') fooTrimmed: string, @Body('foo') foo: string, @Res res: Res) {
 				res.send(fooTrimmed)
 			}
 		}
@@ -145,12 +164,12 @@ describe('param middlewares deduplication', () => {
 			next()
 		}
 
-		const CurrentUser = createParamDecorator((req: RequestAuth) => req.user!, [authent], true)
+		const CurrentUser = createParamDecorator((req: RequestAuth) => req.user!, [{ handler: authent, dedupe: true }])
 
 		@Use(authent)
 		class Bar {
 			@Post('user/:yo')
-			post(@CurrentUser user: User, @Res res: express.Response) {
+			post(@CurrentUser user: User, @Res res: Res) {
 				res.send(user)
 			}
 		}
@@ -164,4 +183,15 @@ describe('param middlewares deduplication', () => {
 		expect(sharedMwares.some((m) => globalMwares.includes(m))).toBe(true)
 		expect(paramMwares).toHaveLength(0)
 	})
+})
+
+test('only one decorator', () => {
+	const QueryBool = (subKey: string) => createParamDecorator((req) => Boolean(req.query[subKey]))
+
+	expect(() => {
+		class Foo {
+			@Get()
+			get(@QueryBool('ok') @Query('ok') ok: boolean) {}
+		}
+	}).toThrowError()
 })

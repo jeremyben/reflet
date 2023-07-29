@@ -1,37 +1,25 @@
-import { ClassType, StatusCode, Decorator } from './interfaces'
+import * as express from 'express'
+import { ClassType, ClassOrMethodDecorator, ClassOrTypedMethodDecorator } from './interfaces'
+import { isReadableStream } from './type-guards'
+import { RefletExpressError } from './reflet-error'
+import { defineMetadata, getOwnMetadata } from './metadata-map'
 
-const META = Symbol('send')
+const METAKEY_SEND = Symbol('send')
 
 /**
  * Tells express to handle the method's return value and send it.
  *
- * @param options - Change the response status or force json response type.
- *
- * - Return value will be sent with [`res.send`](https://expressjs.com/en/4x/api.html#res.send) by default
- * - Switch `json` option to `true` to send it with [`res.json`](https://expressjs.com/en/4x/api.html#res.json)
- *
- * _Method's options will extend class' options._
+ * @param options - Force json response type.
+ * Return value will be sent with [`res.send`](https://expressjs.com/en/4x/api.html#res.send) by default.
+ * Switch `json` option to `true` to send it with [`res.json`](https://expressjs.com/en/4x/api.html#res.json)
  *
  * ------
  * @example
  * ```ts
- * ＠Send({ nullStatus: 205, undefinedStatus: 404 })
  * class Foo {
+ *   ＠Send({ json: true })
  *   ＠Get('/some')
  *   get() {
- *     if (condition) return // 404 status
- *     return null // 205 status
- *   }
- *
- *   ＠Send({ status: 201 })
- *   ＠Post('/some')
- *   create() {
- *     return { foo: 1 } // 201 status
- *   }
- *
- *   ＠Send({ json: true })
- *   ＠Patch('/some')
- *   update() {
  *     return 'bar' // content-type: application-json
  *   }
  * }
@@ -39,10 +27,42 @@ const META = Symbol('send')
  * ------
  * @public
  */
-export function Send(options: Send.Options = {}): Decorator.Send {
+export function Send(options?: Send.Options): Send.Decorator
+
+/**
+ * Handle the method's return value with a custom handler.
+ *
+ * ------
+ * @example
+ * ```ts
+ * class Foo {
+ *   ＠Send<string>((data, { res }) => {
+ *     res.json({ hello: data })
+ *   })
+ *   ＠Get('/some')
+ *   get() {
+ *     return 'world'
+ *   }
+ * }
+ * ```
+ * ------
+ * @public
+ */
+export function Send<T>(handler?: Send.Handler<T>): Send.Decorator<T>
+export function Send(optionsOrHandler: Send.Options | Send.Handler<any> = {}): Send.Decorator {
 	return (target, key, descriptor) => {
-		if (key) Reflect.defineMetadata(META, options, target, key)
-		else Reflect.defineMetadata(META, options, (target as Function).prototype)
+		const sendHandler: Send.Handler<any> =
+			typeof optionsOrHandler === 'function'
+				? optionsOrHandler
+				: optionsOrHandler.json
+				? handleWithJsonMethod
+				: handleWithSendMethod
+
+		if (key) {
+			defineMetadata(METAKEY_SEND, sendHandler, target, key)
+		} else {
+			defineMetadata(METAKEY_SEND, sendHandler, (target as Function).prototype)
+		}
 	}
 }
 
@@ -54,16 +74,21 @@ export namespace Send {
 	export type Options = {
 		/** Forces using express `res.json` method to send response */
 		json?: boolean
-
-		/** Sets default response status */
-		status?: StatusCode
-
-		/** Overrides response status for `undefined` return value */
-		undefinedStatus?: StatusCode
-
-		/** Overrides response status for `null` return value */
-		nullStatus?: StatusCode
 	}
+
+	/**
+	 * @public
+	 */
+	export type Handler<T> = (
+		data: Awaited<T>,
+		context: { req: express.Request; res: express.Response; next: express.NextFunction }
+	) => void | Promise<void>
+
+	/**
+	 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
+	 * @public
+	 */
+	export type Decorator<T = any> = ClassOrTypedMethodDecorator<T> & { __expressSend?: never }
 
 	/**
 	 * Prevents a method from having its return value being sent,
@@ -88,70 +113,113 @@ export namespace Send {
 	 * ------
 	 * @public
 	 */
-	export function Dont(): Decorator.DontSend {
-		return (target, key, descriptor) => {
-			if (key) Reflect.defineMetadata(META, null, target, key)
-			else Reflect.defineMetadata(META, null, (target as Function).prototype)
-		}
-	}
-}
-
-/**
- * @deprecated use `@Send.Dont()`
- * @public
- */
-/* istanbul ignore next - deprecated and replaced by same logic */
-export function DontSend(): Decorator.DontSend {
-	return (target, key, descriptor) => {
-		if (key) Reflect.defineMetadata(META, null, target, key)
-		else Reflect.defineMetadata(META, null, (target as Function).prototype)
-	}
-}
-
-/**
- * Retrieve send options from both the method and the class, so method options can extend class options.
- * @internal
- */
-export function extractSend(
-	target: ClassType | Function,
-	key: string | symbol,
-	appClass?: ClassType
-): Send.Options | null | undefined {
-	const appSend: Send.Options | undefined = appClass ? Reflect.getOwnMetadata(META, appClass) : undefined
-
-	const controllerSend: Send.Options | null | undefined = Reflect.getOwnMetadata(META, (target as Function).prototype)
-
-	const methodSend: Send.Options | null | undefined = Reflect.getOwnMetadata(META, target.prototype, key)
-
-	// Send on method
-	if (methodSend) {
-		if (appSend || controllerSend) {
-			return Object.assign({}, appSend, controllerSend, methodSend)
+	export function Dont(): Send.Dont.Decorator
+	export function Dont(...args: Parameters<Send.Dont.Decorator>): void
+	export function Dont(targetMaybe?: any, keyMaybe?: any): Send.Dont.Decorator | void {
+		if (targetMaybe) {
+			if (keyMaybe) defineMetadata(METAKEY_SEND, null, targetMaybe, keyMaybe)
+			else defineMetadata(METAKEY_SEND, null, (targetMaybe as Function).prototype)
 		} else {
-			return methodSend
-		}
-	} else {
-		// No Send on method
-		if (methodSend === undefined) {
-			// Send on router
-			if (controllerSend) {
-				return Object.assign({}, appSend, controllerSend)
-			} else {
-				// No Send on method or router
-				if (controllerSend === undefined) {
-					return appSend
-				}
-
-				// Send.Dont on router
-				else {
-					return null
-				}
+			return (target, key, descriptor) => {
+				if (key) defineMetadata(METAKEY_SEND, null, target, key)
+				else defineMetadata(METAKEY_SEND, null, (target as Function).prototype)
 			}
 		}
-
-		// Send.Dont on method
-		else {
-			return null
-		}
 	}
+
+	export namespace Dont {
+		/**
+		 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
+		 * @public
+		 */
+		export type Decorator = ClassOrMethodDecorator & { __expressSendDont?: never }
+	}
+}
+
+/**
+ * @internal
+ */
+export function extractSendHandler(
+	target: ClassType,
+	key: string | symbol,
+	appClass?: ClassType
+): Send.Handler<any> | null | undefined {
+	// Send decorator on method
+	const methodSendHandler: Send.Handler<any> | null | undefined = getOwnMetadata(METAKEY_SEND, target.prototype, key)
+
+	if (methodSendHandler !== undefined) {
+		return methodSendHandler
+	}
+
+	// Send decorator on router
+	const routerSendHandler: Send.Handler<any> | null | undefined = getOwnMetadata(METAKEY_SEND, target.prototype)
+
+	if (routerSendHandler !== undefined) {
+		return routerSendHandler
+	}
+
+	// No Send decorator on method or router
+	const appSendHandler: Send.Handler<any> | undefined = appClass
+		? getOwnMetadata(METAKEY_SEND, appClass.prototype)
+		: undefined
+
+	return appSendHandler
+}
+
+/**
+ * @internal
+ */
+function handleWithSendMethod(
+	value: any,
+	{ req, res, next }: { req: express.Request; res: express.Response; next: express.NextFunction }
+) {
+	// Readable stream
+	if (isReadableStream(value)) {
+		value.pipe(res)
+		return
+	}
+
+	// Response object itself
+	if (value === res) {
+		// A stream is piping to the response so we let it go
+		if (res.listenerCount('unpipe') > 0) {
+			return
+		}
+
+		// The response will try to send itself, which will cause a cryptic error
+		// ('TypeError: Converting circular structure to JSON')
+		next(new RefletExpressError('RESPONSE_OBJECT_SENT', `Cannot send the response object.`))
+		return
+	}
+
+	res.send(value)
+}
+
+/**
+ * @internal
+ */
+function handleWithJsonMethod(
+	value: any,
+	{ req, res, next }: { req: express.Request; res: express.Response; next: express.NextFunction }
+) {
+	// Readable stream
+	if (isReadableStream(value)) {
+		value.pipe(res)
+		return
+	}
+
+	// Response object itself
+	if (value === res) {
+		// A stream is piping to the response so we let it go
+		if (res.listenerCount('unpipe') > 0) {
+			return
+		}
+
+		// The response will try to send itself, which will cause a cryptic error
+		// ('TypeError: Converting circular structure to JSON')
+		next(new RefletExpressError('RESPONSE_OBJECT_SENT', `Cannot send the response object.`))
+		return
+	}
+
+	res.json(value)
 }

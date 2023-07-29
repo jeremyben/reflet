@@ -1,6 +1,8 @@
 import * as mongoose from 'mongoose'
-import { ConstructorType, Decorator } from './interfaces'
+import { ClassType, Plain, PlainKeys, Ref, RefGlobal } from './interfaces'
 import { schemaFrom } from './schema-creation'
+import { RefletMongooseError } from './reflet-error'
+import { defineMetadata, getMetadata } from './metadata-map'
 
 const MetaField = Symbol('field')
 const MetaFieldDiscriminators = Symbol('field-discriminators')
@@ -10,9 +12,9 @@ const MetaFieldDiscriminators = Symbol('field-discriminators')
  * @see https://mongoosejs.com/docs/schematypes
  * @public
  */
-export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(
-	field: SchemaTypeOptions<T> | [SchemaTypeOptions<T>]
-): Decorator.Field
+export function Field<T extends Field.SchemaType | [Field.SchemaType] | [[Field.SchemaType]]>(
+	field: Field.Options<T> | [Field.Options<T>]
+): Field.Decorator<T>
 
 /**
  * Defines a SchemaType on a property.
@@ -20,19 +22,69 @@ export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(
  * @public
  */
 // tslint:disable-next-line: unified-signatures - more precise compiler errors
-export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(field: T): Decorator.Field
+export function Field<T extends Field.SchemaType | [Field.SchemaType] | [[Field.SchemaType]]>(
+	field: T
+): Field.Decorator<T>
 
-export function Field<T extends SchemaType | [SchemaType] | [[SchemaType]]>(
-	field: T | SchemaTypeOptions<T> | [SchemaTypeOptions<T>]
-): Decorator.Field {
+export function Field<T extends Field.SchemaType | [Field.SchemaType] | [[Field.SchemaType]]>(
+	field: T | Field.Options<T> | [Field.Options<T>]
+): Field.Decorator<T> {
 	return (target, key) => {
 		const fields = getFields(target.constructor)
-		fields[<string>key] = field
-		Reflect.defineMetadata(MetaField, fields, target.constructor)
+		fields[<string>key] = field as any
+		defineMetadata(MetaField, fields, target.constructor)
 	}
 }
 
 export namespace Field {
+	/**
+	 * SchemaType.
+	 * @see https://mongoosejs.com/docs/schematypes.html#what-is-a-schematype
+	 * @public
+	 */
+	export type SchemaType =
+		| StringConstructor
+		| NumberConstructor
+		| BooleanConstructor
+		| DateConstructor
+		| MapConstructor
+		| typeof Buffer
+		| typeof mongoose.SchemaType
+		| mongoose.Schema
+		| 'ObjectId'
+
+	/**
+	 * SchemaType Options.
+	 * @see https://mongoosejs.com/docs/schematypes.html#schematype-options
+	 * @public
+	 */
+	export type Options<T extends Field.SchemaType | [Field.SchemaType] | [[Field.SchemaType]]> =
+		RefletMongoose.SchemaTypeOptions &
+			CommonOptions<T> &
+			(T extends StringConstructor | typeof mongoose.Schema.Types.String
+				? StringOptions
+				: T extends StringConstructor[] | StringConstructor[][]
+				? ArrayOptions<string>
+				: T extends NumberConstructor | typeof mongoose.Schema.Types.Number
+				? NumberOptions
+				: T extends NumberConstructor[] | NumberConstructor[][]
+				? ArrayOptions<number>
+				: T extends DateConstructor | typeof mongoose.Schema.Types.Date
+				? DateOptions
+				: T extends typeof mongoose.Schema.Types.ObjectId | 'ObjectId'
+				? ObjectIdOptions
+				: T extends MapConstructor
+				? MapOptions
+				: {})
+
+	/**
+	 * Equivalent to `PropertyDecorator`.
+	 * @public
+	 */
+	export type Decorator<T> = PropertyDecorator & {
+		__mongooseField?: T
+	}
+
 	/**
 	 * Defines a nested SchemaType on a property.
 	 *
@@ -41,11 +93,32 @@ export namespace Field {
 	 * @see https://mongoosejs.com/docs/schematypes
 	 * @public
 	 */
-	export function Nested<T extends SchemaTypeNested | SchemaTypeNested[]>(field: T): Decorator.FieldNested {
+	export function Nested<T extends Field.Nested.Options | Field.Nested.Options[]>(field: T): Field.Nested.Decorator {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
 			fields[<string>key] = field
-			Reflect.defineMetadata(MetaField, fields, target.constructor)
+			defineMetadata(MetaField, fields, target.constructor)
+		}
+	}
+
+	export namespace Nested {
+		/**
+		 * @public
+		 */
+		export interface Options {
+			[key: string]:
+				| Field.Options<Field.SchemaType | [Field.SchemaType] | [[Field.SchemaType]]>
+				| [Field.Options<Field.SchemaType | [Field.SchemaType] | [[Field.SchemaType]]>]
+				| Field.Nested.Options
+				| Field.Nested.Options[]
+		}
+
+		/**
+		 * Equivalent to `PropertyDecorator`.
+		 * @public
+		 */
+		export type Decorator = PropertyDecorator & {
+			__mongooseFieldNested?: never
 		}
 	}
 
@@ -53,11 +126,52 @@ export namespace Field {
 	 * Defines a sub-schema on a property (uses `schemaFrom` internally).
 	 * @public
 	 */
-	export function Schema<T extends ConstructorType | [ConstructorType]>(Class: T): Decorator.FieldSchema {
+	export function Schema<T extends ClassType | [ClassType]>(
+		Class: T,
+		options?: Field.Schema.Options<T>
+	): Field.Schema.Decorator<T> {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
-			fields[<string>key] = Array.isArray(Class) ? [schemaFrom(Class[0])] : schemaFrom(Class as ConstructorType)
-			Reflect.defineMetadata(MetaField, fields, target.constructor)
+
+			const type = Array.isArray(Class) ? [schemaFrom(Class[0])] : schemaFrom(Class)
+
+			fields[<string>key] = { type, ...options }
+
+			defineMetadata(MetaField, fields, target.constructor)
+		}
+	}
+
+	export namespace Schema {
+		/**
+		 * @public
+		 */
+		export interface Options<T extends ClassType | [ClassType]> {
+			/**
+			 * https://mongoosejs.com/docs/validation.html#required-validators-on-nested-objects
+			 */
+			required?: boolean
+
+			/**
+			 * https://mongoosejs.com/docs/subdocs.html#subdocument-defaults
+			 */
+			default?: Field.Schema.DefaultType<T> | null | ((this: any, doc: any) => Field.Schema.DefaultType<T> | null)
+		}
+
+		/**
+		 * @public
+		 */
+		export type DefaultType<T extends ClassType | [ClassType]> = T extends [ClassType]
+			? Plain.Partial<InstanceType<T[number]>>[]
+			: T extends ClassType
+			? Plain.Partial<InstanceType<T>>
+			: never
+
+		/**
+		 * Equivalent to `PropertyDecorator`.
+		 * @public
+		 */
+		export type Decorator<T> = PropertyDecorator & {
+			__mongooseFieldSchema?: T
 		}
 	}
 
@@ -66,23 +180,52 @@ export namespace Field {
 	 * @see https://mongoosejs.com/docs/discriminators#single-nested-discriminators
 	 * @public
 	 */
-	export function Union(classes: ConstructorType[], options?: UnionOptions): Decorator.FieldUnion
-	export function Union(...classes: ConstructorType[]): Decorator.FieldUnion
+	export function Union<T extends ClassType>(
+		classes: T[],
+		options?: Field.Union.Options<InstanceType<T>>
+	): Field.Union.Decorator
+	export function Union(...classes: ClassType[]): Field.Union.Decorator
 	export function Union(
-		...args: ConstructorType[] | (ConstructorType[] | UnionOptions | undefined)[]
-	): Decorator.FieldUnion {
+		...args: ClassType[] | (ClassType[] | Field.Union.Options<any> | undefined)[]
+	): Field.Union.Decorator {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
 			// We must remove _id from the base schema or `{ _id: false }` won't do anything on the discriminator schema (_id is still there by default).
 			fields[<string>key] = new mongoose.Schema({}, { _id: false })
-			Reflect.defineMetadata(MetaField, fields, target.constructor)
+			defineMetadata(MetaField, fields, target.constructor)
 			const discriminatorFields = getDiscriminatorFields(target.constructor)
 
 			discriminatorFields[<string>key] = Array.isArray(args[0])
-				? { classes: args[0] as ConstructorType[], options: args[1] as UnionOptions | undefined }
-				: { classes: args as ConstructorType[] }
+				? { classes: args[0] as ClassType[], options: args[1] as Field.Union.Options<any> | undefined }
+				: { classes: args as ClassType[] }
 
-			Reflect.defineMetadata(MetaFieldDiscriminators, discriminatorFields, target.constructor)
+			defineMetadata(MetaFieldDiscriminators, discriminatorFields, target.constructor)
+		}
+	}
+
+	export namespace Union {
+		/**
+		 * @public
+		 */
+		export interface Options<T> {
+			/** If `true`, the field itself is required. */
+			required?: boolean
+
+			/** If `true`, the discriminator key in nested schemas is always required and narrowed to its possible values. */
+			strict?: boolean
+
+			// Distributive https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#distributive-conditional-types
+			default?: T extends any
+				? Plain.Partial<T> | null | ((this: any, doc: any) => Plain.Partial<T> | null)
+				: never
+		}
+
+		/**
+		 * Equivalent to `PropertyDecorator`.
+		 * @public
+		 */
+		export type Decorator = PropertyDecorator & {
+			__mongooseFieldUnion?: never
 		}
 	}
 
@@ -91,24 +234,242 @@ export namespace Field {
 	 * @see https://mongoosejs.com/docs/discriminators#embedded-discriminators-in-arrays
 	 * @public
 	 */
-	export function ArrayOfUnion(classes: ConstructorType[], options?: UnionOptions): Decorator.FieldArrayOfUnion
-	export function ArrayOfUnion(...classes: ConstructorType[]): Decorator.FieldArrayOfUnion
+	export function ArrayOfUnion<T extends ClassType>(
+		classes: T[],
+		options?: Field.ArrayOfUnion.Options<InstanceType<T>>
+	): Field.ArrayOfUnion.Decorator
+	export function ArrayOfUnion(...classes: ClassType[]): Field.ArrayOfUnion.Decorator
 	export function ArrayOfUnion(
-		...args: ConstructorType[] | (ConstructorType[] | UnionOptions | undefined)[]
-	): Decorator.FieldArrayOfUnion {
+		...args: ClassType[] | (ClassType[] | Field.ArrayOfUnion.Options<any> | undefined)[]
+	): Field.ArrayOfUnion.Decorator {
 		return (target, key) => {
 			const fields = getFields(target.constructor)
 			// We must remove _id from the base schema or `{ _id: false }` won't do anything on the discriminator schema (_id is still there by default).
 			fields[<string>key] = [new mongoose.Schema({}, { _id: false })]
-			Reflect.defineMetadata(MetaField, fields, target.constructor)
+			defineMetadata(MetaField, fields, target.constructor)
 
 			const discriminatorArrayFields = getDiscriminatorFields(target.constructor)
 
 			discriminatorArrayFields[<string>key] = Array.isArray(args[0])
-				? { classes: args[0] as ConstructorType[], options: args[1] as UnionOptions | undefined }
-				: { classes: args as ConstructorType[] }
+				? { classes: args[0] as ClassType[], options: args[1] as Field.ArrayOfUnion.Options<any> | undefined }
+				: { classes: args as ClassType[] }
 
-			Reflect.defineMetadata(MetaFieldDiscriminators, discriminatorArrayFields, target.constructor)
+			defineMetadata(MetaFieldDiscriminators, discriminatorArrayFields, target.constructor)
+		}
+	}
+
+	export namespace ArrayOfUnion {
+		/**
+		 * @public
+		 */
+		export interface Options<T> {
+			/** If `true`, the field itself is required. */
+			required?: boolean
+
+			/** If `true`, the discriminator key in nested schemas is always required and narrowed to its possible values. */
+			strict?: boolean
+
+			// Distributive https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#distributive-conditional-types
+			default?: Array<T extends any ? Plain.Partial<T> : never>
+		}
+
+		/**
+		 * Equivalent to `PropertyDecorator`.
+		 * @public
+		 */
+		export type Decorator = PropertyDecorator & {
+			__mongooseFieldArrayOfUnion?: never
+		}
+	}
+
+	/**
+	 * Define references more succintly.
+	 * @see https://mongoosejs.com/docs/populate.html#populate
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Model()
+	 * class Company extends Model.I {
+	 *   ＠Field(String)
+	 *   name: Company
+	 * }
+	 *
+	 * ＠Model()
+	 * class User extends Model.I {
+	 *   ＠Field.Ref(Company, { required: true })
+	 *   company: Company | ObjectId
+	 * }
+	 * ```
+	 * ---
+	 * @public
+	 */
+	export function Ref<T extends Record<string, any>>(
+		ref: Ref<any, T> | [Ref<any, T>],
+		options: Field.Ref.Options = {}
+	): Field.Ref.Decorator<T> {
+		return (target, key) => {
+			const type = mongoose.Schema.Types.ObjectId
+
+			const fields = getFields(target.constructor)
+
+			fields[<string>key] = Array.isArray(ref)
+				? [{ type, ref: ref[0], ...(options as {}) }]
+				: { type, ref, ...(options as {}) }
+
+			defineMetadata(MetaField, fields, target.constructor)
+		}
+	}
+
+	export namespace Ref {
+		/**
+		 * @public
+		 */
+		export interface Options
+			extends RefletMongoose.SchemaTypeOptions,
+				Pick<CommonOptions<'ObjectId'>, 'required' | 'index' | 'unique' | 'select' | 'default'> {}
+
+		/**
+		 * Equivalent to `PropertyDecorator`.
+		 * @public
+		 */
+		export type Decorator<T> = PropertyDecorator & {
+			__mongooseFieldRef?: T
+		}
+	}
+
+	/**
+	 * Define dynamic references more succintly.
+	 * @see https://mongoosejs.com/docs/populate.html#dynamic-ref
+	 * @public
+	 */
+	export function RefPath<T extends Record<string, any>>(
+		refPath: PlainKeys<T> | [PlainKeys<T>],
+		options: Field.Ref.Options = {}
+	): Field.RefPath.Decorator {
+		return (target, key) => {
+			const type = mongoose.Schema.Types.ObjectId
+
+			const fields = getFields(target.constructor)
+
+			fields[<string>key] = Array.isArray(refPath)
+				? [{ type, refPath: refPath[0] as string, ...(options as {}) }]
+				: { type, refPath: refPath as string, ...(options as {}) }
+
+			defineMetadata(MetaField, fields, target.constructor)
+		}
+	}
+
+	export namespace RefPath {
+		/**
+		 * Equivalent to `PropertyDecorator`.
+		 * @public
+		 */
+		export type Decorator = PropertyDecorator & {
+			__mongooseFieldRefPath?: never
+		}
+	}
+
+	/**
+	 * @public
+	 */
+	export function Enum<T extends string | number, D extends T>(
+		values: T[] extends string[] ? T[] : T[] extends number[] ? T[] : never,
+		options?: Field.Enum.Options<D>
+	): Field.Enum.Decorator {
+		return (target, key) => {
+			if (!Array.isArray(values)) {
+				throw new RefletMongooseError(
+					'INVALID_FIELD_TYPE',
+					`Parameter of @Field.Enum "${target.constructor.name}.${key.toString()}" should be an array`
+				)
+			}
+
+			const type = typeof values[0] === 'string' ? String : typeof values[0] === 'number' ? Number : null
+
+			if (!type) {
+				throw new RefletMongooseError(
+					'INVALID_FIELD_TYPE',
+					`Values of @Field.Enum "${
+						target.constructor.name
+					}.${key.toString()}" should either be strings or numbers`
+				)
+			}
+
+			const fields = getFields(target.constructor)
+
+			fields[<string>key] = { type, enum: values, ...options }
+
+			defineMetadata(MetaField, fields, target.constructor)
+		}
+	}
+
+	export namespace Enum {
+		/**
+		 * @public
+		 */
+		export type Options<T extends string | number> = {
+			required?: boolean
+			default?: T | null | ((this: any, doc: any) => T | null)
+		}
+
+		/**
+		 * Equivalent to `PropertyDecorator`.
+		 * @public
+		 */
+		export type Decorator = PropertyDecorator & {
+			__mongooseFieldEnum?: never
+		}
+	}
+
+	/**
+	 * @public
+	 */
+	export function ArrayOfEnum<T extends string | number, D extends T>(
+		values: T[] extends string[] ? T[] : T[] extends number[] ? T[] : never,
+		options: Field.ArrayOfEnum.Options<D>
+	): Field.ArrayOfEnum.Decorator {
+		return (target, key) => {
+			if (!Array.isArray(values)) {
+				throw new RefletMongooseError(
+					'INVALID_FIELD_TYPE',
+					`Parameter of @Field.ArrayOfEnum "${target.constructor.name}.${key.toString()}" should be an array`
+				)
+			}
+
+			const type = typeof values[0] === 'string' ? [String] : typeof values[0] === 'number' ? [Number] : null
+
+			if (!type) {
+				throw new RefletMongooseError(
+					'INVALID_FIELD_TYPE',
+					`Values of @Field.ArrayOfEnum "${
+						target.constructor.name
+					}.${key.toString()}" should either be strings or numbers`
+				)
+			}
+
+			const fields = getFields(target.constructor)
+
+			fields[<string>key] = { type, enum: values, ...options }
+
+			defineMetadata(MetaField, fields, target.constructor)
+		}
+	}
+
+	export namespace ArrayOfEnum {
+		/**
+		 * @public
+		 */
+		export type Options<T extends string | number> = {
+			required?: boolean
+			default?: T[] | ((this: any, doc: any) => T[])
+		}
+
+		/**
+		 * Equivalent to `PropertyDecorator`.
+		 * @public
+		 */
+		export type Decorator = PropertyDecorator & {
+			__mongooseFieldArrayOfEnum?: never
 		}
 	}
 }
@@ -116,49 +477,25 @@ export namespace Field {
 /**
  * @internal
  */
-export function getFields(target: object): { [key: string]: any } {
+export function getFields(target: object): mongoose.SchemaDefinition<any> {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
-	return Object.assign({}, Reflect.getMetadata(MetaField, target))
+	return Object.assign({}, getMetadata(MetaField, target))
 }
 
 /**
  * @internal
  */
-export function getDiscriminatorFields(
-	target: object
-): { [key: string]: { classes: ConstructorType[]; options?: UnionOptions } } {
+export function getDiscriminatorFields(target: object): {
+	[key: string]: { classes: ClassType[]; options?: Field.Union.Options<any> }
+} {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
-	return Object.assign({}, Reflect.getMetadata(MetaFieldDiscriminators, target))
+	return Object.assign({}, getMetadata(MetaFieldDiscriminators, target))
 }
 
 /**
  * @public
  */
-type SchemaTypeNested = {
-	[key: string]:
-		| SchemaTypeOptions<SchemaType | [SchemaType] | [[SchemaType]]>
-		| [SchemaTypeOptions<SchemaType | [SchemaType] | [[SchemaType]]>]
-		| SchemaTypeNested
-		| SchemaTypeNested[]
-}
-
-/**
- * @public
- */
-type SchemaType =
-	| StringConstructor
-	| NumberConstructor
-	| BooleanConstructor
-	| DateConstructor
-	| MapConstructor
-	| typeof Buffer
-	| typeof mongoose.SchemaType
-	| mongoose.Schema
-
-/**
- * @public
- */
-type SchemaTypeOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]> = RefletMongoose.SchemaTypeOptions & {
+interface CommonOptions<T extends Field.SchemaType | [Field.SchemaType] | [[Field.SchemaType]]> {
 	/**
 	 * The type to cast this path to.
 	 *
@@ -185,7 +522,7 @@ type SchemaTypeOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]> = R
 	 *
 	 * [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-default)
 	 */
-	default?: Infer<T> | ((this: any, doc: any) => Infer<T>)
+	default?: Infer<T> | null | ((this: any, doc: any) => Infer<T> | null)
 
 	/**
 	 * Whether to include or exclude this path by default when loading documents using find(), findOne(), etc.
@@ -252,7 +589,7 @@ type SchemaTypeOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]> = R
 	 *
 	 * [Method reference](https://mongoosejs.com/docs/api#schematype_SchemaType-index)
 	 */
-	index?: boolean | string | mongoose.SchemaTypeOpts.IndexOpts
+	index?: boolean | string | mongoose.IndexOptions
 
 	/**
 	 * Build a unique index on this path when the model is compiled. The unique option is not a validator.
@@ -262,6 +599,15 @@ type SchemaTypeOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]> = R
 	 * [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-unique)
 	 */
 	unique?: boolean
+
+	/**
+	 * If truthy, Mongoose will build a text index on this path.
+	 *
+	 * _All types_
+	 *
+	 * [Option reference](https://mongoosejs.com/docs/api.html#schematypeoptions_SchemaTypeOptions-text)
+	 */
+	text?: boolean | number
 
 	/**
 	 * Disallow changes to this path once the document is saved to the database for the first time.
@@ -281,27 +627,13 @@ type SchemaTypeOptions<T extends SchemaType | [SchemaType] | [[SchemaType]]> = R
 	 *
 	 * [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-cast)
 	 */
-	cast?: string
-} & (T extends StringConstructor | typeof mongoose.Schema.Types.String
-		? StringOptions
-		: T extends StringConstructor[] | StringConstructor[][]
-		? ArrayOptions<string>
-		: T extends NumberConstructor | typeof mongoose.Schema.Types.Number
-		? NumberOptions
-		: T extends NumberConstructor[] | NumberConstructor[][]
-		? ArrayOptions<number>
-		: T extends DateConstructor | typeof mongoose.Schema.Types.Date
-		? DateOptions
-		: T extends typeof mongoose.Schema.Types.ObjectId
-		? ObjectIdOptions
-		: T extends MapConstructor
-		? MapOptions
-		: {})
+	cast?: ((val: any) => Infer<T>) | string
+}
 
 /**
  * @public
  */
-type StringOptions = {
+interface StringOptions {
 	/**
 	 * Add a custom setter that lowercases this string using JavaScript's built-in `String#toLowerCase()`.
 	 *
@@ -369,7 +701,7 @@ type StringOptions = {
 /**
  * @public
  */
-type NumberOptions = {
+interface NumberOptions {
 	/**
 	 * The minimum value allowed.
 	 *
@@ -401,7 +733,7 @@ type NumberOptions = {
 /**
  * @public
  */
-type ArrayOptions<T extends string | number> = {
+interface ArrayOptions<T extends string | number> {
 	/**
 	 * _Array type_
 	 *
@@ -413,7 +745,7 @@ type ArrayOptions<T extends string | number> = {
 /**
  * @public
  */
-type DateOptions = {
+interface DateOptions {
 	/**
 	 * The minimum date allowed.
 	 *
@@ -445,7 +777,7 @@ type DateOptions = {
 /**
  * @public
  */
-type ObjectIdOptions = {
+interface ObjectIdOptions {
 	/**
 	 * The model that `populate()` should use if populating this path.
 	 *
@@ -454,15 +786,7 @@ type ObjectIdOptions = {
 	 * [Guide reference](https://mongoosejs.com/docs/populate)
 	 * | [Option reference](https://mongoosejs.com/docs/api#schematypeoptions_SchemaTypeOptions-ref)
 	 */
-	ref?: keyof RefletMongoose.Ref extends undefined
-		? string | mongoose.Model<any> | ((this: any, doc: any) => string | mongoose.Model<any>)
-		:
-				| keyof RefletMongoose.Ref
-				| ConstructorType<RefletMongoose.Ref[keyof RefletMongoose.Ref]>
-				| ((
-						this: any,
-						doc: any
-				  ) => keyof RefletMongoose.Ref | ConstructorType<RefletMongoose.Ref[keyof RefletMongoose.Ref]>)
+	ref?: RefGlobal
 
 	/**
 	 * _ObjectId type_
@@ -475,13 +799,13 @@ type ObjectIdOptions = {
 /**
  * @public
  */
-type MapOptions = {
+interface MapOptions {
 	/**
 	 *  _Map type_
 	 *
 	 * [Guide reference](https://mongoosejs.com/docs/schematypes#maps)
 	 */
-	of?: SchemaType
+	of?: Field.SchemaType
 }
 
 /**
@@ -495,18 +819,18 @@ type Infer<T> = T extends NumberConstructor | typeof mongoose.Schema.Types.Numbe
 	? boolean
 	: T extends DateConstructor | typeof mongoose.Schema.Types.Date
 	? Date
-	: T extends typeof mongoose.Schema.Types.ObjectId
+	: T extends typeof mongoose.Schema.Types.ObjectId | 'ObjectId'
 	? mongoose.Types.ObjectId
 	: T extends [infer U]
 	? Infer<U>[]
 	: T extends [[infer V]]
 	? Infer<V>[][]
-	: Object
+	: any
 
 /**
  * @public
  */
-type ValidateObj<T> = {
+interface ValidateObj<T> {
 	validator: (value: T) => boolean | Promise<boolean>
 	msg?: string | ValidateMessageFn<T>
 	message?: string | ValidateMessageFn<T>
@@ -522,14 +846,3 @@ type ValidateMessageFn<T> = (props: {
 	path: string
 	value: T
 }) => string
-
-/**
- * @public
- */
-type UnionOptions = {
-	/** If `true`, the field itself is required. */
-	required?: boolean
-
-	/** If `true`, the discriminator key in nested schemas is always required and narrowed to its possible values. */
-	strict?: boolean
-}

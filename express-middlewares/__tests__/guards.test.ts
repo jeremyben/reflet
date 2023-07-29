@@ -1,9 +1,10 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
-import { register, Get, Post } from '@reflet/express'
+import { register, Get, Post, Router } from '@reflet/express'
 import { UseGuards } from '../src'
 import { log } from '../../testing/tools'
 
+@Router('/')
 class Controller {
 	@UseGuards(async (req) => req.method === 'GET')
 	@UseGuards((req) => true, (req) => req.headers.via === 'jest')
@@ -22,25 +23,18 @@ class Controller {
 const rq = supertest(register(express(), [Controller]))
 
 test('pass guards', async () => {
-	const res = await rq.get('').set('via', 'jest')
+	const res = await rq.get('/').set('via', 'jest')
 	expect(res.status).toBe(200)
 })
 
 test("don't pass guards", async () => {
-	const res = await rq.get('')
+	const res = await rq.get('/')
 	expect(res.status).toBe(403)
-	expect(res.text).toContain('Error: Access Denied')
+	expect(res.text).toContain('Forbidden: Access Denied')
 })
 
 test('custom html 403 message', async () => {
-	const res = await rq.post('')
+	const res = await rq.post('/')
 	expect(res.status).toBe(403)
 	expect(res.text).toContain('Error: You must be admin')
-})
-
-test('custom json 403 message', async () => {
-	const res = await rq.post('').accept('application/json')
-	// content-type should be inferred by our global error handler
-	expect(res.status).toBe(403)
-	expect(res.body).toEqual({ message: 'You must be admin', status: 403 })
 })

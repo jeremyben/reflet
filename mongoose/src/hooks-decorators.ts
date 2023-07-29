@@ -1,6 +1,8 @@
-import * as mongoose from 'mongoose'
+import type * as mongoose from 'mongoose'
+import type * as mongodb from 'mongodb'
 import { checkDecoratorsOrder } from './check-decorator-order'
-import { ConstructorType, Decorator, Plain } from './interfaces'
+import { AsDocument, ClassType, DocumentAny, Plain } from './interfaces'
+import { defineMetadata, getMetadata } from './metadata-map'
 
 //
 // ────────────────────────────────────────────────────────────────────────────
@@ -20,14 +22,16 @@ const MetaPreHook = Symbol('pre-hook')
  * @public
  */
 // `undefined | void` is the only way to forbid promise as a return type.
-export function PreHook<T>(method: 'init', callback: (this: T, doc: T) => undefined | void): Decorator.PreHook
+export function PreHook<T extends DocumentAny>(
+	method: 'init',
+	callback: (this: T, doc: T) => undefined | void
+): PreHook.Decorator
 
 // 2
 /**
  * Document middleware.
  * - [`Document.validate()`](https://mongoosejs.com/docs/api/document#document_Document-validate)
  * - [`Document.save()`](https://mongoosejs.com/docs/api/document#document_Document-save)
- * - [`Document.remove()`](https://mongoosejs.com/docs/api#model_Model.remove)
  *
  * @remarks
  * - `create()` function fires `'save'` hooks.
@@ -37,41 +41,12 @@ export function PreHook<T>(method: 'init', callback: (this: T, doc: T) => undefi
  * @see https://mongoosejs.com/docs/middleware#pre
  * @public
  */
-export function PreHook<T>(
-	method: DocumentMethodOnly | DocumentMayBeQueryMethod | (DocumentMethodOnly | DocumentMayBeQueryMethod)[],
+export function PreHook<T extends DocumentAny>(
+	method: DocumentMethodOnly | DocumentMethodOnly[],
 	callback: (this: T, next: HookNextFunction) => void
-): Decorator.PreHook
+): PreHook.Decorator
 
 // 3
-/**
- * Document middleware by default.
- * - [`Document.remove()`](https://mongoosejs.com/docs/api#model_Model.remove)
- *
- * Can be registered as a query middleware with `{ query: true }` option.
- * - [`Query.remove()`](https://mongoosejs.com/docs/api/query#query_Query-remove)
- *
- * ---
- * @see https://mongoosejs.com/docs/middleware#pre
- * @public
- */
-export function PreHook<T>(
-	method: DocumentMayBeQueryMethod,
-	options: { query: true; document: false },
-	callback: (this: mongoose.Query<T>, next: HookNextFunction) => void
-): Decorator.PreHook
-
-// 4
-/**
- * {@inheritDoc (PreHook:3)}
- * @public
- */
-export function PreHook<T>(
-	method: DocumentMayBeQueryMethod,
-	options: { query: true; document?: true },
-	callback: (this: T | mongoose.Query<T>, next: HookNextFunction) => void
-): Decorator.PreHook
-
-// 5
 /**
  * Query middleware.
  * - [`Query.count()`](https://mongoosejs.com/docs/api#query_Query-count)
@@ -90,12 +65,12 @@ export function PreHook<T>(
  * @see https://mongoosejs.com/docs/middleware#pre
  * @public
  */
-export function PreHook<T>(
+export function PreHook<T extends DocumentAny>(
 	method: QueryMethodOnly | QueryMaybeDocumentMethod | (QueryMethodOnly | QueryMaybeDocumentMethod)[],
-	callback: (this: mongoose.Query<T>, next: HookNextFunction) => void
-): Decorator.PreHook
+	callback: (this: mongoose.Query<T, T>, next: HookNextFunction) => void
+): PreHook.Decorator
 
-// 6
+// 4
 /**
  * Query middleware by default.
  * - [`Query.updateOne()`](https://mongoosejs.com/docs/api#query_Query-updateOne)
@@ -109,24 +84,24 @@ export function PreHook<T>(
  * @see https://mongoosejs.com/docs/middleware#pre
  * @public
  */
-export function PreHook<T>(
+export function PreHook<T extends DocumentAny>(
 	method: QueryMaybeDocumentMethod,
 	options: { document: true; query: false },
 	callback: (this: T, next: HookNextFunction) => void
-): Decorator.PreHook
+): PreHook.Decorator
 
-// 7
+// 5
 /**
- * {@inheritDoc (PreHook:6)}
+ * {@inheritDoc (PreHook:4)}
  * @public
  */
-export function PreHook<T>(
+export function PreHook<T extends DocumentAny>(
 	method: QueryMaybeDocumentMethod,
 	options: { document: true; query?: true },
-	callback: (this: T | mongoose.Query<T>, next: HookNextFunction) => void
-): Decorator.PreHook
+	callback: (this: T | mongoose.Query<T, T>, next: HookNextFunction) => void
+): PreHook.Decorator
 
-// 8
+// 6
 /**
  * Model middleware.
  * - [`Model.insertMany()`](https://mongoosejs.com/docs/api#model_Model.insertMany)
@@ -135,12 +110,12 @@ export function PreHook<T>(
  * @see https://mongoosejs.com/docs/middleware#pre
  * @public
  */
-export function PreHook<T>(
+export function PreHook<T extends DocumentAny>(
 	method: ModelMethod,
-	callback: (this: mongoose.Model<T & mongoose.Document>, next: HookNextFunction) => void
-): Decorator.PreHook
+	callback: (this: mongoose.Model<AsDocument<T>>, next: HookNextFunction) => void
+): PreHook.Decorator
 
-// 9
+// 7
 /**
  * Aggregate middleware.
  * - [`Model.aggregate()`](https://mongoosejs.com/docs/api#model_Model.aggregate)
@@ -149,12 +124,12 @@ export function PreHook<T>(
  * @see https://mongoosejs.com/docs/middleware#aggregate
  * @public
  */
-export function PreHook<T>(
+export function PreHook<T extends DocumentAny>(
 	method: AggregateMethod,
 	callback: (this: mongoose.Aggregate<T>, next: HookNextFunction) => void
-): Decorator.PreHook
+): PreHook.Decorator
 
-// 10
+// 8
 /**
  * Mixed methods middleware.
  *
@@ -178,45 +153,49 @@ export function PreHook<T>(
  * ---
  * @public
  */
-export function PreHook<T>(
+export function PreHook<T extends DocumentAny>(
 	method: RegExp | (DocumentMethod | QueryMethod | AggregateMethod | ModelMethod)[],
 	callback: (this: unknown, next: HookNextFunction) => void
-): Decorator.PreHook
+): PreHook.Decorator
 
-// 11
+// 9
 /**
- * {@inheritDoc (PreHook:10)}
+ * {@inheritDoc (PreHook:8)}
  * @public
  */
-export function PreHook<T>(
+export function PreHook<T extends DocumentAny>(
 	method: (DocumentMethod | QueryMethod | AggregateMethod | ModelMethod | 'init')[],
 	callback: (this: unknown, nextOrDoc: HookNextFunction | T) => void
-): Decorator.PreHook
+): PreHook.Decorator
 
 // Implementation
 export function PreHook(
 	method: string | string[] | RegExp,
 	callbackOrOptions: Function | { document?: boolean; query?: boolean },
 	callbackIfOptions?: Function
-): Decorator.PreHook {
-	return (Class) => {
-		checkDecoratorsOrder(Class)
-		const preHooks = getPreHooks(Class)
-		preHooks.push({ method, callbackOrOptions, callbackIfOptions })
-		Reflect.defineMetadata(MetaPreHook, preHooks, Class)
+): PreHook.Decorator {
+	return (target) => {
+		checkDecoratorsOrder(target)
+		const preHooks = getPreHooks(target)
+		preHooks.unshift({ method, callbackOrOptions, callbackIfOptions })
+		defineMetadata(MetaPreHook, preHooks, target)
+	}
+}
+
+export namespace PreHook {
+	/**
+	 * Equivalent to `ClassDecorator`.
+	 * @public
+	 */
+	export type Decorator = ClassDecorator & {
+		__mongoosePreHook?: never
 	}
 }
 
 /**
- * @deprecated use `PreHook`
- * @public
- */
-export const Pre = PreHook
-
-/**
  * @internal
  */
-export function applyPreHooks(schema: mongoose.Schema, target: ConstructorType): void {
+export function applyPreHooks(schema: mongoose.Schema<any>, target: ClassType): void {
 	const preHooks = getPreHooks(target)
 
 	for (const preHook of preHooks) {
@@ -227,9 +206,9 @@ export function applyPreHooks(schema: mongoose.Schema, target: ConstructorType):
 /**
  * @internal
  */
-function getPreHooks(target: ConstructorType): Hook[] {
+function getPreHooks(target: Function): Hook[] {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
-	return (Reflect.getMetadata(MetaPreHook, target) || []).slice()
+	return (getMetadata(MetaPreHook, target) || []).slice()
 }
 
 //
@@ -250,7 +229,10 @@ const MetaPostHook = Symbol('post-hook')
  * @public
  */
 // `undefined | void` is the only way to forbid promise as a return type.
-export function PostHook<T>(method: 'init', callback: (this: T, doc: T) => undefined | void): Decorator.PostHook
+export function PostHook<T extends DocumentAny>(
+	method: 'init',
+	callback: (this: T, doc: T) => undefined | void
+): PostHook.Decorator
 
 // 2
 /**
@@ -267,62 +249,22 @@ export function PostHook<T>(method: 'init', callback: (this: T, doc: T) => undef
  * @see https://mongoosejs.com/docs/middleware#post
  * @public
  */
-export function PostHook<T>(
-	method: DocumentMethodOnly | DocumentMayBeQueryMethod | (DocumentMethodOnly | DocumentMayBeQueryMethod)[],
-	callback: (this: T, result: T, next: HookNextFunction) => void
-): Decorator.PostHook
+export function PostHook<T extends DocumentAny>(
+	method: DocumentMethodOnly | DocumentMethodOnly[],
+	callback: (this: T, result: any, next: HookNextFunction) => void
+): PostHook.Decorator
 
 // 3
 /**
  * {@inheritDoc (PostHook:2)}
  * @public
  */
-export function PostHook<T, TError = any>(
-	method: DocumentMethodOnly | DocumentMayBeQueryMethod | (DocumentMethodOnly | DocumentMayBeQueryMethod)[],
+export function PostHook<T extends DocumentAny, TError = any>(
+	method: DocumentMethodOnly | DocumentMethodOnly[],
 	callback: (this: T, error: TError, result: null, next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
 // 4
-/**
- * Document middleware by default.
- * - [`Document.remove()`](https://mongoosejs.com/docs/api#model_Model.remove)
- *
- * Can be registered as a query middleware with `{ query: true }` option.
- * - [`Query.remove()`](https://mongoosejs.com/docs/api/query#query_Query-remove)
- *
- * ---
- * @see https://mongoosejs.com/docs/middleware#post
- * @public
- */
-export function PostHook<T>(
-	method: DocumentMayBeQueryMethod,
-	options: { query: true; document: false },
-	callback: (this: mongoose.Query<T>, result: DeleteWriteOpResultResult, next: HookNextFunction) => void
-): Decorator.PostHook
-
-// 5
-/**
- * {@inheritDoc (PostHook:4)}
- * @public
- */
-export function PostHook<T>(
-	method: DocumentMayBeQueryMethod,
-	options: { query: true; document?: true },
-	callback: (this: T | mongoose.Query<T>, result: T | DeleteWriteOpResultResult, next: HookNextFunction) => void
-): Decorator.PostHook
-
-// 6
-/**
- * {@inheritDoc (PostHook:4)}
- * @public
- */
-export function PostHook<T, TError = any>(
-	method: DocumentMayBeQueryMethod,
-	options: { query: true; document?: boolean },
-	callback: (this: T | mongoose.Query<T>, error: TError, result: null, next: HookNextFunction) => void
-): Decorator.PostHook
-
-// 7
 /**
  * Query middleware.
  * - [`Query.findOne()`](https://mongoosejs.com/docs/api#query_Query-findOne)
@@ -334,12 +276,12 @@ export function PostHook<T, TError = any>(
  * @see https://mongoosejs.com/docs/middleware#post
  * @public
  */
-export function PostHook<T>(
+export function PostHook<T extends DocumentAny>(
 	method: 'findOne' | 'findOneAndUpdate' | 'findOneAndDelete' | 'findOneAndRemove',
-	callback: (this: mongoose.Query<T>, result: T, next: HookNextFunction) => void
-): Decorator.PostHook
+	callback: (this: mongoose.Query<T, T>, result: T, next: HookNextFunction) => void
+): PostHook.Decorator
 
-// 8
+// 5
 /**
  * Query middleware.
  * - [`Query.find()`](https://mongoosejs.com/docs/api#query_Query-find)
@@ -348,12 +290,12 @@ export function PostHook<T>(
  * @see https://mongoosejs.com/docs/middleware#post
  * @public
  */
-export function PostHook<T>(
+export function PostHook<T extends DocumentAny>(
 	method: 'find',
-	callback: (this: mongoose.Query<T>, results: T[], next: HookNextFunction) => void
-): Decorator.PostHook
+	callback: (this: mongoose.Query<T, T>, results: T[], next: HookNextFunction) => void
+): PostHook.Decorator
 
-// 9
+// 6
 /**
  * Query middleware.
  * - [`Query.update()`](https://mongoosejs.com/docs/api#query_Query-update)
@@ -362,12 +304,12 @@ export function PostHook<T>(
  * @see https://mongoosejs.com/docs/middleware#post
  * @public
  */
-export function PostHook<T>(
+export function PostHook<T extends DocumentAny>(
 	method: 'update' | 'updateMany',
-	callback: (this: mongoose.Query<T>, result: UpdateWriteOpResultResult, next: HookNextFunction) => void
-): Decorator.PostHook
+	callback: (this: mongoose.Query<T, T>, result: mongodb.UpdateResult, next: HookNextFunction) => void
+): PostHook.Decorator
 
-// 10
+// 7
 /**
  * Query middleware.
  * - [`Query.deleteMany()`](https://mongoosejs.com/docs/api#query_Query-deleteMany)
@@ -375,12 +317,12 @@ export function PostHook<T>(
  * @see https://mongoosejs.com/docs/middleware#post
  * @public
  */
-export function PostHook<T>(
+export function PostHook<T extends DocumentAny>(
 	method: 'deleteMany',
-	callback: (this: mongoose.Query<T>, result: DeleteWriteOpResultResult, next: HookNextFunction) => void
-): Decorator.PostHook
+	callback: (this: mongoose.Query<T, T>, result: mongodb.DeleteResult, next: HookNextFunction) => void
+): PostHook.Decorator
 
-// 11
+// 8
 /**
  * Query middleware.
  * - [`Query.count()`](https://mongoosejs.com/docs/api#query_Query-count)
@@ -389,12 +331,12 @@ export function PostHook<T>(
  * @see https://mongoosejs.com/docs/middleware#post
  * @public
  */
-export function PostHook<T>(
+export function PostHook<T extends DocumentAny>(
 	method: 'count',
-	callback: (this: mongoose.Query<T>, result: number, next: HookNextFunction) => void
-): Decorator.PostHook
+	callback: (this: mongoose.Query<T, T>, result: number, next: HookNextFunction) => void
+): PostHook.Decorator
 
-// 12
+// 9
 /**
  * Query middleware.
  * - [`Query.count()`](https://mongoosejs.com/docs/api#query_Query-count)
@@ -413,12 +355,22 @@ export function PostHook<T>(
  * @see https://mongoosejs.com/docs/middleware#post
  * @public
  */
-export function PostHook<T, TError = any>(
+export function PostHook<T extends DocumentAny>(
 	method: QueryMethodOnly | (QueryMethodOnly | QueryMaybeDocumentMethod)[],
-	callback: (this: mongoose.Query<T>, error: TError, result: null, next: HookNextFunction) => void
-): Decorator.PostHook
+	callback: (this: mongoose.Query<T, T>, result: any, next: HookNextFunction) => void
+): PostHook.Decorator
 
-// 13
+// 10
+/**
+ * {@inheritDoc (PostHook:9)}
+ * @public
+ */
+export function PostHook<T extends DocumentAny, TError = any>(
+	method: QueryMethodOnly | (QueryMethodOnly | QueryMaybeDocumentMethod)[],
+	callback: (this: mongoose.Query<T, T>, error: TError, result: undefined, next: HookNextFunction) => void
+): PostHook.Decorator
+
+// 11
 /**
  * Query middleware by default.
  * - [`Query.updateOne()`](https://mongoosejs.com/docs/api#query_Query-updateOne)
@@ -430,28 +382,28 @@ export function PostHook<T, TError = any>(
  * @see https://mongoosejs.com/docs/middleware#post
  * @public
  */
-export function PostHook<T>(
+export function PostHook<T extends DocumentAny>(
 	method: 'updateOne',
 	callbackOrOptions:
-		| ((this: mongoose.Query<T>, result: UpdateWriteOpResultResult, next: HookNextFunction) => void)
+		| ((this: mongoose.Query<T, T>, result: mongodb.UpdateResult, next: HookNextFunction) => void)
 		| { document: true; query?: false },
 	callbackIfOptions?: (this: T, result: T, next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
-// 14
+// 11
 /**
- * {@inheritDoc (PostHook:13)}
+ * {@inheritDoc (PostHook:11)}
  * @public
  */
-export function PostHook<T, TError = any>(
+export function PostHook<T extends DocumentAny, TError = any>(
 	method: 'updateOne',
 	callbackOrOptions:
-		| ((this: mongoose.Query<T>, error: TError, result: UpdateWriteOpResultResult, next: HookNextFunction) => void)
+		| ((this: mongoose.Query<T, T>, error: TError, result: mongodb.UpdateResult, next: HookNextFunction) => void)
 		| { document: true; query?: false },
 	callbackIfOptions?: (this: T, error: TError, result: T, next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
-// 15
+// 12
 /**
  * Query middleware by default.
  * - [`Query.deleteOne()`](https://mongoosejs.com/docs/api#query_Query-deleteOne)
@@ -463,28 +415,28 @@ export function PostHook<T, TError = any>(
  * @see https://mongoosejs.com/docs/middleware#post
  * @public
  */
-export function PostHook<T>(
+export function PostHook<T extends DocumentAny>(
 	method: 'deleteOne',
 	callbackOrOptions:
-		| ((this: mongoose.Query<T>, result: DeleteWriteOpResultResult, next: HookNextFunction) => void)
+		| ((this: mongoose.Query<T, T>, result: mongodb.DeleteResult, next: HookNextFunction) => void)
 		| { document: true; query?: false },
 	callbackIfOptions?: (this: T, result: T, next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
-// 16
+// 13
 /**
- * {@inheritDoc (PostHook:15)}
+ * {@inheritDoc (PostHook:12)}
  * @public
  */
-export function PostHook<T, TError = any>(
+export function PostHook<T extends DocumentAny, TError = any>(
 	method: 'deleteOne',
 	callbackOrOptions:
-		| ((this: mongoose.Query<T>, error: TError, result: DeleteWriteOpResultResult, next: HookNextFunction) => void)
+		| ((this: mongoose.Query<T, T>, error: TError, result: mongodb.DeleteResult, next: HookNextFunction) => void)
 		| { document: true; query?: false },
 	callbackIfOptions?: (this: T, error: TError, result: T, next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
-// 17
+// 14
 /**
  * Model middleware.
  * - [`Model.insertMany()`](https://mongoosejs.com/docs/api#model_Model.insertMany)
@@ -493,22 +445,22 @@ export function PostHook<T, TError = any>(
  * @see https://mongoosejs.com/docs/middleware#post
  * @public
  */
-export function PostHook<T>(
+export function PostHook<T extends DocumentAny>(
 	method: ModelMethod,
-	callback: (this: mongoose.Model<T & mongoose.Document>, results: T[], next: HookNextFunction) => void
-): Decorator.PostHook
+	callback: (this: mongoose.Model<AsDocument<T>>, results: T[], next: HookNextFunction) => void
+): PostHook.Decorator
 
-// 18
+// 15
 /**
- * {@inheritDoc (PostHook:17)}
+ * {@inheritDoc (PostHook:14)}
  * @public
  */
-export function PostHook<T, TError = any>(
+export function PostHook<T extends DocumentAny, TError = any>(
 	method: ModelMethod,
-	callback: (this: mongoose.Model<T & mongoose.Document>, error: TError, results: T[], next: HookNextFunction) => void
-): Decorator.PostHook
+	callback: (this: mongoose.Model<AsDocument<T>>, error: TError, results: T[], next: HookNextFunction) => void
+): PostHook.Decorator
 
-// 19
+// 16
 /**
  * Aggregate middleware.
  * - [`Model.aggregate()`](https://mongoosejs.com/docs/api#model_Model.aggregate)
@@ -517,22 +469,22 @@ export function PostHook<T, TError = any>(
  * @see https://mongoosejs.com/docs/middleware#aggregate
  * @public
  */
-export function PostHook<T>(
+export function PostHook<T extends DocumentAny>(
 	method: AggregateMethod,
 	callback: (this: mongoose.Aggregate<T>, results: Plain<T>[], next: HookNextFunction) => void
-): Decorator.PostHook
+): PostHook.Decorator
 
-// 20
+// 17
 /**
- * {@inheritDoc (PostHook:19)}
+ * {@inheritDoc (PostHook:16)}
  * @public
  */
-export function PostHook<T, TError = any>(
+export function PostHook<T extends DocumentAny, TError = any>(
 	method: AggregateMethod,
-	callback: (this: mongoose.Aggregate<T>, error: TError, results: undefined, next: HookNextFunction) => void
-): Decorator.PostHook
+	callback: (this: mongoose.Aggregate<T>, error: TError, results: null, next: HookNextFunction) => void
+): PostHook.Decorator
 
-// 21
+// 18
 /**
  * Mixed methods middleware.
  *
@@ -556,45 +508,49 @@ export function PostHook<T, TError = any>(
  * ---
  * @public
  */
-export function PostHook<T>(
+export function PostHook<T extends DocumentAny>(
 	method: RegExp | (DocumentMethod | QueryMethod | AggregateMethod | ModelMethod)[],
-	callback: (this: unknown, result: unknown, next: HookNextFunction) => void
-): Decorator.PreHook
+	callback: (this: any, result: any, next: HookNextFunction) => void
+): PreHook.Decorator
 
-// 22
+// 19
 /**
- * {@inheritDoc (PostHook:21)}
+ * {@inheritDoc (PostHook:18)}
  * @public
  */
-export function PostHook<T, TError = any>(
+export function PostHook<T extends DocumentAny, TError = any>(
 	method: RegExp | (DocumentMethod | QueryMethod | AggregateMethod | ModelMethod)[],
-	callback: (this: unknown, error: TError, result: unknown, next: HookNextFunction) => void
-): Decorator.PreHook
+	callback: (this: any, error: TError, result: any, next: HookNextFunction) => void
+): PreHook.Decorator
 
 // Implementation
 export function PostHook(
 	method: string | string[] | RegExp,
 	callbackOrOptions: Function | { document?: boolean; query?: boolean },
 	callbackIfOptions?: Function
-): Decorator.PostHook {
-	return (Class) => {
-		checkDecoratorsOrder(Class)
-		const postHooks = getPostHooks(Class)
-		postHooks.push({ method, callbackOrOptions, callbackIfOptions })
-		Reflect.defineMetadata(MetaPostHook, postHooks, Class)
+): PostHook.Decorator {
+	return (target) => {
+		checkDecoratorsOrder(target)
+		const postHooks = getPostHooks(target)
+		postHooks.unshift({ method, callbackOrOptions, callbackIfOptions })
+		defineMetadata(MetaPostHook, postHooks, target)
+	}
+}
+
+export namespace PostHook {
+	/**
+	 * Equivalent to `ClassDecorator`.
+	 * @public
+	 */
+	export type Decorator = ClassDecorator & {
+		__mongoosePostHook?: never
 	}
 }
 
 /**
- * @deprecated use PostHook
- * @public
- */
-export const Post = PostHook
-
-/**
  * @internal
  */
-export function applyPostHooks(schema: mongoose.Schema, target: ConstructorType): void {
+export function applyPostHooks(schema: mongoose.Schema<any>, target: ClassType): void {
 	const postHooks = getPostHooks(target)
 
 	for (const postHook of postHooks) {
@@ -605,9 +561,9 @@ export function applyPostHooks(schema: mongoose.Schema, target: ConstructorType)
 /**
  * @internal
  */
-function getPostHooks(target: ConstructorType): Hook[] {
+function getPostHooks(target: Function): Hook[] {
 	// Clone to avoid inheritance issues: https://github.com/rbuckton/reflect-metadata/issues/62
-	return (Reflect.getMetadata(MetaPostHook, target) || []).slice()
+	return (getMetadata(MetaPostHook, target) || []).slice()
 }
 
 //
@@ -628,7 +584,7 @@ type Hook = {
 /**
  * @public
  */
-type DocumentMethod = 'validate' | 'save' | 'remove' | 'updateOne' | 'deleteOne'
+type DocumentMethod = 'validate' | 'save' | 'updateOne' | 'deleteOne'
 
 /**
  * @public
@@ -642,8 +598,6 @@ type QueryMethod =
 	| 'findOneAndDelete'
 	| 'findOneAndRemove'
 	| 'findOneAndUpdate'
-	| 'remove'
-	| 'update'
 	| 'updateOne'
 	| 'updateMany'
 
@@ -656,11 +610,6 @@ type DocumentMethodOnly = Exclude<DocumentMethod, QueryMethod>
  * @public
  */
 type QueryMethodOnly = Exclude<QueryMethod, DocumentMethod>
-
-/**
- * @public
- */
-type DocumentMayBeQueryMethod = 'remove'
 
 /**
  * @public
@@ -681,23 +630,3 @@ type AggregateMethod = 'aggregate'
  * @public
  */
 type HookNextFunction = (err?: Error) => void
-
-/**
- * http://mongodb.github.io/node-mongodb-native/3.1/api/Collection#~updateWriteOpResult
- * @public
- */
-interface UpdateWriteOpResultResult {
-	ok: number
-	n: number
-	nModified: number
-}
-
-/**
- * http://mongodb.github.io/node-mongodb-native/3.1/api/Collection#~deleteWriteOpResult
- * @public
- */
-interface DeleteWriteOpResultResult {
-	n: number
-	ok: number
-	deletedCount: number
-}

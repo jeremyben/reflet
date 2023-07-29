@@ -1,23 +1,24 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
-import { Application, Catch, Get, Send, Use } from '../src'
+import { Application, Catch, Get, Post, Router, ScopedMiddlewares, Send, Use } from '../src'
 import { getGlobalMiddlewares } from '../src/register'
 import { log } from '../../testing/tools'
 
 test('simple app', async () => {
 	@Send()
-	class Bar {
-		@Get('/bar')
+	@Router('/')
+	class Simple {
+		@Get('/simple')
 		getOne() {
-			return 'bar'
+			return 'simple'
 		}
 	}
 
-	const app = new Application().register([Bar])
+	const app = new Application().register([Simple])
 	const rq = supertest(app)
 
-	const res = await rq.get('/bar')
-	expect(res.text).toBe('bar')
+	const res = await rq.get('/simple')
+	expect(res.text).toBe('simple')
 	expect(res.type).toBe('text/html')
 })
 
@@ -27,10 +28,19 @@ describe('inherit application class', () => {
 		next(err)
 	})
 	@Send.Dont()
+	@Router('/')
 	class Foo {
 		@Get('/foo')
 		getOne(req: express.Request, res: express.Response) {
 			throw Error('y')
+		}
+	}
+
+	@Router('/bar')
+	class Bar {
+		@Get('/')
+		getBar() {
+			return true
 		}
 	}
 
@@ -71,7 +81,7 @@ describe('inherit application class', () => {
 		private successText = 'success'
 	}
 
-	const app = new App(new Service()).register([Foo])
+	const app = new App(new Service()).register([Foo, Bar])
 	const rq = supertest(app)
 
 	test('inheritance', () => {
@@ -80,6 +90,11 @@ describe('inherit application class', () => {
 		expect(app).toHaveProperty('healthCheck')
 		expect(app).toHaveProperty('service')
 		expect(app.service.user).toBe('Jeremy')
+	})
+
+	test('send inheritance', async () => {
+		const res = await rq.get('/bar')
+		expect(res.text).toEqual('true')
 	})
 
 	test('middlewares and route', async () => {
@@ -118,4 +133,63 @@ describe('inherit application class', () => {
 		const res = await rq.get('/foo')
 		expect(res.text).toBe('yolo')
 	})
+})
+
+test('router scope middlewares', async () => {
+	const UseSome = Use((req, res, next) => {
+		req.body.data += 1
+		next()
+	})
+
+	const UseOther = Use((req, res, next) => {
+		req.body.data += 10
+		next()
+	})
+
+	@Router('/')
+	@UseSome
+	class One {
+		@Post('/1')
+		getTwo(req: express.Request, res: express.Response) {
+			return { foo: req.body.data }
+		}
+	}
+
+	@Router('/')
+	@ScopedMiddlewares.Dont
+	@UseOther
+	class Two {
+		@Post('/2')
+		getTwo(req: express.Request, res: express.Response) {
+			return { foo: req.body.data }
+		}
+	}
+
+	@Router('/')
+	class Three {
+		@Post('/3')
+		getTwo(req: express.Request, res: express.Response) {
+			return { foo: req.body.data }
+		}
+	}
+
+	@Send({ json: true })
+	@Use(express.json())
+	@ScopedMiddlewares
+	class App extends Application {}
+
+	const app = new App().register([One, Two, Three])
+	const rq = supertest(app)
+
+	const res1 = await rq.post('/1').send({ data: 1 })
+	expect(res1.status).toBe(200)
+	expect(res1.body).toEqual({ foo: 2 })
+
+	const res2 = await rq.post('/2').send({ data: 1 })
+	expect(res2.status).toBe(200)
+	expect(res2.body).toEqual({ foo: 11 })
+
+	const res3 = await rq.post('/3').send({ data: 10 })
+	expect(res3.status).toBe(200)
+	expect(res3.body).toEqual({ foo: 20 })
 })

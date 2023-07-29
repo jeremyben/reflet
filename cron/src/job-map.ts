@@ -123,7 +123,7 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 						) {
 							return
 						}
-					} catch (error) {
+					} catch (error: any) {
 						/* istanbul ignore next */
 						if (error?.name !== 'LockError') {
 							console.error(error)
@@ -199,7 +199,7 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 			if (redisLock) {
 				try {
 					await redisLock.unlock()
-				} catch (error) {
+				} catch (error: any) {
 					// Safe to ignore lock error, as the lock will expire after its timeout:
 					// https://github.com/mike-marcacci/node-redlock/blob/v4.2.0/redlock.js#L229.
 					// We still log other types of error.

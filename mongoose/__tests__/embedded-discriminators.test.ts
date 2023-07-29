@@ -1,5 +1,6 @@
 import * as mongoose from 'mongoose'
 import { SchemaOptions, Field, Kind, DiscriminatorKey, Model, Plain } from '../src'
+import { RefletMongooseError } from '../src/reflet-error'
 
 /**
  * https://mongoosejs.com/docs/discriminators#single-nested-discriminators
@@ -20,16 +21,17 @@ test('single nested discriminators', async () => {
 	}
 
 	@Model()
+	@SchemaOptions({ minimize: false })
 	class Shape extends Model.I {
-		@Field.Union(Circle, Square)
+		@Field.Union([Circle, Square], { default: { radius: 5, __t: 'Circle' } })
 		shape: Circle | Square
 
-		constructor(doc?: Plain.Optional<Shape, '_id'>) {
+		constructor(doc?: Plain.Partial<Shape>) {
 			super()
 		}
 	}
 
-	const circle = new Shape({ shape: { __t: 'Circle', radius: 5 } })
+	const circle = new Shape({})
 	const circleObject = circle.toObject()
 	expect(circleObject).toStrictEqual({
 		_id: expect.any(mongoose.Types.ObjectId),
@@ -76,7 +78,7 @@ test('embedded discriminators in arrays', async () => {
 
 	@Model()
 	class Batch extends Model.I {
-		@Field.ArrayOfUnion(Clicked, Purchased)
+		@Field.ArrayOfUnion([Clicked, Purchased], { required: true })
 		events: (Clicked | Purchased)[]
 
 		constructor(doc?: Plain.Optional<Batch, '_id'>) {
@@ -136,17 +138,25 @@ test('recursive embedded discriminators in arrays', async () => {
 	}
 
 	const doc = await EventList.create(list)
+	const obj = doc.toObject()
 
-	expect(doc.events).toHaveLength(2)
+	expect(obj.events).toHaveLength(2)
 
-	expect(doc.events[0].sub_events[0].message).toBe('test1')
-	expect(doc.events[0].message).toBe('hello')
+	const [firstEvent, secondEvent] = obj.events
 
-	expect(doc.events[1].sub_events[0].sub_events[0].message).toBe('test3')
-	expect(doc.events[1].message).toBe('world')
+	expect(firstEvent.sub_events).toHaveLength(1)
+
+	expect(firstEvent.sub_events[0]).toEqual({ message: 'test1', kind: 'SubEvent', sub_events: [] })
+	expect(firstEvent.sub_events[0].message).toBe('test1')
+	expect(firstEvent.message).toBe('hello')
+
+	expect(secondEvent.sub_events[0].sub_events[0].message).toBe('test3')
+	expect(secondEvent.message).toBe('world')
 })
 
 test('nested discriminators kind key coercion', async () => {
+	const code: RefletMongooseError['code'] = 'DISCRIMINATOR_KEY_CONFLICT'
+
 	abstract class N1 {
 		@Field(Number)
 		radius: number
@@ -169,7 +179,7 @@ test('nested discriminators kind key coercion', async () => {
 			@Field.Union(N1, N2)
 			shape: N1 | N2
 		}
-	}).toThrowError(/sibling/)
+	}).toThrow(expect.objectContaining({ code }))
 })
 
 describe('union options', () => {
@@ -200,9 +210,9 @@ describe('union options', () => {
 		}
 
 		const doc = new RequiredField({ name: 'test' })
-		const validationError = doc.validateSync()
+		const validationError = doc.validateSync()!
 		expect(validationError).toBeInstanceOf(mongoose.Error.ValidationError)
-		expect(validationError!.errors.shape).toHaveProperty('kind', 'required')
+		expect(validationError.errors.shape).toHaveProperty('kind', 'required')
 	})
 
 	test('required discriminatorKey', async () => {
@@ -236,9 +246,9 @@ describe('union options', () => {
 		])
 
 		const c = new RequiredKindAndField({ name: 'test', shapes: [{}] })
-		const validationError = c.validateSync()
+		const validationError = c.validateSync()!
 		expect(validationError).toBeInstanceOf(mongoose.Error.ValidationError)
-		expect(validationError!.errors['shapes.0.__t']).toHaveProperty('kind', 'required')
+		expect(validationError.errors['shapes.0.__t']).toHaveProperty('kind', 'required')
 	})
 
 	test('required discriminatorKey but not field', async () => {
@@ -264,8 +274,8 @@ describe('union options', () => {
 		expect(b.toObject().shape).toStrictEqual({ __t: 'R2', side: 2 })
 
 		const c = new RequiredKind({ name: 'test', shape: {} })
-		const validationError = c.validateSync()
+		const validationError = c.validateSync()!
 		expect(validationError).toBeInstanceOf(mongoose.Error.ValidationError)
-		expect(validationError!.errors['shape.__t']).toHaveProperty('kind', 'required')
+		expect(validationError.errors['shape.__t']).toHaveProperty('kind', 'required')
 	})
 })

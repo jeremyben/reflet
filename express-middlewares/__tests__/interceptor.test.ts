@@ -1,6 +1,6 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
-import { register, Get, Post, Put, Patch, Catch, Send, Delete } from '@reflet/express'
+import { register, Get, Post, Put, Patch, Catch, Send, Delete, Router } from '@reflet/express'
 import { UseInterceptor } from '../src'
 import { log } from '../../testing/tools'
 
@@ -9,6 +9,7 @@ afterEach(() => consoleSpy.mockClear())
 afterAll(() => consoleSpy.mockRestore())
 
 describe('intercept responses', () => {
+	@Router('/')
 	class Controller {
 		@UseInterceptor<{ foo: number; bar: number }>(async (data, { req, res }) => {
 			return { ...data, foo: data.foo * 2 }
@@ -47,22 +48,22 @@ describe('intercept responses', () => {
 	const rq = supertest(register(express(), [Controller]))
 
 	test('intercept json response with async transform', async () => {
-		const res = await rq.get('')
+		const res = await rq.get('/')
 		expect(res.body).toEqual({ foo: 4, bar: 5 })
 	})
 
 	test('multiple interceptors', async () => {
-		const res = await rq.put('')
+		const res = await rq.put('/')
 		expect(res.body).toEqual({ foo: 16 })
 	})
 
 	test('intercept end method', async () => {
-		const res = await rq.post('')
+		const res = await rq.post('/')
 		expect(res.text).toBe('<div><p>foo</p></div>')
 	})
 
 	test('developer sending the response in the interceptor', async () => {
-		const res = await rq.patch('')
+		const res = await rq.patch('/')
 		expect(res.body).toEqual({ bar: 2 })
 	})
 })
@@ -72,15 +73,13 @@ describe("don't intercept", () => {
 		console.info('intercepted')
 		return data + '...'
 	})
+	@Router('/')
 	class Controller {
 		@Get()
 		get(req: express.Request, res: express.Response, next: express.NextFunction) {
-			throw Error('400')
-		}
-
-		@Put()
-		async put(req: express.Request, res: express.Response, next: express.NextFunction) {
-			throw 418
+			const err = Error() as any
+			err.status = 418
+			throw err
 		}
 
 		@Catch((err, req, res, next) => {
@@ -106,33 +105,25 @@ describe("don't intercept", () => {
 	const rq = supertest(register(express(), [Controller]))
 
 	test('Error instance thrown', async () => {
-		const res = await rq.get('')
-		// status should be inferred by our global error handler
-		expect(res.status).toBe(400)
-		expect(consoleSpy).not.toBeCalledWith('intercepted')
-	})
-
-	test('status code thrown', async () => {
-		const res = await rq.put('')
-		// status should be inferred by our global error handler
+		const res = await rq.get('/')
 		expect(res.status).toBe(418)
 		expect(consoleSpy).not.toBeCalledWith('intercepted')
 	})
 
 	test('response with status code >= 400', async () => {
-		const res = await rq.post('')
+		const res = await rq.post('/')
 		expect(res.status).toBe(422)
 		expect(consoleSpy).not.toBeCalledWith('intercepted')
 	})
 
 	test('write method', async () => {
-		const res = await rq.patch('')
+		const res = await rq.patch('/')
 		expect(res.text).toBe('nope!')
 		expect(consoleSpy).not.toBeCalledWith('intercepted')
 	})
 
 	test('empty end method', async () => {
-		const res = await rq.delete('')
+		const res = await rq.delete('/')
 		expect(res.text).toBe('')
 		expect(consoleSpy).not.toBeCalledWith('intercepted')
 	})

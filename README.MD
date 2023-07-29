@@ -1,17 +1,17 @@
 <h1 align="center">Reflet 💫</h1>
 
-[![Node version](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/jeremyben/reflet/master/package.json&label=Node&query=engines.node&color=green&logo=node.js)](https://nodejs.org)
-
-Reflet is a suite of modules made of well-typed [decorators](https://www.typescriptlang.org/docs/handbook/decorators.html), to enhance Node.js and established libraries.<br>Reflet is simple, flexible. It will help you organize your app, without the pitfall of verbosity.<br>But most importantly, Reflet is french for reflection (pronounce _ruh flay_ 🐔).
+Reflet is a suite of modules made of well-typed [decorators](https://www.typescriptlang.org/docs/handbook/decorators.html).<br>
+Reflet is simple and flexible. It will help you organize your app, without the pitfall of verbosity.<br>
+<sub>But most importantly, Reflet is french for reflection (pronounce _ruh flay_ 🐔).</sub>
 
 ## [Reflet/express](./express)
 
-Organize your [Express](https://expressjs.com/) application. Have a little taste before heading **[to the doc](./express/README.MD)**.
+Organize your [Express](https://expressjs.com/) application.<br>**[Documentation](./express/README.MD)**.
 
 ```ts
 @Use(isAuthenticated)
 @Router('/things')
-class ThingController {
+class ThingRouter {
 
   @Get('/:id')
   async get(@Params('id') id: string, @Res res: Response) {
@@ -31,7 +31,7 @@ _Add-on: [Reflet/express-middlewares](./express-middlewares)_
 
 ## [Reflet/mongoose](./mongoose)
 
-Declare your [Mongoose](https://mongoosejs.com/) models in a more concise way. The **[doc is here](./mongoose/README.MD)**.
+Declare your [Mongoose](https://mongoosejs.com/) models in a more concise way.<br>**[Documentation](./mongoose/README.MD)**.
 
 ```ts
 @Model()
@@ -52,27 +52,21 @@ const user = new User({ email: 'jeremy@example.com', name: 'Jeremy' })
 await user.save()
 ```
 
-## [Reflet/cron](./cron)
+## [Reflet/http](./http)
 
-Handle your cron jobs in a declarative and flexbile way. Here's **[the doc](./cron/README.MD)**.
+Typed HTTP primitives to use within any framework.<br>**[Documentation](./http/README.md)**.
 
 ```ts
-@Cron.TimeZone('Europe/Paris')
-@Cron.Retry({ attempts: 2, delay: 1000 })
-class Jobs {
-  @Cron(Expression.EVERY_SECOND)
-  logMessage() {
-    console.log('This is annoying');
-  }
-
-  @Cron(Expression.EVERY_DAY_AT_MIDNIGHT)
-  async sendEmailToAdmin() {
-    await emailClient.send({ to: 'admin@github.com', content: 'This is fine' })
+@Router('/things')
+class ThingRouter {
+  @UseStatus(Status.Created)
+  @Post()
+  async create(@Headers(RequestHeader.Authorization) auth: string) {
+    if (!auth) {
+      throw HttpError.Unauthorized('Stop right there')
+    }
   }
 }
-
-const jobs = initCronJobs(Jobs)
-jobs.startAll()
 ```
 
 ## Philosophy 📣
@@ -125,7 +119,7 @@ NPM ecosystem got a bad rep by encouraging intricate third-party dependencies fo
 
 Reflet modules fully **own** their codebase. No direct third-party dependencies, only peer ones.
 
-_e.g. [Reflet/express](./express) only asks for the necessary **peer** dependencies: `express`, `@types/express`, `reflect-metadata`._
+_e.g. [Reflet/express](./express) only asks for the necessary **peer** dependencies: `express`, `@types/express`, `@reflet/http`._
 
 ### Integration-tested
 

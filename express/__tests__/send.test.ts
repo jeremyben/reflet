@@ -1,11 +1,12 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
 import { createReadStream, readFileSync } from 'fs'
-import { register, Router, Get, Put, Post, Patch, Delete, Res, Params, Send, Decorator } from '../src'
+import { register, Router, Get, Put, Post, Patch, Delete, Res, Params, Send, Route } from '../src'
 import { log } from '../../testing/tools'
 
 describe('handle return value', () => {
-	class Controller {
+	@Router('/')
+	class FooRouter {
 		@Send()
 		@Get('/:type')
 		get(@Params('type') type: 'string' | 'object') {
@@ -43,9 +44,17 @@ describe('handle return value', () => {
 		async put(@Res res: express.Response) {
 			return res
 		}
+
+		@Send<Promise<string>>((data, { res }) => {
+			res.status(201).json({ hello: data })
+		})
+		@Route.Options()
+		async options(@Res res: express.Response) {
+			return 'world'
+		}
 	}
 
-	const rq = supertest(register(express(), [Controller]))
+	const rq = supertest(register(express(), [FooRouter]))
 
 	test('object value', async () => {
 		const res = await rq.get('/object')
@@ -78,7 +87,7 @@ describe('handle return value', () => {
 	test('error thrown', async () => {
 		const res = await rq.delete('').accept('json')
 		expect(res.status).toBe(400)
-		expect(res.body).toEqual({ status: 400, message: 'wtf' })
+		expect(res.text).toMatch('wtf')
 	})
 
 	test('already sent', async () => {
@@ -88,52 +97,22 @@ describe('handle return value', () => {
 	})
 
 	test('response object', async () => {
-		const consoleSpy = jest.spyOn(console, 'error').mockImplementation()
 		const res = await rq.put('').accept('json')
 		expect(res.status).toBe(500)
-		expect(res.body.message).toMatch('Response')
-		expect(consoleSpy).toBeCalledWith(expect.any(Error))
-		consoleSpy.mockRestore()
+		expect(res.text).toMatch('RefletExpressError')
 	})
-})
 
-describe('specific status', () => {
-	class Controller {
-		@Send({ status: 201, undefinedStatus: 404, nullStatus: 204 })
-		@Put('/:type')
-		async put(@Params('type') type: 'null' | 'undefined') {
-			if (type === 'null') return null
-			if (type === 'undefined') return
-
-			return { foo: 3 }
-		}
-	}
-
-	const app = express()
-	const rq = supertest(app)
-	register(app, [Controller])
-
-	test('success', async () => {
-		const res = await rq.put('/yolo')
+	test('custom handler', async () => {
+		const res = await rq.options('')
 		expect(res.status).toBe(201)
-		expect(res.body).toEqual({ foo: 3 })
-	})
-
-	test('undefined', async () => {
-		const res = await rq.put('/undefined')
-		expect(res.status).toBe(404)
-		expect(res.text).toEqual('')
-	})
-
-	test('null', async () => {
-		const res = await rq.put('/null')
-		expect(res.status).toBe(204)
-		expect(res.text).toEqual('')
+		expect(res.type).toBe('application/json')
+		expect(res.body).toEqual({ hello: 'world' })
 	})
 })
 
 describe('streams', () => {
-	class Controller {
+	@Router('/')
+	class FooRouter {
 		@Send()
 		@Get()
 		get() {
@@ -146,7 +125,7 @@ describe('streams', () => {
 			return createReadStream(__filename)
 		}
 
-		@Send({ status: 201 })
+		@Send()
 		@Post()
 		async post(@Res res: express.Response) {
 			const readable = createReadStream(__filename)
@@ -154,7 +133,7 @@ describe('streams', () => {
 		}
 	}
 
-	const rq = supertest(register(express(), [Controller]))
+	const rq = supertest(register(express(), [FooRouter]))
 	const thisFile = readFileSync(__filename, 'utf8')
 
 	test('readable stream', async () => {
@@ -173,15 +152,16 @@ describe('streams', () => {
 
 	test('streaming response object', async () => {
 		const res = await rq.post('')
-		expect(res.status).toBe(201)
+		expect(res.status).toBe(200)
 		expect(res.header['transfer-encoding']).toBe('chunked')
 		expect(res.text).toContain(thisFile)
 	})
 })
 
 describe('buffers', () => {
-	class Controller {
-		@Send({ status: 201 })
+	@Router('/')
+	class FooRouter {
+		@Send()
 		@Get()
 		get() {
 			return readFileSync(__filename)
@@ -200,11 +180,11 @@ describe('buffers', () => {
 		}
 	}
 
-	const rq = supertest(register(express(), [Controller]))
+	const rq = supertest(register(express(), [FooRouter]))
 
 	test('file buffer', async () => {
 		const res = await rq.get('')
-		expect(res.status).toBe(201)
+		expect(res.status).toBe(200)
 		expect(res.type).toBe('application/octet-stream')
 		expect(res.body).toBeInstanceOf(Buffer)
 	})
@@ -226,34 +206,34 @@ describe('buffers', () => {
 })
 
 describe('class decorator', () => {
-	const JsonRouter = (path: string | RegExp): Decorator.Router & Decorator.Send<'class'> => {
+	const JsonRouter = (path: string | RegExp): Router.Decorator & Send.Decorator => {
 		return (target) => {
-			Router(path)(target)
-			Send({ json: true, undefinedStatus: 404 })(target)
+			Router(path)(target as Function)
+			Send({ json: true })(target)
 		}
 	}
 
 	@JsonRouter('/')
-	class Controller {
+	class BarRouter {
 		@Get()
 		get() {
 			return 'bar'
 		}
 
-		@Send({ status: 201 })
+		@Send({ json: false })
 		@Post()
 		post() {
 			return 'bar'
 		}
 
-		@Send.Dont()
+		@Send.Dont
 		@Put()
 		async put() {
 			return 'bar'
 		}
 	}
 
-	const rq = supertest(register(express(), [Controller]))
+	const rq = supertest(register(express(), [BarRouter]))
 
 	test('class decorator combo', async () => {
 		const res = await rq.get('/')
@@ -262,14 +242,14 @@ describe('class decorator', () => {
 		expect(res.body).toEqual('bar')
 	})
 
-	test('extend class options with method options', async () => {
+	test('override class options with method options', async () => {
 		const res = await rq.post('/')
-		expect(res.status).toBe(201)
-		expect(res.type).toBe('application/json')
-		expect(res.body).toEqual('bar')
+		expect(res.status).toBe(200)
+		expect(res.type).toBe('text/html')
+		expect(res.text).toEqual('bar')
 	})
 
-	test('send exception', async () => {
-		expect(rq.put('/').timeout(200)).rejects.toThrow(/Timeout/)
+	test('dont send', async () => {
+		expect(rq.put('/').timeout(150)).rejects.toThrow(/Timeout/)
 	})
 })

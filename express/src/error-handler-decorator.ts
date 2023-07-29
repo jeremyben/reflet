@@ -1,10 +1,11 @@
 import * as express from 'express'
-import { ClassType, Decorator } from './interfaces'
+import { ClassOrMethodDecorator, ClassType } from './interfaces'
+import { getMetadata, defineMetadata, getOwnMetadata } from './metadata-map'
 
-const META = Symbol('catch')
+const METAKEY_CATCH = Symbol('catch')
 
 /**
- * Attaches an error handler on a single route when applied to a method, or on multipe routes when applied to a controller class.
+ * Attaches an error handler on a single route when applied to a method, or on multipe routes when applied to a router class.
  * @see http://expressjs.com/en/guide/error-handling.html
  *
  * @remarks
@@ -29,22 +30,31 @@ const META = Symbol('catch')
  */
 export function Catch<T = any>(
 	errorHandler: (err: T, req: express.Request, res: express.Response, next: express.NextFunction) => any
-): Decorator.Catch {
+): Catch.Decorator {
 	return (target, key, descriptor) => {
 		// Method
 		if (key) {
-			const handlers: express.ErrorRequestHandler[] = Reflect.getMetadata(META, target, key) || []
+			const handlers: express.ErrorRequestHandler[] = getMetadata(METAKEY_CATCH, target, key) || []
 			handlers.unshift(errorHandler)
-			Reflect.defineMetadata(META, handlers, target, key)
+			defineMetadata(METAKEY_CATCH, handlers, target, key)
 		}
 		// Class
 		else {
 			const handlers: express.ErrorRequestHandler[] =
-				Reflect.getMetadata(META, (target as Function).prototype) || []
+				getMetadata(METAKEY_CATCH, (target as Function).prototype) || []
 			handlers.unshift(errorHandler)
-			Reflect.defineMetadata(META, handlers, (target as Function).prototype)
+			defineMetadata(METAKEY_CATCH, handlers, (target as Function).prototype)
 		}
 	}
+}
+
+export namespace Catch {
+	/**
+	 * Used for `@Catch` decorator.
+	 * Equivalent to a union of `ClassDecorator` and `MethodDecorator`.
+	 * @public
+	 */
+	export type Decorator = ClassOrMethodDecorator & { __expressCatch?: never }
 }
 
 /**
@@ -55,7 +65,7 @@ export function extractErrorHandlers(
 	key?: string | symbol
 ): express.ErrorRequestHandler[] {
 	// Method
-	if (key) return Reflect.getOwnMetadata(META, target.prototype, key) || []
+	if (key) return getOwnMetadata(METAKEY_CATCH, target.prototype, key) || []
 	// Class
-	return Reflect.getOwnMetadata(META, target.prototype) || []
+	return getOwnMetadata(METAKEY_CATCH, target.prototype) || []
 }

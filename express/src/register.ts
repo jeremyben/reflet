@@ -1,22 +1,22 @@
 import * as express from 'express'
 import { wrapAsync, wrapAsyncError } from './async-wrapper'
-import { globalErrorHandler, makeGlobalErrorHandlerRemovable } from './global-error-handler'
-import { ClassType, Controllers, ObjectInstance } from './interfaces'
-import { isPromise, isReadableStream, isClass, isExpressApp, isExpressRouter, isAsyncFunction } from './type-guards'
+import { ClassType, Registration } from './interfaces'
+import { isPromise, isClass, isExpressApp, isExpressRouter, isAsyncFunction } from './type-guards'
 
 // Extractors
-import { defineChildRouters, DYNAMIC_PATH, extractRouterMeta } from './router-decorator'
-import { extractRoutes, hasRoutes } from './route-decorators'
+import { DYNAMIC_PATH, extractRouterMeta, RouterMeta } from './router-decorator'
+import { extractRoutes } from './route-decorators'
 import { extractMiddlewares } from './middleware-decorator'
 import { extractErrorHandlers } from './error-handler-decorator'
 import { extractParams, extractParamsMiddlewares } from './param-decorators'
-import { extractSend } from './send-decorator'
+import { extractSendHandler } from './send-decorator'
 import { ApplicationMeta, extractApplicationClass } from './application-class'
+import { RefletExpressError } from './reflet-error'
 
 /**
- * Main method to register controllers into an express application.
+ * Main method to register routers into an express application.
  * @param app - express application.
- * @param controllers - classes or instances with decorated routes.
+ * @param routers - decorated classes or instances.
  *
  * @example
  * ```ts
@@ -35,85 +35,42 @@ import { ApplicationMeta, extractApplicationClass } from './application-class'
  * ------
  * @public
  */
-export function register(app: express.Application, controllers: Controllers): express.Application
-
-/**
- * Attaches children controllers to a parent router, to have nested routers.
- *
- * To be used in the **constructor** of a `@Router` decorated class.
- *
- * @param parent - should simply be `this`.
- * @param children - classes or instances with decorated routes.
- *
- * @example
- * ```ts
- * ＠Router('/foo')
- * class ParentController {
- *   constructor() {
- *     register(this, [NestedController])
- *   }
- * }
- *
- * ＠Router('/bar')
- * class NestedController {}
- * ```
- * ------
- * @public
- */
-export function register(parent: ObjectInstance, children: Controllers): void
-
-export function register(appInstance: object, controllers: Controllers): express.Application | void {
-	if (isExpressApp(appInstance)) {
-		const appMeta = extractApplicationClass(appInstance)
-
-		registerRootHandlers(appInstance, appMeta)
-
-		// Retrieve all global middlewares from plain `use` and from application class decorators if any.
-		const globalMwares = getGlobalMiddlewares(appInstance)
-
-		for (const controller of controllers) {
-			registerController(controller, appInstance, globalMwares, [], appMeta?.class)
-		}
-
-		registerRootErrorHandlers(appInstance, appMeta)
-
-		if (appMeta && !appMeta.registered) {
-			appMeta.registered = true
-		}
-
-		return appInstance
+export function register(app: express.Application, routers: Registration[]): express.Application {
+	if (!isExpressApp(app)) {
+		throw new RefletExpressError('INVALID_EXPRESS_APP', 'This is not an Express application.')
 	}
 
-	// Register call from controller constructor
-	else {
-		const parentClass = appInstance.constructor as ClassType
-		const routerMeta = extractRouterMeta(parentClass)
+	const appMeta = extractApplicationClass(app)
 
-		if (routerMeta?.path == null) {
-			if (hasRoutes(parentClass)) {
-				throw Error(`"${parentClass.name}" must be decorated with @Router.`)
-			}
+	registerRootHandlers(app, appMeta)
 
-			throw Error(`First argument should be an express application or an instance decorated with @Router.`)
-		}
+	// Retrieve all global middlewares from plain `use` and from application class decorators if any.
+	const globalMwares = getGlobalMiddlewares(app)
 
-		defineChildRouters(parentClass, routerMeta, controllers)
+	for (const router of routers) {
+		registerRouter(router, app, globalMwares, [], appMeta?.class)
 	}
+
+	registerRootErrorHandlers(app, appMeta)
+
+	if (appMeta && !appMeta.registered) {
+		appMeta.registered = true
+	}
+
+	return app
 }
 
 /**
  * @internal
  */
-function registerController(
-	controller: Controllers[number],
+function registerRouter(
+	registration: Registration,
 	app: express.Router,
 	globalMwares: express.RequestHandler[],
 	parentSharedMwares: express.RequestHandler[] = [],
 	appClass?: ClassType
 ) {
-	const { path: constrainedPath, router } = isPathRouterObject(controller)
-		? controller
-		: { path: undefined, router: controller }
+	const [constrainedPath, router] = isPathRouterTuple(registration) ? registration : [null, registration]
 
 	// Attach plain express routers.
 	if (constrainedPath && isExpressRouter(router)) {
@@ -121,70 +78,63 @@ function registerController(
 		return
 	}
 
-	const controllerInstance = isClass(router) ? new router() : router
-	const controllerClass = isClass(router) ? router : (controllerInstance.constructor as ClassType)
+	const routerInstance = isClass(router) ? new router() : router
+	const routerClass = isClass(router) ? router : (routerInstance.constructor as ClassType)
 
 	// Must be after instanciation to properly retrieve child routers from metadata.
-	const routerMeta = extractRouterMeta(controllerClass)
+	const routerMeta = extractRouterMeta(routerClass, appClass)
 
-	checkPathConstraint(constrainedPath, routerMeta, controllerClass)
+	if (!routerMeta || routerMeta.path == null) {
+		throw new RefletExpressError(
+			'ROUTER_DECORATOR_MISSING',
+			`"${routerClass.name}" must be decorated with @Router.`
+		)
+	}
+
+	checkPathConstraint(constrainedPath, routerMeta, routerClass)
 
 	// Either attach middlewares/handlers to an intermediary router or directly to the app.
 	const appInstance = routerMeta ? express.Router(routerMeta.options) : app
 
-	const routes = extractRoutes(controllerClass)
+	const routes = extractRoutes(routerClass)
 
-	if (!routes.length && !routerMeta) {
-		console.warn(`"${controllerClass.name}" doesn't have any route or router to register.`)
-	}
-
-	const sharedMwares = extractMiddlewares(controllerClass)
-	const sharedErrHandlers = extractErrorHandlers(controllerClass)
+	const sharedMwares = extractMiddlewares(routerClass)
+	const sharedErrHandlers = extractErrorHandlers(routerClass)
 
 	// Apply shared middlewares to the router instance
 	// or to each of the routes if the class is attached on the base app.
-	if (routerMeta) {
+
+	if (!routerMeta.scopedMiddlewares) {
 		for (const mware of sharedMwares) {
 			appInstance.use(wrapAsync(mware))
 		}
 	}
 
 	for (const { path, method, key } of routes) {
-		const routeMwares = extractMiddlewares(controllerClass, key)
-		const routeErrHandlers = extractErrorHandlers(controllerClass, key)
-		const paramsMwares = extractParamsMiddlewares(controllerClass, key, [
+		const routeMwares = extractMiddlewares(routerClass, key)
+		const routeErrHandlers = extractErrorHandlers(routerClass, key)
+		const paramsMwares = extractParamsMiddlewares(routerClass, key, [
 			globalMwares,
 			parentSharedMwares,
 			sharedMwares,
 			routeMwares,
 		])
 
-		const handler = createHandler(controllerClass, controllerInstance, key, appClass)
+		const handler = createHandler(routerClass, routerInstance, key, appClass)
 
-		if (routerMeta) {
-			appInstance[method](
-				path,
-				routeMwares.map(wrapAsync),
-				paramsMwares.map(wrapAsync),
-				handler,
-				routeErrHandlers.map(wrapAsyncError)
-			)
-		} else {
-			// Have same order of middlewares by surrounding route specific ones by shared ones.
-			appInstance[method](
-				path,
-				sharedMwares.map(wrapAsync),
-				routeMwares.map(wrapAsync),
-				paramsMwares.map(wrapAsync),
-				handler,
-				routeErrHandlers.map(wrapAsyncError),
-				sharedErrHandlers.map(wrapAsyncError)
-			)
-		}
+		appInstance[method](
+			path,
+			routerMeta.scopedMiddlewares ? sharedMwares.map(wrapAsync) : [],
+			routeMwares.map(wrapAsync),
+			paramsMwares.map(wrapAsync),
+			handler,
+			routeErrHandlers.map(wrapAsyncError),
+			routerMeta.scopedMiddlewares ? sharedErrHandlers.map(wrapAsyncError) : []
+		)
 	}
 
-	// Recursively attach children controllers
-	if (routerMeta?.children) {
+	// Recursively attach children routers
+	if (routerMeta.children) {
 		// Keep track of all shared middlewares for dedupe.
 		const parentSharedMwares_ = parentSharedMwares.concat(sharedMwares)
 
@@ -194,25 +144,20 @@ function registerController(
 				: routerMeta.children
 
 		for (const child of children) {
-			// Undocumented and untyped feature to attach plain express Routers with a tuple. Will be removed.
-			if (Array.isArray(child) && typeof child[0] === 'string' && isExpressRouter(child[1])) {
-				appInstance.use(child[0], child[1])
-			} else {
-				registerController(child, appInstance, globalMwares, parentSharedMwares_, appClass)
-			}
+			registerRouter(child, appInstance, globalMwares, parentSharedMwares_, appClass)
 		}
 	}
 
-	if (routerMeta?.path != null) {
+	if (!routerMeta.scopedMiddlewares) {
 		for (const errHandler of sharedErrHandlers) {
 			appInstance.use(wrapAsyncError(errHandler))
 		}
-
-		const routerPath = routerMeta.path === DYNAMIC_PATH ? constrainedPath! : routerMeta.path
-
-		// Finally attach the router to the app
-		app.use(routerPath, appInstance)
 	}
+
+	const routerPath = routerMeta.path === DYNAMIC_PATH ? constrainedPath! : routerMeta.path
+
+	// Finally attach the router to the app
+	app.use(routerPath, appInstance)
 }
 
 /**
@@ -263,26 +208,19 @@ function registerRootHandlers(app: express.Application, appMeta?: ApplicationMet
  */
 function registerRootErrorHandlers(app: express.Application, appMeta?: ApplicationMeta) {
 	if (!appMeta) {
-		// todo: remove the default one and give user a way to compose its own (decorator or not).
-		app.use(globalErrorHandler)
-		makeGlobalErrorHandlerRemovable(app)
 		return
 	}
 
-	const customGlobalErrorHandlers = extractErrorHandlers(appMeta.class)
+	const globalErrorHandlers = extractErrorHandlers(appMeta.class)
 
-	if (!customGlobalErrorHandlers.length) {
-		// We attach the default global error handler even on subsequent register calls,
-		// since it will first removes itself automatically.
-		app.use(globalErrorHandler)
-		makeGlobalErrorHandlerRemovable(app)
+	if (!globalErrorHandlers.length) {
 		return
 	}
 
 	// Error handlers added at the end of the stack during the first `register` call,
 	// are moved to the last position for subsequent calls, to keep their behavior global.
 	if (appMeta.registered) {
-		for (const errHandler of customGlobalErrorHandlers) {
+		for (const errHandler of globalErrorHandlers) {
 			const layerIndex = app._router?.stack.findIndex((layer) => layer.handle === errHandler)
 
 			// optimisation, not sure about side effects.
@@ -295,7 +233,7 @@ function registerRootErrorHandlers(app: express.Application, appMeta?: Applicati
 			}
 		}
 	} else {
-		for (const errHandler of customGlobalErrorHandlers) {
+		for (const errHandler of globalErrorHandlers) {
 			app.use(wrapAsyncError(errHandler))
 		}
 	}
@@ -304,40 +242,28 @@ function registerRootErrorHandlers(app: express.Application, appMeta?: Applicati
 /**
  * @internal
  */
-function isPathRouterObject(
-	controller: Record<string, any>
-): controller is { path: string | RegExp | symbol; router: object } {
-	return (
-		controller.hasOwnProperty('path') &&
-		controller.hasOwnProperty('router') &&
-		(typeof controller.path === 'string' || controller.path instanceof RegExp) &&
-		(typeof controller.router === 'function' || typeof controller.router === 'object')
-	)
+function isPathRouterTuple(registration: object): registration is [path: string | RegExp, router: object] {
+	return Array.isArray(registration) && registration.length === 2
 }
 
 /**
  * @internal
  */
-function checkPathConstraint(
-	constrainedPath: string | RegExp | undefined,
-	router: ReturnType<typeof extractRouterMeta>,
-	controllerClass: ClassType
-) {
-	if (!constrainedPath) {
-		if (router?.path === DYNAMIC_PATH) {
-			throw Error(`"${controllerClass.name}" is dynamic and must be registered with a path.`)
+function checkPathConstraint(constrainedPath: string | RegExp | null, router: RouterMeta, routerClass: ClassType) {
+	if (router.path === DYNAMIC_PATH) {
+		if (constrainedPath === null) {
+			throw new RefletExpressError(
+				'DYNAMIC_ROUTER_PATH_UNDEFINED',
+				`"${routerClass.name}" is dynamic and must be registered with a path.`
+			)
 		}
 
+		// Stop there if dynamic path
 		return
 	}
 
-	if (!router) {
-		throw Error(
-			`"${controllerClass.name}" is constrained to the specific path "${constrainedPath}" and must be decorated with @Router.`
-		)
-	}
-
-	if (router.path === DYNAMIC_PATH) {
+	// Stop there if no constraint on path
+	if (constrainedPath === null) {
 		return
 	}
 
@@ -345,7 +271,10 @@ function checkPathConstraint(
 		typeof router.path === 'string' && typeof constrainedPath === 'string' && router.path !== constrainedPath
 
 	if (notSameString) {
-		throw Error(`"${controllerClass.name}" expects "${constrainedPath}" as root path. Actual: "${router.path}".`)
+		throw new RefletExpressError(
+			'ROUTER_PATH_CONSTRAINED',
+			`"${routerClass.name}" expects "${constrainedPath}" as root path. Actual: "${router.path}".`
+		)
 	}
 
 	const notSameRegex =
@@ -354,22 +283,27 @@ function checkPathConstraint(
 		router.path.source !== constrainedPath.source
 
 	if (notSameRegex) {
-		throw Error(`"${controllerClass.name}" expects "${constrainedPath}" as root path. Actual: "${router.path}".`)
+		throw new RefletExpressError(
+			'ROUTER_PATH_CONSTRAINED',
+			`"${routerClass.name}" expects "${constrainedPath}" as root path. Actual: "${router.path}".`
+		)
 	}
 
 	const shouldBeString = router.path instanceof RegExp && typeof constrainedPath === 'string'
 
 	if (shouldBeString) {
-		throw Error(
-			`"${controllerClass.name}" expects string "${constrainedPath}" as root path. Actual: "${router.path}" (regex).`
+		throw new RefletExpressError(
+			'ROUTER_PATH_CONSTRAINED',
+			`"${routerClass.name}" expects string "${constrainedPath}" as root path. Actual: "${router.path}" (regex).`
 		)
 	}
 
 	const shouldBeRegex = typeof router.path === 'string' && constrainedPath instanceof RegExp
 
 	if (shouldBeRegex) {
-		throw Error(
-			`"${controllerClass.name}" expects regex "${constrainedPath}" as root path. Actual: "${router.path}" (string).`
+		throw new RefletExpressError(
+			'ROUTER_PATH_CONSTRAINED',
+			`"${routerClass.name}" expects regex "${constrainedPath}" as root path. Actual: "${router.path}" (string).`
 		)
 	}
 }
@@ -378,83 +312,46 @@ function checkPathConstraint(
  * @internal
  */
 function createHandler(
-	controllerClass: ClassType, // different from `controllerInstance.constructor` in case of decorated Application class.
-	controllerInstance: any,
+	routerClass: ClassType, // different from `routerInstance.constructor` in case of decorated Application class.
+	routerInstance: any,
 	key: string | symbol,
 	appClass?: ClassType
-) {
-	const toSend = extractSend(controllerClass, key, appClass)
+): express.Handler {
+	const sendHandler = extractSendHandler(routerClass, key, appClass)
 
 	// get from the instance instead of the prototype, so this can be a function property and not only a method.
-	const fn = controllerInstance[key] as Function
+	const fn = routerInstance[key] as Function
+
+	const codePath = `${routerClass.name}.${String(key)}`
 
 	if (typeof fn !== 'function') {
-		throw Error(`"${controllerClass.name}.${key.toString()}" should be a function.`)
+		throw new RefletExpressError('INVALID_ROUTE_TYPE', `"${codePath}" should be a function.`)
 	}
 
 	const isAsync = isAsyncFunction(fn)
 
-	return (req: express.Request, res: express.Response, next: express.NextFunction) => {
-		const args = extractParams(controllerClass, key, { req, res, next })
-		const result = fn.apply(controllerInstance, args)
+	return (req, res, next) => {
+		const args = extractParams(routerClass, key, { req, res, next })
+		const result = fn.apply(routerInstance, args)
 
 		// Handle or bypass sending the method's result according to @Send decorator,
 		// if the response has already been sent to the client, we also bypass.
-		if (!toSend || res.headersSent) {
-			if (isAsync) {
-				return (result as Promise<any>).catch(next)
-			} else {
-				// todo? If the user returns a promise (not with async),
-				// and this promise throw an error, it won't be caught,
-				// but that seems overkill.
-				// if (isPromise(result)) return result.catch(next)
-				return result
-			}
+		if (!sendHandler || res.headersSent) {
+			// We only use the async modifier in this case to decide to catch async errors, for performance.
+			// If the user ever decides to return a promise in a non-async method while not using @Send,
+			// it won't catch its errors, but that's an unlikely edge case.
+			return isAsync ? (result as Promise<any>).catch(next) : result
 		}
-
-		const { json, status, nullStatus, undefinedStatus } = toSend
 
 		if (isPromise(result)) {
-			return result.then((value) => send(value)).catch(next)
-		} else {
-			return send(result)
+			return result.then((value) => sendHandler(value, { req, res, next })).catch(next)
 		}
 
-		function send(value: any): express.Response {
-			// Default status
-			if (status) {
-				res.status(status)
-			}
-
-			// Undefined and null status
-			if (value === undefined && undefinedStatus) {
-				res.status(undefinedStatus)
-			} else if (value === null && nullStatus) {
-				res.status(nullStatus)
-			}
-
-			// Readable stream
-			if (isReadableStream(value)) {
-				return value.pipe(res)
-			}
-
-			// Response object itself
-			if (value === res) {
-				// A stream is piping to the response so we let it go
-				if (res.listenerCount('unpipe') > 0) {
-					return res
-				}
-
-				// The response will try to send itself, which will cause a cryptic error
-				// ('TypeError: Converting circular structure to JSON')
-				return next(Error('Cannot send the whole Response object.')) as any
-			}
-
-			if (json) {
-				return res.json(value)
-			} else {
-				return res.send(value)
-			}
+		try {
+			const sendResult = sendHandler(result, { req, res, next })
+			return isPromise(sendResult) ? sendResult.catch(next) : sendResult
+		} catch (error) {
+			next(error)
 		}
 	}
 }

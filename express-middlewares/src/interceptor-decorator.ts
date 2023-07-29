@@ -64,7 +64,9 @@ export function UseInterceptor<In, Out = In>(
 			const result = transform(body, { req, res })
 
 			// Response has been sent from the interceptor (bad bad programmer).
-			if (res.finished) return res
+			if (res.writableEnded) {
+				return res
+			}
 
 			if (isPromise(result)) {
 				return result.then((value) => send0.call(res, value)) as any
@@ -88,7 +90,9 @@ export function UseInterceptor<In, Out = In>(
 			const result = transform(body, { req, res })
 
 			// Response has been sent from the interceptor (bad bad programmer).
-			if (res.finished) return res
+			if (res.writableEnded) {
+				return res
+			}
 
 			if (isPromise(result)) {
 				return result.then((value) => json0.call(res, value)) as any
@@ -112,7 +116,9 @@ export function UseInterceptor<In, Out = In>(
 			const result = transform(body, { req, res })
 
 			// Response has been sent from the interceptor (bad bad programmer).
-			if (res.finished) return res
+			if (res.writableEnded) {
+				return res
+			}
 
 			if (isPromise(result)) {
 				return result.then((value) => jsonp0.call(res, value)) as any
@@ -139,7 +145,7 @@ export function UseInterceptor<In, Out = In>(
 				res.statusCode >= 400 ||
 				res.headersSent
 			) {
-				return end0.apply(res, (arguments as unknown) as Parameters<express.Response['end']>)
+				return end0.apply(res, arguments as unknown as Parameters<express.Response['end']>)
 			}
 
 			// Directly modify the data parameter.
@@ -147,15 +153,17 @@ export function UseInterceptor<In, Out = In>(
 
 			// Response has been sent from the interceptor (bad bad programmer).
 			/* istanbul ignore if - covered in res.send */
-			if (res.finished) return res
+			if (res.writableEnded) {
+				return res
+			}
 
 			if (isPromise(arguments[0])) {
 				return arguments[0].then((value: any) => {
 					arguments[0] = value
-					return end0.apply(res, (arguments as unknown) as Parameters<express.Response['end']>)
+					return end0.apply(res, arguments as unknown as Parameters<express.Response['end']>)
 				})
 			} else {
-				return end0.apply(res, (arguments as unknown) as Parameters<express.Response['end']>)
+				return end0.apply(res, arguments as unknown as Parameters<express.Response['end']>)
 			}
 		}
 

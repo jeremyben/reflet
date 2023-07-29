@@ -1,11 +1,29 @@
-import { join } from 'path'
-import { build } from 'tsc-prog'
+import { basename, join } from 'path'
+import { build, EmitOptions } from 'tsc-prog'
 import * as ts from 'typescript'
 import * as tsdoc from '@microsoft/tsdoc'
 import { writeFileSync } from 'fs'
 
 const basePath = process.cwd()
+const folderName = basename(basePath)
 const dtsEntryPoint = 'index.d.ts'
+
+let bundle: EmitOptions.Bundle | undefined
+
+if (folderName !== 'http' && folderName !== 'mongoose') {
+	bundle = {
+		entryPoint: dtsEntryPoint,
+		augmentations: false,
+	}
+}
+
+if (folderName === 'mongoose') {
+	bundle = {
+		entryPoint: dtsEntryPoint,
+		augmentations: false,
+		extras: [{ position: 'after-imports', declaration: 'import * as mongoose from "mongoose";' }],
+	}
+}
 
 build({
 	basePath,
@@ -20,7 +38,7 @@ build({
 	include: [`src/**/*`],
 	exclude: ['**/__tests__', '**/test.ts', '**/*.test.ts', '**/*.spec.ts', 'node_modules'],
 	clean: { outDir: true },
-	bundleDeclaration: { entryPoint: dtsEntryPoint, augmentations: false },
+	bundleDeclaration: bundle,
 })
 
 syncOverloadsDoc()

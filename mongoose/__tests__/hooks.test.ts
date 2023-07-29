@@ -1,5 +1,5 @@
-import { Model, Field, PreHook, PostHook } from '../src'
 import * as mongoose from 'mongoose'
+import { Model, Field, PreHook, PostHook } from '../src'
 
 const consoleSpy = jest.spyOn(console, 'info').mockImplementation()
 afterEach(() => {
@@ -46,12 +46,12 @@ test('init, validate, save, findOne, remove', async () => {
 		console.info('post-findOne', doc)
 		next()
 	})
-	@PreHook<UserHookIVSFR>('remove', { query: true }, function (next) {
-		console.info('pre-remove', this.constructor.name)
+	@PreHook<UserHookIVSFR>('deleteOne', function (next) {
+		console.info('pre-deleteOne', this.constructor.name)
 		next()
 	})
-	@PostHook<UserHookIVSFR>('remove', { query: true, document: false }, function (result, next) {
-		console.info('post-remove', result.deletedCount)
+	@PostHook<UserHookIVSFR>('deleteOne', function (result, next) {
+		console.info('post-deleteOne', result.deletedCount)
 		next()
 	})
 	class UserHookIVSFR extends Model.Interface {
@@ -61,8 +61,8 @@ test('init, validate, save, findOne, remove', async () => {
 
 	await UserHookIVSFR.create({ name: 'jeremy' })
 	const user = await UserHookIVSFR.findOne({ name: 'jeremy' })
-	// await user?.remove()
-	await UserHookIVSFR.remove({ name: 'jeremy' })
+	// await user?.deleteOne()
+	await UserHookIVSFR.deleteOne({ name: 'jeremy' })
 
 	try {
 		await UserHookIVSFR.create({ name: ['jeremy'] as any }) // will error out
@@ -76,8 +76,8 @@ test('init, validate, save, findOne, remove', async () => {
 	expect(consoleSpy).toBeCalledWith('post-save', true)
 	expect(consoleSpy).toBeCalledWith('pre-findOne', 'Query')
 	expect(consoleSpy).toBeCalledWith('post-findOne', expect.objectContaining({ name: 'jeremy' }))
-	expect(consoleSpy).toBeCalledWith('pre-remove', 'Query')
-	expect(consoleSpy).toBeCalledWith('post-remove', 1)
+	expect(consoleSpy).toBeCalledWith('pre-deleteOne', 'Query')
+	expect(consoleSpy).toBeCalledWith('post-deleteOne', 1)
 	expect(consoleSpy).toBeCalledWith('post-validate-error', expect.any(Error), null)
 })
 
@@ -88,7 +88,7 @@ test('updateOne, deleteOne', async () => {
 		next()
 	})
 	@PostHook<UserHookUD>('updateOne', function (result, next) {
-		console.info('post-updateOne', this.constructor.name, result.nModified)
+		console.info('post-updateOne', this.constructor.name, result.modifiedCount)
 		next()
 	})
 	@PreHook<UserHookUD>('deleteOne', function (next) {
@@ -117,11 +117,11 @@ test('updateOne, deleteOne', async () => {
 test('insertMany, find, update, updateMany, count, deleteMany', async () => {
 	@Model()
 	@PreHook<UserHookIFUUCD>('insertMany', function (next) {
-		console.info('pre-insertMany', this.modelName)
+		console.info('pre-insertMany', UserHookIFUUCD.modelName)
 		next()
 	})
 	@PostHook<UserHookIFUUCD>('insertMany', (docs, next) => {
-		console.info('post-insertMany', docs[0])
+		postInsertManyFirstResult = docs[0]
 		next()
 	})
 	@PostHook<UserHookIFUUCD>('find', (docs, next) => {
@@ -132,12 +132,12 @@ test('insertMany, find, update, updateMany, count, deleteMany', async () => {
 		console.info('post-find-error', error, docs)
 		next()
 	})
-	@PostHook<UserHookIFUUCD>('update', (result, next) => {
-		console.info('post-update', result.ok)
+	@PostHook<UserHookIFUUCD>('updateOne', (result, next) => {
+		console.info('post-update', result.modifiedCount)
 		next()
 	})
 	@PostHook<UserHookIFUUCD>('updateMany', (result, next) => {
-		console.info('post-updateMany', result)
+		postUpdateManyResult = result
 		next()
 	})
 	@PostHook<UserHookIFUUCD>('count', (result, next) => {
@@ -145,7 +145,7 @@ test('insertMany, find, update, updateMany, count, deleteMany', async () => {
 		next()
 	})
 	@PostHook<UserHookIFUUCD>('deleteMany', (result, next) => {
-		console.info('post-deleteMany', result)
+		postDeleteManyResult = result
 		next()
 	})
 	@PostHook<UserHookIFUUCD, Error>('deleteMany', (error, result, next) => {
@@ -157,9 +157,13 @@ test('insertMany, find, update, updateMany, count, deleteMany', async () => {
 		name: string
 	}
 
+	let postInsertManyFirstResult
+	let postDeleteManyResult
+	let postUpdateManyResult
+
 	await UserHookIFUUCD.insertMany([{ name: 'jeremy' }, { name: 'julia' }])
 	await UserHookIFUUCD.find({})
-	await UserHookIFUUCD.update({ name: 'jeremy' }, { name: 'arthur' })
+	await UserHookIFUUCD.updateOne({ name: 'jeremy' }, { name: 'arthur' })
 	await UserHookIFUUCD.updateMany({ name: { $in: ['julia', 'arthur'] } }, { name: 'marc' })
 	await UserHookIFUUCD.count({ name: 'marc' })
 	await UserHookIFUUCD.deleteMany({ name: 'marc' })
@@ -173,20 +177,20 @@ test('insertMany, find, update, updateMany, count, deleteMany', async () => {
 	} catch (error) {} // tslint:disable-line: no-empty
 
 	expect(consoleSpy).toBeCalledWith('pre-insertMany', UserHookIFUUCD.modelName)
-	expect(consoleSpy).toBeCalledWith('post-insertMany', expect.objectContaining({ name: 'jeremy' }))
+	expect(postInsertManyFirstResult).toMatchObject({ name: 'jeremy' })
 	expect(consoleSpy).toBeCalledWith('post-find', 2)
 	expect(consoleSpy).toBeCalledWith('post-update', 1)
-	expect(consoleSpy).toBeCalledWith('post-find-error', expect.any(Error), null)
-	expect(consoleSpy).toBeCalledWith('post-updateMany', { n: 2, nModified: 2, ok: 1 })
+	expect(consoleSpy).toBeCalledWith('post-find-error', expect.any(Error), undefined)
+	expect(postUpdateManyResult).toMatchObject({ matchedCount: 2, modifiedCount: 2 })
 	expect(consoleSpy).toBeCalledWith('post-count', 2)
-	expect(consoleSpy).toBeCalledWith('post-deleteMany', { n: 2, ok: 1, deletedCount: 2 })
-	expect(consoleSpy).toBeCalledWith('post-deleteMany-error', expect.any(Error), null)
+	expect(postDeleteManyResult).toMatchObject({ deletedCount: 2 })
+	expect(consoleSpy).toBeCalledWith('post-deleteMany-error', expect.any(Error), undefined)
 })
 
 test('aggregate', async () => {
 	@Model()
 	@PreHook<UserHookA>('aggregate', function (next) {
-		this.project('name -_id')
+		this.project({ _id: false, name: true })
 		next()
 	})
 	@PostHook<UserHookA>('aggregate', function (docs, next) {
@@ -210,7 +214,7 @@ test('aggregate', async () => {
 		await UserHookA.aggregate([{ $match: { name: { $or: ['jeremy'] } } }]) // will error out
 	} catch (error) {} // tslint:disable-line: no-empty
 
-	expect(consoleSpy).toBeCalledWith('post-aggregate-error', expect.any(Error), undefined)
+	expect(consoleSpy).toBeCalledWith('post-aggregate-error', expect.any(Error), null)
 })
 
 test('mixed hooks', async () => {

@@ -1,5 +1,7 @@
-import * as mongoose from 'mongoose'
-import { Decorator } from './interfaces'
+import type * as mongoose from 'mongoose'
+import { ModelAny } from './interfaces'
+import { RefletMongooseError } from './reflet-error'
+import { defineMetadata, getMetadata } from './metadata-map'
 
 const MetaKind = Symbol('kind')
 
@@ -24,20 +26,35 @@ const MetaKind = Symbol('kind')
  * ---
  * @public
  */
-export function Kind(value?: string): Decorator.Kind
+export function Kind(value?: string): Kind.Decorator
 
-export function Kind(...args: Parameters<Decorator.Kind>): void
+export function Kind(...args: Parameters<Kind.Decorator>): void
 
 export function Kind(valueOrTarget?: string | Object, key?: string | symbol) {
 	if (typeof valueOrTarget === 'string' && !key) {
-		return (target: Object, key_: string | symbol) => {
+		return (target: Object, keyy: string | symbol) => {
 			/* istanbul ignore if - checked by the compiler */
-			if (!valueOrTarget) throw Error(`Schema ${target.constructor.name} cannot have an empty @Kind value`)
+			if (!valueOrTarget) {
+				throw new RefletMongooseError(
+					'EMPTY_DISCRIMINATOR_KEY',
+					`Schema ${target.constructor.name} cannot have an empty @Kind (or @DiscriminatorKey) value`
+				)
+			}
 
-			Reflect.defineMetadata(MetaKind, [key_, valueOrTarget], target.constructor)
+			defineMetadata(MetaKind, [keyy, valueOrTarget], target.constructor)
 		}
 	} else {
-		return Reflect.defineMetadata(MetaKind, [key, undefined], valueOrTarget!.constructor)
+		return defineMetadata(MetaKind, [key, undefined], valueOrTarget!.constructor)
+	}
+}
+
+export namespace Kind {
+	/**
+	 * Equivalent to `PropertyDecorator`.
+	 * @public
+	 */
+	export type Decorator = PropertyDecorator & {
+		__mongooseKind?: never
 	}
 }
 
@@ -47,7 +64,7 @@ export { Kind as DiscriminatorKey }
  * @internal
  */
 export function getKind(target: object): [string?, string?] {
-	return Reflect.getMetadata(MetaKind, target) || []
+	return getMetadata(MetaKind, target) || []
 }
 
 /**
@@ -60,8 +77,8 @@ export function assignModelKindKey({
 	discriminatorModel,
 }: {
 	kindKey: string | undefined
-	rootModel: mongoose.Model<mongoose.Document>
-	discriminatorModel: mongoose.Model<mongoose.Document>
+	rootModel: ModelAny
+	discriminatorModel: ModelAny
 }): void {
 	const providedDiscriminatorKey = (rootModel.schema as SchemaFix)._userProvidedOptions.discriminatorKey
 	const providedKindKey: string | undefined = (rootModel as any)[MetaKind]
@@ -69,15 +86,17 @@ export function assignModelKindKey({
 
 	// Check that sibling discriminators have the same @Kind key.
 	if ((providedKindKey && !kindKey) || (providedKindKey && kindKey && providedKindKey !== kindKey)) {
-		throw Error(
-			`Discriminator "${discriminatorModel.name}" must have @Kind named "${providedKindKey}", like its sibling discriminator(s).`
+		throw new RefletMongooseError(
+			'DISCRIMINATOR_KEY_CONFLICT',
+			`Discriminator "${discriminatorModel.name}" must have @Kind (or @DiscriminatorKey) named "${providedKindKey}", like its sibling discriminator(s).`
 		)
 	}
 
 	// Then check overwriting of the discriminatorKey provided by the user on the root model.
 	if (providedDiscriminatorKey && kindKey && providedDiscriminatorKey !== kindKey) {
-		throw Error(
-			`Discriminator "${discriminatorModel.name}" cannot overwrite discriminatorKey "${providedDiscriminatorKey}" of root model "${rootModel.modelName}" with @Kind named "${kindKey}".`
+		throw new RefletMongooseError(
+			'DISCRIMINATOR_KEY_CONFLICT',
+			`Discriminator "${discriminatorModel.name}" cannot overwrite discriminatorKey "${providedDiscriminatorKey}" of root model "${rootModel.modelName}" with @Kind (or @DiscriminatorKey) named "${kindKey}".`
 		)
 	}
 

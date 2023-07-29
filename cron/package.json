@@ -24,9 +24,7 @@
 	"engineStrict": true,
 	"peerDependencies": {
 		"@types/cron": "^1.7.2",
-		"@types/node": ">=8",
-		"cron": "^1.8.2",
-		"reflect-metadata": "^0.1.13"
+		"cron": "^1.8.2"
 	},
 	"devDependencies": {
 		"@types/cron": "^1.7.2",
@@ -42,6 +40,7 @@
 		"test:watch": "yarn test --watch --verbose false",
 		"test:file": "yarn test --testPathPattern",
 		"preversion": "yarn test --coverage && ts-node -T ../testing/summary.ts && git add coverage-summary.json",
-		"prepublishOnly": "yarn run build"
+		"prepublishOnly": "yarn run build",
+		"publish:next": "yarn publish --tag next"
 	}
 }
