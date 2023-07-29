@@ -1,5 +1,5 @@
-import * as mongoose from 'mongoose'
-import * as mongodb from 'mongodb'
+import type * as mongoose from 'mongoose'
+import type * as mongodb from 'mongodb'
 import { checkDecoratorsOrder } from './check-decorator-order'
 import { AsDocument, ClassType, DocumentAny, Plain } from './interfaces'
 import { defineMetadata, getMetadata } from './metadata-map'

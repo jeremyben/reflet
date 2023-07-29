@@ -1,4 +1,4 @@
-import * as mongoose from 'mongoose'
+import type * as mongoose from 'mongoose'
 import { checkDecoratorsOrder } from './check-decorator-order'
 import { ClassType, PlainKeys } from './interfaces'
 import { defineMetadata, getMetadata } from './metadata-map'

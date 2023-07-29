@@ -1,5 +1,5 @@
-import * as mongoose from 'mongoose'
-import * as mongodb from 'mongodb' // tslint:disable-line: no-implicit-dependencies
+import type * as mongoose from 'mongoose'
+import type * as mongodb from 'mongodb' // tslint:disable-line: no-implicit-dependencies
 import { ClassType, IsAny, Plain, PlainKeys } from './interfaces'
 
 /** @ts-ignore protected */
@@ -241,10 +241,10 @@ export declare abstract class ModelI<C extends ClassType = any> extends (class {
 
 	static where<T extends ModelI>(this: ClassType<T>): mongoose.Query<T[], T>
 
-	// @ts-ignore
+	/** @ts-ignore */
 	toObject(options?: mongoose.ToObjectOptions): Plain<this>
 
-	// @ts-ignore
+	/** @ts-ignore */
 	toJSON(options?: mongoose.ToObjectOptions): Plain<this>
 }
 

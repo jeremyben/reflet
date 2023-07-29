@@ -1,5 +1,5 @@
-import * as mongoose from 'mongoose'
-import * as mongodb from 'mongodb'
+import type * as mongoose from 'mongoose'
+import type * as mongodb from 'mongodb'
 
 // tslint:disable: no-shadowed-variable
 
@@ -307,5 +307,3 @@ declare global {
 		interface Ref {}
 	}
 }
-
-declare module 'mongoose' {} // keep it for now (issue in declaration bundling)

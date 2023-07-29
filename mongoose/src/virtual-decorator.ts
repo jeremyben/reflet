@@ -1,4 +1,4 @@
-import * as mongoose from 'mongoose'
+import type * as mongoose from 'mongoose'
 import { PlainKeys, Ref } from './interfaces'
 import { defineMetadata, getMetadata } from './metadata-map'
 

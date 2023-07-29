@@ -1,4 +1,4 @@
-import * as mongoose from 'mongoose'
+import type * as mongoose from 'mongoose'
 import { ModelAny } from './interfaces'
 import { RefletMongooseError } from './reflet-error'
 import { defineMetadata, getMetadata } from './metadata-map'
