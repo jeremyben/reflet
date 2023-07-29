@@ -46,7 +46,7 @@ export function PreHook<T extends DocumentAny>(
 	callback: (this: T, next: HookNextFunction) => void
 ): PreHook.Decorator
 
-// 5
+// 3
 /**
  * Query middleware.
  * - [`Query.count()`](https://mongoosejs.com/docs/api#query_Query-count)
@@ -70,7 +70,7 @@ export function PreHook<T extends DocumentAny>(
 	callback: (this: mongoose.Query<T, T>, next: HookNextFunction) => void
 ): PreHook.Decorator
 
-// 6
+// 4
 /**
  * Query middleware by default.
  * - [`Query.updateOne()`](https://mongoosejs.com/docs/api#query_Query-updateOne)
@@ -90,9 +90,9 @@ export function PreHook<T extends DocumentAny>(
 	callback: (this: T, next: HookNextFunction) => void
 ): PreHook.Decorator
 
-// 7
+// 5
 /**
- * {@inheritDoc (PreHook:6)}
+ * {@inheritDoc (PreHook:4)}
  * @public
  */
 export function PreHook<T extends DocumentAny>(
@@ -101,7 +101,7 @@ export function PreHook<T extends DocumentAny>(
 	callback: (this: T | mongoose.Query<T, T>, next: HookNextFunction) => void
 ): PreHook.Decorator
 
-// 8
+// 6
 /**
  * Model middleware.
  * - [`Model.insertMany()`](https://mongoosejs.com/docs/api#model_Model.insertMany)
@@ -115,7 +115,7 @@ export function PreHook<T extends DocumentAny>(
 	callback: (this: mongoose.Model<AsDocument<T>>, next: HookNextFunction) => void
 ): PreHook.Decorator
 
-// 9
+// 7
 /**
  * Aggregate middleware.
  * - [`Model.aggregate()`](https://mongoosejs.com/docs/api#model_Model.aggregate)
@@ -129,7 +129,7 @@ export function PreHook<T extends DocumentAny>(
 	callback: (this: mongoose.Aggregate<T>, next: HookNextFunction) => void
 ): PreHook.Decorator
 
-// 10
+// 8
 /**
  * Mixed methods middleware.
  *
@@ -158,9 +158,9 @@ export function PreHook<T extends DocumentAny>(
 	callback: (this: unknown, next: HookNextFunction) => void
 ): PreHook.Decorator
 
-// 11
+// 9
 /**
- * {@inheritDoc (PreHook:10)}
+ * {@inheritDoc (PreHook:8)}
  * @public
  */
 export function PreHook<T extends DocumentAny>(
@@ -264,7 +264,7 @@ export function PostHook<T extends DocumentAny, TError = any>(
 	callback: (this: T, error: TError, result: null, next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 7
+// 4
 /**
  * Query middleware.
  * - [`Query.findOne()`](https://mongoosejs.com/docs/api#query_Query-findOne)
@@ -281,7 +281,7 @@ export function PostHook<T extends DocumentAny>(
 	callback: (this: mongoose.Query<T, T>, result: T, next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 8
+// 5
 /**
  * Query middleware.
  * - [`Query.find()`](https://mongoosejs.com/docs/api#query_Query-find)
@@ -295,7 +295,7 @@ export function PostHook<T extends DocumentAny>(
 	callback: (this: mongoose.Query<T, T>, results: T[], next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 9
+// 6
 /**
  * Query middleware.
  * - [`Query.update()`](https://mongoosejs.com/docs/api#query_Query-update)
@@ -309,7 +309,7 @@ export function PostHook<T extends DocumentAny>(
 	callback: (this: mongoose.Query<T, T>, result: mongodb.UpdateResult, next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 10
+// 7
 /**
  * Query middleware.
  * - [`Query.deleteMany()`](https://mongoosejs.com/docs/api#query_Query-deleteMany)
@@ -322,7 +322,7 @@ export function PostHook<T extends DocumentAny>(
 	callback: (this: mongoose.Query<T, T>, result: mongodb.DeleteResult, next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 11
+// 8
 /**
  * Query middleware.
  * - [`Query.count()`](https://mongoosejs.com/docs/api#query_Query-count)
@@ -336,7 +336,7 @@ export function PostHook<T extends DocumentAny>(
 	callback: (this: mongoose.Query<T, T>, result: number, next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 12
+// 9
 /**
  * Query middleware.
  * - [`Query.count()`](https://mongoosejs.com/docs/api#query_Query-count)
@@ -360,9 +360,9 @@ export function PostHook<T extends DocumentAny>(
 	callback: (this: mongoose.Query<T, T>, result: any, next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 13
+// 10
 /**
- * {@inheritDoc (PostHook:12)}
+ * {@inheritDoc (PostHook:9)}
  * @public
  */
 export function PostHook<T extends DocumentAny, TError = any>(
@@ -370,7 +370,7 @@ export function PostHook<T extends DocumentAny, TError = any>(
 	callback: (this: mongoose.Query<T, T>, error: TError, result: undefined, next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 14
+// 11
 /**
  * Query middleware by default.
  * - [`Query.updateOne()`](https://mongoosejs.com/docs/api#query_Query-updateOne)
@@ -390,9 +390,9 @@ export function PostHook<T extends DocumentAny>(
 	callbackIfOptions?: (this: T, result: T, next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 15
+// 11
 /**
- * {@inheritDoc (PostHook:14)}
+ * {@inheritDoc (PostHook:11)}
  * @public
  */
 export function PostHook<T extends DocumentAny, TError = any>(
@@ -403,7 +403,7 @@ export function PostHook<T extends DocumentAny, TError = any>(
 	callbackIfOptions?: (this: T, error: TError, result: T, next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 16
+// 12
 /**
  * Query middleware by default.
  * - [`Query.deleteOne()`](https://mongoosejs.com/docs/api#query_Query-deleteOne)
@@ -423,9 +423,9 @@ export function PostHook<T extends DocumentAny>(
 	callbackIfOptions?: (this: T, result: T, next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 17
+// 13
 /**
- * {@inheritDoc (PostHook:16)}
+ * {@inheritDoc (PostHook:12)}
  * @public
  */
 export function PostHook<T extends DocumentAny, TError = any>(
@@ -436,7 +436,7 @@ export function PostHook<T extends DocumentAny, TError = any>(
 	callbackIfOptions?: (this: T, error: TError, result: T, next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 18
+// 14
 /**
  * Model middleware.
  * - [`Model.insertMany()`](https://mongoosejs.com/docs/api#model_Model.insertMany)
@@ -450,9 +450,9 @@ export function PostHook<T extends DocumentAny>(
 	callback: (this: mongoose.Model<AsDocument<T>>, results: T[], next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 19
+// 15
 /**
- * {@inheritDoc (PostHook:18)}
+ * {@inheritDoc (PostHook:14)}
  * @public
  */
 export function PostHook<T extends DocumentAny, TError = any>(
@@ -460,7 +460,7 @@ export function PostHook<T extends DocumentAny, TError = any>(
 	callback: (this: mongoose.Model<AsDocument<T>>, error: TError, results: T[], next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 20
+// 16
 /**
  * Aggregate middleware.
  * - [`Model.aggregate()`](https://mongoosejs.com/docs/api#model_Model.aggregate)
@@ -474,9 +474,9 @@ export function PostHook<T extends DocumentAny>(
 	callback: (this: mongoose.Aggregate<T>, results: Plain<T>[], next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 21
+// 17
 /**
- * {@inheritDoc (PostHook:20)}
+ * {@inheritDoc (PostHook:16)}
  * @public
  */
 export function PostHook<T extends DocumentAny, TError = any>(
@@ -484,7 +484,7 @@ export function PostHook<T extends DocumentAny, TError = any>(
 	callback: (this: mongoose.Aggregate<T>, error: TError, results: null, next: HookNextFunction) => void
 ): PostHook.Decorator
 
-// 22
+// 18
 /**
  * Mixed methods middleware.
  *
@@ -513,9 +513,9 @@ export function PostHook<T extends DocumentAny>(
 	callback: (this: any, result: any, next: HookNextFunction) => void
 ): PreHook.Decorator
 
-// 23
+// 19
 /**
- * {@inheritDoc (PostHook:22)}
+ * {@inheritDoc (PostHook:18)}
  * @public
  */
 export function PostHook<T extends DocumentAny, TError = any>(
