@@ -19,7 +19,7 @@
   Use `Send.Dont` decorator instead.
 
 * `Send` decorator no longer have the following options: `status`, `nullStatus`, `undefinedStatus`.
-  Use `UseStatus` from "@reflet/http" for `status`.
+  Use `UseStatus` from "@reflet/express-middlewares" for `status`.
   For `nullStatus` and `undefinedStatus`, define a custom send handler to accomplish the same task:
   ```ts
   @Send((data, { res }) => {
