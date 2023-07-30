@@ -13,7 +13,7 @@
   Use `finalHandler` to accomplish the same task.
 
 * `Router.register` was deprecated and has been removed, as well as `register` in router constructor.
-  Use `Router.Chidren` decorator instead.
+  Use `Router.Children` decorator instead.
 
 * `DontSend` decorator was deprecated and has been removed.
   Use `Send.Dont` decorator instead.

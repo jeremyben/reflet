@@ -6,7 +6,7 @@
 [![branches coverage](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/jeremyben/reflet/master/express-middlewares/coverage-summary.json&label=branches&query=total.branches.pct&color=brightgreen&suffix=%&logo=jest)](./coverage-summary.json)
 
 > [!IMPORTANT]  
-> Upgrade from **v1** to **v2** : [Migration guide](../express-middlewares/MIGRATION.md)
+> Upgrade from **v1** to **v2** : [Migration guide](https://github.com/jeremyben/reflet/blob/master/express-middlewares/MIGRATION.md)
 
 Convenient middleware decorators to use with [Reflet/express](../express).
 

@@ -6,7 +6,7 @@
 [![branches coverage](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/jeremyben/reflet/master/express/coverage-summary.json&label=branches&query=total.branches.pct&color=brightgreen&suffix=%&logo=jest)](./coverage-summary.json)
 
 > [!IMPORTANT]  
-> Upgrade from **v1** to **v2** : [Migration guide](../express/MIGRATION.md)
+> Upgrade from **v1** to **v2** : [Migration guide](https://github.com/jeremyben/reflet/blob/master/express/MIGRATION.md)
 
 The **best** decorators for [Express](https://expressjs.com/). Have a look at [Reflet's philosophy](../README.MD#Philosophy-).
 
@@ -493,14 +493,14 @@ If you wish to circumvent this default behavior, add `ScopedMiddlewares` decorat
 @Router('/foo')
 @ScopedMiddlewares
 @Use(authenticate)
-class FooSecret {
-  @Get()
+class Foo1 {
+  @Get('/secret')
   getSecret(req: Request, res: Response, next: NextFunction) {}
 }
 
 @Router('/foo')
-class FooPublic {
-  @Get()
+class Foo2 {
+  @Get('/public')
   getPublic(req: Request, res: Response, next: NextFunction) {}
 }
 ```
@@ -1096,7 +1096,7 @@ import { UserRouter } from './user.router'
 
 @Send({ json: true })
 @Use(express.json(), express.urlencoded())
-@Router.ScopedMiddlewares
+@ScopedMiddlewares
 @Catch(finalHandler({ 
   json: true,
   log: true,
