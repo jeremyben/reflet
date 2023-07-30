@@ -3,6 +3,67 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0](https://github.com/jeremyben/reflet/compare/@reflet/express@1.6.1...@reflet/express@2.0.0) (2023-07-30)
+
+
+### Bug Fixes
+
+* **express:** aconvenient types with each param decorator ([e3a86bf](https://github.com/jeremyben/reflet/commit/e3a86bf8a503e2fefe50f277517f20917758146b))
+* **express:** allow Send.Dont to be applied without invokation ([c701586](https://github.com/jeremyben/reflet/commit/c701586e5d845a3b3d8bd5f73a61e055c0e8c7dc))
+* **express:** bug with mutated middewares reference in Use decorator ([0622483](https://github.com/jeremyben/reflet/commit/0622483195510287a284dcd37edbe1cdb40ac39e))
+* **express:** change final-handler signature for booleans ([e796dc1](https://github.com/jeremyben/reflet/commit/e796dc16de0cd9b6355bf494eb6c7e3bb890d144))
+* **express:** change path constraint object to a tuple and unwrap RegistrationArray to Registration ([58cc9a2](https://github.com/jeremyben/reflet/commit/58cc9a2031af52ddccc8a4892b0a7f80a909c6ea))
+* **express:** dedicated reflet express error ([ddf9c90](https://github.com/jeremyben/reflet/commit/ddf9c9053b40ce25abde535f1370cd0808f67e1a))
+* **express:** easier and more flexible finalHandler ([32fb80f](https://github.com/jeremyben/reflet/commit/32fb80faa7803723055fb9bcb342e3c12df830da))
+* **express:** improve internal errors ([8a90790](https://github.com/jeremyben/reflet/commit/8a907905eb0b5b4477f62fba263670840050e181))
+* **express:** improve signature for param middleware deduplication ([3206e26](https://github.com/jeremyben/reflet/commit/3206e262f9ee53d8bf7bf71a617cfe613e04f9e8))
+* **express:** make Router decorator mandatory ([1da8201](https://github.com/jeremyben/reflet/commit/1da82012fcb0807d6eb203456d9512d595b5f00f))
+* **express:** more control for middleware deduplication in createParamDecorator ([18e6d41](https://github.com/jeremyben/reflet/commit/18e6d41bef340dc59cef6bafde7a64b951e8f4bd))
+* **express:** more options to reveal error name and message ([1c0824c](https://github.com/jeremyben/reflet/commit/1c0824c7805d26a1a5c39c4201b7a44ea3f9949b))
+* **express:** proper reflet error for sending response object ([16a7e50](https://github.com/jeremyben/reflet/commit/16a7e50fcd7bbef81ce2513f5d0eccab4ab1fdf4))
+* **express:** remove deprecated APIs ([9097d60](https://github.com/jeremyben/reflet/commit/9097d601db62c0a7d014c2b48fadbb104cb07690))
+* **express:** remove every "controller" word occurence ([c68bca8](https://github.com/jeremyben/reflet/commit/c68bca8b3b0b13b52c62f5b87118de03215d6071))
+* **express:** remove generic from ClassOrMethodDecorator interface ([b450227](https://github.com/jeremyben/reflet/commit/b4502278fd8cb493e784090279e580dd3f9bb4e7))
+* **express:** remove global error handler to avoid magic ([fd5a286](https://github.com/jeremyben/reflet/commit/fd5a2865d379d3069cef0be595d429ea4cebd3c9))
+* **express:** remove need for reflect-metadata ([a0eea93](https://github.com/jeremyben/reflet/commit/a0eea9386011c14787d5722b775ff0c60e70cbdc))
+* **express:** Remove way of registering childrens router in parent constructor ([002f551](https://github.com/jeremyben/reflet/commit/002f5510eed0b5e933142f8f914b1211ff044684))
+* **express:** rename Method decorator to Route ([9425ee4](https://github.com/jeremyben/reflet/commit/9425ee4550b7892f75610e91dd579e157c7eebb3))
+* **express:** rename reveal to expose in final handler options ([a3da648](https://github.com/jeremyben/reflet/commit/a3da648d8cc42b9467c471762c8452071400c401))
+* **express:** ScopedMiddlewares out of Router namespace ([7987be4](https://github.com/jeremyben/reflet/commit/7987be44c25b84fa0b460eaee60a4d7139f4d8c9))
+* **express:** send not detected on decorated application ([f8656d6](https://github.com/jeremyben/reflet/commit/f8656d6565187779dd629f3c4fd02482213830d7))
+* **express:** simplify regex for json detection in final handler ([9ce7f5a](https://github.com/jeremyben/reflet/commit/9ce7f5a02594ce5b6424884dabcaa01deea8289c))
+* **express:** throw an error if Router.Children are defined without Router ([da7a357](https://github.com/jeremyben/reflet/commit/da7a35792cf7e9d8bcc8631d4f04ea35b59efbc5))
+* **express:** throw error on multiple param decorators overriding each other ([93081e5](https://github.com/jeremyben/reflet/commit/93081e5e7d2bc9eb1e78e32d12612b0cf2b98467))
+* use reflet/http for header and status types ([3a1c362](https://github.com/jeremyben/reflet/commit/3a1c36206c0a9afd1e8315d2f15d7db8529c9f96))
+
+
+### Features
+
+* **express:** allow uppercase http method in Route decorator ([c890fc5](https://github.com/jeremyben/reflet/commit/c890fc51cf3e61873c91e130264cbe1b1a5e9713))
+* **express:** custom handler for Send decorator ([36c5103](https://github.com/jeremyben/reflet/commit/36c5103b45cad3754a282edf9e4716e15d91bee3))
+* **express:** custom status code for notFoundHandler ([2fd6d99](https://github.com/jeremyben/reflet/commit/2fd6d99eef47d0b48f330785aab600d3956e636e))
+* **express:** decorator Router.ScopedMiddlewares ([6b46032](https://github.com/jeremyben/reflet/commit/6b46032d155b1a7f3da07a84bc4bdf4d6c2e1bbb))
+* **express:** final handler ([4f08c3e](https://github.com/jeremyben/reflet/commit/4f08c3eb89bb17cd6ef60cf77cc28ab1309a650d))
+* **express:** simpler and more flexible option to whitelist error properties in finalHandler ([800698d](https://github.com/jeremyben/reflet/commit/800698dc4883a1c283b62a4d5550d5b956b8f1ae))
+
+
+### BREAKING CHANGES
+
+* **express:** Send decorator no longer has status, nullStatus and undefinedStatus options.
+* reflet/http is now a required peer dependency
+* **express:** Path constraint in registration is no longer an object
+* **express:** signature has changed from a single boolean to a full object for each middleware.
+* **express:** Router decorator must be applied on routing classes
+* **express:** overload of register method for chidren routers has been removed
+* **express:** rename Controllers to RegistrationArray
+* **express:** DontSend decorator and Router.register method are removed
+* **express:** global error handler has been removed (no more automatic json detection in global errors)
+* **express:** Method replaced by Route
+
+
+
+
+
 ## [1.6.1](https://github.com/jeremyben/reflet/tree/master/express/compare/@reflet/express@1.6.0...@reflet/express@1.6.1) (2022-04-11)
 
 

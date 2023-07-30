@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0](https://github.com/jeremyben/reflet/compare/@reflet/express-middlewares@1.1.10...@reflet/express-middlewares@2.0.0) (2023-07-30)
+
+
+### Bug Fixes
+
+* **express-middlewares:** add common extensions as shorthands for UseType decorator ([84b16cc](https://github.com/jeremyben/reflet/commit/84b16ccd56bb4cdc894102a40e9a0635b529cb04))
+* **express-middlewares:** remove aliases ([429b0fd](https://github.com/jeremyben/reflet/commit/429b0fd07e39d2b06c5ecba8744af7db15f4d27a))
+* **express-middlewares:** response readonly interface ([55c0cd5](https://github.com/jeremyben/reflet/commit/55c0cd54df4fbb27cfd4ecb02d56040bb2b12f54))
+* **express-middlewares:** use response property writableEnded instead of deprecated finished ([92a9b38](https://github.com/jeremyben/reflet/commit/92a9b386f4c8d8f0fdf29cde7d519a498c85caed))
+* **express:** remove need for reflect-metadata ([a0eea93](https://github.com/jeremyben/reflet/commit/a0eea9386011c14787d5722b775ff0c60e70cbdc))
+* use reflet/http for header and status types ([3a1c362](https://github.com/jeremyben/reflet/commit/3a1c36206c0a9afd1e8315d2f15d7db8529c9f96))
+
+
+### Features
+
+* **express-middlewares:** add UseHeader.Append decorator ([dd208d7](https://github.com/jeremyben/reflet/commit/dd208d758c4583c5446471448785e56abb5e6096))
+
+
+### BREAKING CHANGES
+
+* reflet/http is now a required peer dependency
+* **express-middlewares:** UseSet and UseContentType have been removed
+
+
+
+
+
 ## [1.1.10](https://github.com/jeremyben/reflet/tree/master/express-middlewares/compare/@reflet/express-middlewares@1.1.9...@reflet/express-middlewares@1.1.10) (2021-08-05)
 
 **Note:** Version bump only for package @reflet/express-middlewares
