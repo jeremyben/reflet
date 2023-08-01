@@ -56,15 +56,6 @@
 
 		/* Experimental Options */
 		"experimentalDecorators": true,
-		"emitDecoratorMetadata": false,
-
-		/* Compiler Plugins */
-		"plugins": [
-			{
-				// https://github.com/Microsoft/typescript-tslint-plugin
-				"name": "typescript-tslint-plugin",
-				"configFile": "tslint.json"
-			}
-		]
+		"emitDecoratorMetadata": false
 	}
 }

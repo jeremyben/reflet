@@ -1,7 +1,0 @@
-{
-	"extends": "../tslint.json",
-	"rules": {
-		"variable-name": false,
-		"only-arrow-functions": false
-	}
-}
