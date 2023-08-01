@@ -9,15 +9,14 @@ on:
       - 'express/**/*.ts'
       - 'express-middlewares/**/*.ts'
       - 'mongoose/**/*.ts'
-      - 'cron/**/*.ts'
 
 jobs:
   test:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        node-version: [12.x, 14.x]
+        node-version: [16.x, 18.x]
         redis-version: [5]
 
     steps:
