@@ -1,12 +1,15 @@
 import { join } from 'path'
 import { spawn } from 'child_process'
 import { build } from 'tsc-prog'
-import autocannon from 'autocannon'
+import * as autocannon from 'autocannon'
+import { inspect } from 'util'
 
 const rootDir = 'express-hello-world'
 const outDir = `${rootDir}-dist`
 const libs = ['plain', 'reflet', 'nest', 'routing-controllers'] as const
-type Result = autocannon.Result & { title: typeof libs[number] }
+
+type Lib = (typeof libs)[number]
+type Result = autocannon.Result & { title: Lib }
 
 build({
 	basePath: __dirname,
@@ -22,14 +25,14 @@ build({
 		results.push(result)
 	}
 
-	console.log(results)
+	console.log('\nFull Results:\n', inspect(results, { compact: true, breakLength: 2000, colors: true }))
 })()
 
-async function runExpressWith(lib: typeof libs[number]) {
+async function runExpressWith(lib: Lib) {
 	const libPath = join(__dirname, outDir, lib, 'index.js')
 	const process = spawn('node', [libPath])
 
-	console.log(`\n===============\n${lib.toUpperCase()}\n===============\n`)
+	console.log(`\n===============\n${lib.toUpperCase()}\n===============`)
 
 	await new Promise((resolve) => setTimeout(resolve, 1000))
 
@@ -39,7 +42,7 @@ async function runExpressWith(lib: typeof libs[number]) {
 				url: 'http://localhost:3001',
 				title: lib,
 				connections: 100,
-				duration: '10s',
+				duration: '2s',
 			},
 			(err, result) => {
 				process.kill()
