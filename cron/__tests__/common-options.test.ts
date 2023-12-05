@@ -29,7 +29,7 @@ test('timezone and offset', async () => {
 		@Cron(Expression.EVERY_SECOND)
 		async first() {}
 
-		@Cron.UtcOffset('+03:00')
+		@Cron.UtcOffset(180)
 		@Cron(Expression.EVERY_SECOND)
 		async second() {}
 	}
@@ -37,10 +37,12 @@ test('timezone and offset', async () => {
 	const jobs = initCronJobs(Jobs)
 
 	const firstJob = jobs.get('first')
-	expect(firstJob.nextDate().isUtcOffset()).toBe(true)
+	expect(firstJob.nextDate().offset).toBe(180)
+	expect(firstJob.nextDate().zoneName).toBe('Europe/Istanbul')
 
 	const secondJob = jobs.get('second')
-	expect(secondJob.nextDate().utcOffset()).toBe(180)
+	expect(secondJob.nextDate().offset).toBe(180)
+	expect(secondJob.nextDate().zoneName).toBe('UTC+3')
 
 	await new Promise((r) => setTimeout(r, 100))
 })

@@ -2,7 +2,6 @@ import {
 	ClassOrMethodDecorator,
 	ClassType,
 	JobParameters,
-	Offset,
 	Zone,
 	RetryOptions,
 	RedisLockOption,
@@ -207,7 +206,7 @@ export namespace Cron {
 	 *
 	 * @example
 	 * ```ts
-	 * ＠Cron.UtcOffset('+01:00')
+	 * ＠Cron.UtcOffset(60)
 	 * class Jobs {
 	 *   ＠Cron(Expression.EVERY_SECOND)
 	 *   doSomething() {}
@@ -217,7 +216,7 @@ export namespace Cron {
 	 * @see https://momentjs.com/docs/#/manipulating/utc-offset/
 	 * @public
 	 */
-	export function UtcOffset(offset: Offset | number): ClassOrMethodDecorator {
+	export function UtcOffset(offset: number): ClassOrMethodDecorator {
 		return (target, key, descriptor) => {
 			if (key) defineMetadata(META.utcOffset, offset, target, key)
 			else defineMetadata(META.utcOffset, offset, target)

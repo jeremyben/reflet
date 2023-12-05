@@ -1,4 +1,5 @@
-import { CronJob, CronJobParameters } from 'cron'
+import { CronJob, CronJobParams, CronOnCompleteCallback } from 'cron'
+import { type DateTime } from 'luxon'
 
 /**
  * @public
@@ -30,7 +31,7 @@ export type MethodKeys<T> = { [P in keyof T]: T[P] extends Function ? P : never 
 /**
  * @public
  */
-export interface Job extends CronJob {
+export interface Job extends CronJob<CronOnCompleteCallback> {
 	/**
 	 * Returns `true` if the job's tick function is actually being run.
 	 *
@@ -42,30 +43,33 @@ export interface Job extends CronJob {
 	 * Job's name in the following format: `class.method`.
 	 */
 	name: string
-
-	/**
-	 * A function that will fire when the job is stopped with `job.stop()`,
-	 * and may also be called by `onTick` at the end of each run.
-	 */
-	onComplete: (() => void) | undefined
 }
 
 /**
  * @public
  */
-export interface JobParameters<T extends object = object, PassJob extends boolean = false>
-	extends Omit<CronJobParameters, 'context' | 'onTick'> {
-	cronTime: string | Date
+export interface JobParameters<C extends object = object, PassJob extends boolean = false>
+	extends Omit<CronJobParams, 'context' | 'onTick' | 'onComplete' | 'timeZone' | 'utcOffset'> {
+	cronTime: string | Date | DateTime
+
 	/** The function to fire at the specified time. */
 	onTick: PassJob extends true
-		? (this: T, currentJob: Job) => void | Promise<void>
-		: (this: T, onComplete?: () => void) => void | Promise<void>
+		? (this: C, currentJob: Job) => void | Promise<void>
+		: (this: C, onComplete?: () => void) => void | Promise<void>
+
+	/** Access current job from its own `onTick` function. */
 	passCurrentJob?: PassJob
+
 	onComplete?: () => void
-	timeZone?: Zone
-	utcOffset?: Offset | number
+
+	timeZone?: Zone | null
+
+	utcOffset?: number | null
+
 	catchError?: (error: unknown) => void
+
 	retry?: RetryOptions
+
 	preventOverlap?: boolean | RedisLockOption
 }
 
@@ -102,48 +106,6 @@ export type RedisLockOption = {
  */
 /** @ts-ignore redlock not installed */
 export type RedlockLock = import('redlock').Lock
-
-/**
- * @public
- */
-export type Offset =
-	| '+00:00'
-	| '+03:00'
-	| '+01:00'
-	| '+02:00'
-	| '-10:00'
-	| '-09:00'
-	| '-04:00'
-	| '-03:00'
-	| '-05:00'
-	| '-06:00'
-	| '-07:00'
-	| '-08:00'
-	| '-02:00'
-	| '-01:00'
-	| '-03:30'
-	| '+08:00'
-	| '+07:00'
-	| '+10:00'
-	| '+11:00'
-	| '+05:00'
-	| '+13:00'
-	| '+06:00'
-	| '+12:00'
-	| '+04:00'
-	| '+09:00'
-	| '+05:30'
-	| '+04:30'
-	| '+05:45'
-	| '+03:30'
-	| '+06:30'
-	| '+10:30'
-	| '+09:30'
-	| '+08:45'
-	| '+14:00'
-	| '+13:45'
-	| '-09:30'
-	| '-11:00'
 
 /**
  * @public

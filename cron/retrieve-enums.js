@@ -22,21 +22,5 @@ get(url, (res) => {
 
 		const zonePath = join(__dirname, 'zone.ignore.ts')
 		writeFileSync(zonePath, zoneContent, 'utf8')
-
-		const moment = require('moment-timezone')
-
-		let offsets = []
-		for (const zone of zones) {
-			offsets.push(moment.tz(zone).format('Z'))
-			// offsets.push(moment.tz(zone).utcOffset())
-			// offsets.push(Math.floor(moment.tz(zone).utcOffset() / 60))
-		}
-
-		offsets = Array.from(new Set(offsets))
-
-		const offsetContent = `${jsdoc}export type Offset = \n\t| ${offsets.map(z => `'${z}'`).join('\n\t| ')}\n`
-
-		const offsetPath = join(__dirname, 'offset.ignore.ts')
-		writeFileSync(offsetPath, offsetContent, 'utf8')
 	})
 })

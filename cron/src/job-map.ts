@@ -57,14 +57,14 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 
 		const onTickExtended = this.extendOnTick(key, parameters)
 
-		const job = new CronJob({
+		const job = CronJob.from({
 			cronTime,
 			onTick: onTickExtended,
 			context: this.context,
 			onComplete,
 			start,
 			timeZone,
-			utcOffset,
+			utcOffset: utcOffset as any,
 			unrefTimeout,
 		})
 
@@ -79,13 +79,14 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 			value: `${contextClass.name}.${key}`,
 		})
 
-		super.set(<any>key, <Job>job)
+		super.set(<any>key, <any>job)
 
-		// runOnInit logic for dynamic jobs
+		// Add runOnInit logic for dynamic jobs
+		// https://github.com/kelektiv/node-cron/blob/3111ecdd00e950c8d9bf292b9e61f4c27c4e7330/src/job.ts#L94-L95
 		if (this[initialized]) {
 			const runOnInit = parameters.runOnInit ?? extract('runOnInit', contextClass)
 			if (runOnInit) {
-				;(<any>job).lastExecution = new Date()
+				job.lastExecution = new Date()
 				job.fireOnTick()
 			}
 		}

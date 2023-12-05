@@ -71,8 +71,10 @@ export function initCronJobs<T extends (new () => any) | ObjectInstance>(target:
 		}
 	}
 
+	// Add runOnInit logic
+	// https://github.com/kelektiv/node-cron/blob/3111ecdd00e950c8d9bf292b9e61f4c27c4e7330/src/job.ts#L94-L95
 	for (const runOnInitJob of runOnInitJobs) {
-		;(runOnInitJob as any).lastExecution = new Date()
+		runOnInitJob.lastExecution = new Date()
 		runOnInitJob.fireOnTick()
 	}
 
