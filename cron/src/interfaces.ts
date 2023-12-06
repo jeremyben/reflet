@@ -70,7 +70,7 @@ export interface JobParameters<C extends object = object, PassJob extends boolea
 
 	retry?: RetryOptions
 
-	preventOverlap?: boolean | RedisLockOption
+	preventOverlap?: boolean
 }
 
 /**
@@ -92,20 +92,6 @@ export interface RetryOptions {
 	/** Filter function with the error as parameter. */
 	condition?: (error: any) => boolean
 }
-
-/**
- * @public
- */
-export type RedisLockOption = {
-	type: 'redis'
-	lock: (job: Job) => Promise<RedlockLock>
-}
-
-/**
- * @public
- */
-/** @ts-ignore redlock not installed */
-export type RedlockLock = import('redlock').Lock
 
 /**
  * @public

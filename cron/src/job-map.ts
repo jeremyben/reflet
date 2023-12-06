@@ -1,6 +1,6 @@
 import { CronJob } from 'cron'
 import { extract } from './cron-decorators'
-import { ClassType, Job, JobParameters, MethodKeys, RedlockLock } from './interfaces'
+import { ClassType, Job, JobParameters, MethodKeys } from './interfaces'
 
 export const initialized = Symbol('initialized')
 
@@ -106,33 +106,10 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 		const onTickExtended = async (onCompleteArg?: () => void) => {
 			const currentJob = this.get(<any>key)
 
-			let redisLock: RedlockLock | undefined
+			// todo: HOOK on fire
 
 			if (preventOverlap) {
 				if (currentJob.firing) return
-
-				if (typeof preventOverlap === 'object' && preventOverlap.type === 'redis') {
-					try {
-						redisLock = await preventOverlap.lock(currentJob)
-
-						// Dev might catch the error from the decorator, which would return the wrong thing.
-						if (
-							!redisLock ||
-							typeof redisLock !== 'object' ||
-							typeof redisLock.unlock !== 'function' ||
-							typeof redisLock.extend !== 'function'
-						) {
-							return
-						}
-					} catch (error: any) {
-						/* istanbul ignore next */
-						if (error?.name !== 'LockError') {
-							console.error(error)
-						}
-
-						return
-					}
-				}
 			}
 
 			;(currentJob as any).firing = true
@@ -142,8 +119,6 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 				let attempts = retry.attempts
 				let delay = retry.delay || 0
 				const { delayFactor, delayMax, condition } = retry
-
-				const ttlApproximate = redisLock ? redisLock.expiration - Date.now() : 0
 
 				do {
 					try {
@@ -160,11 +135,7 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 							break
 						}
 
-						// If the job fails and retries itself, we extend the lock appropriately.
-						if (redisLock && ttlApproximate > 0) {
-							const ttlExtended = ttlApproximate + delay
-							await redisLock.extend(ttlExtended).catch(console.error)
-						}
+						// todo: HOOK on failed retry
 
 						if (delay) {
 							await new Promise((resolve) => setTimeout(resolve, delay))
@@ -197,19 +168,7 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 
 			;(currentJob as any).firing = false
 
-			if (redisLock) {
-				try {
-					await redisLock.unlock()
-				} catch (error: any) {
-					// Safe to ignore lock error, as the lock will expire after its timeout:
-					// https://github.com/mike-marcacci/node-redlock/blob/v4.2.0/redlock.js#L229.
-					// We still log other types of error.
-					/* istanbul ignore next */
-					if (error?.name !== 'LockError') {
-						console.error(error)
-					}
-				}
-			}
+			// todo: HOOK on end
 		}
 
 		// Rename to the name of the instance method, for a better error stack.

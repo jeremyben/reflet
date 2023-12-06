@@ -262,44 +262,6 @@ class Jobs {
 }
 ```
 
-### Distributed overlaps
-
-> 🔦 `@Cron.PreventOverlap.RedisLock`
-
-If your application hosting your cron jobs is running amongst multiple instances, you want to make sure a single job is firing once.<br>With the help of Redis and the **[node-redlock](https://github.com/mike-marcacci/node-redlock)** package, you can achieve cron locks easily.
-
-You obviously need to install a Redis server, a nodejs Redis client, and `node-redlock`.
-
-```ts
-import * as redis from 'redis'
-import * as Redlock from 'redlock'
-import { Cron, Expression } from '@reflet/cron'
-
-const redisClient = redis.createClient()
-
-@Cron.PreventOverlap.RedisLock((job) => {
-  const redlock = new Redlock([redisClient], { retryCount: 0 })
-  return redlock.lock(`lock:${job.name}`, 1000)
-  // use each job's name as a unique resource ("Jobs.doSomething" in this case).
-})
-class Jobs {
-  @Cron(Expression.EVERY_MINUTE)
-  doSomething() {}
-}
-```
-
-Reflet will handle the unlocking, once the job is over.<br>If `@Cron.Retry` is also applied, the lock will be reacquired on retries with the original `ttl` and the eventual retry delay.
-
-🗣️ By default, redlock `retryCount` is set to `10`, the [documentation](https://github.com/mike-marcacci/node-redlock#how-do-i-check-if-something-is-locked) recommends to set `retryCount` to `0` for most tasks (especially for high frequency jobs).
-
-In that regard, if you want to have a look at failed locks, you can simply `.catch` your lock promise: 
-
-```ts
-return redlock.lock(`lock:${job.name}`, 1000).catch(console.warn)
-```
-
-Go to [node-redlock documentation](https://github.com/mike-marcacci/node-redlock#configuration) for more details.
-
 ## Options flexibility
 
 ### Single decorator

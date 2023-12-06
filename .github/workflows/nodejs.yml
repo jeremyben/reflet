@@ -17,7 +17,6 @@ jobs:
     strategy:
       matrix:
         node-version: [16.x, 18.x]
-        redis-version: [5]
 
     steps:
       - name: Git checkout
@@ -27,11 +26,6 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
-
-      - name: Start Redis ${{ matrix.redis-version }}
-        uses: supercharge/redis-github-action@1.2.0
-        with:
-          redis-version: ${{ matrix.redis-version }}
 
       - name: Install and test
         run: |
