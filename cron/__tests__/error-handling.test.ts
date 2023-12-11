@@ -7,14 +7,14 @@ afterAll(() => consoleErrorSpy.mockRestore())
 test('stderr or catch', async () => {
 	@Cron.RunOnInit
 	class Jobs {
-		@Cron.Catch((err: Error) => console.error('oops'))
+		@Cron.Catch((err: Error, job: Job) => console.error(job.name + err.message))
 		@Cron(Expression.EVERY_SECOND)
-		async throwSome() {
-			throw Error()
+		async oops() {
+			throw Error('y')
 		}
 
 		@Cron(Expression.EVERY_SECOND)
-		async throwSomeOther() {
+		async oups() {
 			throw ReferenceError()
 		}
 	}
@@ -23,7 +23,7 @@ test('stderr or catch', async () => {
 	await new Promise((r) => setTimeout(r, 50))
 	jobs.stopAll()
 
-	expect(consoleErrorSpy).toBeCalledWith('oops')
+	expect(consoleErrorSpy).toBeCalledWith('oopsy')
 	expect(consoleErrorSpy).not.toBeCalledWith(expect.any(TypeError))
 	expect(consoleErrorSpy).toBeCalledWith(expect.any(ReferenceError))
 })

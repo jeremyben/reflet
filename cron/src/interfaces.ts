@@ -61,7 +61,7 @@ export interface JobParameters<C extends object = object>
 
 	utcOffset?: number | null
 
-	catchError?: (error: unknown) => void
+	catchError?: (error: unknown, currentJob: Job) => void
 
 	retry?: RetryOptions
 

@@ -1,10 +1,4 @@
-import {
-	ClassOrMethodDecorator,
-	ClassType,
-	JobParameters,
-	Zone,
-	RetryOptions,
-} from './interfaces'
+import { ClassOrMethodDecorator, ClassType, JobParameters, Zone, RetryOptions, Job } from './interfaces'
 import { defineMetadata, getOwnMetadata } from './metadata-map'
 
 /* istanbul ignore file - lots of branches with no logic */
@@ -295,7 +289,7 @@ export namespace Cron {
 	 * ---
 	 * @public
 	 */
-	export function Catch<T = unknown>(errorHandler: (error: T) => void): ClassOrMethodDecorator {
+	export function Catch<T = unknown>(errorHandler: (error: T, currentJob: Job) => void): ClassOrMethodDecorator {
 		return (target, key, descriptor) => {
 			if (key) defineMetadata(META.catchError, errorHandler, target, key)
 			else defineMetadata(META.catchError, errorHandler, target)

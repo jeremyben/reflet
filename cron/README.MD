@@ -216,22 +216,22 @@ class Jobs {
 
 ## Errors and retries
 
-Errors happening in a cron job are automatically logged to `stderr` instead of crashing the server.
+Errors happening in a cron job are automatically logged to `stderr` instead of crashing the server,
+but you should handle your errors manually so you can give it more context or use your own logger.
 
 ### Catch
 
-> 🔦 `@Cron.Catch(errorHandler)`
+> 🔦 `@Cron.Catch(errorHandler, currentJob)`
 
 This decorator allows you to do something else than logging with your errors.
 
 ```ts
 import { Cron, Expression } from '@reflet/cron'
 
+@Cron.Catch((err, job) => {
+  logger.error({ jobName: job.name, jobError: error })
+})
 class Jobs {
-  @Cron.Catch(async (err) => {
-    console.error(err)
-    await db.insert(err)
-  })
   @Cron(Expression.EVERY_SECOND)
   doSomething() {}
 }

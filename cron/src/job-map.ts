@@ -125,7 +125,7 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 						break
 					} catch (error) {
 						if (--attempts < 0 || (condition && !condition(error))) {
-							if (catchError) catchError(error)
+							if (catchError) catchError(error, currentJob)
 							else console.error(error)
 							break
 						}
@@ -152,7 +152,7 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 				try {
 					await onTick.call(this.context, currentJob)
 				} catch (error) {
-					if (catchError) catchError(error)
+					if (catchError) catchError(error, currentJob)
 					else console.error(error)
 				}
 			}
