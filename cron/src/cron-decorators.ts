@@ -12,7 +12,6 @@ const META = {
 	utcOffset: Symbol('cron-utcoffset'),
 	unrefTimeout: Symbol('cron-unreftimeout'),
 	catchError: Symbol('cron-catch'),
-	preventOverlap: Symbol('cron-preventoverlap'),
 	retry: Symbol('cron-retry'),
 	preFire: Symbol('cron-prefire'),
 	postFire: Symbol('cron-postfire'),
@@ -319,59 +318,6 @@ export namespace Cron {
 	}
 
 	/**
-	 * Prevents the job from being fired if the previous occurence is not finished.
-	 * Useful for potentially long jobs firing every second.
-	 *
-	 * @example
-	 * ```ts
-	 * ＠Cron.PreventOverlap
-	 * class Jobs {
-	 *   ＠Cron(Expression.EVERY_SECOND)
-	 *   doSomething() {}
-	 * }
-	 * ```
-	 * ---
-	 * @public
-	 */
-	export function PreventOverlap(...args: Parameters<ClassOrMethodDecorator>): void
-	export function PreventOverlap(): ClassOrMethodDecorator
-	export function PreventOverlap(target?: object, key?: string | symbol): ClassOrMethodDecorator | void {
-		if (arguments.length && (typeof target === 'function' || typeof target === 'object')) {
-			if (key) defineMetadata(META.preventOverlap, true, target, key)
-			else defineMetadata(META.preventOverlap, true, target)
-		} else {
-			// tslint:disable-next-line: no-shadowed-variable
-			return (target, key, descriptor) => {
-				if (key) defineMetadata(META.preventOverlap, true, target, key)
-				else defineMetadata(META.preventOverlap, true, target)
-			}
-		}
-	}
-
-	export namespace PreventOverlap {
-		/**
-		 * Override and remove class-defined `Cron.PreventOverlap` behavior on a specific method.
-		 * @public
-		 */
-		export function Dont(target: object, key: string | symbol, descriptor: TypedPropertyDescriptor<any>): void
-		export function Dont(): MethodDecorator
-		export function Dont(
-			target?: object,
-			key?: string | symbol,
-			descriptor?: TypedPropertyDescriptor<any>
-		): void | MethodDecorator {
-			if (arguments.length === 3 && typeof target === 'object') {
-				defineMetadata(META.preventOverlap, false, target, key!)
-			} else {
-				// tslint:disable-next-line: no-shadowed-variable
-				return (target, key, descriptor) => {
-					defineMetadata(META.preventOverlap, false, target, key)
-				}
-			}
-		}
-	}
-
-	/**
 	 * Hook before the job is fired.
 	 *
 	 * You can return `false` to prevent the job from firing,
@@ -445,7 +391,6 @@ export namespace Cron {
 			if (options.utcOffset) defineMetadata(META.utcOffset, options.utcOffset, target, key)
 			if (options.unrefTimeout) defineMetadata(META.unrefTimeout, options.unrefTimeout, target, key)
 			if (options.retry) defineMetadata(META.retry, options.retry, target, key)
-			if (options.preventOverlap) defineMetadata(META.preventOverlap, options.preventOverlap, target, key)
 			if (options.catchError) defineMetadata(META.catchError, options.catchError, target, key)
 			if (options.preFire) defineMetadata(META.preFire, options.preFire, target, key)
 			if (options.postFire) defineMetadata(META.postFire, options.postFire, target, key)

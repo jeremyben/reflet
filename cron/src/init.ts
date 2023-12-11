@@ -43,7 +43,6 @@ export function initCronJobs<T extends (new () => any) | ObjectInstance>(target:
 		const unrefTimeout = extract('unrefTimeout', targetClass, key)
 		const catchError = extract('catchError', targetClass, key)
 		const retry = extract('retry', targetClass, key)
-		const preventOverlap = extract('preventOverlap', targetClass, key)
 		const preFire = extract('preFire', targetClass, key)
 		const postFire = extract('postFire', targetClass, key)
 

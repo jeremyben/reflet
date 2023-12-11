@@ -99,7 +99,6 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 		const postFire = parameters.postFire || extract('postFire', contextClass)
 		const catchError = parameters.catchError || extract('catchError', contextClass)
 		const retry = parameters.retry || extract('retry', contextClass)
-		const preventOverlap = parameters.preventOverlap ?? extract('preventOverlap', contextClass)
 
 		const onTickExtended = async () => {
 			const currentJob = this.get(<any>key)
@@ -107,10 +106,6 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 			if (preFire) {
 				const ok = preFire(currentJob)
 				if (ok === false) return
-			}
-
-			if (preventOverlap) {
-				if (currentJob.firing) return
 			}
 
 			;(currentJob as any).firing = true
@@ -137,7 +132,7 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 
 						if (onFailPreRetry) {
 							const ok = onFailPreRetry(error, currentJob, attempts, delay)
-	
+
 							if (ok === false) {
 								if (catchError) catchError(error, currentJob)
 								else console.error(error)

@@ -260,22 +260,6 @@ class Jobs {
 
 If all the attempts failed, then the error is logged to `stderr` (or handled by `Cron.Catch`).
 
-## Overlaps
-
-> 🔦 `@Cron.PreventOverlap`
-
-Prevents the job from firing if the previous occurence is not finished. Useful for potentially long jobs firing every second.<br>_Can be used with or without invokation._
-
-```ts
-import { Cron, Expression } from '@reflet/cron'
-
-class Jobs {
-  @Cron.PreventOverlap
-  @Cron(Expression.EVERY_SECOND)
-  doSomething() {}
-}
-```
-
 ## Options flexibility
 
 ### Single decorator

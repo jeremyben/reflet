@@ -5,7 +5,7 @@ test('prevent one-second overlap', async () => {
 
 	@Cron.RunOnInit
 	@Cron.Start
-	@Cron.PreventOverlap
+	@Cron.PreFire((job) => !job.firing)
 	class Jobs {
 		@Cron(Expression.EVERY_SECOND)
 		async throwSome() {
