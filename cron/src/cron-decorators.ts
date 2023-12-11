@@ -14,6 +14,8 @@ const META = {
 	catchError: Symbol('cron-catch'),
 	preventOverlap: Symbol('cron-preventoverlap'),
 	retry: Symbol('cron-retry'),
+	preFire: Symbol('cron-prefire'),
+	postFire: Symbol('cron-postfire'),
 } satisfies Partial<Record<keyof JobParameters, symbol>>
 
 /**
@@ -370,6 +372,55 @@ export namespace Cron {
 	}
 
 	/**
+	 * Hook before the job is fired.
+	 *
+	 * You can return `false` to prevent the job from firing,
+	 * which is useful to implement a mechanism to avoid overlaps.
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Cron.PreFire((job) => {
+	 *   if (job.firing) return false
+	 * })
+	 * class Jobs {
+	 *   ＠Cron(Expression.EVERY_SECOND)
+	 *   doSomething() {}
+	 * }
+	 * ```
+	 * ---
+	 * @public
+	 */
+	export function PreFire(fn: (currentJob: Job) => boolean | void): ClassOrMethodDecorator {
+		return (target, key, descriptor) => {
+			if (key) defineMetadata(META.preFire, fn, target, key)
+			else defineMetadata(META.preFire, fn, target)
+		}
+	}
+
+	/**
+	 * Hook after the job has been fired.
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Cron.PostFire((job) => {
+	 *   console.log(`Job ${job.name} has been successfully executed`)
+	 * })
+	 * class Jobs {
+	 *   ＠Cron(Expression.EVERY_SECOND)
+	 *   doSomething() {}
+	 * }
+	 * ```
+	 * ---
+	 * @public
+	 */
+	export function PostFire(fn: (currentJob: Job) => boolean | void): ClassOrMethodDecorator {
+		return (target, key, descriptor) => {
+			if (key) defineMetadata(META.postFire, fn, target, key)
+			else defineMetadata(META.postFire, fn, target)
+		}
+	}
+
+	/**
 	 * Options grouped in a single decorator.
 	 * @example
 	 * ```ts
@@ -385,33 +436,19 @@ export namespace Cron {
 	 * ---
 	 * @public
 	 */
-	export function Options(
-		options: Omit<JobParameters, 'onTick' | 'cronTime' | 'passCurrentJob'>
-	): ClassOrMethodDecorator {
+	export function Options(options: Omit<JobParameters, 'onTick' | 'cronTime'>): ClassOrMethodDecorator {
 		return (target, key, descriptor) => {
-			if (key) {
-				if (options.onComplete) defineMetadata(META.onComplete, options.onComplete, target, key)
-				if (options.start) defineMetadata(META.start, options.start, target, key)
-				if (options.runOnInit) defineMetadata(META.runOnInit, options.runOnInit, target, key)
-				if (options.timeZone) defineMetadata(META.timeZone, options.timeZone, target, key)
-				if (options.utcOffset) defineMetadata(META.utcOffset, options.utcOffset, target, key)
-				if (options.unrefTimeout) defineMetadata(META.unrefTimeout, options.unrefTimeout, target, key)
-				if (options.retry) defineMetadata(META.retry, options.retry, target, key)
-				if (options.preventOverlap) {
-					defineMetadata(META.preventOverlap, options.preventOverlap, target, key)
-				}
-				if (options.catchError) defineMetadata(META.catchError, options.catchError, target, key)
-			} else {
-				if (options.onComplete) defineMetadata(META.onComplete, options.onComplete, target)
-				if (options.start) defineMetadata(META.start, options.start, target)
-				if (options.runOnInit) defineMetadata(META.runOnInit, options.runOnInit, target)
-				if (options.timeZone) defineMetadata(META.timeZone, options.timeZone, target)
-				if (options.utcOffset) defineMetadata(META.utcOffset, options.utcOffset, target)
-				if (options.unrefTimeout) defineMetadata(META.unrefTimeout, options.unrefTimeout, target)
-				if (options.retry) defineMetadata(META.retry, options.retry, target)
-				if (options.preventOverlap) defineMetadata(META.preventOverlap, options.preventOverlap, target)
-				if (options.catchError) defineMetadata(META.catchError, options.catchError, target)
-			}
+			if (options.onComplete) defineMetadata(META.onComplete, options.onComplete, target, key)
+			if (options.start) defineMetadata(META.start, options.start, target, key)
+			if (options.runOnInit) defineMetadata(META.runOnInit, options.runOnInit, target, key)
+			if (options.timeZone) defineMetadata(META.timeZone, options.timeZone, target, key)
+			if (options.utcOffset) defineMetadata(META.utcOffset, options.utcOffset, target, key)
+			if (options.unrefTimeout) defineMetadata(META.unrefTimeout, options.unrefTimeout, target, key)
+			if (options.retry) defineMetadata(META.retry, options.retry, target, key)
+			if (options.preventOverlap) defineMetadata(META.preventOverlap, options.preventOverlap, target, key)
+			if (options.catchError) defineMetadata(META.catchError, options.catchError, target, key)
+			if (options.preFire) defineMetadata(META.preFire, options.preFire, target, key)
+			if (options.postFire) defineMetadata(META.postFire, options.postFire, target, key)
 		}
 	}
 }

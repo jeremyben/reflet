@@ -65,7 +65,18 @@ export interface JobParameters<C extends object = object>
 
 	retry?: RetryOptions
 
-	preventOverlap?: boolean
+	/**
+	 * Hook before the job is fired.
+	 *
+	 * You can return `false` to prevent the job from firing,
+	 * which is useful to implement a mechanism to avoid overlaps.
+	 */
+	preFire?: (currentJob: Job) => void | boolean
+
+	/**
+	 * Hook after the job has been fired.
+	 */
+	postFire?: (currentJob: Job) => void
 }
 
 /**
@@ -84,8 +95,13 @@ export interface RetryOptions {
 	/** Caps the maximum delay in milliseconds. */
 	delayMax?: number
 
-	/** Filter function with the error as parameter. */
-	condition?: (error: any) => boolean
+	/**
+	 * Hook after a failed attempt and before the next one (and the possible delay).
+	 *
+	 * You can return `false` to bypass the remaining attempts and directly throw the error,
+	 * which is useful to restrain the retry mechanism to a certain type of error.
+	 */
+	onFailPreRetry?: (error: any, currentJob: Job, currentDelay: number, remainingAttempts: number) => void | boolean
 }
 
 /**

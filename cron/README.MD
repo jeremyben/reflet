@@ -247,7 +247,6 @@ If your job throw an error, you can retry it with a specify number of `attempts`
 * `delay`: Delay between retry attemps in milliseconds.
 * `delayFactor`: Increases each time the previous delay by a multiplicative factor.
 * `delayMax`: Caps the maximum delay in milliseconds.
-* `condition`: Filter function with the error as parameter (so you can retry on specific errors only).
 
 ```ts
 import { Cron, Expression } from '@reflet/cron'
