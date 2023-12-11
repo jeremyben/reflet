@@ -55,7 +55,7 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 		const utcOffset = parameters.utcOffset ?? extract('utcOffset', contextClass)
 		const unrefTimeout = parameters.unrefTimeout ?? extract('unrefTimeout', contextClass)
 
-		const onTickExtended = this.extendOnTick(key, parameters)
+		const onTickExtended = this.#extendOnTick(key, parameters)
 
 		const job = CronJob.from({
 			cronTime,
@@ -94,15 +94,15 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 		return this
 	}
 
-	private extendOnTick(key: string, parameters: JobParameters<T>) {
+	#extendOnTick(key: string, parameters: JobParameters<T>) {
 		const contextClass = this.context.constructor as ClassType
 
-		const onTick = parameters.onTick as Function
+		const onTick = parameters.onTick
 		const catchError = parameters.catchError || extract('catchError', contextClass)
 		const retry = parameters.retry || extract('retry', contextClass)
 		const preventOverlap = parameters.preventOverlap ?? extract('preventOverlap', contextClass)
 
-		const onTickExtended = async (onCompleteArg?: () => void) => {
+		const onTickExtended = async () => {
 			const currentJob = this.get(<any>key)
 
 			// todo: HOOK on fire

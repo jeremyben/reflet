@@ -419,7 +419,7 @@ export namespace Cron {
 /**
  * @internal
  */
-export function extract<T extends Exclude<keyof JobParameters, 'onTick'>>(
+export function extract<T extends keyof typeof META>(
 	parameter: T,
 	target: ClassType,
 	methodKey?: string
