@@ -48,17 +48,12 @@ export interface Job extends CronJob<CronOnCompleteCallback> {
 /**
  * @public
  */
-export interface JobParameters<C extends object = object, PassJob extends boolean = false>
+export interface JobParameters<C extends object = object>
 	extends Omit<CronJobParams, 'context' | 'onTick' | 'onComplete' | 'timeZone' | 'utcOffset'> {
 	cronTime: string | Date | DateTime
 
 	/** The function to fire at the specified time. */
-	onTick: PassJob extends true
-		? (this: C, currentJob: Job) => void | Promise<void>
-		: (this: C, onComplete?: () => void) => void | Promise<void>
-
-	/** Access current job from its own `onTick` function. */
-	passCurrentJob?: PassJob
+	onTick: (this: C, currentJob: Job) => void | Promise<void>
 
 	onComplete?: () => void
 

@@ -167,6 +167,21 @@ Compared to [node-cron](https://github.com/kelektiv/node-cron), Reflet adds 2 pr
 * `firing`: readonly `boolean` that helps us determine if the job is **actually** being executed. Because the original node-cron `running` property defines whether the job has been started or stopped. _This property is used by the [PreventOverlap](#overlaps) decorator._
 * `name`: `string` in the following format: `class.method`, to help distinguish jobs.
 
+## Current job access
+
+The current job instance is always available as the parameter of the `onTick` function, which is useful to stop it for example.
+
+```ts
+import { Cron, Expression } from '@reflet/cron'
+
+class Jobs {
+  @Cron(Expression.EVERY_SECOND)
+  doSomething(job: Job) {
+    job.stop()
+  }
+}
+```
+
 ## Common options
 
 > 🔦 `@Cron.Start`, `@Cron.RunOnInit`, `@Cron.OnComplete(fn)`, `@Cron.TimeZone(tz)`, `@Cron.UtcOffset(offset)`, `@Cron.UnrefTimeout`<br>
@@ -304,23 +319,6 @@ class Jobs {
   @Cron.Start.Dont
   @Cron(Expression.EVERY_SECOND)
   doSomethingElse() {}
-}
-```
-
-## Current job access
-
-> 🔦 `@CurrentJob`
-
-You might need to access the current job instance from its own `onTick` function, for example to simply stop it.<br>_Can be used with or without invokation._
-
-```ts
-import { Cron, Expression, CurrentJob } from '@reflet/cron'
-
-class Jobs {
-  @Cron(Expression.EVERY_SECOND)
-  doSomething(@CurrentJob job: Job) {
-    job.stop()
-  }
 }
 ```
 

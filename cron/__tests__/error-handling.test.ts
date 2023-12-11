@@ -1,4 +1,4 @@
-import { Cron, CurrentJob, Expression, initCronJobs, Job } from '../src'
+import { Cron, Expression, initCronJobs, Job } from '../src'
 
 const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation()
 afterEach(() => consoleErrorSpy.mockClear())
@@ -95,7 +95,7 @@ test('retry with delay cap and fail and catch', async () => {
 	@Cron.RunOnInit
 	class Jobs {
 		@Cron(Expression.EVERY_SECOND)
-		async throwSome(@CurrentJob job: Job) {
+		async throwSome() {
 			throw Error()
 			success++
 		}

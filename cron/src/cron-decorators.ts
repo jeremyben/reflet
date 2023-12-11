@@ -20,7 +20,6 @@ const META = {
 	catchError: Symbol('cron-catch'),
 	preventOverlap: Symbol('cron-preventoverlap'),
 	retry: Symbol('cron-retry'),
-	passCurrentJob: Symbol('current-job'),
 } satisfies Partial<Record<keyof JobParameters, symbol>>
 
 /**
@@ -419,34 +418,6 @@ export namespace Cron {
 				if (options.preventOverlap) defineMetadata(META.preventOverlap, options.preventOverlap, target)
 				if (options.catchError) defineMetadata(META.catchError, options.catchError, target)
 			}
-		}
-	}
-}
-
-/**
- * Access current job from its own `onTick` function.
- *
- * @example
- * ```ts
- * class Jobs {
- *   ＠Cron(Expression.EVERY_SECOND)
- *   doSomething(＠CurrentJob job: Job) {
- *     job.stop()
- *   }
- * }
- * ```
- * ---
- * @public
- */
-export function CurrentJob(...args: Parameters<ParameterDecorator>): void
-export function CurrentJob(): ParameterDecorator
-export function CurrentJob(target?: object, key?: string | symbol, index?: number): ParameterDecorator | void {
-	if (arguments.length && typeof index === 'number') {
-		defineMetadata(META.passCurrentJob, true, target!, key!)
-	} else {
-		// tslint:disable-next-line: no-shadowed-variable
-		return (target, key, index) => {
-			defineMetadata(META.passCurrentJob, true, target, key)
 		}
 	}
 }

@@ -42,9 +42,9 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 	 * @param parameters - cron job parameters.
 	 */
 	/** @ts-ignore override parameters */
-	set<K extends string, PassJob extends boolean = false>(
+	set<K extends string>(
 		key: K extends MethodKeys<T> ? never : K,
-		parameters: JobParameters<T, PassJob>
+		parameters: JobParameters<T>
 	) {
 		const contextClass = this.context.constructor as ClassType
 
@@ -94,14 +94,13 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 		return this
 	}
 
-	private extendOnTick(key: string, parameters: JobParameters<T, boolean>) {
+	private extendOnTick(key: string, parameters: JobParameters<T>) {
 		const contextClass = this.context.constructor as ClassType
 
 		const onTick = parameters.onTick as Function
 		const catchError = parameters.catchError || extract('catchError', contextClass)
 		const retry = parameters.retry || extract('retry', contextClass)
 		const preventOverlap = parameters.preventOverlap ?? extract('preventOverlap', contextClass)
-		const passCurrentJob = parameters.passCurrentJob
 
 		const onTickExtended = async (onCompleteArg?: () => void) => {
 			const currentJob = this.get(<any>key)
@@ -122,11 +121,7 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 
 				do {
 					try {
-						if (passCurrentJob) {
-							await onTick.call(this.context, currentJob)
-						} else {
-							await onTick.call(this.context, onCompleteArg)
-						}
+						await onTick.call(this.context, currentJob)
 						break
 					} catch (error) {
 						if (--attempts < 0 || (condition && !condition(error))) {
@@ -155,11 +150,7 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 			// Without retry
 			else {
 				try {
-					if (passCurrentJob) {
-						await onTick.call(this.context, currentJob)
-					} else {
-						await onTick.call(this.context, onCompleteArg)
-					}
+					await onTick.call(this.context, currentJob)
 				} catch (error) {
 					if (catchError) catchError(error)
 					else console.error(error)

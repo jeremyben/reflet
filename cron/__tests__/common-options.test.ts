@@ -1,4 +1,4 @@
-import { Cron, initCronJobs, Expression } from '../src'
+import { Cron, initCronJobs, Expression, Job } from '../src'
 
 const consoleSpy = jest.spyOn(console, 'info').mockImplementation()
 afterEach(() => consoleSpy.mockClear())
@@ -8,8 +8,8 @@ test('on complete', async () => {
 	class Jobs {
 		@Cron(Expression.EVERY_SECOND)
 		@Cron.OnComplete(async () => console.info('complete'))
-		async logLastDate(onComplete: () => void) {
-			onComplete()
+		async logLastDate(job: Job) {
+			job.onComplete!()
 		}
 	}
 
@@ -57,8 +57,8 @@ test('options decorator', async () => {
 	})
 	class Jobs {
 		@Cron(Expression.EVERY_MINUTE)
-		yo(onComplete: () => void) {
-			onComplete()
+		yo(job: Job) {
+			job.onComplete!()
 		}
 	}
 

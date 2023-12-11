@@ -44,7 +44,6 @@ export function initCronJobs<T extends (new () => any) | ObjectInstance>(target:
 		const catchError = extract('catchError', targetClass, key)
 		const retry = extract('retry', targetClass, key)
 		const preventOverlap = extract('preventOverlap', targetClass, key)
-		const passCurrentJob = extract('passCurrentJob', targetClass, key)
 
 		const methodDescriptor = Object.getOwnPropertyDescriptor(targetClass.prototype, key)!
 
@@ -59,7 +58,6 @@ export function initCronJobs<T extends (new () => any) | ObjectInstance>(target:
 			catchError,
 			preventOverlap,
 			retry,
-			passCurrentJob,
 		})
 
 		// Don't pass runOnInit to the parameters.

@@ -1,4 +1,4 @@
-import { Cron, CurrentJob, Expression, initCronJobs, Initializer, Job } from '../src'
+import { Cron, Expression, initCronJobs, Initializer, Job } from '../src'
 
 const consoleSpy = jest.spyOn(console, 'info').mockImplementation()
 afterEach(() => consoleSpy.mockClear())
@@ -49,7 +49,7 @@ test('pass current job', async () => {
 	@Cron.Start
 	class Jobs {
 		@Cron(Expression.EVERY_10_MINUTES)
-		foo(@CurrentJob job: Job) {
+		foo(job: Job) {
 			console.info(job.name)
 			job.stop()
 		}
@@ -59,7 +59,6 @@ test('pass current job', async () => {
 
 	jobs.set('bar', {
 		cronTime: Expression.EVERY_10_MINUTES,
-		passCurrentJob: true,
 		async onTick(job) {
 			console.info(job.name)
 			job.stop()
