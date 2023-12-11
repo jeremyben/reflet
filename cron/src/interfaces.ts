@@ -40,7 +40,7 @@ export interface Job extends CronJob<CronOnCompleteCallback> {
 	readonly firing: boolean
 
 	/**
-	 * Job's name in the following format: `class.method`.
+	 * Job's name.
 	 */
 	name: string
 }

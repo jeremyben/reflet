@@ -68,6 +68,6 @@ test('pass current job', async () => {
 	await new Promise((r) => setTimeout(r, 50))
 	jobs.stopAll()
 
-	expect(consoleSpy).toBeCalledWith('Jobs.foo')
-	expect(consoleSpy).toBeCalledWith('Jobs.bar')
+	expect(consoleSpy).toBeCalledWith('foo')
+	expect(consoleSpy).toBeCalledWith('bar')
 })

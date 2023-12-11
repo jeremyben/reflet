@@ -76,7 +76,7 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 
 		Object.defineProperty(job, 'name', {
 			enumerable: true,
-			value: `${contextClass.name}.${key}`,
+			value: key,
 		})
 
 		super.set(<any>key, <any>job)

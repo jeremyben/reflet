@@ -165,7 +165,7 @@ const jobs = Jobs.init()
 
 Compared to [node-cron](https://github.com/kelektiv/node-cron), Reflet adds 2 properties to jobs' instances:
 * `firing`: readonly `boolean` that helps us determine if the job is **actually** being executed. Because the original node-cron `running` property defines whether the job has been started or stopped. _This property is used by the [PreventOverlap](#overlaps) decorator._
-* `name`: `string` in the following format: `class.method`, to help distinguish jobs.
+* `name`: `string` which is the name of the method.
 
 ## Current job access
 
