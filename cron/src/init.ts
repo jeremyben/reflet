@@ -41,7 +41,7 @@ export function initCronJobs<T extends (new () => any) | ObjectInstance>(target:
 		const timeZone = extract('timeZone', targetClass, key)
 		const utcOffset = extract('utcOffset', targetClass, key)
 		const unrefTimeout = extract('unrefTimeout', targetClass, key)
-		const catchError = extract('catchError', targetClass, key)
+		const catchErr = extract('catch', targetClass, key)
 		const retry = extract('retry', targetClass, key)
 		const preFire = extract('preFire', targetClass, key)
 		const postFire = extract('postFire', targetClass, key)
@@ -56,7 +56,7 @@ export function initCronJobs<T extends (new () => any) | ObjectInstance>(target:
 			timeZone,
 			utcOffset,
 			unrefTimeout,
-			catchError,
+			catch: catchErr,
 			retry,
 			preFire,
 			postFire,

@@ -97,7 +97,7 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 		const onTick = parameters.onTick
 		const preFire = parameters.preFire || extract('preFire', contextClass)
 		const postFire = parameters.postFire || extract('postFire', contextClass)
-		const catchError = parameters.catchError || extract('catchError', contextClass)
+		const catchError = parameters.catch || extract('catch', contextClass)
 		const retry = parameters.retry || extract('retry', contextClass)
 
 		const onTickExtended = async () => {
@@ -115,7 +115,7 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 				let attempts = Math.floor(retry.attempts)
 				let delay = retry.delay || 0
 
-				const { delayFactor, delayMax, onFailPreRetry } = retry
+				const { delayFactor, delayMax, preRetry } = retry
 
 				do {
 					try {
@@ -130,8 +130,8 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 							break
 						}
 
-						if (onFailPreRetry) {
-							const ok = onFailPreRetry(error, currentJob, attempts, delay)
+						if (preRetry) {
+							const ok = preRetry(error, currentJob, attempts, delay)
 
 							if (ok === false) {
 								if (catchError) catchError(error, currentJob)

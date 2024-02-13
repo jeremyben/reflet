@@ -11,7 +11,7 @@ const META = {
 	timeZone: Symbol('cron-timezone'),
 	utcOffset: Symbol('cron-utcoffset'),
 	unrefTimeout: Symbol('cron-unreftimeout'),
-	catchError: Symbol('cron-catch'),
+	catch: Symbol('cron-catch'),
 	retry: Symbol('cron-retry'),
 	preFire: Symbol('cron-prefire'),
 	postFire: Symbol('cron-postfire'),
@@ -292,8 +292,8 @@ export namespace Cron {
 	 */
 	export function Catch<T = unknown>(errorHandler: (error: T, currentJob: Job) => void): ClassOrMethodDecorator {
 		return (target, key, descriptor) => {
-			if (key) defineMetadata(META.catchError, errorHandler, target, key)
-			else defineMetadata(META.catchError, errorHandler, target)
+			if (key) defineMetadata(META.catch, errorHandler, target, key)
+			else defineMetadata(META.catch, errorHandler, target)
 		}
 	}
 
@@ -391,7 +391,7 @@ export namespace Cron {
 			if (options.utcOffset) defineMetadata(META.utcOffset, options.utcOffset, target, key)
 			if (options.unrefTimeout) defineMetadata(META.unrefTimeout, options.unrefTimeout, target, key)
 			if (options.retry) defineMetadata(META.retry, options.retry, target, key)
-			if (options.catchError) defineMetadata(META.catchError, options.catchError, target, key)
+			if (options.catch) defineMetadata(META.catch, options.catch, target, key)
 			if (options.preFire) defineMetadata(META.preFire, options.preFire, target, key)
 			if (options.postFire) defineMetadata(META.postFire, options.postFire, target, key)
 		}

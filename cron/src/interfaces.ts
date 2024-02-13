@@ -61,7 +61,7 @@ export interface JobParameters<C extends object = object>
 
 	utcOffset?: number | null
 
-	catchError?: (error: unknown, currentJob: Job) => void
+	catch?: (error: unknown, currentJob: Job) => void
 
 	retry?: RetryOptions
 
@@ -96,12 +96,12 @@ export interface RetryOptions {
 	delayMax?: number
 
 	/**
-	 * Hook after a failed attempt and before the next one (and the possible delay).
+	 * Hook after a failed attempt and before the next one (with the possible delay).
 	 *
 	 * You can return `false` to bypass the remaining attempts and directly throw the error,
 	 * which is useful to restrain the retry mechanism to a certain type of error.
 	 */
-	onFailPreRetry?: (error: any, currentJob: Job, currentDelay: number, remainingAttempts: number) => void | boolean
+	preRetry?: (error: any, currentJob: Job, currentDelay: number, remainingAttempts: number) => void | boolean
 }
 
 /**
