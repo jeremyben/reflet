@@ -33,7 +33,8 @@ test('retry once on specific error and succeed', async () => {
 	let success = 0
 
 	@Cron.RunOnInit
-	@Cron.Retry({ attempts: 1, preRetry: (err: Error) => err.name === 'TypeError' })
+	@Cron.Retry({ attempts: 1 })
+	@Cron.PreRetry((err: any) => err.name === 'TypeError')
 	class Jobs {
 		@Cron(Expression.EVERY_SECOND)
 		async throwSome() {

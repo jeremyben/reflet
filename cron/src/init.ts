@@ -36,30 +36,38 @@ export function initCronJobs<T extends (new () => any) | ObjectInstance>(target:
 		const cronTime = extract('cronTime', targetClass, key)
 		if (!cronTime) continue
 
-		const onComplete = extract('onComplete', targetClass, key)
-		const start = extract('start', targetClass, key)
-		const timeZone = extract('timeZone', targetClass, key)
-		const utcOffset = extract('utcOffset', targetClass, key)
-		const unrefTimeout = extract('unrefTimeout', targetClass, key)
-		const catchErr = extract('catch', targetClass, key)
-		const retry = extract('retry', targetClass, key)
-		const preFire = extract('preFire', targetClass, key)
-		const postFire = extract('postFire', targetClass, key)
+		const onComplete = extract('onComplete', targetClass, key) || extract('onComplete', targetClass)
+		const start = extract('start', targetClass, key) || extract('start', targetClass)
+		const timeZone = extract('timeZone', targetClass, key) || extract('timeZone', targetClass)
+		const utcOffset = extract('utcOffset', targetClass, key) || extract('utcOffset', targetClass)
+		const unrefTimeout = extract('unrefTimeout', targetClass, key) || extract('unrefTimeout', targetClass)
+		const catchError = extract('catch', targetClass, key) || extract('catch', targetClass)
+		const retry = extract('retry', targetClass, key) || extract('retry', targetClass)
+		const preFire = extract('preFire', targetClass, key) || extract('preFire', targetClass)
+		const postFire = extract('postFire', targetClass, key) || extract('postFire', targetClass)
+		const preRetry = extract('preRetry', targetClass, key) || extract('preRetry', targetClass)
 
-		const methodDescriptor = Object.getOwnPropertyDescriptor(targetClass.prototype, key)!
+		if (preRetry && !retry) {
+			console.log(
+				`RefletCronWarning: @Cron.PreRetry needs @Cron.Retry to work properly in class "${targetClass.name}".`
+			)
+		}
+
+		const onTick = Object.getOwnPropertyDescriptor(targetClass.prototype, key)!.value
 
 		jobMap.set(<any>key, {
 			cronTime,
-			onTick: methodDescriptor.value,
+			onTick,
 			onComplete,
 			start,
 			timeZone,
 			utcOffset,
 			unrefTimeout,
-			catch: catchErr,
+			catch: catchError,
 			retry,
 			preFire,
 			postFire,
+			preRetry,
 		})
 
 		// Don't pass runOnInit to the parameters.

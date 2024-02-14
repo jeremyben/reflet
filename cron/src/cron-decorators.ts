@@ -1,4 +1,4 @@
-import { ClassOrMethodDecorator, ClassType, JobParameters, Zone, RetryOptions, Job } from './interfaces'
+import { ClassOrMethodDecorator, ClassType, JobParameters, Zone, Job, RetryOptions } from './interfaces'
 import { defineMetadata, getOwnMetadata } from './metadata-map'
 
 /* istanbul ignore file - lots of branches with no logic */
@@ -15,6 +15,7 @@ const META = {
 	retry: Symbol('cron-retry'),
 	preFire: Symbol('cron-prefire'),
 	postFire: Symbol('cron-postfire'),
+	preRetry: Symbol('cron-preretry'),
 } satisfies Partial<Record<keyof JobParameters, symbol>>
 
 /**
@@ -320,14 +321,14 @@ export namespace Cron {
 	/**
 	 * Hook before the job is fired.
 	 *
-	 * You can return `false` to prevent the job from firing,
-	 * which is useful to implement a mechanism to avoid overlaps.
+	 * - Return `true` to carry on the job.
+	 * - Return `false` to prevent the job from firing.
+	 *
+	 * _Useful to implement a mechanism to avoid overlaps._
 	 *
 	 * @example
 	 * ```ts
-	 * ＠Cron.PreFire((job) => {
-	 *   if (job.firing) return false
-	 * })
+	 * ＠Cron.PreFire((job) => !job.firing)
 	 * class Jobs {
 	 *   ＠Cron(Expression.EVERY_SECOND)
 	 *   doSomething() {}
@@ -336,7 +337,9 @@ export namespace Cron {
 	 * ---
 	 * @public
 	 */
-	export function PreFire(fn: (currentJob: Job) => boolean | void): ClassOrMethodDecorator {
+	export function PreFire<M>(
+		fn: (currentJob: Job, passMetadata: (metadata: M) => void) => boolean | Promise<boolean>
+	): ClassOrMethodDecorator {
 		return (target, key, descriptor) => {
 			if (key) defineMetadata(META.preFire, fn, target, key)
 			else defineMetadata(META.preFire, fn, target)
@@ -344,13 +347,11 @@ export namespace Cron {
 	}
 
 	/**
-	 * Hook after the job has been fired.
+	 * Hook after the job has been fired, whether it has succeeded or failed.
 	 *
 	 * @example
 	 * ```ts
-	 * ＠Cron.PostFire((job) => {
-	 *   console.log(`Job ${job.name} has been successfully executed`)
-	 * })
+	 * ＠Cron.PostFire((job) => console.log("Job executed:", job.name))
 	 * class Jobs {
 	 *   ＠Cron(Expression.EVERY_SECOND)
 	 *   doSomething() {}
@@ -359,10 +360,47 @@ export namespace Cron {
 	 * ---
 	 * @public
 	 */
-	export function PostFire(fn: (currentJob: Job) => boolean | void): ClassOrMethodDecorator {
+	export function PostFire<M>(fn: (currentJob: Job, metadata?: M) => void): ClassOrMethodDecorator {
 		return (target, key, descriptor) => {
 			if (key) defineMetadata(META.postFire, fn, target, key)
 			else defineMetadata(META.postFire, fn, target)
+		}
+	}
+
+	/**
+	 * Hook after a failed attempt and before the next one (with the possible delay).
+	 *
+	 * Only works in tandem with the `Cron.Retry` decorator.
+	 *
+	 * - Return `true` to carry on with the retry mechanism.
+	 * - Return `false` to bypass and directly throw the error.
+	 *
+	 * _Useful to restrain the retry mechanism to a certain type of error._
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Cron.Retry({ attempts: 3, delay: 100, delayFactor: 2, delayMax: 1000 })
+	 * ＠Cron.PreRetry((err: any) => err.code === 'OOPS')
+	 * class Jobs {
+	 *   ＠Cron(Expression.EVERY_SECOND)
+	 *   doSomething() {}
+	 * }
+	 * ```
+	 * ---
+	 * @public
+	 */
+	export function PreRetry<M>(
+		fn: (
+			error: unknown,
+			currentJob: Job,
+			remainingAttempts: number,
+			currentDelay: number,
+			metadata?: M
+		) => boolean | Promise<boolean>
+	): ClassOrMethodDecorator {
+		return (target, key, descriptor) => {
+			if (key) defineMetadata(META.preRetry, fn, target, key)
+			else defineMetadata(META.preRetry, fn, target)
 		}
 	}
 
@@ -382,7 +420,7 @@ export namespace Cron {
 	 * ---
 	 * @public
 	 */
-	export function Options(options: Omit<JobParameters, 'onTick' | 'cronTime'>): ClassOrMethodDecorator {
+	export function Options<M>(options: Omit<JobParameters<any, M>, 'onTick' | 'cronTime'>): ClassOrMethodDecorator {
 		return (target, key, descriptor) => {
 			if (options.onComplete) defineMetadata(META.onComplete, options.onComplete, target, key)
 			if (options.start) defineMetadata(META.start, options.start, target, key)
@@ -394,6 +432,7 @@ export namespace Cron {
 			if (options.catch) defineMetadata(META.catch, options.catch, target, key)
 			if (options.preFire) defineMetadata(META.preFire, options.preFire, target, key)
 			if (options.postFire) defineMetadata(META.postFire, options.postFire, target, key)
+			if (options.preRetry) defineMetadata(META.preRetry, options.preRetry, target, key)
 		}
 	}
 }

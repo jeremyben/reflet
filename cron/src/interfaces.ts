@@ -31,7 +31,7 @@ export type MethodKeys<T> = { [P in keyof T]: T[P] extends Function ? P : never 
 /**
  * @public
  */
-export interface Job extends CronJob<CronOnCompleteCallback> {
+export interface Job extends CronJob<CronOnCompleteCallback, any> {
 	/**
 	 * Returns `true` if the job's tick function is actually being run.
 	 *
@@ -46,9 +46,12 @@ export interface Job extends CronJob<CronOnCompleteCallback> {
 }
 
 /**
+ * @template C - Context: decorated class instance.
+ * @template M - Hook metadata.
+ *
  * @public
  */
-export interface JobParameters<C extends object = object>
+export interface JobParameters<C = object, M = unknown>
 	extends Omit<CronJobParams, 'context' | 'onTick' | 'onComplete' | 'timeZone' | 'utcOffset'> {
 	cronTime: string | Date | DateTime
 
@@ -71,12 +74,26 @@ export interface JobParameters<C extends object = object>
 	 * You can return `false` to prevent the job from firing,
 	 * which is useful to implement a mechanism to avoid overlaps.
 	 */
-	preFire?: (currentJob: Job) => void | boolean
+	preFire?: (currentJob: Job, passMetadata: (metadata: M) => void) => boolean | Promise<boolean>
 
 	/**
-	 * Hook after the job has been fired.
+	 * Hook after the job has been fired, whether it has succeeded or failed.
 	 */
-	postFire?: (currentJob: Job) => void
+	postFire?: (currentJob: Job, metadata?: M) => void
+
+	/**
+	 * Hook after a failed attempt and before the next one (with the possible delay).
+	 *
+	 * You can return `false` to bypass the remaining attempts and directly throw the error,
+	 * which is useful to restrain the retry mechanism to a certain type of error.
+	 */
+	preRetry?: (
+		error: unknown,
+		currentJob: Job,
+		remainingAttempts: number,
+		currentDelay: number,
+		metadata?: M
+	) => boolean | Promise<boolean>
 }
 
 /**
@@ -94,14 +111,6 @@ export interface RetryOptions {
 
 	/** Caps the maximum delay in milliseconds. */
 	delayMax?: number
-
-	/**
-	 * Hook after a failed attempt and before the next one (with the possible delay).
-	 *
-	 * You can return `false` to bypass the remaining attempts and directly throw the error,
-	 * which is useful to restrain the retry mechanism to a certain type of error.
-	 */
-	preRetry?: (error: any, currentJob: Job, currentDelay: number, remainingAttempts: number) => void | boolean
 }
 
 /**

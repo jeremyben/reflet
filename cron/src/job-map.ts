@@ -45,6 +45,7 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 	set<K extends string>(key: K extends MethodKeys<T> ? never : K, parameters: JobParameters<T>) {
 		const contextClass = this.context.constructor as ClassType
 
+		// Retrieve shared options from class as a fallback for dynamic jobs.
 		const cronTime = parameters.cronTime
 		const onComplete = parameters.onComplete || extract('onComplete', contextClass)
 		const start = parameters.start ?? extract('start', contextClass)
@@ -95,27 +96,31 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 		const contextClass = this.context.constructor as ClassType
 
 		const onTick = parameters.onTick
-		const preFire = parameters.preFire || extract('preFire', contextClass)
-		const postFire = parameters.postFire || extract('postFire', contextClass)
 		const catchError = parameters.catch || extract('catch', contextClass)
 		const retry = parameters.retry || extract('retry', contextClass)
+		const preFire = parameters.preFire || extract('preFire', contextClass)
+		const postFire = parameters.postFire || extract('postFire', contextClass)
+		const preRetry = parameters.preRetry || extract('preRetry', contextClass)
 
 		const onTickExtended = async () => {
 			const currentJob = this.get(<any>key)
 
+			let metadata: any
+
 			if (preFire) {
-				const ok = preFire(currentJob)
-				if (ok === false) return
+				const hookRes = preFire(currentJob, (val) => (metadata = val))
+				const ok = hookRes instanceof Promise ? await hookRes : hookRes
+
+				if (!ok) return
 			}
 
 			;(currentJob as any).firing = true
 
 			if (retry) {
-				// Clone to avoid mutation of original decorator options
+				const { delayFactor, delayMax } = retry
+				// Clone to avoid mutation of original decorator options.
 				let attempts = Math.floor(retry.attempts)
 				let delay = retry.delay || 0
-
-				const { delayFactor, delayMax, preRetry } = retry
 
 				do {
 					try {
@@ -131,9 +136,10 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 						}
 
 						if (preRetry) {
-							const ok = preRetry(error, currentJob, attempts, delay)
+							const hookRes = preRetry(error, currentJob, attempts, delay, metadata)
+							const ok = hookRes instanceof Promise ? await hookRes : hookRes
 
-							if (ok === false) {
+							if (!ok) {
 								if (catchError) catchError(error, currentJob)
 								else console.error(error)
 								break
@@ -167,7 +173,7 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 
 			;(currentJob as any).firing = false
 
-			postFire?.(currentJob)
+			postFire?.(currentJob, metadata)
 		}
 
 		// Rename to the name of the instance method, for a better error stack.
