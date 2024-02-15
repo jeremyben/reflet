@@ -38,7 +38,7 @@ const META = {
  * ---
  * @public
  */
-export function Cron(cronTime: string | Date): MethodDecorator {
+export function Cron(cronTime: string | Date): Cron.Decorator {
 	return (target, key, descriptor) => {
 		defineMetadata(META.cronTime, cronTime, target, key)
 	}
@@ -435,6 +435,16 @@ export namespace Cron {
 			if (options.preRetry) defineMetadata(META.preRetry, options.preRetry, target, key)
 		}
 	}
+
+	/**
+	 * @public
+	 * Equivalent to `MethodDecorator`.
+	 */
+	export type Decorator = (
+		target: Object,
+		propertyKey: string | symbol,
+		descriptor: TypedPropertyDescriptor<any>
+	) => { value?: (job?: Job) => any } | void
 }
 
 /**
