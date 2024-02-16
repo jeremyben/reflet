@@ -1,5 +1,5 @@
-import { CronJob, CronJobParams, CronOnCompleteCallback } from 'cron'
-import { type DateTime } from 'luxon'
+import type { CronJob, CronJobParams, CronOnCompleteCallback } from 'cron'
+import type { DateTime } from 'luxon'
 
 /**
  * @public
@@ -56,7 +56,7 @@ export interface JobParameters<C = object, M = unknown>
 	cronTime: string | Date | DateTime
 
 	/** The function to fire at the specified time. */
-	onTick: (this: C, currentJob: Job) => void | Promise<void>
+	onTick: (this: C, job: Job) => void | Promise<void>
 
 	onComplete?: () => void
 
@@ -64,9 +64,9 @@ export interface JobParameters<C = object, M = unknown>
 
 	utcOffset?: number | null
 
-	catch?: (error: unknown, currentJob: Job) => void
+	catch?: (error: unknown, job: Job) => void
 
-	retry?: RetryOptions
+	retry?: JobParameters.Retry
 
 	/**
 	 * Hook before the job is fired.
@@ -74,12 +74,12 @@ export interface JobParameters<C = object, M = unknown>
 	 * You can return `false` to prevent the job from firing,
 	 * which is useful to implement a mechanism to avoid overlaps.
 	 */
-	preFire?: (currentJob: Job, passMetadata: (metadata: M) => void) => boolean | Promise<boolean>
+	preFire?: (job: Job, passMetadata: (metadata: M) => void) => boolean | Promise<boolean>
 
 	/**
 	 * Hook after the job has been fired, whether it has succeeded or failed.
 	 */
-	postFire?: (currentJob: Job, metadata?: M) => void
+	postFire?: (job: Job, metadata?: M) => void
 
 	/**
 	 * Hook after a failed attempt and before the next one (with the possible delay).
@@ -89,11 +89,30 @@ export interface JobParameters<C = object, M = unknown>
 	 */
 	preRetry?: (
 		error: unknown,
-		currentJob: Job,
+		job: Job,
 		remainingAttempts: number,
 		currentDelay: number,
 		metadata?: M
 	) => boolean | Promise<boolean>
+}
+
+export namespace JobParameters {
+	/**
+	 * @public
+	 */
+	export interface Retry {
+		/** Max number of retry attempts. */
+		attempts: number
+
+		/** Delay between retry attemps in milliseconds. */
+		delay?: number
+
+		/** Increases each time the previous delay by a multiplicative factor. */
+		delayFactor?: number
+
+		/** Caps the maximum delay in milliseconds. */
+		delayMax?: number
+	}
 }
 
 /**

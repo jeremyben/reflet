@@ -1,4 +1,4 @@
-import { Cron, Expression, initCronJobs, Job } from '../src'
+import { Cron, CronExpression, initCronJobs } from '../src'
 
 const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation()
 afterEach(() => consoleErrorSpy.mockClear())
@@ -7,13 +7,13 @@ afterAll(() => consoleErrorSpy.mockRestore())
 test('stderr or catch', async () => {
 	@Cron.RunOnInit
 	class Jobs {
-		@Cron.Catch((err: Error, job: Job) => console.error(job.name + err.message))
-		@Cron(Expression.EVERY_SECOND)
+		@Cron.Catch<Error>((err, job) => console.error(job.name + err.message))
+		@Cron(CronExpression.EVERY_SECOND)
 		async oops() {
 			throw Error('y')
 		}
 
-		@Cron(Expression.EVERY_SECOND)
+		@Cron(CronExpression.EVERY_SECOND)
 		async oups() {
 			throw ReferenceError()
 		}
@@ -36,7 +36,7 @@ test('retry once on specific error and succeed', async () => {
 	@Cron.Retry({ attempts: 1 })
 	@Cron.PreRetry((err: any) => err.name === 'TypeError')
 	class Jobs {
-		@Cron(Expression.EVERY_SECOND)
+		@Cron(CronExpression.EVERY_SECOND)
 		async throwSome() {
 			if (!thrown) {
 				thrown = true
@@ -46,7 +46,7 @@ test('retry once on specific error and succeed', async () => {
 			success++
 		}
 
-		@Cron(Expression.EVERY_SECOND)
+		@Cron(CronExpression.EVERY_SECOND)
 		async throwSomeOther() {
 			throw ReferenceError()
 		}
@@ -70,7 +70,7 @@ test('retry multiple times with delay and succeed', async () => {
 		retry: { attempts: 3, delay: 100 },
 	})
 	class Jobs {
-		@Cron(Expression.EVERY_SECOND)
+		@Cron(CronExpression.EVERY_SECOND)
 		async throwSome() {
 			if (++counter < 4) {
 				throw Error()
@@ -95,7 +95,7 @@ test('retry with delay cap and fail and catch', async () => {
 	@Cron.Retry({ attempts: 2, delay: 100, delayFactor: 3, delayMax: 200 })
 	@Cron.RunOnInit
 	class Jobs {
-		@Cron(Expression.EVERY_SECOND)
+		@Cron(CronExpression.EVERY_SECOND)
 		async throwSome() {
 			throw Error()
 			success++

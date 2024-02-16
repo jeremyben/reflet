@@ -103,18 +103,18 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 		const preRetry = parameters.preRetry || extract('preRetry', contextClass)
 
 		const onTickExtended = async () => {
-			const currentJob = this.get(<any>key)
+			const job = this.get(<any>key)
 
 			let metadata: any
 
 			if (preFire) {
-				const hookRes = preFire(currentJob, (val) => (metadata = val))
+				const hookRes = preFire(job, (val) => (metadata = val))
 				const ok = hookRes instanceof Promise ? await hookRes : hookRes
 
 				if (!ok) return
 			}
 
-			;(currentJob as any).firing = true
+			;(job as any).firing = true
 
 			if (retry) {
 				const { delayFactor, delayMax } = retry
@@ -124,23 +124,23 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 
 				do {
 					try {
-						await onTick.call(this.context, currentJob)
+						await onTick.call(this.context, job)
 						break
 					} catch (error) {
 						attempts--
 
 						if (attempts < 0) {
-							if (catchError) catchError(error, currentJob)
+							if (catchError) catchError(error, job)
 							else console.error(error)
 							break
 						}
 
 						if (preRetry) {
-							const hookRes = preRetry(error, currentJob, attempts, delay, metadata)
+							const hookRes = preRetry(error, job, attempts, delay, metadata)
 							const ok = hookRes instanceof Promise ? await hookRes : hookRes
 
 							if (!ok) {
-								if (catchError) catchError(error, currentJob)
+								if (catchError) catchError(error, job)
 								else console.error(error)
 								break
 							}
@@ -164,16 +164,16 @@ export class JobMap<T extends object> extends Map<MethodKeys<T>, Job> {
 			// Without retry
 			else {
 				try {
-					await onTick.call(this.context, currentJob)
+					await onTick.call(this.context, job)
 				} catch (error) {
-					if (catchError) catchError(error, currentJob)
+					if (catchError) catchError(error, job)
 					else console.error(error)
 				}
 			}
 
-			;(currentJob as any).firing = false
+			;(job as any).firing = false
 
-			postFire?.(currentJob, metadata)
+			postFire?.(job, metadata)
 		}
 
 		// Rename to the name of the instance method, for a better error stack.

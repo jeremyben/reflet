@@ -1,7 +1,7 @@
-export { initCronJobs, Initializer } from './init'
+export { initCronJobs, CronInit } from './init'
 
 export { Cron } from './cron-decorators'
 
-export { Expression } from './expression'
+export { CronExpression } from './expression'
 
 export { Job, JobParameters } from './interfaces'

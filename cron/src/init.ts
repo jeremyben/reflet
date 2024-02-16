@@ -96,7 +96,7 @@ export function initCronJobs<T extends (new () => any) | ObjectInstance>(target:
  *
  * @example
  * ```ts
- * class Jobs extends Initializer<typeof Jobs> {
+ * class Jobs extends CronInit<typeof Jobs> {
  *   ＠Cron(Expression.EVERY_SECOND)
  *   doSomething() {}
  * }
@@ -106,14 +106,14 @@ export function initCronJobs<T extends (new () => any) | ObjectInstance>(target:
  * ---
  * @public
  */
-export abstract class Initializer<C extends ClassType> {
+export abstract class CronInit<C extends ClassType> {
 	private $typeof?: C
 
 	/**
 	 * Initializes cron jobs.
 	 */
 	/** @ts-ignore private */
-	static init<T extends Initializer<any>>(this: ClassType<T>, ...deps: ConstructorParameters<T['$typeof']>) {
+	static init<T extends CronInit<any>>(this: ClassType<T>, ...deps: ConstructorParameters<T['$typeof']>) {
 		return initCronJobs(new this(...deps))
 	}
 }

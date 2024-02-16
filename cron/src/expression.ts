@@ -9,14 +9,14 @@
  * @example
  * ```ts
  * class Jobs {
- *   ＠Cron(Expression.EVERY_SECOND)
+ *   ＠Cron(CronExpression.EVERY_SECOND)
  *   doSomething() {}
  * }
  * ```
  * ---
  * @public
  */
-export enum Expression {
+export enum CronExpression {
 	EVERY_SECOND = '* * * * * *',
 	EVERY_5_SECONDS = '*/5 * * * * *',
 	EVERY_10_SECONDS = '*/10 * * * * *',

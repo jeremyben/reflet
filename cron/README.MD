@@ -19,30 +19,11 @@ The **best** decorators for [node-cron](https://github.com/kelektiv/node-cron). 
 
 ## Getting started
 
-1. <details>
-    <summary>Make sure you have decorators enabled. (click for details)</summary>
-    <p>
+1. Enable experimental decorators in TypeScript compiler options.<br>_No need to install "reflect-metadata"._
 
-    * Enable them in your TypeScript compiler options.
-
-        ```json
-        "experimentalDecorators": true,
-        ```
-
-    * Install `reflect-metadata` shim.
-
-        ```sh
-        npm i reflect-metadata
-        ```
-
-    * Import the shim in your program before everything else.
-
-        ```ts
-        import 'reflect-metadata'
-        ```
-
-    </p>
-    </details>
+    ```json
+    "experimentalDecorators": true,
+    ```
 
 2. Install the package along with peer dependencies.
 
@@ -55,16 +36,16 @@ The **best** decorators for [node-cron](https://github.com/kelektiv/node-cron). 
 
     ```ts
     // jobs.ts
-    import { Cron, Expression } from '@reflet/cron'
+    import { Cron, CronExpression } from '@reflet/cron'
 
     @Cron.TimeZone('Europe/Paris')
     export class Jobs {
-      @Cron(Expression.EVERY_SECOND)
+      @Cron(CronExpression.EVERY_SECOND)
       async logMessage() {
         console.log('You will see this message every second');
       }
 
-      @Cron(Expression.EVERY_DAY_AT_MIDNIGHT)
+      @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
       async sendEmailToAdmin() {
         await emailClient.send({ to: 'admin@github.com', content: 'This is fine' })
       }
@@ -111,13 +92,13 @@ jobs.startAll()
 jobs.stopAll()
 ```
 
-💡 Use `Expression` enum to avoid using cron syntax:
+💡 Use `CronExpression` enum to avoid using cron syntax:
 
 ```ts
-import { Cron, Expression } from '@reflet/cron'
+import { Cron, CronExpression } from '@reflet/cron'
 
 class Jobs {
-  @Cron(Expression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_MINUTE)
   logFoo() {
     console.log('foo')
   }
@@ -136,7 +117,7 @@ class Jobs {
     return initCronJobs(new Jobs(...deps))
   }
 
-  @Cron(Expression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_MINUTE)
   logFoo() {
     console.log('foo')
   }
@@ -145,14 +126,14 @@ class Jobs {
 const jobs = Jobs.init()
 ```
 
-💡 As a convenience, you can inherit from the abstract class `Initializer` which already have the `init` static method:
+💡 As a convenience, you can inherit from the abstract class `CronInit` which already have the `init` static method:
 
 ```ts
-import { Initializer } from '@reflet/cron'
+import { CronInit } from '@reflet/cron'
 
 // You must pass the child class as type parameter to properly infer its constructor parameters.
-class Jobs extends Initializer<typeof Jobs> {
-  @Cron(Expression.EVERY_MINUTE)
+class Jobs extends CronInit<typeof Jobs> {
+  @Cron(CronExpression.EVERY_MINUTE)
   logFoo() {
     console.log('foo')
   }
@@ -164,7 +145,7 @@ const jobs = Jobs.init()
 ## Extra properties
 
 Compared to [node-cron](https://github.com/kelektiv/node-cron), Reflet adds 2 properties to jobs' instances:
-* `firing`: readonly `boolean` that helps us determine if the job is **actually** being executed. Because the original node-cron `running` property defines whether the job has been started or stopped. _This property is used by the [PreventOverlap](#overlaps) decorator._
+* `firing`: readonly `boolean` that helps us determine if the job is **actually** being executed. Because the original node-cron `running` property defines whether the job has been started or stopped.
 * `name`: `string` which is the name of the method.
 
 ## Current job access
@@ -172,10 +153,10 @@ Compared to [node-cron](https://github.com/kelektiv/node-cron), Reflet adds 2 pr
 The current job instance is always available as the parameter of the `onTick` function, which is useful to stop it for example.
 
 ```ts
-import { Cron, Expression } from '@reflet/cron'
+import { Cron, CronExpression } from '@reflet/cron'
 
 class Jobs {
-  @Cron(Expression.EVERY_SECOND)
+  @Cron(CronExpression.EVERY_SECOND)
   doSomething(job: Job) {
     job.stop()
   }
@@ -196,20 +177,20 @@ class Jobs {
 Please refer to the **[node-cron repository](https://github.com/kelektiv/node-cron#api)** for more details.
 
 ```ts
-import { Cron, Expression } from '@reflet/cron'
+import { Cron, CronExpression } from '@reflet/cron'
 
 class Jobs {
   @Cron.Start 
   @Cron.RunOnInit
   @Cron.TimeZone('Europe/Paris')
-  @Cron(Expression.EVERY_SECOND)
+  @Cron(CronExpression.EVERY_SECOND)
   doSomething() {}
 
   @Cron.Start()
   @Cron.RunOnInit()
   @Cron.UtcOffset('+01:00')
   @Cron.OnComplete(() => {}) 
-  @Cron(Expression.EVERY_SECOND)
+  @Cron(CronExpression.EVERY_SECOND)
   doSomethingElse() {}
 }
 ```
@@ -226,13 +207,13 @@ but you should handle your errors manually so you can give it more context or us
 This decorator allows you to do something else than logging with your errors.
 
 ```ts
-import { Cron, Expression } from '@reflet/cron'
+import { Cron, CronExpression } from '@reflet/cron'
 
 @Cron.Catch((err, job) => {
   logger.error({ jobName: job.name, jobError: error })
 })
 class Jobs {
-  @Cron(Expression.EVERY_SECOND)
+  @Cron(CronExpression.EVERY_SECOND)
   doSomething() {}
 }
 ```
@@ -249,11 +230,11 @@ If your job throw an error, you can retry it with a specify number of `attempts`
 * `delayMax`: Caps the maximum delay in milliseconds.
 
 ```ts
-import { Cron, Expression } from '@reflet/cron'
+import { Cron, CronExpression } from '@reflet/cron'
 
 class Jobs {
   @Cron.Retry({ attempts: 3, delay: 100, delayFactor: 2, delayMax: 1000 })
-  @Cron(Expression.EVERY_HOUR)
+  @Cron(CronExpression.EVERY_HOUR)
   doSomething() {}
 }
 ```
@@ -289,18 +270,18 @@ class Jobs {
 
 Attach any option decorator to the class to share it with all jobs. You can override it by reattaching it to the method.
 
-Boolean option decorators (`@Cron.Start`, `@Cron.RunOnInit`, `@Cron.UnrefTimeout`, `@Cron.PreventOverlap`) can be turned to false with their special sub decorator: `@Cron.XXX.Dont` _(can be used with or without invokation)_
+Boolean option decorators (`@Cron.Start`, `@Cron.RunOnInit`, `@Cron.UnrefTimeout`) can be turned to false with their special sub decorator: `@Cron.XXX.Dont` _(can be used with or without invokation)_
 
 ```ts
 @Cron.Start
 @Cron.PreventOverlap
 @Cron.Retry({ maxRetries: 3, delay: 200 })
 class Jobs {
-  @Cron(Expression.EVERY_SECOND)
+  @Cron(CronExpression.EVERY_SECOND)
   doSomething() {}
 
   @Cron.Start.Dont
-  @Cron(Expression.EVERY_SECOND)
+  @Cron(CronExpression.EVERY_SECOND)
   doSomethingElse() {}
 }
 ```
@@ -310,18 +291,18 @@ class Jobs {
 You can add dynamic cron jobs like so:
 
 ```ts
-import { Cron, Expression, initCronJobs } from '@reflet/cron'
+import { Cron, CronExpression, initCronJobs } from '@reflet/cron'
 
 @Cron.Start
 class Jobs {
-  @Cron(Expression.EVERY_SECOND)
+  @Cron(CronExpression.EVERY_SECOND)
   doSomething() {}
 }
 
 const jobs = initCronJobs(Jobs)
 
 jobs.set('doSomethingElse', {
-  cronTime: Expression.EVERY_HOUR,
+  cronTime: CronExpression.EVERY_HOUR,
   onTick() {
     console.log("I'm a dynamic job")
   },
@@ -337,20 +318,16 @@ Dynamic jobs inherit shared class options.
 If you want to go full OOP and your job classes has constructor dependencies, Reflet will enforce passing them as instances (along with their dependencies) instead of classes.
 
 ```ts
-import { Cron, Expression, initCronJobs } from '@reflet/cron'
+import { Cron, CronExpression, initCronJobs } from '@reflet/cron'
 
 class Service {
   user = 'Jeremy'
 }
 
-class Jobs {
-  static init(...deps: ConstructorParameters<typeof Jobs>) {
-    return initCronJobs(new Jobs(...deps))
-  }
-
+class Jobs extends CronInit<typeof Jobs> {
   constructor(private service: Service) {}
 
-  @Cron(Expression.EVERY_10_MINUTES)
+  @Cron(CronExpression.EVERY_10_MINUTES)
   doSomething() {
     console.log(this.service.user)
   }

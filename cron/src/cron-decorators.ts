@@ -1,4 +1,4 @@
-import { ClassOrMethodDecorator, ClassType, JobParameters, Zone, Job, RetryOptions } from './interfaces'
+import type { ClassOrMethodDecorator, ClassType, Job, JobParameters, Zone } from './interfaces'
 import { defineMetadata, getOwnMetadata } from './metadata-map'
 
 /* istanbul ignore file - lots of branches with no logic */
@@ -24,7 +24,7 @@ const META = {
  *
  * @remarks
  * To help with cron syntax:
- * - use `Expression` enum
+ * - use `CronExpression` enum
  * - [crontab guru](https://crontab.guru)
  *
  * ---
@@ -291,7 +291,7 @@ export namespace Cron {
 	 * ---
 	 * @public
 	 */
-	export function Catch<T = unknown>(errorHandler: (error: T, currentJob: Job) => void): ClassOrMethodDecorator {
+	export function Catch<T = unknown>(errorHandler: (error: T, job: Job) => void): ClassOrMethodDecorator {
 		return (target, key, descriptor) => {
 			if (key) defineMetadata(META.catch, errorHandler, target, key)
 			else defineMetadata(META.catch, errorHandler, target)
@@ -311,7 +311,7 @@ export namespace Cron {
 	 * ---
 	 * @public
 	 */
-	export function Retry(options: RetryOptions): ClassOrMethodDecorator {
+	export function Retry(options: JobParameters.Retry): ClassOrMethodDecorator {
 		return (target, key, descriptor) => {
 			if (key) defineMetadata(META.retry, options, target, key)
 			else defineMetadata(META.retry, options, target)
@@ -338,7 +338,7 @@ export namespace Cron {
 	 * @public
 	 */
 	export function PreFire<M>(
-		fn: (currentJob: Job, passMetadata: (metadata: M) => void) => boolean | Promise<boolean>
+		fn: (job: Job, passMetadata: (metadata: M) => void) => boolean | Promise<boolean>
 	): ClassOrMethodDecorator {
 		return (target, key, descriptor) => {
 			if (key) defineMetadata(META.preFire, fn, target, key)
@@ -360,7 +360,7 @@ export namespace Cron {
 	 * ---
 	 * @public
 	 */
-	export function PostFire<M>(fn: (currentJob: Job, metadata?: M) => void): ClassOrMethodDecorator {
+	export function PostFire<M>(fn: (job: Job, metadata?: M) => void): ClassOrMethodDecorator {
 		return (target, key, descriptor) => {
 			if (key) defineMetadata(META.postFire, fn, target, key)
 			else defineMetadata(META.postFire, fn, target)
@@ -392,7 +392,7 @@ export namespace Cron {
 	export function PreRetry<M>(
 		fn: (
 			error: unknown,
-			currentJob: Job,
+			job: Job,
 			remainingAttempts: number,
 			currentDelay: number,
 			metadata?: M

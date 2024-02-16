@@ -1,4 +1,4 @@
-import { Cron, Expression, initCronJobs, Initializer, Job } from '../src'
+import { Cron, CronExpression, initCronJobs, CronInit, Job } from '../src'
 
 const consoleSpy = jest.spyOn(console, 'info').mockImplementation()
 afterEach(() => consoleSpy.mockClear())
@@ -12,12 +12,12 @@ test('dynamic jobs can access class context and inherit class decorator behavior
 	@Cron.TimeZone('Europe/Paris')
 	@Cron.RunOnInit
 	@Cron.Start
-	class Jobs extends Initializer<typeof Jobs> {
+	class Jobs extends CronInit<typeof Jobs> {
 		constructor(private service: Service) {
 			super()
 		}
 
-		@Cron(Expression.EVERY_10_MINUTES)
+		@Cron(CronExpression.EVERY_10_MINUTES)
 		foo() {
 			console.info(this.service.user)
 		}
@@ -30,7 +30,7 @@ test('dynamic jobs can access class context and inherit class decorator behavior
 	const jobs = Jobs.init(new Service())
 
 	jobs.set('bar', {
-		cronTime: Expression.EVERY_10_MINUTES,
+		cronTime: CronExpression.EVERY_10_MINUTES,
 		onTick() {
 			console.info(this.baz)
 		},
@@ -48,17 +48,17 @@ test('pass current job', async () => {
 	@Cron.RunOnInit
 	@Cron.Start
 	class Jobs {
-		@Cron(Expression.EVERY_10_MINUTES)
+		@Cron(CronExpression.EVERY_10_MINUTES)
 		foo(job: Job) {
 			console.info(job.name)
 			job.stop()
 		}
 	}
 
-	const jobs = initCronJobs(Jobs)
+	const jobs = initCronJobs(new Jobs())
 
 	jobs.set('bar', {
-		cronTime: Expression.EVERY_10_MINUTES,
+		cronTime: CronExpression.EVERY_10_MINUTES,
 		async onTick(job) {
 			console.info(job.name)
 			job.stop()

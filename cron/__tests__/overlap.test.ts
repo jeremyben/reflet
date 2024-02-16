@@ -1,6 +1,6 @@
 import { Redis } from 'ioredis'
 import Redlock, { type Lock } from 'redlock'
-import { Cron, Expression, initCronJobs } from '../src'
+import { Cron, CronExpression, initCronJobs } from '../src'
 
 test('prevent one-second overlap', async () => {
 	let success = 0
@@ -9,7 +9,7 @@ test('prevent one-second overlap', async () => {
 	@Cron.Start
 	@Cron.PreFire((job) => !job.firing)
 	class Jobs {
-		@Cron(Expression.EVERY_SECOND)
+		@Cron(CronExpression.EVERY_SECOND)
 		async throwSome() {
 			success++
 			await new Promise((r) => setTimeout(r, 2000))
@@ -61,13 +61,13 @@ describe('redlock', () => {
 			}
 		})
 		class Jobs {
-			@Cron(Expression.EVERY_SECOND)
+			@Cron(CronExpression.EVERY_SECOND)
 			async getSomeRedlock() {
 				success++
 			}
 		}
 
-		const jobsA = initCronJobs(Jobs)
+		const jobsA = initCronJobs(new Jobs())
 		const jobsB = initCronJobs(Jobs)
 		const jobsC = initCronJobs(Jobs)
 		await new Promise((r) => setTimeout(r, 400))
@@ -114,7 +114,7 @@ describe('redlock', () => {
 			}
 		})
 		class Jobs {
-			@Cron(Expression.EVERY_SECOND)
+			@Cron(CronExpression.EVERY_SECOND)
 			async throwSomeRedlock() {
 				if (counter < 4) {
 					counter++

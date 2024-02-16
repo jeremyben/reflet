@@ -1,4 +1,5 @@
-import { Cron, initCronJobs, Expression, Job } from '../src'
+import { Cron, initCronJobs, CronExpression } from '../src'
+import { Job } from '../src/interfaces'
 
 const consoleSpy = jest.spyOn(console, 'info').mockImplementation()
 afterEach(() => consoleSpy.mockClear())
@@ -6,7 +7,7 @@ afterAll(() => consoleSpy.mockRestore())
 
 test('on complete', async () => {
 	class Jobs {
-		@Cron(Expression.EVERY_SECOND)
+		@Cron(CronExpression.EVERY_SECOND)
 		@Cron.OnComplete(async () => console.info('complete'))
 		async logLastDate(job: Job) {
 			job.onComplete!()
@@ -26,11 +27,11 @@ test('on complete', async () => {
 test('timezone and offset', async () => {
 	class Jobs {
 		@Cron.TimeZone('Europe/Istanbul')
-		@Cron(Expression.EVERY_SECOND)
+		@Cron(CronExpression.EVERY_SECOND)
 		async first() {}
 
 		@Cron.UtcOffset(180)
-		@Cron(Expression.EVERY_SECOND)
+		@Cron(CronExpression.EVERY_SECOND)
 		async second() {}
 	}
 
@@ -56,7 +57,7 @@ test('options decorator', async () => {
 		timeZone: 'Europe/Paris',
 	})
 	class Jobs {
-		@Cron(Expression.EVERY_MINUTE)
+		@Cron(CronExpression.EVERY_MINUTE)
 		yo(job: Job) {
 			job.onComplete!()
 		}
