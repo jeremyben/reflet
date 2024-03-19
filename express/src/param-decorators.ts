@@ -1,7 +1,6 @@
 import * as express from 'express'
 import * as core from 'express-serve-static-core'
 import { RequestHeader } from '@reflet/http'
-import { flatMapFast } from './array-manipulation'
 import { ClassType } from './interfaces'
 import { RefletExpressError } from './reflet-error'
 import { getOwnMetadata, defineMetadata } from './metadata-map'
@@ -482,7 +481,7 @@ export function extractParamsMiddlewares(
 				if (mware.dedupe === true || mware.dedupe === 'by-name') {
 					// Perform the flatmap only if one of the parameter requires deduplication by name.
 					if (!alreadyNames.length) {
-						alreadyNames = flatMapFast(alreadyMwares, (m) => m.name)
+						alreadyNames = alreadyMwares.flat().map((m) => m.name)
 					}
 
 					const sameName = !!mware.handler.name && alreadyNames.includes(mware.handler.name)
