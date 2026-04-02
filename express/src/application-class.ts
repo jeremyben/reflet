@@ -14,7 +14,7 @@ export type ApplicationMeta = {
 
 const METAKEY_APPLICATION = Symbol('application')
 
-export interface Application extends express.Application {}
+export interface ExpressApplication extends express.Application {}
 
 /**
  * Express application class to extend, to apply the decorators with a global behavior.
@@ -25,7 +25,7 @@ export interface Application extends express.Application {}
  * ```ts
  * ＠Send({ json: true })
  * ＠Use(express.json())
- * class App extends Application {
+ * class App extends ExpressApplication {
  *   ＠Get('/healthcheck')
  *   healthcheck() {
  *     return { success: true }
@@ -47,7 +47,7 @@ export interface Application extends express.Application {}
  * ------
  * @public
  */
-export class Application {
+export class ExpressApplication {
 	constructor() {
 		const app = express()
 		mixinApplication(app, this.constructor)

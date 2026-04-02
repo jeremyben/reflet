@@ -1,6 +1,6 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
-import { Application, Catch, Get, Post, Router, ScopedMiddlewares, Send, Use } from '../src'
+import { ExpressApplication, Catch, Get, Post, Router, ScopedMiddlewares, Send, Use } from '../src'
 import { getGlobalMiddlewares } from '../src/register'
 import { log } from '../../testing/tools'
 
@@ -14,7 +14,7 @@ test('simple app', async () => {
 		}
 	}
 
-	const app = new Application().register([Simple])
+	const app = new ExpressApplication().register([Simple])
 	const rq = supertest(app)
 
 	const res = await rq.get('/simple')
@@ -62,7 +62,7 @@ describe('inherit application class', () => {
 		next()
 	})
 	@Send()
-	class App extends Application {
+	class App extends ExpressApplication {
 		constructor(public service: Service) {
 			super()
 			this.disable('x-powered-by')
@@ -176,7 +176,7 @@ test('router scope middlewares', async () => {
 	@Send({ json: true })
 	@Use(express.json())
 	@ScopedMiddlewares
-	class App extends Application {}
+	class App extends ExpressApplication {}
 
 	const app = new App().register([One, Two, Three])
 	const rq = supertest(app)

@@ -1,7 +1,7 @@
 import * as express from 'express'
 import * as supertest from 'supertest'
 import { HttpError } from '@reflet/http'
-import { Use, Catch, Application, Get, finalHandler } from '../src'
+import { Use, Catch, ExpressApplication, Get, finalHandler } from '../src'
 import { log } from '../../testing/tools'
 
 const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation()
@@ -28,7 +28,7 @@ describe('final handler', () => {
 			notFoundHandler: 499,
 		})
 	)
-	class App extends Application {
+	class App extends ExpressApplication {
 		@Use((req, res, next) => {
 			res.type('json')
 			next()

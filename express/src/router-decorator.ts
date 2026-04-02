@@ -43,9 +43,49 @@ export const DYNAMIC_PATH = Symbol('dynamic-path')
  * ```
  * ------
  *
+ * @deprecated use `@Controller` instead.
+ *
  * @public
  */
 export function Router(path: string | RegExp, options?: express.RouterOptions): Router.Decorator {
+	return (target) => {
+		const existingRouterMeta = extractRouterMeta(target)
+
+		if (existingRouterMeta) {
+			existingRouterMeta.path = path
+			existingRouterMeta.options = options
+		} else {
+			const newRouterMeta: RouterMeta = { path, options }
+			defineRouterMeta(newRouterMeta, target)
+		}
+	}
+}
+
+/**
+ * Attaches an express Router to a class.
+ *
+ * The routes will be attached to the router at its root `path`.
+ *
+ * @param path - root path of the router.
+ * @param options - specifies router behavior.
+ *
+ * @see https://expressjs.com/en/4x/api.html#router
+ * @example
+ * ```ts
+ * ＠Controller('/things')
+ * class Foo {
+ *   ＠Get()
+ *   list(req: Request, res: Response, next: NextFunction) {}
+ *
+ *   ＠Get('/:id')
+ *   getOne(req: Request, res: Response, next: NextFunction) {}
+ * }
+ * ```
+ * ------
+ *
+ * @public
+ */
+export function Controller(path: string | RegExp, options?: express.RouterOptions): Router.Decorator {
 	return (target) => {
 		const existingRouterMeta = extractRouterMeta(target)
 

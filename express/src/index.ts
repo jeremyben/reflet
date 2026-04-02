@@ -1,6 +1,6 @@
 export { register } from './register'
 
-export { Router, ScopedMiddlewares } from './router-decorator'
+export { Router, Controller, ScopedMiddlewares } from './router-decorator'
 
 export { Route, Get, Post, Put, Patch, Delete } from './route-decorators'
 
@@ -12,7 +12,7 @@ export { Req, Res, Next, Body, Params, Query, Headers, createParamDecorator } fr
 
 export { Send } from './send-decorator'
 
-export { Application } from './application-class'
+export { ExpressApplication } from './application-class'
 
 export { Registration } from './interfaces'
 

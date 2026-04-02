@@ -1,5 +1,10 @@
 # Migration guide for `@reflet/express`
 
+## From v2 to v3
+
+* The `@Router` decorator has been renamed to `@Controller`.
+* The `Application` class has been renamed to `ExpressApplication`.
+
 ## From v1 to v2
 
 * `Router` decorator is now mandatory on every router class.
