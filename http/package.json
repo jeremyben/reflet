@@ -39,8 +39,7 @@
 		"test": "jest --config ../jest.config.js",
 		"test:watch": "pnpm test --watch --verbose false",
 		"test:file": "pnpm test --testPathPattern",
-		"preversion": "pnpm test --coverage && ts-node -T ../testing/summary.ts && git add coverage-summary.json",
-		"prepublishOnly": "pnpm run build",
-		"publish:next": "pnpm publish --tag next"
+		"release": "release-it --config ../.release-it.js --git.requireBranch=master",
+		"release:next": "release-it --config ../.release-it.js --preRelease=next"
 	}
 }
