@@ -56,10 +56,13 @@ test('custom params', () => {
 test('enumerability', () => {
 	const err = HttpError.BadRequest({ message: { foo: 'bar' } })
 
-	const props = Object.getOwnPropertyNames(err).reduce((acc, prop) => {
-		;(acc as any)[prop] = Object.getOwnPropertyDescriptor(err, prop)
-		return acc
-	}, <Record<keyof HttpError<400>, PropertyDescriptor>>{})
+	const props = Object.getOwnPropertyNames(err).reduce(
+		(acc, prop) => {
+			;(acc as any)[prop] = Object.getOwnPropertyDescriptor(err, prop)
+			return acc
+		},
+		<Record<keyof HttpError<400>, PropertyDescriptor>>{}
+	)
 
 	expect(props.name.enumerable).toBe(false)
 	expect(props.message.enumerable).toBe(false)
@@ -86,8 +89,8 @@ test('express default error handling', (done) => {
 	const server = express()
 		.get('/', (req, res, next) => {
 			const err = HttpError.MethodNotAllowed({ message: 'foo', headers: { allow: ['GET', 'POST'] } })
-
 			throw err
+			HttpError.MethodNotAllowed('Test Union Type')
 		})
 		.listen(3090, 'localhost', () => {
 			request({ hostname: 'localhost', port: 3090, method: 'GET', path: '/' }, (res: IncomingMessage) => {
@@ -108,7 +111,7 @@ test('express default error handling', (done) => {
 declare global {
 	namespace RefletHttp {
 		interface ErrorConstraint {
-			status: 299 | 420 | 400 | 401 | 403 | 405 | 418 | 500
+			// status: 299 | 420 | 400 | 401 | 403 | 405 | 418 | 500
 		}
 
 		interface CustomErrors {
@@ -123,12 +126,12 @@ declare global {
 				code?: number
 			}
 
-			405: {
-				message?: string
-				headers: {
-					allow: ('GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE')[]
-				}
-			}
+			405:
+				| string
+				| {
+						message?: string
+						headers: { allow: ('GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE')[] }
+				  }
 
 			299: { data: string }
 		}

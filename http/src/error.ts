@@ -71,21 +71,21 @@ class HttpError<S extends _HttpError.Status> extends Error {
 	readonly name: S extends keyof OriginalErrors
 		? OriginalErrors[S]
 		: S extends keyof RefletHttp.CustomErrors
-		? RefletHttp.CustomErrors[S]
-		: 'HttpError'
+			? RefletHttp.CustomErrors[S]
+			: 'HttpError'
 
 	constructor(
 		// Only way to make an argument either required or optional without overloading (which does not work properly without `new` keyword)
-		...args: keyof RefletHttp.ErrorParams[S] extends undefined
-			? [status: S, message?: string]
-			: [status: S, data: RefletHttp.ErrorParams[S]]
+		...args: S extends keyof RefletHttp.ErrorParams
+			? [status: S, data: RefletHttp.ErrorParams[S]]
+			: [status: S, message?: string]
 	) {
 		super(typeof args[1] === 'string' ? args[1] : '')
 
 		this.name = (<any>OriginalErrors)[args[0]] || this.constructor.name
 		Object.defineProperty(this, 'name', { enumerable: false }) // keep the original configuration of Error.
 
-		this.status = args[0]
+		this.status = args[0] as S
 
 		// Assign properties directly to the error object if the interface was augmented.
 		if (typeof args[1] === 'object' && !!args[1]) {
@@ -121,8 +121,8 @@ class HttpError<S extends _HttpError.Status> extends Error {
 			(<any>args)[2] === Caller.Direct
 				? HttpError[<'BadRequest'>this.name] || HttpError
 				: (<any>args)[2] === Caller.Proxy
-				? proxyHandler.apply
-				: HttpError
+					? proxyHandler.apply
+					: HttpError
 
 		// Handle custom stackTraceLimit for HttpError
 		if (HttpError.stackTraceLimit !== Error.stackTraceLimit) {
@@ -590,9 +590,9 @@ class HttpError<S extends _HttpError.Status> extends Error {
 /**
  * @public
  */
-type ErrParams<S extends _HttpError.Status> = keyof RefletHttp.ErrorParams[S] extends undefined
-	? [message?: string]
-	: [data: RefletHttp.ErrorParams[S]]
+type ErrParams<S extends _HttpError.Status> = S extends keyof RefletHttp.ErrorParams
+	? [data: RefletHttp.ErrorParams[S]]
+	: [message?: string]
 
 /**
  * @public
@@ -613,21 +613,20 @@ type CustomStatus<V extends RefletHttp.CustomErrors[keyof RefletHttp.CustomError
 /**
  * @public
  */
-interface HttpErrorConstructor
-	extends Pick<
-		typeof HttpError & StaticCustomErrors,
-		_HttpError.Name | keyof typeof Error | 'isInstance' | 'getStatus'
-	> {
+interface HttpErrorConstructor extends Pick<
+	typeof HttpError & StaticCustomErrors,
+	_HttpError.Name | keyof typeof Error | 'isInstance' | 'getStatus'
+> {
 	new <S extends _HttpError.Status>(
-		...args: keyof RefletHttp.ErrorParams[S] extends undefined
-			? [status: S, message?: string]
-			: [status: S, data: RefletHttp.ErrorParams[S]]
+		...args: S extends keyof RefletHttp.ErrorParams
+			? [status: S, data: RefletHttp.ErrorParams[S]]
+			: [status: S, message?: string]
 	): _HttpError<S>
 
 	<S extends _HttpError.Status>(
-		...args: keyof RefletHttp.ErrorParams[S] extends undefined
-			? [status: S, message?: string]
-			: [status: S, data: RefletHttp.ErrorParams[S]]
+		...args: S extends keyof RefletHttp.ErrorParams
+			? [status: S, data: RefletHttp.ErrorParams[S]]
+			: [status: S, message?: string]
 	): _HttpError<S>
 }
 
@@ -672,7 +671,8 @@ const proxyHandler: ProxyHandler<new (...args: any[]) => any> = {
  */
 const _HttpError: HttpErrorConstructor = new Proxy<any>(HttpError, proxyHandler)
 
-type _HttpError<S extends _HttpError.Status> = HttpError<S> & Omit<RefletHttp.ErrorParams[S], 'message'>
+type _HttpError<S extends _HttpError.Status> = HttpError<S> &
+	(S extends keyof RefletHttp.ErrorParams ? Omit<RefletHttp.ErrorParams[S], 'message'> : {})
 
 namespace _HttpError {
 	/**
@@ -742,7 +742,7 @@ declare global {
 		 * }
 		 * ```
 		 */
-		interface ErrorParams extends Record<_HttpError.Status, {}> {}
+		interface ErrorParams {}
 
 		/**
 		 * Adds custom errors, with their own static method.
