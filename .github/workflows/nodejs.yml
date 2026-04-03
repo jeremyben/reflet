@@ -6,9 +6,9 @@ on:
       - master
       - develop
     paths:
-      - 'express/**/*.ts'
-      - 'express-middlewares/**/*.ts'
-      - 'mongoose/**/*.ts'
+      - "express/**/*.ts"
+      - "express-middlewares/**/*.ts"
+      - "mongoose/**/*.ts"
 
 jobs:
   test:
@@ -16,20 +16,24 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [16.x, 18.x]
+        node-version: [18.x, 20.x]
 
     steps:
       - name: Git checkout
         uses: actions/checkout@v2
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
+          cache: "pnpm"
 
       - name: Install and test
         run: |
-          yarn install
-          yarn test
+          pnpm install
+          pnpm test
         env:
           CI: true

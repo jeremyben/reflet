@@ -33,10 +33,10 @@
 	"scripts": {
 		"build": "ts-node -T ../build.ts",
 		"test": "jest --config ../jest.config.js",
-		"test:watch": "yarn test --watch --verbose false",
-		"test:file": "yarn test --testPathPattern",
-		"preversion": "yarn test --coverage && ts-node -T ../testing/summary.ts && git add coverage-summary.json",
-		"prepublishOnly": "yarn run build",
-		"publish:next": "yarn publish --tag next"
+		"test:watch": "pnpm test --watch --verbose false",
+		"test:file": "pnpm test --testPathPattern",
+		"preversion": "pnpm test --coverage && ts-node -T ../testing/summary.ts && git add coverage-summary.json",
+		"prepublishOnly": "pnpm run build",
+		"publish:next": "pnpm publish --tag next"
 	}
 }

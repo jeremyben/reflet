@@ -1,6 +1,6 @@
 {
 	"editor.formatOnSave": true,
-	"npm.packageManager": "yarn",
+	"npm.packageManager": "pnpm",
 	"prettier.requireConfig": true,
 	"files.associations": {
 		"tslint.json": "jsonc"

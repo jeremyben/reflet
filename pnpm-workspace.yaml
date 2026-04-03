@@ -1,0 +1,7 @@
+packages:
+  - express
+  - express-middlewares
+  - benchmarks
+  - mongoose
+  - http
+  - cron

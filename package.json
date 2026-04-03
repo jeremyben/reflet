@@ -5,22 +5,14 @@
 	"license": "MIT",
 	"private": true,
 	"repository": "github:jeremyben/reflet",
-	"workspaces": [
-		"express",
-		"express-middlewares",
-		"benchmarks",
-		"mongoose",
-		"http",
-		"cron"
-	],
 	"engines": {
 		"node": ">=14"
 	},
 	"engineStrict": true,
 	"scripts": {
-		"bootstrap": "yarn install --force",
-		"test": "lerna run test --stream",
-		"build": "lerna run build --stream",
+		"bootstrap": "pnpm install",
+		"test": "pnpm --recursive --parallel run test",
+		"build": "pnpm --recursive --parallel run build",
 		"create-package": "ts-node -T ./create-package.ts",
 		"release:version": "lerna version --conventional-graduate",
 		"release:publish": "lerna publish from-package",
