@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.0.1](https://github.com/jeremyben/reflet/compare/@reflet/http@1.0.0...@reflet/http@1.0.1) (2026-04-04)
+
+
+### Bug Fixes
+
+* **http:** allow union types in ErrorParams ([a92ec36](https://github.com/jeremyben/reflet/commit/a92ec36934b9da4520395e80bbb439d5a8ea7047))
 
 # 1.0.0 (2023-07-30)
 
