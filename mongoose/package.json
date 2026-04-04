@@ -32,9 +32,9 @@
 		"mongoose": ">=7"
 	},
 	"devDependencies": {
-		"@shelf/jest-mongodb": "^4.1.7",
-		"mongoose": "^7.4.1",
-		"mongoose-autopopulate": "^1.0.1"
+		"@shelf/jest-mongodb": "^4.3.2",
+		"mongoose": "^7.8.9",
+		"mongoose-autopopulate": "^1.2.1"
 	},
 	"scripts": {
 		"build": "ts-node -T ../build.ts",
