@@ -118,4 +118,68 @@ describe('initEnv', () => {
 		const env = initEnv(E, {})
 		expect(() => ((env as any).A = 'y')).toThrow()
 	})
+
+	test('requiredWhen makes a var conditionally required', () => {
+		class E {
+			@Env.Bool({ default: false }) USE_S3!: boolean
+			@Env.Str({ requiredWhen: (env: E) => env.USE_S3 === true }) S3_BUCKET!: string
+		}
+
+		const env = initEnv(E, { USE_S3: 'false' })
+		expect(env.USE_S3).toBe(false)
+		expect((env as any).S3_BUCKET).toBeUndefined()
+
+		expect(() => initEnv(E, { USE_S3: 'true' })).toThrow(EnvValidationError)
+		try {
+			initEnv(E, { USE_S3: 'true' })
+		} catch (err: any) {
+			expect(err.missing).toHaveLength(1)
+			expect(err.missing[0].name).toBe('S3_BUCKET')
+		}
+	})
+
+	test('NODE_ENV shortcuts', () => {
+		class E {
+			@Env.Str({ default: 'x' }) A!: string
+		}
+		expect(initEnv(E, { NODE_ENV: 'production' }).isProduction).toBe(true)
+		expect(initEnv(E, { NODE_ENV: 'production' }).isDev).toBe(false)
+		expect(initEnv(E, { NODE_ENV: 'test' }).isTest).toBe(true)
+		expect(initEnv(E, { NODE_ENV: 'development' }).isDev).toBe(true)
+	})
+
+	test('testDefault only kicks in when NODE_ENV=test', () => {
+		class E {
+			@Env.Str({ testDefault: 'mock-token' }) API_TOKEN!: string
+		}
+		expect(initEnv(E, { NODE_ENV: 'test' }).API_TOKEN).toBe('mock-token')
+		expect(() => initEnv(E, { NODE_ENV: 'production' })).toThrow(EnvValidationError)
+	})
+
+	test('EnvValidationError exposes kind and metadata', () => {
+		class E {
+			@Env.Num({ desc: 'Item count', example: '42', docs: 'https://docs/COUNT' }) COUNT!: number
+			@Env.Str({ desc: 'API key' }) API_KEY!: string
+		}
+
+		try {
+			initEnv(E, { COUNT: 'nope' })
+			fail('should throw')
+		} catch (err: any) {
+			expect(err).toBeInstanceOf(EnvValidationError)
+			expect(err.invalid).toHaveLength(1)
+			expect(err.missing).toHaveLength(1)
+			expect(err.invalid[0]).toMatchObject({
+				name: 'COUNT',
+				kind: 'invalid',
+				desc: 'Item count',
+				example: '42',
+				docs: 'https://docs/COUNT',
+			})
+			expect(err.message).toContain('Item count')
+			expect(err.message).toContain('42')
+			expect(err.message).toContain('https://docs/COUNT')
+			expect(err.message).toContain('API_KEY (missing)')
+		}
+	})
 })
