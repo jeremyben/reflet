@@ -10,8 +10,13 @@ const ORIGINAL = Symbol('original')
  * @internal
  */
 export function wrapAsync(handler: express.RequestHandler): express.RequestHandler {
-	// Arrays of handlers are left to express, as well as express applications and routers,
-	// which must be recognized as such by `app.use` (e.g. to mount sub-applications).
+	// Arrays of handlers are flattened by express, so we wrap each of them.
+	if (Array.isArray(handler)) {
+		return handler.map(wrapAsync) as unknown as express.RequestHandler
+	}
+
+	// Express applications and routers are left as is,
+	// as they must be recognized by `app.use` (e.g. to mount sub-applications).
 	if (typeof handler !== 'function' || isWrapped(handler) || typeof (handler as any).handle === 'function') {
 		return handler
 	}
@@ -33,7 +38,12 @@ export function wrapAsync(handler: express.RequestHandler): express.RequestHandl
  * @internal
  */
 export function wrapAsyncError(handler: express.ErrorRequestHandler): express.ErrorRequestHandler {
-	// Arrays of handlers (e.g. `finalHandler` with `notFoundHandler`) are left to express.
+	// Arrays of handlers (e.g. `finalHandler` with `notFoundHandler`) can mix request and error handlers,
+	// so each of them is wrapped according to its arity.
+	if (Array.isArray(handler)) {
+		return handler.map(wrapAsync) as unknown as express.ErrorRequestHandler
+	}
+
 	if (typeof handler !== 'function' || isWrapped(handler)) {
 		return handler
 	}
@@ -56,7 +66,16 @@ export function wrapAsyncError(handler: express.ErrorRequestHandler): express.Er
  * @internal
  */
 export function forwardRejection(result: unknown, next: express.NextFunction): Promise<unknown> | undefined {
-	return result instanceof Promise ? result.catch(next) : undefined
+	return result instanceof Promise ? result.catch(nextOnRejection(next)) : undefined
+}
+
+/**
+ * Passes the rejection reason to `next`, and makes sure a falsy reason (e.g. `Promise.reject()`)
+ * is still treated as an error instead of moving on to the next handler, like express 5 does.
+ * @internal
+ */
+export function nextOnRejection(next: express.NextFunction) {
+	return (reason: unknown) => next(reason || new Error('Rejected promise'))
 }
 
 /**
