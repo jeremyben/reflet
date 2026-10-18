@@ -1,5 +1,4 @@
 import * as express from 'express'
-import * as core from 'express-serve-static-core'
 
 /**
  * @public
@@ -7,10 +6,10 @@ import * as core from 'express-serve-static-core'
 export type Request<Req extends {} = {}> = keyof Req extends undefined
 	? express.Request
 	: express.Request<
-			Req extends { params: infer P } ? P : core.ParamsDictionary,
+			Req extends { params: infer P } ? P : express.Request['params'],
 			any,
 			Req extends { body: infer B } ? B : any,
-			Req extends { query: infer Q } ? Q : core.Query
+			Req extends { query: infer Q } ? Q : express.Request['query']
 	  > &
 			Req
 

@@ -128,6 +128,7 @@ export function UseInterceptor<In, Out = In>(
 		}
 
 		// https://nodejs.org/api/http.html#http_response_end_data_encoding_callback
+		// Typed loosely since it might return a promise if the transform is async.
 		res.end = function end(
 			dataOrCallback?: string | Buffer | (() => void),
 			encodingOrCallback?: string | (() => void),
@@ -165,7 +166,7 @@ export function UseInterceptor<In, Out = In>(
 			} else {
 				return end0.apply(res, arguments as unknown as Parameters<express.Response['end']>)
 			}
-		}
+		} as express.Response['end']
 
 		next()
 	})
