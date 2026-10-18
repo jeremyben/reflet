@@ -92,3 +92,53 @@ describe('final handler', () => {
 		)
 	})
 })
+
+describe('default logger', () => {
+	@Catch(finalHandler({ json: true, expose: false, log: '5xx' }))
+	class App extends Application {
+		@Get('/server-error')
+		serverError() {
+			throw Error('server')
+		}
+
+		@Get('/client-error')
+		clientError() {
+			throw HttpError.BadRequest('client')
+		}
+	}
+
+	const rq = supertest(new App().register())
+
+	test('logs server errors with request context', async () => {
+		await rq.get('/server-error?a=1')
+		await new Promise((resolve) => setImmediate(resolve))
+
+		expect(consoleErrorSpy).toBeCalledWith('GET /server-error 500', expect.objectContaining({ message: 'server' }))
+	})
+
+	test('does not log client errors', async () => {
+		await rq.get('/client-error')
+		await new Promise((resolve) => setImmediate(resolve))
+
+		expect(consoleErrorSpy).not.toBeCalled()
+	})
+})
+
+test('warns when exposing everything in production', () => {
+	const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation()
+	const nodeEnv = process.env.NODE_ENV
+
+	try {
+		process.env.NODE_ENV = 'production'
+		finalHandler({ json: true, expose: true })
+		finalHandler({ json: true, expose: ['message'] })
+		expect(consoleWarnSpy).toBeCalledTimes(1)
+
+		process.env.NODE_ENV = 'development'
+		finalHandler({ json: true, expose: true })
+		expect(consoleWarnSpy).toBeCalledTimes(1)
+	} finally {
+		process.env.NODE_ENV = nodeEnv
+		consoleWarnSpy.mockRestore()
+	}
+})

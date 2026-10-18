@@ -17,6 +17,12 @@ import { ResponseReadonly } from './interfaces'
  * @public
  */
 export function finalHandler(options: finalHandler.Options): express.ErrorRequestHandler {
+	if (options.expose === true && process.env.NODE_ENV === 'production') {
+		console.warn(
+			'finalHandler: `expose: true` sends every error property to the client, stack included, in production.'
+		)
+	}
+
 	const finalErrorHandler: express.ErrorRequestHandler = (error, req, res, next) => {
 		if (res.headersSent) {
 			return next(error)
@@ -49,7 +55,9 @@ export function finalHandler(options: finalHandler.Options): express.ErrorReques
 			if (typeof options.log === 'function') {
 				options.log(error, req, res)
 			} else if (options.log === true || (options.log === '5xx' && res.statusCode >= 500)) {
-				setImmediate(() => console.error(error))
+				// Query string is left out, as it might contain sensitive data.
+				const context = `${req.method} ${req.baseUrl}${req.path} ${res.statusCode}`
+				setImmediate(() => console.error(context, error))
 			}
 		}
 
@@ -121,7 +129,7 @@ export namespace finalHandler {
 		/**
 		 * Exposes error properties to client:
 		 *
-		 * - `true`: exposes all properties (stack included, beware of information leakage !).
+		 * - `true`: exposes all properties (stack included, beware of information leakage !), warns in production.
 		 * - `false`: exposes nothing (empty object).
 		 * - `string[]`: whitelists specific error properties.
 		 * - `(status) => boolean | string[]`: flexible whitelisting.
@@ -133,7 +141,7 @@ export namespace finalHandler {
 		/**
 		 * log error:
 		 *
-		 * - `true`: every error
+		 * - `true`: every error, with request method, url and response status
 		 * - `false`: none
 		 * - `'5xx'`: only server errors
 		 * - `(err, req, res) => void`: flexible logging

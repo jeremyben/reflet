@@ -1010,7 +1010,7 @@ By default, Error `message` and `name` are not serialized to json.
 
 With this option, you can either hide all error properties or expose some of them in the serialized response:
 
-* `true`: exposes all properties (stack included, beware of information leakage !).
+* `true`: exposes all properties (stack included, beware of information leakage !). A warning is printed if used with `NODE_ENV=production`.
 * `false`: exposes nothing (empty object).
 * `string[]`: whitelists specifics properties.
 * `(status) => boolean | string[]`: function for more conditional whitelisting:
@@ -1020,7 +1020,7 @@ finalHandler({
   json: true,
   expose(status) {
     // expose all properties in non production environment
-    if (process.env !== 'production') {
+    if (process.env.NODE_ENV !== 'production') {
       return true
     }
 
@@ -1036,9 +1036,9 @@ finalHandler({
 
 ##### `log`
 
-* `log: true` always logs errors (with `console.error`).
+* `log: true` always logs errors (with `console.error`), preceded by the request method, path (without query string) and response status (e.g. `GET /foo 500`).
 * `log: false` never logs errors, _default_.
-* `log: '5xx'` only logs server errors (with `console.error`).
+* `log: '5xx'` only logs server errors (same format).
 * If you need the flexibility to log more infos or use a dedicated logger other that `console.error`, you can pass a function like so:
 
 ```ts
