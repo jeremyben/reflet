@@ -1,5 +1,16 @@
 import * as express from 'express'
-import * as core from 'express-serve-static-core'
+
+/**
+ * Default route parameters type, retrieved from express to avoid depending on `express-serve-static-core`.
+ * @public
+ */
+export type ParamsDictionary = express.Request['params']
+
+/**
+ * Default query string type, retrieved from express to avoid depending on `express-serve-static-core`.
+ * @public
+ */
+export type ParsedQuery = express.Request['query']
 
 /**
  * @public
@@ -97,10 +108,10 @@ export interface Handler<Req extends {} = {}> {
 		req: keyof Req extends undefined
 			? express.Request
 			: express.Request<
-					Req extends { params: infer P } ? P : core.ParamsDictionary,
+					Req extends { params: infer P } ? P : ParamsDictionary,
 					any,
 					Req extends { body: infer B } ? B : any,
-					Req extends { query: infer Q } ? Q : core.Query
+					Req extends { query: infer Q } ? Q : ParsedQuery
 			  > &
 					Req,
 		res: express.Response,
