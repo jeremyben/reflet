@@ -401,29 +401,40 @@ export namespace createParamDecorator {
 }
 
 /**
- * Used to intercept a decorated handler execution and extract the Request, Response, Next,
- * or Request properties, by applying the mapper defined in the metadata.
+ * Retrieves the mappers defined in the metadata, to extract the Request, Response, Next,
+ * or Request properties, and inject them in the decorated handler parameters.
+ *
+ * Extracted once on route registering, and applied later inside a closure on route handling.
+ * Returns `null` if the method has no parameter decorator.
  *
  * @internal
  */
-export function extractParams(
+export function extractParamsMappers(
 	target: ClassType,
-	key: string | symbol,
-	{ req, res, next }: { req: express.Request; res: express.Response; next: express.NextFunction }
-): any[] {
+	key: string | symbol
+): createParamDecorator.Options['mapper'][] | null {
 	const params: createParamDecorator.Options[] = getOwnMetadata(METAKEY_PARAM, target.prototype, key) || []
 
-	// No decorator found in the method: simply return the original arguments in the original order
-	if (!params.length) return [req, res, next]
+	// No decorator found in the method: the original arguments will be passed in the original order.
+	if (!params.length) return null
 
-	const args: any[] = []
+	const mappers: createParamDecorator.Options['mapper'][] = []
 
+	// Use a classic loop to iterate over the holes of the sparse array.
 	for (let index = 0; index < params.length; index++) {
-		const { mapper } = params[index]
-		args[index] = mapper(req, res, next)
+		if (!params[index]) {
+			const codePath = `${target.name}.${String(key)}`
+
+			throw new RefletExpressError(
+				'PARAMETER_DECORATOR_MISSING',
+				`Parameter ${index} of "${codePath}" should have an express decorator, as other parameters are decorated.`
+			)
+		}
+
+		mappers[index] = params[index].mapper
 	}
 
-	return args
+	return mappers
 }
 
 /**
@@ -450,10 +461,11 @@ export function extractParamsMiddlewares(
 
 	let alreadyNames: string[] = []
 
-	for (const { use } of params) {
-		if (!use) continue
+	for (const param of params) {
+		// Undecorated parameters are reported when extracting mappers.
+		if (!param || !param.use) continue
 
-		for (const mware of use) {
+		for (const mware of param.use) {
 			if (typeof mware === 'function') {
 				// If the same param decorator is used twice, we prevent adding its middlewares twice
 				// whether or not it's marked for dedupe, to do that we simply compare by reference.

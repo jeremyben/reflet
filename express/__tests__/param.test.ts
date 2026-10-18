@@ -195,3 +195,15 @@ test('only one decorator', () => {
 		}
 	}).toThrowError()
 })
+
+test('every parameter decorated', () => {
+	@Router('/foo')
+	class Foo {
+		@Get()
+		get(req: express.Request, @Res res: Res) {}
+	}
+
+	expect(() => register(express(), [Foo])).toThrowError(
+		expect.objectContaining({ code: 'PARAMETER_DECORATOR_MISSING' })
+	)
+})
