@@ -160,8 +160,15 @@ export namespace Router {
 	 */
 	export function Dynamic(options?: express.RouterOptions): Router.Decorator {
 		return (target) => {
-			const routerMeta: RouterMeta = { path: DYNAMIC_PATH, options }
-			defineRouterMeta(routerMeta, target)
+			const existingRouterMeta = extractRouterMeta(target)
+
+			if (existingRouterMeta) {
+				existingRouterMeta.path = DYNAMIC_PATH
+				existingRouterMeta.options = options
+			} else {
+				const newRouterMeta: RouterMeta = { path: DYNAMIC_PATH, options }
+				defineRouterMeta(newRouterMeta, target)
+			}
 		}
 	}
 
