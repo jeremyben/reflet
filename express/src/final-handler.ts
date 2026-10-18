@@ -34,12 +34,7 @@ export function finalHandler(options: finalHandler.Options): express.ErrorReques
 
 		if (errorStatus) {
 			res.status(errorStatus)
-		} else if (
-			typeof res.statusCode !== 'number' ||
-			res.statusCode < 400 ||
-			res.statusCode > 599 ||
-			Number.isNaN(res.statusCode)
-		) {
+		} else if (!Number.isInteger(res.statusCode) || res.statusCode < 400 || res.statusCode > 599) {
 			res.status(500)
 		}
 
@@ -201,11 +196,11 @@ function getStatusFromErrorProps(err: any): number | undefined {
 		return undefined
 	}
 
-	if (typeof err.status === 'number' && err.status >= 400 && err.status < 600) {
+	if (Number.isInteger(err.status) && err.status >= 400 && err.status < 600) {
 		return err.status
 	}
 
-	if (typeof err.statusCode === 'number' && err.statusCode >= 400 && err.statusCode < 600) {
+	if (Number.isInteger(err.statusCode) && err.statusCode >= 400 && err.statusCode < 600) {
 		return err.statusCode
 	}
 
