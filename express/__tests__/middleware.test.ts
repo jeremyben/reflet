@@ -112,3 +112,51 @@ test('router scoped middlewares', async () => {
 	expect(res2.status).toBe(200)
 	expect(res2.body).toEqual({ foo: 1 })
 })
+
+test('error handlers of a child router do not leak into its parent', async () => {
+	@Catch((err, req, res, next) => res.status(500).send('parent'))
+	@Router('/parent')
+	class Parent {
+		@Get()
+		get(req: express.Request, res: express.Response) {
+			throw Error()
+		}
+	}
+
+	@Catch((err, req, res, next) => res.status(500).send('child'))
+	@Router('/child')
+	class Child extends Parent {}
+
+	const res = await supertest(register(express(), [Parent])).get('/parent')
+	expect(res.text).toBe('parent')
+})
+
+test('error handlers are not inherited from parent router, like middlewares', async () => {
+	const called: string[] = []
+
+	@Catch((err, req, res, next) => {
+		called.push('parent')
+		res.status(500).send('parent')
+	})
+	@Router('/parent-catch')
+	class Parent {}
+
+	@Catch((err, req, res, next) => {
+		called.push('child')
+		next(err)
+	})
+	@Router('/child-catch')
+	class Child extends Parent {
+		@Get()
+		get(req: express.Request, res: express.Response) {
+			throw Error('child')
+		}
+	}
+
+	const app = register(express(), [Child])
+	app.use(((err, req, res, next) => res.status(500).send('global')) as express.ErrorRequestHandler)
+
+	const res = await supertest(app).get('/child-catch')
+	expect(res.text).toBe('global')
+	expect(called).toEqual(['child'])
+})
