@@ -4,7 +4,7 @@ import { ClassType, Registration } from './interfaces'
 import { isPromise, isClass, isExpressApp, isExpressRouter } from './type-guards'
 
 // Extractors
-import { DYNAMIC_PATH, extractRouterMeta, RouterMeta } from './router-decorator'
+import { DYNAMIC_PATH, extractRouterMeta, extractChildrenDeps, RouterMeta } from './router-decorator'
 import { extractRoutes } from './route-decorators'
 import { extractMiddlewares } from './middleware-decorator'
 import { extractErrorHandlers } from './error-handler-decorator'
@@ -140,7 +140,7 @@ function registerRouter(
 
 		const children =
 			typeof routerMeta.children === 'function'
-				? routerMeta.children(...routerMeta.childrenDeps!)
+				? routerMeta.children(...extractChildrenDeps(routerInstance))
 				: routerMeta.children
 
 		for (const child of children) {

@@ -359,3 +359,53 @@ test('route function constraint', async () => {
 		expect.objectContaining({ code: <RefletExpressError['code']>'INVALID_ROUTE_TYPE' })
 	)
 })
+
+describe('children dependencies', () => {
+	@Router('/item')
+	class Item {
+		constructor(private name: string) {}
+
+		@Get()
+		get(req: express.Request, res: express.Response) {
+			res.send(this.name)
+		}
+	}
+
+	@Router.Children<typeof Parent>((name) => [new Item(name)])
+	@Router('/parent')
+	class Parent {
+		constructor(public name: string) {}
+	}
+
+	test('are retrieved for each instance', async () => {
+		const one = new Parent('one')
+		const two = new Parent('two')
+
+		const resOne = await supertest(register(express(), [one])).get('/parent/item')
+		const resTwo = await supertest(register(express(), [two])).get('/parent/item')
+
+		expect(resOne.text).toBe('one')
+		expect(resTwo.text).toBe('two')
+	})
+
+	test('are retrieved with default constructor parameters', async () => {
+		@Router.Children<typeof DefaultParent>((name) => [new Item(name!)])
+		@Router('/default-parent')
+		class DefaultParent {
+			constructor(public name = 'default') {}
+		}
+
+		const res = await supertest(register(express(), [new DefaultParent('custom')])).get('/default-parent/item')
+		expect(res.text).toBe('custom')
+	})
+
+	test('keep subclasses prototype', () => {
+		class SubParent extends Parent {
+			sub = true
+		}
+
+		const sub = new SubParent('sub')
+		expect(sub).toBeInstanceOf(SubParent)
+		expect(sub.sub).toBe(true)
+	})
+})
