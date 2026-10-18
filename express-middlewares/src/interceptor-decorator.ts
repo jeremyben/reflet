@@ -69,7 +69,7 @@ export function UseInterceptor<In, Out = In>(
 			}
 
 			if (isPromise(result)) {
-				return result.then((value) => send0.call(res, value)) as any
+				return result.then((value) => send0.call(res, value), forwardError(req, next)) as any
 			} else {
 				return send0.call(res, result)
 			}
@@ -95,7 +95,7 @@ export function UseInterceptor<In, Out = In>(
 			}
 
 			if (isPromise(result)) {
-				return result.then((value) => json0.call(res, value)) as any
+				return result.then((value) => json0.call(res, value), forwardError(req, next)) as any
 			} else {
 				return json0.call(res, result)
 			}
@@ -121,7 +121,7 @@ export function UseInterceptor<In, Out = In>(
 			}
 
 			if (isPromise(result)) {
-				return result.then((value) => jsonp0.call(res, value)) as any
+				return result.then((value) => jsonp0.call(res, value), forwardError(req, next)) as any
 			} else {
 				return jsonp0.call(res, result)
 			}
@@ -161,7 +161,7 @@ export function UseInterceptor<In, Out = In>(
 				return arguments[0].then((value: any) => {
 					arguments[0] = value
 					return end0.apply(res, arguments as unknown as Parameters<express.Response['end']>)
-				})
+				}, forwardError(req, next))
 			} else {
 				return end0.apply(res, arguments as unknown as Parameters<express.Response['end']>)
 			}
@@ -169,4 +169,14 @@ export function UseInterceptor<In, Out = In>(
 
 		next()
 	})
+}
+
+/**
+ * Forwards transform errors to the `next` function of the current layer (the one sending the response, e.g. the route handler),
+ * as the interceptor middleware has already called its own `next`.
+ * @internal
+ */
+function forwardError(req: express.Request, next: express.NextFunction) {
+	const currentNext = req.next || next
+	return (error: unknown) => currentNext(error)
 }
