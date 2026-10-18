@@ -34,6 +34,8 @@ The **best** decorators for [Express](https://expressjs.com/). Have a look at [R
     npm i -D @types/express
     ```
 
+    _Both Express 4 and Express 5 are supported. See [Express 5](#express-5) for the changes on your side._
+
 3. Create your decorated routing routers.
 
     ```ts
@@ -404,6 +406,15 @@ You can apply them **with or without invokation**, how flexible is that. 😉
 The decorators when used as types, are convenient references to express interfaces (so you don't need to import them).
 
 Looking for other decorators like `@Body` ? [Request properties injection](#request-properties-injection).
+
+### Express 5
+
+Reflet supports Express 4 and 5 with the same API. When upgrading your app to Express 5, follow the [official migration guide](https://expressjs.com/en/guide/migrating-5.html), especially for these changes that affect decorated routers:
+
+* **Path syntax** (path-to-regexp v8): optional parameters are written `'/user{/:id}'` instead of `'/user/:id?'`, wildcards must be named (`'/*splat'` instead of `'/*'`), and regular expressions are no longer allowed in strings (use a `RegExp` instead).
+* **`req.body`** is `undefined` if the request has no body (instead of an empty object with Express 4), so `@Body()` injects `undefined` as well. `@Body('key')` safely injects `undefined` in that case.
+* **Returned values**: Express 5 calls `then` on anything returned by a handler, so a query builder returned without being awaited (e.g. a Mongoose query) would be executed. Reflet doesn't pass these values back to Express, so this only concerns plain Express handlers.
+* **Node.js 18** is required by Express 5.
 
 ### Async support
 

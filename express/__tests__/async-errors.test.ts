@@ -3,8 +3,9 @@ import * as express from 'express'
 import * as http from 'http'
 import { AddressInfo } from 'net'
 import { Readable } from 'stream'
-import { Application, Catch, Get, register, Router, Send, Use } from '../src'
-import { getGlobalMiddlewares } from '../src/register'
+import { Application, Body, Catch, Get, Post, register, Router, Send, Use } from '../src'
+import { getGlobalMiddlewares, getRouterStack } from '../src/register'
+import { isExpress4 } from '../src/type-guards'
 
 const errorHandler: express.ErrorRequestHandler = (err, req, res, next) => {
 	res.status(500).send(err.message)
@@ -82,7 +83,7 @@ describe('promises returned by plain functions are caught', () => {
 
 		const namedApp = express()
 		register(namedApp, [Named])
-		const routerLayer = namedApp._router.stack.find((layer: { name: string; handle: unknown }) => layer.name === 'router')!
+		const routerLayer = getRouterStack(namedApp).find((layer: { name: string; handle: unknown }) => layer.name === 'router')!
 		const routerStack = (routerLayer.handle as any).stack as { name: string }[]
 		expect(routerStack.map((layer) => layer.name)).toContain('namedMware')
 	})
@@ -181,7 +182,7 @@ describe('async global handlers with multiple register calls', () => {
 		expect(res.status).toBe(500)
 		expect(res.text).toBe('global bar')
 
-		const stack = app._router.stack
+		const stack = getRouterStack(app)
 		expect(stack[stack.length - 1].name).toBe('asyncGlobalErr')
 		expect(stack.filter((layer) => layer.name === 'asyncGlobalErr')).toHaveLength(1)
 	})
@@ -222,6 +223,10 @@ describe('review regressions', () => {
 
 		@Router('/lazy')
 		class Lazy {
+			@Use((req, res, next) => {
+				next()
+				return lazyQuery as any
+			})
 			@Get()
 			get(req: express.Request, res: express.Response) {
 				res.send('ok')
@@ -270,5 +275,145 @@ describe('review regressions', () => {
 		// Connection closed by the server rather than a client timeout.
 		expect(error).not.toBeNull()
 		expect(error.timeout).toBeUndefined()
+	})
+})
+
+describe('express 5 review', () => {
+	const errorHandler: express.ErrorRequestHandler = (err, req, res, next) => {
+		res.status(500).send(err.message)
+	}
+
+	test('whole body follows each express version without body', async () => {
+		@Send({ json: true })
+		@Router('/whole-body')
+		class WholeBody {
+			@Post()
+			post(@Body() body: object | undefined) {
+				return { isUndefined: body === undefined, body }
+			}
+		}
+
+		const res = await supertest(register(express(), [WholeBody])).post('/whole-body')
+		expect(res.status).toBe(200)
+
+		// Express 4 body parsers default to an empty object, express 5 ones leave it undefined.
+		if (isExpress4(express.application)) {
+			expect(res.body).toEqual({ isUndefined: false, body: {} })
+		} else {
+			expect(res.body).toEqual({ isUndefined: true })
+		}
+	})
+
+	test('falsy rejection is treated as an error', async () => {
+		@Router('/falsy')
+		class Falsy {
+			@Get()
+			get(req: express.Request, res: express.Response) {
+				return Promise.reject()
+			}
+
+			@Get('/fallthrough')
+			fallthrough(req: express.Request, res: express.Response) {
+				res.send('fell through')
+			}
+		}
+
+		const app = register(express(), [Falsy])
+		app.use(errorHandler)
+
+		const res = await supertest(app).get('/falsy')
+		expect(res.status).toBe(500)
+		expect(res.text).toBe('Rejected promise')
+	})
+
+	test('thenable without catch is sent', async () => {
+		let errorHandled = false
+
+		@Send()
+		@Router('/thenable')
+		class Thenable {
+			@Get()
+			get() {
+				// Returns nothing from `then`, unlike promises.
+				return {
+					then(resolve: (value: string) => void) {
+						resolve('thenable')
+					},
+				}
+			}
+		}
+
+		const app = register(express(), [Thenable])
+		app.use(((err, req, res, next) => {
+			errorHandled = true
+			next(err)
+		}) as express.ErrorRequestHandler)
+
+		const res = await supertest(app).get('/thenable')
+		await new Promise((resolve) => setImmediate(resolve))
+		expect(res.text).toBe('thenable')
+		expect(errorHandled).toBe(false)
+	})
+
+	test('arrays of middlewares are wrapped', async () => {
+		let executed = false
+		const lazyQuery = {
+			then() {
+				executed = true
+			},
+		}
+
+		@Router('/array')
+		class ArrayMwares {
+			@Use([
+				((req, res, next) => {
+					next()
+					return lazyQuery
+				}) as express.RequestHandler,
+				(async () => {
+					throw Error('array')
+				}) as express.RequestHandler,
+			] as any)
+			@Get()
+			get(req: express.Request, res: express.Response) {
+				res.send('ok')
+			}
+		}
+
+		const app = register(express(), [ArrayMwares])
+		app.use(errorHandler)
+
+		const res = await supertest(app).get('/array')
+		expect(res.text).toBe('array')
+		expect(executed).toBe(false)
+	})
+
+	test('undecorated class looking like an express router is not mounted as one', () => {
+		class LookAlike {
+			static stack = []
+			static handle() {}
+			static use() {}
+		}
+
+		expect(() => register(express(), [['/look-alike', LookAlike]])).toThrowError(
+			expect.objectContaining({ code: 'ROUTER_DECORATOR_MISSING' })
+		)
+	})
+
+	test('decorated class looking like an express router is still registered', async () => {
+		@Router('/look-alike')
+		class LookAlike {
+			static stack = []
+			static handle() {}
+			static use() {}
+
+			@Get()
+			get(req: express.Request, res: express.Response) {
+				res.send('decorated')
+			}
+		}
+
+		const res = await supertest(register(express(), [['/look-alike', LookAlike]])).get('/look-alike')
+		expect(res.text).toBe('decorated')
 	})
 })

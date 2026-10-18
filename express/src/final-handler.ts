@@ -201,11 +201,11 @@ function getStatusFromErrorProps(err: any): number | undefined {
 		return undefined
 	}
 
-	if (typeof err.status === 'number' && err.status >= 400 && err.status < 600) {
+	if (Number.isInteger(err.status) && err.status >= 400 && err.status < 600) {
 		return err.status
 	}
 
-	if (typeof err.statusCode === 'number' && err.statusCode >= 400 && err.statusCode < 600) {
+	if (Number.isInteger(err.statusCode) && err.statusCode >= 400 && err.statusCode < 600) {
 		return err.statusCode
 	}
 

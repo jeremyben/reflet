@@ -2,6 +2,7 @@ import * as express from 'express'
 import * as supertest from 'supertest'
 import { HttpError } from '@reflet/http'
 import { Use, Catch, Application, Get, Router, finalHandler } from '../src'
+import { getRouterStack } from '../src/register'
 import { log } from '../../testing/tools'
 
 const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation()
@@ -181,9 +182,23 @@ describe('global final handler with not found handler and multiple register call
 	})
 
 	test('is not added twice', () => {
-		const names = app._router.stack.map((layer: { name: string }) => layer.name)
+		const names = getRouterStack(app).map((layer: { name: string }) => layer.name)
 		expect(names.filter((name: string) => name === 'notFoundHandler')).toHaveLength(1)
 		expect(names.filter((name: string) => name === 'finalErrorHandler')).toHaveLength(1)
 		expect(names.slice(-2)).toEqual(['notFoundHandler', 'finalErrorHandler'])
 	})
+})
+
+test('non-integer error status is ignored', async () => {
+	@Catch(finalHandler({ json: true, expose: ['message'] }))
+	class App extends Application {
+		@Get('/float')
+		float() {
+			throw Object.assign(Error('float'), { status: 404.5 })
+		}
+	}
+
+	const res = await supertest(new App().register()).get('/float')
+	expect(res.status).toBe(500)
+	expect(res.body).toEqual({ message: 'float' })
 })
