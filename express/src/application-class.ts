@@ -83,13 +83,16 @@ function mixinApplication(target: express.Application, source: Function) {
 		protoChainLink = Object.getPrototypeOf(protoChainLink)
 	} while (protoChainLink !== Function.prototype && protoChainLink !== Object.prototype)
 
+	// Keys defined by the class chain itself, which can be overridden by subclasses.
+	const ownKeys = new Set<string>()
+
 	for (const proto of protoChain) {
 		const keys = Object.getOwnPropertyNames(proto.prototype)
 
 		for (const key of keys) {
 			if (key === 'constructor') continue
 
-			if (key in target) {
+			if (key in target && !ownKeys.has(key)) {
 				throw new RefletExpressError(
 					'EXPRESS_PROPERTY_PROTECTED',
 					`Cannot overwrite "${key}" on express application.`
@@ -98,6 +101,7 @@ function mixinApplication(target: express.Application, source: Function) {
 
 			const descriptor = Object.getOwnPropertyDescriptor(proto.prototype, key)!
 			Object.defineProperty(target, key, descriptor)
+			ownKeys.add(key)
 		}
 	}
 }
