@@ -58,3 +58,21 @@ test('rejected guard is forwarded to error handlers', async () => {
 	expect(res.status).toBe(500)
 	expect(res.text).toBe('guard')
 })
+
+test('guard rejected without reason does not authorize', async () => {
+	@Router('/falsy-guard')
+	class FalsyGuard {
+		@UseGuards(() => Promise.reject())
+		@Get()
+		get(req: express.Request, res: express.Response) {
+			res.send('secret')
+		}
+	}
+
+	const app = register(express(), [FalsyGuard])
+	app.use(((err, req, res, next) => res.status(500).send(err.message)) as express.ErrorRequestHandler)
+
+	const res = await supertest(app).get('/falsy-guard')
+	expect(res.status).toBe(500)
+	expect(res.text).not.toBe('secret')
+})

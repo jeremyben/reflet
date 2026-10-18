@@ -2,6 +2,7 @@ import { Use } from '@reflet/express'
 import * as express from 'express'
 import { Request } from './interfaces'
 import { isPromise } from './type-guards'
+import { nextOnRejection } from './next-on-rejection'
 
 /**
  * Applies middlewares conditionally.
@@ -28,14 +29,14 @@ export function UseIf<Req extends {}>(
 		router.use((req, res, next) => {
 			const result: unknown = middleware(req, res, next)
 			// Only native promises, to avoid triggering lazy thenables.
-			if (result instanceof Promise) result.catch(next)
+			if (result instanceof Promise) result.catch(nextOnRejection(next))
 		})
 	}
 
 	return Use<Req>((req, res, next) => {
 		const ok = condition(req)
 
-		if (isPromise(ok)) ok.then((yes) => apply(yes), next)
+		if (isPromise(ok)) ok.then((yes) => apply(yes), nextOnRejection(next))
 		else apply(ok)
 
 		function apply(yes: boolean) {

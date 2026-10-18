@@ -2,6 +2,7 @@ import { Use } from '@reflet/express'
 import * as express from 'express'
 import { ResponseSafe } from './interfaces'
 import { isPromise } from './type-guards'
+import { nextOnRejection } from './next-on-rejection'
 
 /**
  * Intercepts and manipulates the response body.
@@ -178,6 +179,5 @@ export function UseInterceptor<In, Out = In>(
  * @internal
  */
 function forwardError(req: express.Request, next: express.NextFunction) {
-	const currentNext = req.next || next
-	return (error: unknown) => currentNext(error)
+	return nextOnRejection(req.next || next)
 }
