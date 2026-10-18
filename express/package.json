@@ -27,17 +27,19 @@
 	"engineStrict": true,
 	"peerDependencies": {
 		"@reflet/http": "workspace:^",
-		"@types/express": "^4.17.0",
-		"express": "^4.17.0"
+		"@types/express": "^4.17.0 || ^5.0.0",
+		"express": "^4.17.0 || ^5.0.0"
 	},
 	"devDependencies": {
 		"@reflet/http": "workspace:^",
 		"@types/express": "^4.17.25",
-		"express": "^4.22.1"
+		"express": "^4.22.1",
+		"express5": "npm:express@^5.3.0"
 	},
 	"scripts": {
 		"build": "ts-node -T ../build.ts",
 		"test": "jest --config ../jest.config.js",
+		"test:express5": "jest --config ../jest.express5.config.js",
 		"test:watch": "pnpm test --watch --verbose false",
 		"test:file": "pnpm test --testPathPattern",
 		"release": "release-it --config ../.release-it.js --git.requireBranch=master",

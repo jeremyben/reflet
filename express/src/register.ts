@@ -1,7 +1,7 @@
 import * as express from 'express'
 import { wrapAsync, wrapAsyncError, unwrap, forwardRejection, nextOnRejection } from './async-wrapper'
 import { ClassType, Registration } from './interfaces'
-import { isPromise, isClass, isExpressApp, isExpressRouter } from './type-guards'
+import { isPromise, isClass, isExpressApp, isExpressRouter, isExpress4 } from './type-guards'
 
 // Extractors
 import { DYNAMIC_PATH, extractRouterMeta, extractChildrenDeps, RouterMeta } from './router-decorator'
@@ -220,7 +220,7 @@ function registerRootErrorHandlers(app: express.Application, appMeta?: Applicati
 	// Error handlers added at the end of the stack during the first `register` call,
 	// are moved to the last position for subsequent calls, to keep their behavior global.
 	if (appMeta.registered) {
-		const stack = app._router?.stack || []
+		const stack = getRouterStack(app)
 
 		for (const errHandler of globalErrorHandlers) {
 			// Arrays of handlers (e.g. `finalHandler` with `notFoundHandler`) are flattened by express in multiple layers.
@@ -382,9 +382,10 @@ function createHandler(
 
 		try {
 			const sendResult = sendHandler(result, { req, res, next })
-			return isPromise(sendResult) ? Promise.resolve(sendResult).catch(nextOnRejection(next)) : sendResult
+			return isPromise(sendResult) ? Promise.resolve(sendResult).catch(nextOnRejection(next)) : undefined
 		} catch (error) {
 			next(error)
+			return undefined
 		}
 	}
 }
@@ -396,17 +397,28 @@ function createHandler(
 export function getGlobalMiddlewares(app: express.Application): express.RequestHandler[] {
 	const globalMwares: express.RequestHandler[] = []
 
-	// `_router` might be undefined before express app is properly initialized.
-	for (const layer of app._router?.stack || []) {
-		if (
-			layer.name !== 'query' &&
-			layer.name !== 'expressInit' &&
-			layer.name !== 'router' &&
-			layer.name !== 'bound dispatch'
-		) {
+	for (const layer of getRouterStack(app)) {
+		// Exclude express 4 internal middlewares, routers, and routes (whose layer is named
+		// 'bound dispatch' in express 4 and 'handle' in express 5, so we check the route property instead).
+		if (layer.name !== 'query' && layer.name !== 'expressInit' && layer.name !== 'router' && !layer.route) {
 			globalMwares.push(unwrap(layer.handle) as express.RequestHandler)
 		}
 	}
 
 	return globalMwares
+}
+
+/**
+ * Retrieves the stack of the application main router:
+ * `app._router` with express 4 (might be undefined before the app is properly initialized),
+ * `app.router` with express 5.
+ *
+ * Exported for tests only.
+ * @internal
+ */
+export function getRouterStack(app: express.Application): express._Router['stack'] {
+	// Express 4 throws when accessing `app.router`.
+	const router: express._Router | undefined = isExpress4(app) ? app._router : (app as any).router
+
+	return router ? router.stack : []
 }

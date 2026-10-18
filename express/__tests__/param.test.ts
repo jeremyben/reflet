@@ -207,3 +207,18 @@ test('every parameter decorated', () => {
 		expect.objectContaining({ code: 'PARAMETER_DECORATOR_MISSING' })
 	)
 })
+
+test('body property without body', async () => {
+	@Router('/no-body')
+	class NoBody {
+		@Post()
+		post(@Body<{ name: string }>('name') name: string | undefined, @Res res: Res) {
+			res.send(String(name))
+		}
+	}
+
+	// Express 5 leaves `req.body` undefined if the request has no body.
+	const res = await supertest(register(express(), [NoBody])).post('/no-body')
+	expect(res.status).toBe(200)
+	expect(res.text).toBe('undefined')
+})

@@ -173,7 +173,8 @@ export function Body<T extends object>(
 		return createParamDecorator((req) => req.body, bodyParsers)(target, propertyKey!, parameterIndex!)
 	} else {
 		const subKey = keyOrTarget as keyof T | undefined
-		return createParamDecorator((req) => (subKey ? req.body[subKey] : req.body), bodyParsers)
+		// Express 5 leaves `req.body` undefined if the request has no body.
+		return createParamDecorator((req) => (subKey ? req.body?.[subKey] : req.body), bodyParsers)
 	}
 }
 

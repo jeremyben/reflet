@@ -4,7 +4,7 @@ import * as http from 'http'
 import { AddressInfo } from 'net'
 import { Readable } from 'stream'
 import { Application, Catch, Get, register, Router, Send, Use } from '../src'
-import { getGlobalMiddlewares } from '../src/register'
+import { getGlobalMiddlewares, getRouterStack } from '../src/register'
 
 const errorHandler: express.ErrorRequestHandler = (err, req, res, next) => {
 	res.status(500).send(err.message)
@@ -82,7 +82,7 @@ describe('promises returned by plain functions are caught', () => {
 
 		const namedApp = express()
 		register(namedApp, [Named])
-		const routerLayer = namedApp._router.stack.find(
+		const routerLayer = getRouterStack(namedApp).find(
 			(layer: { name: string; handle: unknown }) => layer.name === 'router'
 		)!
 		const routerStack = (routerLayer.handle as any).stack as { name: string }[]
@@ -183,7 +183,7 @@ describe('async global handlers with multiple register calls', () => {
 		expect(res.status).toBe(500)
 		expect(res.text).toBe('global bar')
 
-		const stack = app._router.stack
+		const stack = getRouterStack(app)
 		expect(stack[stack.length - 1].name).toBe('asyncGlobalErr')
 		expect(stack.filter((layer) => layer.name === 'asyncGlobalErr')).toHaveLength(1)
 	})
@@ -224,6 +224,10 @@ describe('review regressions', () => {
 
 		@Router('/lazy')
 		class Lazy {
+			@Use((req, res, next) => {
+				next()
+				return lazyQuery as any
+			})
 			@Get()
 			get(req: express.Request, res: express.Response) {
 				res.send('ok')
