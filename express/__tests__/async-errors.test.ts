@@ -272,3 +272,97 @@ describe('review regressions', () => {
 		expect(error.timeout).toBeUndefined()
 	})
 })
+
+describe('rejections, thenables and arrays of handlers', () => {
+	const errorHandler: express.ErrorRequestHandler = (err, req, res, next) => {
+		res.status(500).send(err.message)
+	}
+
+	test('falsy rejection is treated as an error', async () => {
+		@Router('/falsy')
+		class Falsy {
+			@Get()
+			get(req: express.Request, res: express.Response) {
+				return Promise.reject()
+			}
+		}
+
+		// Same path, registered after: must not be reached.
+		@Router('/falsy')
+		class Fallthrough {
+			@Get()
+			get(req: express.Request, res: express.Response) {
+				res.send('fell through')
+			}
+		}
+
+		const app = register(express(), [Falsy, Fallthrough])
+		app.use(errorHandler)
+
+		const res = await supertest(app).get('/falsy')
+		expect(res.status).toBe(500)
+		expect(res.text).toBe('Rejected promise')
+	})
+
+	test('thenable without catch is sent', async () => {
+		let errorHandled = false
+
+		@Send()
+		@Router('/thenable')
+		class Thenable {
+			@Get()
+			get() {
+				// Returns nothing from `then`, unlike promises.
+				return {
+					then(resolve: (value: string) => void) {
+						resolve('thenable')
+					},
+				}
+			}
+		}
+
+		const app = register(express(), [Thenable])
+		app.use(((err, req, res, next) => {
+			errorHandled = true
+			next(err)
+		}) as express.ErrorRequestHandler)
+
+		const res = await supertest(app).get('/thenable')
+		await new Promise((resolve) => setImmediate(resolve))
+		expect(res.text).toBe('thenable')
+		expect(errorHandled).toBe(false)
+	})
+
+	test('arrays of middlewares are wrapped', async () => {
+		let executed = false
+		const lazyQuery = {
+			then() {
+				executed = true
+			},
+		}
+
+		@Router('/array')
+		class ArrayMwares {
+			@Use([
+				((req, res, next) => {
+					next()
+					return lazyQuery
+				}) as express.RequestHandler,
+				(async () => {
+					throw Error('array')
+				}) as express.RequestHandler,
+			] as any)
+			@Get()
+			get(req: express.Request, res: express.Response) {
+				res.send('ok')
+			}
+		}
+
+		const app = register(express(), [ArrayMwares])
+		app.use(errorHandler)
+
+		const res = await supertest(app).get('/array')
+		expect(res.text).toBe('array')
+		expect(executed).toBe(false)
+	})
+})
