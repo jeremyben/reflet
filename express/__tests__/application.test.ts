@@ -193,3 +193,31 @@ test('router scope middlewares', async () => {
 	expect(res3.status).toBe(200)
 	expect(res3.body).toEqual({ foo: 20 })
 })
+
+describe('application class inheritance', () => {
+	test('subclass can override a method of its parent', () => {
+		class Base extends Application {
+			helper() {
+				return 'base'
+			}
+		}
+
+		class Child extends Base {
+			helper() {
+				return 'child'
+			}
+		}
+
+		expect(new Base().helper()).toBe('base')
+		expect(new Child().helper()).toBe('child')
+	})
+
+	test('express properties stay protected', () => {
+		class App extends Application {
+			// @ts-expect-error - overriding express method
+			listen() {}
+		}
+
+		expect(() => new App()).toThrowError(expect.objectContaining({ code: 'EXPRESS_PROPERTY_PROTECTED' }))
+	})
+})
