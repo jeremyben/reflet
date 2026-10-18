@@ -106,13 +106,6 @@ importers:
         version: 4.22.1
 
   express-middlewares:
-    dependencies:
-      '@types/express':
-        specifier: ^4.17.0
-        version: 4.17.17
-      express:
-        specifier: ^4.17.0
-        version: 4.18.2
     devDependencies:
       '@reflet/express':
         specifier: workspace:^
@@ -120,6 +113,12 @@ importers:
       '@reflet/http':
         specifier: workspace:^
         version: link:../http
+      '@types/express':
+        specifier: ^4.17.25
+        version: 4.17.25
+      express:
+        specifier: ^4.22.1
+        version: 4.22.1
 
   http:
     devDependencies:
@@ -1204,14 +1203,8 @@ packages:
   '@types/cookiejar@2.1.5':
     resolution: {integrity: sha512-he+DHOWReW0nghN24E1WUqM0efK4kI9oTqDm6XmK8ZPe2djZ90BSNdGnIyCLzCPw7/pogPlGbzI2wHGGmi4O/Q==}
 
-  '@types/express-serve-static-core@4.17.35':
-    resolution: {integrity: sha512-wALWQwrgiB2AWTT91CB62b6Yt0sNHpznUXeZEcnPU3DRdlDIz74x8Qg1UUYKSVFi+va5vKOLYRBI1bRKiLLKIg==}
-
   '@types/express-serve-static-core@4.19.9':
     resolution: {integrity: sha512-QP2ESEe/ImWY0HDwNAnK9PvEffUyhLTnWkk7KXzHfyeWAnlrDe1fN77bXl6ia8KT3wPlmA7t9/VPRpnf4Ex9sg==}
-
-  '@types/express@4.17.17':
-    resolution: {integrity: sha512-Q4FmmuLGBG58btUnfS1c1r/NQdlp3DMfGDGig8WhfpA2YRUtEkxAjkZb0yvplJGYdF1fsQ81iMDcH24sSCNC/Q==}
 
   '@types/express@4.17.25':
     resolution: {integrity: sha512-dVd04UKsfpINUnK0yBoYHDF3xu7xVH4BuDotC/xGuycx4CgbP48X/KF/586bcObxT0HENHXEU8Nqtu6NR+eKhw==}
@@ -1252,14 +1245,8 @@ packages:
   '@types/mime@1.3.5':
     resolution: {integrity: sha512-/pyBZWSLD2n0dcHE3hq8s8ZvcETHtEuF+3E7XVt0Ig2nvsVQXdghHVcEkIWjy9A0wKfTn97a/PSDYohKIlnP/w==}
 
-  '@types/mime@2.0.2':
-    resolution: {integrity: sha512-4kPlzbljFcsttWEq6aBW0OZe6BDajAmyvr2xknBG92tejQnvdGtT9+kXSZ580DqpxY9qG2xeQVF9Dq0ymUTo5Q==}
-
   '@types/node@18.19.130':
     resolution: {integrity: sha512-GRaXQx6jGfL8sKfaIDD6OupbIHBr9jv7Jnaml9tB7l4v068PAOXqfcujMMo5PhbIs6ggR1XODELqahT2R8v0fg==}
-
-  '@types/node@26.6.5':
-    resolution: {integrity: sha512-uMzsv9stDdofIZBx4UGh4Z9ZgXnGC9seRDscilBcTHAeOFk67MZg/k9bWVfO+bk4qZmG+l52hRnLwUiH2LnJTg==}
 
   '@types/normalize-package-data@2.4.4':
     resolution: {integrity: sha512-37i+OaWTh9qeK4LSHPsyRC7NahnGotNuZvjLSgcPzblpHB3rrCJxAOgI5gCdKm7coonsaX1Of0ILiTcnZjbfxA==}
@@ -1274,14 +1261,8 @@ packages:
   '@types/range-parser@1.2.3':
     resolution: {integrity: sha512-ewFXqrQHlFsgc09MK5jP5iR7vumV/BYayNC6PgJO2LPe8vrnNFyjQjSppfEngITi0qvfKtzFvgKymGheFM9UOA==}
 
-  '@types/send@0.17.1':
-    resolution: {integrity: sha512-Cwo8LE/0rnvX7kIIa3QHCkcuF21c05Ayb0ZfxPiv0W8VRiZiNW/WuRupHKpqqGVGf7SUA44QSOUKaEd9lIrd/Q==}
-
   '@types/send@0.17.6':
     resolution: {integrity: sha512-Uqt8rPBE8SY0RK8JB1EzVOIZ32uqy8HwdxCnoCOsYrvnswqmFZ/k+9Ikidlk/ImhsdvBsloHbAlewb2IEBV/Og==}
-
-  '@types/serve-static@1.13.3':
-    resolution: {integrity: sha512-oprSwp094zOglVrXdlo/4bAHtKTAxX6VT8FOZlBKrmyLbNvE1zxZyJ6yikMVtHIvwP45+ZQGJn+FdXGKTozq0g==}
 
   '@types/serve-static@1.15.10':
     resolution: {integrity: sha512-tRs1dB+g8Itk72rlSI2ZrW6vZg0YrLI81iQSTkMmOqnqCaNr/8Ek4VwWcN5vZgCYWbg/JJSGBlUaYGAOP73qBw==}
@@ -3080,9 +3061,6 @@ packages:
     resolution: {integrity: sha512-W67iLl4J2EXEGTbfeHCffrjDfitvLANg0UlX3wFUUSTx92KXRFegMHUVgSqE+wvhAbi4WqjGg9czysTV2Epbew==}
     engines: {node: '>= 0.4'}
 
-  object-inspect@1.9.0:
-    resolution: {integrity: sha512-i3Bp9iTqwhaLZBxGkRfo5ZbE07BQRT7MGu8+nNgwW9ItGp1TzCTw2DLEoWwjClxBjOFI/hWljTAmYGCEwmtnOw==}
-
   ohash@2.0.11:
     resolution: {integrity: sha512-RdR9FQrFwNBNXAr4GixM8YaRZRJ5PUWbKYbE5eOsrwAjJW0q2REGcf79oYPsLyskQCZG1PLN+S/K1V00joZAoQ==}
 
@@ -3821,9 +3799,6 @@ packages:
 
   undici-types@5.26.5:
     resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
-
-  undici-types@8.9.0:
-    resolution: {integrity: sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg==}
 
   undici@6.23.0:
     resolution: {integrity: sha512-VfQPToRA5FZs/qJxLIinmU59u0r7LXqoJkCzinq3ckNJp3vKEh7jTWN589YQ5+aoAC/TGRLyJLCPKcLQbM8r9g==}
@@ -5396,7 +5371,7 @@ snapshots:
 
   '@koa/router@12.0.0':
     dependencies:
-      http-errors: 2.0.0
+      http-errors: 2.0.1
       koa-compose: 4.1.0
       methods: 1.1.2
       path-to-regexp: 6.3.0
@@ -5657,26 +5632,12 @@ snapshots:
 
   '@types/cookiejar@2.1.5': {}
 
-  '@types/express-serve-static-core@4.17.35':
-    dependencies:
-      '@types/node': 18.19.130
-      '@types/qs': 6.9.2
-      '@types/range-parser': 1.2.3
-      '@types/send': 0.17.1
-
   '@types/express-serve-static-core@4.19.9':
     dependencies:
       '@types/node': 18.19.130
       '@types/qs': 6.9.2
       '@types/range-parser': 1.2.3
-      '@types/send': 0.17.1
-
-  '@types/express@4.17.17':
-    dependencies:
-      '@types/body-parser': 1.19.0
-      '@types/express-serve-static-core': 4.17.35
-      '@types/qs': 6.9.2
-      '@types/serve-static': 1.13.3
+      '@types/send': 0.17.6
 
   '@types/express@4.17.25':
     dependencies:
@@ -5722,15 +5683,9 @@ snapshots:
 
   '@types/mime@1.3.5': {}
 
-  '@types/mime@2.0.2': {}
-
   '@types/node@18.19.130':
     dependencies:
       undici-types: 5.26.5
-
-  '@types/node@26.6.5':
-    dependencies:
-      undici-types: 8.9.0
 
   '@types/normalize-package-data@2.4.4': {}
 
@@ -5742,25 +5697,15 @@ snapshots:
 
   '@types/range-parser@1.2.3': {}
 
-  '@types/send@0.17.1':
+  '@types/send@0.17.6':
     dependencies:
       '@types/mime': 1.3.5
       '@types/node': 18.19.130
 
-  '@types/send@0.17.6':
-    dependencies:
-      '@types/mime': 1.3.5
-      '@types/node': 26.6.5
-
-  '@types/serve-static@1.13.3':
-    dependencies:
-      '@types/express-serve-static-core': 4.17.35
-      '@types/mime': 2.0.2
-
   '@types/serve-static@1.15.10':
     dependencies:
       '@types/http-errors': 2.0.5
-      '@types/node': 26.6.5
+      '@types/node': 18.19.130
       '@types/send': 0.17.6
 
   '@types/stack-utils@2.0.1': {}
@@ -5784,7 +5729,7 @@ snapshots:
 
   '@types/whatwg-url@8.2.2':
     dependencies:
-      '@types/node': 26.6.5
+      '@types/node': 18.19.130
       '@types/webidl-conversions': 7.0.3
 
   '@types/yargs-parser@21.0.0': {}
@@ -6006,6 +5951,7 @@ snapshots:
       unpipe: 1.0.0
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   body-parser@1.20.2:
     dependencies:
@@ -6132,6 +6078,7 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
       get-intrinsic: 1.3.0
+    optional: true
 
   call-bound@1.0.4:
     dependencies:
@@ -6497,7 +6444,8 @@ snapshots:
 
   emoji-regex@9.2.2: {}
 
-  encodeurl@1.0.2: {}
+  encodeurl@1.0.2:
+    optional: true
 
   encodeurl@2.0.0: {}
 
@@ -6652,6 +6600,7 @@ snapshots:
       vary: 1.1.2
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   express@4.22.1:
     dependencies:
@@ -6669,7 +6618,7 @@ snapshots:
       etag: 1.8.1
       finalhandler: 1.3.2
       fresh: 0.5.2
-      http-errors: 2.0.0
+      http-errors: 2.0.1
       merge-descriptors: 1.0.3
       methods: 1.1.2
       on-finished: 2.4.1
@@ -6682,7 +6631,7 @@ snapshots:
       send: 0.19.2
       serve-static: 1.16.3
       setprototypeof: 1.2.0
-      statuses: 2.0.1
+      statuses: 2.0.2
       type-is: 1.6.18
       utils-merge: 1.0.1
       vary: 1.1.2
@@ -6746,6 +6695,7 @@ snapshots:
       unpipe: 1.0.0
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   finalhandler@1.3.2:
     dependencies:
@@ -6779,9 +6729,9 @@ snapshots:
       - supports-color
     optional: true
 
-  follow-redirects@1.15.11(debug@4.3.4):
+  follow-redirects@1.15.11(debug@4.4.3):
     optionalDependencies:
-      debug: 4.3.4
+      debug: 4.4.3
 
   foreground-child@3.1.1:
     dependencies:
@@ -6862,7 +6812,7 @@ snapshots:
     dependencies:
       basic-ftp: 5.2.0
       data-uri-to-buffer: 6.0.2
-      debug: 4.3.4
+      debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
 
@@ -6978,6 +6928,7 @@ snapshots:
       setprototypeof: 1.2.0
       statuses: 2.0.1
       toidentifier: 1.0.1
+    optional: true
 
   http-errors@2.0.1:
     dependencies:
@@ -6992,14 +6943,14 @@ snapshots:
   http-proxy-agent@7.0.2:
     dependencies:
       agent-base: 7.1.4
-      debug: 4.3.4
+      debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
 
   https-proxy-agent@7.0.6:
     dependencies:
       agent-base: 7.1.4
-      debug: 4.3.4
+      debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
 
@@ -7575,7 +7526,7 @@ snapshots:
       content-disposition: 0.5.4
       content-type: 1.0.5
       cookies: 0.8.0
-      debug: 4.3.4
+      debug: 4.4.3
       delegates: 1.0.0
       depd: 2.0.0
       destroy: 1.2.0
@@ -7681,7 +7632,8 @@ snapshots:
 
   meow@13.2.0: {}
 
-  merge-descriptors@1.0.1: {}
+  merge-descriptors@1.0.1:
+    optional: true
 
   merge-descriptors@1.0.3: {}
 
@@ -7746,9 +7698,9 @@ snapshots:
     dependencies:
       async-mutex: 0.4.1
       camelcase: 6.3.0
-      debug: 4.3.4
+      debug: 4.4.3
       find-cache-dir: 3.3.2
-      follow-redirects: 1.15.11(debug@4.3.4)
+      follow-redirects: 1.15.11(debug@4.4.3)
       https-proxy-agent: 7.0.6
       mongodb: 5.9.2(@aws-sdk/credential-providers@3.345.0)
       new-find-package-json: 2.0.0
@@ -7861,7 +7813,7 @@ snapshots:
 
   new-find-package-json@2.0.0:
     dependencies:
-      debug: 4.3.4
+      debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
 
@@ -7911,8 +7863,6 @@ snapshots:
   object-assign@4.1.1: {}
 
   object-inspect@1.13.4: {}
-
-  object-inspect@1.9.0: {}
 
   ohash@2.0.11: {}
 
@@ -7986,7 +7936,7 @@ snapshots:
     dependencies:
       '@tootallnate/quickjs-emscripten': 0.23.0
       agent-base: 7.1.4
-      debug: 4.3.4
+      debug: 4.4.3
       get-uri: 6.0.5
       http-proxy-agent: 7.0.2
       https-proxy-agent: 7.0.6
@@ -8037,7 +7987,8 @@ snapshots:
 
   path-to-regexp@0.1.13: {}
 
-  path-to-regexp@0.1.7: {}
+  path-to-regexp@0.1.7:
+    optional: true
 
   path-to-regexp@3.3.0: {}
 
@@ -8126,6 +8077,7 @@ snapshots:
   qs@6.11.0:
     dependencies:
       side-channel: 1.0.4
+    optional: true
 
   qs@6.14.2:
     dependencies:
@@ -8146,6 +8098,7 @@ snapshots:
       http-errors: 2.0.0
       iconv-lite: 0.4.24
       unpipe: 1.0.0
+    optional: true
 
   raw-body@2.5.2:
     dependencies:
@@ -8321,6 +8274,7 @@ snapshots:
       statuses: 2.0.1
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   send@0.19.2:
     dependencies:
@@ -8348,6 +8302,7 @@ snapshots:
       send: 0.18.0
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   serve-static@1.16.3:
     dependencies:
@@ -8390,7 +8345,8 @@ snapshots:
     dependencies:
       call-bind: 1.0.2
       get-intrinsic: 1.3.0
-      object-inspect: 1.9.0
+      object-inspect: 1.13.4
+    optional: true
 
   side-channel@1.1.0:
     dependencies:
@@ -8415,7 +8371,7 @@ snapshots:
   socks-proxy-agent@8.0.5:
     dependencies:
       agent-base: 7.1.4
-      debug: 4.3.4
+      debug: 4.4.3
       socks: 2.8.7
     transitivePeerDependencies:
       - supports-color
@@ -8462,7 +8418,8 @@ snapshots:
   statuses@1.5.0:
     optional: true
 
-  statuses@2.0.1: {}
+  statuses@2.0.1:
+    optional: true
 
   statuses@2.0.2: {}
 
@@ -8731,8 +8688,6 @@ snapshots:
   uint8array-extras@1.5.0: {}
 
   undici-types@5.26.5: {}
-
-  undici-types@8.9.0: {}
 
   undici@6.23.0: {}
 
