@@ -220,23 +220,43 @@ function registerRootErrorHandlers(app: express.Application, appMeta?: Applicati
 	// Error handlers added at the end of the stack during the first `register` call,
 	// are moved to the last position for subsequent calls, to keep their behavior global.
 	if (appMeta.registered) {
+		const stack = app._router?.stack || []
+
 		for (const errHandler of globalErrorHandlers) {
-			const layerIndex = app._router?.stack.findIndex((layer) => unwrap(layer.handle) === errHandler)
+			// Arrays of handlers (e.g. `finalHandler` with `notFoundHandler`) are flattened by express in multiple layers.
+			const handlers: Function[] = Array.isArray(errHandler) ? flattenHandlers(errHandler) : [errHandler]
 
-			// optimisation, not sure about side effects.
-			// if (layerIndex === app._router.stack.length - 1) continue
+			const layerIndexes = handlers
+				.map((handler) => stack.findIndex((layer) => unwrap(layer.handle) === handler))
+				.filter((layerIndex) => layerIndex >= 0)
 
-			/* istanbul ignore else - user has removed error handler before calling register again */
-			if (layerIndex >= 0) {
-				app._router?.stack.splice(layerIndex, 1)
-				app.use(wrapAsyncError(errHandler))
+			/* istanbul ignore if - user has removed error handler before calling register again */
+			if (!layerIndexes.length) {
+				continue
 			}
+
+			// Remove from the end, to keep the remaining indexes valid.
+			for (const layerIndex of layerIndexes.sort((a, b) => b - a)) {
+				stack.splice(layerIndex, 1)
+			}
+
+			app.use(wrapAsyncError(errHandler))
 		}
 	} else {
 		for (const errHandler of globalErrorHandlers) {
 			app.use(wrapAsyncError(errHandler))
 		}
 	}
+}
+
+/**
+ * @internal
+ */
+function flattenHandlers(handlers: any[]): Function[] {
+	return handlers.reduce<Function[]>(
+		(flat, handler) => flat.concat(Array.isArray(handler) ? flattenHandlers(handler) : handler),
+		[]
+	)
 }
 
 /**
