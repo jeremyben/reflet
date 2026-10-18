@@ -5,6 +5,7 @@ import * as express from 'express'
 import { Readable, Writable } from 'stream'
 import { IncomingMessage, ServerResponse } from 'http'
 import { ClassType } from './interfaces'
+import { extractRouterMeta } from './router-decorator'
 
 /**
  * Checks if given object is a Promise or Promise-like.
@@ -62,10 +63,31 @@ export function isExpressApp(obj: any): obj is express.Application {
 }
 
 /**
+ * Checks if given express application (or `express.application` prototype) comes from express 4,
+ * which is the only version with `lazyrouter`.
+ * @internal
+ */
+export function isExpress4(app: object): boolean {
+	return typeof (app as any).lazyrouter === 'function'
+}
+
+/**
  * @internal
  */
 export function isExpressRouter(obj: any): obj is express.Router {
-	return Object.getPrototypeOf(obj) === express.Router
+	// Duck typing to support both express 4 and 5 (whose router comes from a separate package),
+	// `stack` is also a way to exclude express applications.
+	return (
+		typeof obj === 'function' &&
+		typeof obj.handle === 'function' &&
+		typeof obj.use === 'function' &&
+		Array.isArray(obj.stack) &&
+		!!obj.params &&
+		typeof obj.params === 'object' &&
+		'mergeParams' in obj &&
+		// Exclude decorated classes that would look like one.
+		!(obj.prototype && extractRouterMeta(obj))
+	)
 }
 
 /**

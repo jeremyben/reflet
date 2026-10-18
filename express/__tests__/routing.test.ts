@@ -2,7 +2,10 @@ import * as supertest from 'supertest'
 import * as express from 'express'
 import { register, Router, Get, Post, Patch, Route, Res, Req, Use, Params, Body } from '../src'
 import { type RefletExpressError } from '../src/reflet-error'
+import { isExpress4 } from '../src/type-guards'
 import { log } from '../../testing/tools'
+
+const isExpress5 = !isExpress4(express.application)
 
 describe('basic routing', () => {
 	class UserService {
@@ -129,7 +132,8 @@ describe('children routers', () => {
 			constructor(private service: UserService) {}
 		}
 
-		@Router('/user/:userId?', { mergeParams: true })
+		// Optional parameter syntax changed with express 5 (path-to-regexp v8).
+		@Router(isExpress5 ? '/user{/:userId}' : '/user/:userId?', { mergeParams: true })
 		@Router.Children<typeof UserRouter>((service) => [['/item/:itemId', new UserItemRouter(service)]])
 		class UserRouter {
 			constructor(private service: UserService) {}

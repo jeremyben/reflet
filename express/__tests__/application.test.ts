@@ -1,7 +1,7 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
 import { Application, Catch, Get, Post, Router, ScopedMiddlewares, Send, Use } from '../src'
-import { getGlobalMiddlewares } from '../src/register'
+import { getGlobalMiddlewares, getRouterStack } from '../src/register'
 import { log } from '../../testing/tools'
 
 test('simple app', async () => {
@@ -125,7 +125,7 @@ describe('inherit application class', () => {
 	})
 
 	test('error handlers are kept at the end of the stack after multiple register calls', async () => {
-		const stack = app._router.stack
+		const stack = getRouterStack(app)
 
 		const layerIndex = stack.findIndex((layer) => layer.name === 'bazErr')
 		expect(layerIndex).toBe(stack.length - 1)

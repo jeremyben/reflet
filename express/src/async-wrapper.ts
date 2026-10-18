@@ -51,10 +51,12 @@ export function wrapAsyncError(handler: express.ErrorRequestHandler): express.Er
  * Only native promises are caught (returned by async functions, even transpiled ones),
  * not every thenable, to avoid triggering lazy thenables like query builders
  * that are returned without being meant to be executed.
+ *
+ * Other values are not returned to express, as express 5 calls `then` on returned thenables.
  * @internal
  */
-export function forwardRejection(result: unknown, next: express.NextFunction): unknown {
-	return result instanceof Promise ? result.catch(next) : result
+export function forwardRejection(result: unknown, next: express.NextFunction): Promise<unknown> | undefined {
+	return result instanceof Promise ? result.catch(next) : undefined
 }
 
 /**
