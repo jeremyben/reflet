@@ -11,7 +11,7 @@
 	},
 	"engineStrict": true,
 	"scripts": {
-		"test": "pnpm --recursive --parallel run test",
+		"test": "pnpm --recursive --parallel run test && pnpm --recursive --parallel run test:express5",
 		"build": "pnpm --recursive --parallel run build",
 		"format": "prettier --write .",
 		"format:check": "prettier --check ."
