@@ -153,3 +153,21 @@ describe('middlewares chaining', () => {
 		expect((await rqq.post('/reject/middleware')).text).toBe('middleware')
 	})
 })
+
+test('condition rejected without reason is an error', async () => {
+	@Router('/falsy-condition')
+	class FalsyCondition {
+		@UseIf(() => Promise.reject(), [])
+		@Post()
+		post(req: express.Request, res: express.Response) {
+			res.send('ran')
+		}
+	}
+
+	const app = register(express(), [FalsyCondition])
+	app.use(((err, req, res, next) => res.status(500).send(err.message)) as express.ErrorRequestHandler)
+
+	const res = await supertest(app).post('/falsy-condition')
+	expect(res.status).toBe(500)
+	expect(res.text).toBe('Rejected promise')
+})

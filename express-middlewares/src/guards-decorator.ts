@@ -2,6 +2,7 @@ import { Use } from '@reflet/express'
 import * as express from 'express'
 import { Request } from './interfaces'
 import { isPromise } from './type-guards'
+import { nextOnRejection } from './next-on-rejection'
 
 // To avoid crashing the server if the user has not installed reflet/http.
 let ForbiddenError: Function
@@ -47,7 +48,7 @@ export function UseGuards<Req extends {}>(
 			const result = guard(req)
 
 			if (isPromise(result)) {
-				result.then((value) => authorize(value), next)
+				result.then((value) => authorize(value), nextOnRejection(next))
 			} else {
 				authorize(result)
 			}
