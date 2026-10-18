@@ -1,29 +1,83 @@
 import * as express from 'express'
-import { isAsyncFunction } from './type-guards'
+
+const ORIGINAL = Symbol('original')
 
 /**
+ * Forwards errors of promise-returning middlewares to `next`.
+ *
+ * Wraps every handler regardless of the `async` modifier, so that plain functions returning a promise,
+ * or async functions transpiled to an older target, don't produce unhandled rejections.
  * @internal
  */
-export function wrapAsync(handler: express.RequestHandler) {
-	if (isAsyncFunction<express.RequestHandler>(handler)) {
-		// todo? rename the wrapper to the wrapped function name to have better stack.
-		return (req: express.Request, res: express.Response, next: express.NextFunction) => {
-			return handler(req, res, next).catch(next)
-		}
+export function wrapAsync(handler: express.RequestHandler): express.RequestHandler {
+	// Arrays of handlers are left to express, as well as express applications and routers,
+	// which must be recognized as such by `app.use` (e.g. to mount sub-applications).
+	if (typeof handler !== 'function' || isWrapped(handler) || typeof (handler as any).handle === 'function') {
+		return handler
 	}
 
-	return handler
+	// Keep the arity for express to recognize error handlers passed by mistake to `@Use`.
+	if (handler.length === 4) {
+		return wrapAsyncError(handler as unknown as express.ErrorRequestHandler) as unknown as express.RequestHandler
+	}
+
+	const wrapper: express.RequestHandler = (req, res, next) => {
+		return forwardRejection(handler(req, res, next), next)
+	}
+
+	return markWrapped(wrapper, handler)
+}
+
+/**
+ * Forwards errors of promise-returning error handlers to `next`.
+ * @internal
+ */
+export function wrapAsyncError(handler: express.ErrorRequestHandler): express.ErrorRequestHandler {
+	// Arrays of handlers (e.g. `finalHandler` with `notFoundHandler`) are left to express.
+	if (typeof handler !== 'function' || isWrapped(handler)) {
+		return handler
+	}
+
+	const wrapper: express.ErrorRequestHandler = (error, req, res, next) => {
+		return forwardRejection(handler(error, req, res, next), next)
+	}
+
+	return markWrapped(wrapper, handler)
+}
+
+/**
+ * Forwards the rejection of a returned promise to `next`.
+ *
+ * Only native promises are caught (returned by async functions, even transpiled ones),
+ * not every thenable, to avoid triggering lazy thenables like query builders
+ * that are returned without being meant to be executed.
+ * @internal
+ */
+export function forwardRejection(result: unknown, next: express.NextFunction): unknown {
+	return result instanceof Promise ? result.catch(next) : result
+}
+
+/**
+ * Retrieves the original handler, to compare by reference or by name.
+ * @internal
+ */
+export function unwrap<T extends Function>(handler: T): T {
+	return typeof handler === 'function' && isWrapped(handler) ? (handler as any)[ORIGINAL] : handler
 }
 
 /**
  * @internal
  */
-export function wrapAsyncError(handler: express.ErrorRequestHandler) {
-	if (isAsyncFunction<express.ErrorRequestHandler>(handler)) {
-		return (error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-			return handler(error, req, res, next).catch(next)
-		}
-	}
+function isWrapped(handler: Function): boolean {
+	return Object.prototype.hasOwnProperty.call(handler, ORIGINAL)
+}
 
-	return handler
+/**
+ * @internal
+ */
+function markWrapped<T extends Function>(wrapper: T, original: Function): T {
+	Object.defineProperty(wrapper, ORIGINAL, { value: original })
+	// Keep the original name for express layers and stack traces.
+	Object.defineProperty(wrapper, 'name', { value: original.name, configurable: true })
+	return wrapper
 }

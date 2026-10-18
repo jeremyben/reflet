@@ -1,7 +1,7 @@
 import * as express from 'express'
-import { wrapAsync, wrapAsyncError } from './async-wrapper'
+import { wrapAsync, wrapAsyncError, unwrap, forwardRejection } from './async-wrapper'
 import { ClassType, Registration } from './interfaces'
-import { isPromise, isClass, isExpressApp, isExpressRouter, isAsyncFunction } from './type-guards'
+import { isPromise, isClass, isExpressApp, isExpressRouter } from './type-guards'
 
 // Extractors
 import { DYNAMIC_PATH, extractRouterMeta, RouterMeta } from './router-decorator'
@@ -93,8 +93,8 @@ function registerRouter(
 
 	checkPathConstraint(constrainedPath, routerMeta, routerClass)
 
-	// Either attach middlewares/handlers to an intermediary router or directly to the app.
-	const appInstance = routerMeta ? express.Router(routerMeta.options) : app
+	// Attach middlewares/handlers to an intermediary router.
+	const appInstance = express.Router(routerMeta.options)
 
 	const routes = extractRoutes(routerClass)
 
@@ -221,7 +221,7 @@ function registerRootErrorHandlers(app: express.Application, appMeta?: Applicati
 	// are moved to the last position for subsequent calls, to keep their behavior global.
 	if (appMeta.registered) {
 		for (const errHandler of globalErrorHandlers) {
-			const layerIndex = app._router?.stack.findIndex((layer) => layer.handle === errHandler)
+			const layerIndex = app._router?.stack.findIndex((layer) => unwrap(layer.handle) === errHandler)
 
 			// optimisation, not sure about side effects.
 			// if (layerIndex === app._router.stack.length - 1) continue
@@ -328,8 +328,6 @@ function createHandler(
 		throw new RefletExpressError('INVALID_ROUTE_TYPE', `"${codePath}" should be a function.`)
 	}
 
-	const isAsync = isAsyncFunction(fn)
-
 	return (req, res, next) => {
 		const args = extractParams(routerClass, key, { req, res, next })
 		const result = fn.apply(routerInstance, args)
@@ -337,10 +335,9 @@ function createHandler(
 		// Handle or bypass sending the method's result according to @Send decorator,
 		// if the response has already been sent to the client, we also bypass.
 		if (!sendHandler || res.headersSent) {
-			// We only use the async modifier in this case to decide to catch async errors, for performance.
-			// If the user ever decides to return a promise in a non-async method while not using @Send,
-			// it won't catch its errors, but that's an unlikely edge case.
-			return isAsync ? (result as Promise<any>).catch(next) : result
+			// Catch any returned promise, not only from `async` methods (plain functions returning a promise,
+			// or async methods transpiled to an older target), to prevent unhandled rejections.
+			return forwardRejection(result, next)
 		}
 
 		if (isPromise(result)) {
@@ -371,7 +368,7 @@ export function getGlobalMiddlewares(app: express.Application): express.RequestH
 			layer.name !== 'router' &&
 			layer.name !== 'bound dispatch'
 		) {
-			globalMwares.push(layer.handle as express.RequestHandler)
+			globalMwares.push(unwrap(layer.handle) as express.RequestHandler)
 		}
 	}
 

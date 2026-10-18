@@ -1,4 +1,5 @@
 import * as express from 'express'
+import { Readable } from 'stream'
 import { ClassType, ClassOrMethodDecorator, ClassOrTypedMethodDecorator } from './interfaces'
 import { isReadableStream } from './type-guards'
 import { RefletExpressError } from './reflet-error'
@@ -175,7 +176,7 @@ function handleWithSendMethod(
 ) {
 	// Readable stream
 	if (isReadableStream(value)) {
-		value.pipe(res)
+		sendStream(value, res, next)
 		return
 	}
 
@@ -204,7 +205,7 @@ function handleWithJsonMethod(
 ) {
 	// Readable stream
 	if (isReadableStream(value)) {
-		value.pipe(res)
+		sendStream(value, res, next)
 		return
 	}
 
@@ -222,4 +223,39 @@ function handleWithJsonMethod(
 	}
 
 	res.json(value)
+}
+
+/**
+ * Pipes a readable stream to the response, and forwards stream errors to `next` instead of crashing the process.
+ * Also destroys the source stream if the client closes the connection prematurely.
+ *
+ * Doesn't use `stream.pipeline` which would destroy the response on error,
+ * and prevent error handlers from sending a proper error response if headers are not sent yet.
+ * @internal
+ */
+function sendStream(stream: Readable, res: express.Response, next: express.NextFunction) {
+	let errored = false
+
+	// Keep listening after the first error, so that subsequent errors don't crash the process.
+	stream.on('error', (error) => {
+		if (errored) return
+		errored = true
+		stream.unpipe(res)
+
+		// The response is partially sent and can't be completed: close it so that the client doesn't hang.
+		if (res.headersSent) {
+			res.destroy()
+		}
+
+		next(error)
+	})
+
+	res.once('close', () => {
+		// Stream-like objects might not implement `destroy`.
+		if (!stream.readableEnded && !stream.destroyed && typeof stream.destroy === 'function') {
+			stream.destroy()
+		}
+	})
+
+	stream.pipe(res)
 }
