@@ -193,6 +193,12 @@ function handleWithSendMethod(
 		return
 	}
 
+	// Express 4 treats a number as a status code (deprecated), express 5 sends it as json.
+	if (typeof value === 'number') {
+		res.json(value)
+		return
+	}
+
 	res.send(value)
 }
 

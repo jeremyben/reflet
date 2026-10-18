@@ -253,3 +253,19 @@ describe('class decorator', () => {
 		expect(rq.put('/').timeout(150)).rejects.toThrow(/Timeout/)
 	})
 })
+
+test('number is sent as json', async () => {
+	@Send()
+	@Router('/number')
+	class NumberRouter {
+		@Get()
+		get() {
+			return 42
+		}
+	}
+
+	const res = await supertest(register(express(), [NumberRouter])).get('/number')
+	expect(res.status).toBe(200)
+	expect(res.type).toBe('application/json')
+	expect(res.body).toBe(42)
+})
