@@ -128,3 +128,23 @@ describe("don't intercept", () => {
 		expect(consoleSpy).not.toBeCalledWith('intercepted')
 	})
 })
+
+test('rejected transform is forwarded to error handlers', async () => {
+	@Router('/rejected-transform')
+	class RejectedTransform {
+		@UseInterceptor<string>(async () => {
+			throw Error('transform')
+		})
+		@Get()
+		get(req: express.Request, res: express.Response) {
+			res.send('data')
+		}
+	}
+
+	const app = register(express(), [RejectedTransform])
+	app.use(((err, req, res, next) => res.status(500).send(err.message)) as express.ErrorRequestHandler)
+
+	const res = await supertest(app).get('/rejected-transform')
+	expect(res.status).toBe(500)
+	expect(res.text).toBe('transform')
+})

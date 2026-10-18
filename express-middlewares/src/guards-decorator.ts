@@ -47,7 +47,7 @@ export function UseGuards<Req extends {}>(
 			const result = guard(req)
 
 			if (isPromise(result)) {
-				result.then((value) => authorize(value))
+				result.then((value) => authorize(value), next)
 			} else {
 				authorize(result)
 			}

@@ -38,3 +38,23 @@ test('custom html 403 message', async () => {
 	expect(res.status).toBe(403)
 	expect(res.text).toContain('Error: You must be admin')
 })
+
+test('rejected guard is forwarded to error handlers', async () => {
+	@Router('/rejected-guard')
+	class RejectedGuard {
+		@UseGuards(async () => {
+			throw Error('guard')
+		})
+		@Get()
+		get(req: express.Request, res: express.Response) {
+			res.send('secret')
+		}
+	}
+
+	const app = register(express(), [RejectedGuard])
+	app.use(((err, req, res, next) => res.status(500).send(err.message)) as express.ErrorRequestHandler)
+
+	const res = await supertest(app).get('/rejected-guard')
+	expect(res.status).toBe(500)
+	expect(res.text).toBe('guard')
+})
