@@ -15,7 +15,8 @@ class Controller {
 
 	@Put()
 	put(req: express.Request, res: express.Response, next: express.NextFunction) {
-		res.json(req.body)
+		// Express 5 leaves `req.body` undefined if no parser has been applied.
+		res.json(req.body || {})
 	}
 }
 
