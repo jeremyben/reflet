@@ -306,8 +306,9 @@ export function extractRouterMeta(target: ClassType | Function, appClass?: Class
 		return routerMeta
 	}
 
+	// Return a copy, to avoid leaking the application setting to other applications using the same router.
 	if (routerMeta.scopedMiddlewares == null && appMeta.scopedMiddlewares != null) {
-		routerMeta.scopedMiddlewares = appMeta.scopedMiddlewares
+		return { ...routerMeta, scopedMiddlewares: appMeta.scopedMiddlewares }
 	}
 
 	return routerMeta
