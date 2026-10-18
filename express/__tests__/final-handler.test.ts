@@ -1,7 +1,7 @@
 import * as express from 'express'
 import * as supertest from 'supertest'
 import { HttpError } from '@reflet/http'
-import { Use, Catch, Application, Get, finalHandler } from '../src'
+import { Use, Catch, Application, Get, Router, finalHandler } from '../src'
 import { log } from '../../testing/tools'
 
 const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation()
@@ -141,4 +141,49 @@ test('warns when exposing everything in production', () => {
 		process.env.NODE_ENV = nodeEnv
 		consoleWarnSpy.mockRestore()
 	}
+})
+
+describe('global final handler with not found handler and multiple register calls', () => {
+	@Router('/foo')
+	class Foo {
+		@Get()
+		get() {
+			throw HttpError.BadRequest('foo')
+		}
+	}
+
+	@Router('/bar')
+	class Bar {
+		@Get()
+		get() {
+			throw HttpError.BadRequest('bar')
+		}
+	}
+
+	@Catch(finalHandler({ json: true, expose: ['message'], notFoundHandler: true }))
+	class App extends Application {}
+
+	const app = new App().register([Foo]).register([Bar])
+	const rq = supertest(app)
+
+	test('stays global for routers of every register call', async () => {
+		const foo = await rq.get('/foo')
+		expect(foo.status).toBe(400)
+		expect(foo.body).toEqual({ message: 'foo' })
+
+		const bar = await rq.get('/bar')
+		expect(bar.status).toBe(400)
+		expect(bar.body).toEqual({ message: 'bar' })
+
+		const notFound = await rq.get('/baz')
+		expect(notFound.status).toBe(404)
+		expect(notFound.body).toEqual({ message: 'Cannot GET /baz' })
+	})
+
+	test('is not added twice', () => {
+		const names = app._router.stack.map((layer: { name: string }) => layer.name)
+		expect(names.filter((name: string) => name === 'notFoundHandler')).toHaveLength(1)
+		expect(names.filter((name: string) => name === 'finalErrorHandler')).toHaveLength(1)
+		expect(names.slice(-2)).toEqual(['notFoundHandler', 'finalErrorHandler'])
+	})
 })
