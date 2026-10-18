@@ -188,3 +188,17 @@ describe('global final handler with not found handler and multiple register call
 		expect(names.slice(-2)).toEqual(['notFoundHandler', 'finalErrorHandler'])
 	})
 })
+
+test('non-integer error status is ignored', async () => {
+	@Catch(finalHandler({ json: true, expose: ['message'] }))
+	class App extends Application {
+		@Get('/float')
+		float() {
+			throw Object.assign(Error('float'), { status: 404.5 })
+		}
+	}
+
+	const res = await supertest(new App().register()).get('/float')
+	expect(res.status).toBe(500)
+	expect(res.body).toEqual({ message: 'float' })
+})
