@@ -1,5 +1,5 @@
 import * as express from 'express'
-import { wrapAsync, wrapAsyncError, unwrap, forwardRejection } from './async-wrapper'
+import { wrapAsync, wrapAsyncError, unwrap, forwardRejection, nextOnRejection } from './async-wrapper'
 import { ClassType, Registration } from './interfaces'
 import { isPromise, isClass, isExpressApp, isExpressRouter } from './type-guards'
 
@@ -374,12 +374,15 @@ function createHandler(
 		}
 
 		if (isPromise(result)) {
-			return result.then((value) => sendHandler(value, { req, res, next })).catch(next)
+			// Convert to a native promise, as thenables might not implement `catch` or return themselves from `then`.
+			return Promise.resolve(result)
+				.then((value) => sendHandler(value, { req, res, next }))
+				.catch(nextOnRejection(next))
 		}
 
 		try {
 			const sendResult = sendHandler(result, { req, res, next })
-			return isPromise(sendResult) ? sendResult.catch(next) : sendResult
+			return isPromise(sendResult) ? Promise.resolve(sendResult).catch(nextOnRejection(next)) : sendResult
 		} catch (error) {
 			next(error)
 		}
