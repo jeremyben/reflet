@@ -1,6 +1,6 @@
 import * as express from 'express'
 import { ClassOrMethodDecorator, ClassType } from './interfaces'
-import { getMetadata, defineMetadata, getOwnMetadata } from './metadata-map'
+import { defineMetadata, getOwnMetadata } from './metadata-map'
 
 const METAKEY_CATCH = Symbol('catch')
 
@@ -34,16 +34,16 @@ export function Catch<T = any>(
 	return (target, key, descriptor) => {
 		// Method
 		if (key) {
-			const handlers: express.ErrorRequestHandler[] = getMetadata(METAKEY_CATCH, target, key) || []
-			handlers.unshift(errorHandler)
-			defineMetadata(METAKEY_CATCH, handlers, target, key)
+			// Own metadata only: error handlers are not inherited from a parent class, like middlewares.
+			const handlers: express.ErrorRequestHandler[] = getOwnMetadata(METAKEY_CATCH, target, key) || []
+			defineMetadata(METAKEY_CATCH, [errorHandler, ...handlers], target, key)
 		}
 		// Class
 		else {
+			// Own metadata only: error handlers are not inherited from a parent class, like middlewares.
 			const handlers: express.ErrorRequestHandler[] =
-				getMetadata(METAKEY_CATCH, (target as Function).prototype) || []
-			handlers.unshift(errorHandler)
-			defineMetadata(METAKEY_CATCH, handlers, (target as Function).prototype)
+				getOwnMetadata(METAKEY_CATCH, (target as Function).prototype) || []
+			defineMetadata(METAKEY_CATCH, [errorHandler, ...handlers], (target as Function).prototype)
 		}
 	}
 }
