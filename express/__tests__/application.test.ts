@@ -221,3 +221,38 @@ describe('application class inheritance', () => {
 		expect(() => new App()).toThrowError(expect.objectContaining({ code: 'EXPRESS_PROPERTY_PROTECTED' }))
 	})
 })
+
+test('scoped middlewares setting of an application does not leak to another', async () => {
+	let calls = 0
+
+	@Use((req, res, next) => {
+		calls++
+		next()
+	})
+	@Router('/shared')
+	class Shared {
+		@Get()
+		get(req: express.Request, res: express.Response) {
+			res.send('shared')
+		}
+	}
+
+	@Router('/shared')
+	class SamePath {
+		@Get('/other')
+		get(req: express.Request, res: express.Response) {
+			res.send('other')
+		}
+	}
+
+	@ScopedMiddlewares
+	class ScopedApp extends Application {}
+	class UnscopedApp extends Application {}
+
+	new ScopedApp().register([Shared])
+	const unscoped = new UnscopedApp().register([Shared, SamePath])
+
+	// Without scoped middlewares, the middleware is applied to the whole router path.
+	await supertest(unscoped).get('/shared/other')
+	expect(calls).toBe(1)
+})
