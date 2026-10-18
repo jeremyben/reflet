@@ -1,7 +1,6 @@
 import * as express from 'express'
-import * as core from 'express-serve-static-core'
 import { RequestHeader } from '@reflet/http'
-import { ClassType } from './interfaces'
+import { ClassType, ParamsDictionary, ParsedQuery } from './interfaces'
 import { RefletExpressError } from './reflet-error'
 import { getOwnMetadata, defineMetadata } from './metadata-map'
 
@@ -36,10 +35,10 @@ export function Req() {
 }
 
 export type Req<
-	P = core.ParamsDictionary,
+	P = ParamsDictionary,
 	ResBody = any,
 	ReqBody = any,
-	ReqQuery = core.Query,
+	ReqQuery = ParsedQuery,
 	Locals extends Record<string, any> = Record<string, any>
 > = express.Request<P, ResBody, ReqBody, ReqQuery, Locals>
 
