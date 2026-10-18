@@ -12,8 +12,13 @@ export type RouterMeta = {
 	options?: express.RouterOptions
 	scopedMiddlewares?: boolean
 	children?: Registration[] | ((...deps: any[]) => Registration[])
-	childrenDeps?: any[]
 }
+
+/**
+ * Constructor arguments of router instances, to pass them down to children.
+ * Attached to each instance, as the same router class can be instantiated with different dependencies.
+ */
+const ROUTERS_DEPS = new WeakMap<object, any[]>()
 
 /**
  * Token to use in place of `Router` path parameter, signaling that the path is defined at registration.
@@ -85,19 +90,18 @@ export namespace Router {
 
 			if (existingRouterMeta) {
 				existingRouterMeta.children = register as (...deps: any[]) => Registration[]
-				existingRouterMeta.childrenDeps = []
 			} else {
 				const newRouterMeta: RouterMeta = {
 					path: null,
 					children: register as (...deps: any[]) => Registration[],
-					childrenDeps: [],
 				}
 
 				defineRouterMeta(newRouterMeta, target)
 			}
 
-			// No need to intercept constructor if no dependency.
-			if (!target.length || !register.length) {
+			// No need to intercept constructor if children don't expect dependencies.
+			// The constructor length is not checked, as it doesn't count default and rest parameters.
+			if (!register.length) {
 				return
 			}
 
@@ -105,10 +109,11 @@ export namespace Router {
 			// https://stackoverflow.com/questions/34411546/how-to-properly-wrap-constructors-with-decorators-in-typescript
 			return new Proxy(target, {
 				construct(targett, args, newTarget) {
-					const routerMeta = extractRouterMeta(target)!
-					routerMeta.childrenDeps = args
+					// Pass `newTarget` to keep the right prototype for subclasses.
+					const instance = Reflect.construct(targett, args, newTarget)
+					ROUTERS_DEPS.set(instance, args)
 
-					return new (target as any)(...args)
+					return instance
 				},
 			})
 		}
@@ -299,6 +304,13 @@ export function extractRouterMeta(target: ClassType | Function, appClass?: Class
 	}
 
 	return routerMeta
+}
+
+/**
+ * @internal
+ */
+export function extractChildrenDeps(routerInstance: object): any[] {
+	return ROUTERS_DEPS.get(routerInstance) || []
 }
 
 /**
