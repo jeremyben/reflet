@@ -19,14 +19,27 @@ export function UseIf<Req extends {}>(
 	condition: (req: Request<Req>) => boolean | Promise<boolean>,
 	middlewares: express.RequestHandler[]
 ) {
+	// Delegate middlewares sequencing to an express router, to keep the exact express semantics
+	// (a middleware ending the request or passing an error stops the chain).
+	// Merge params to keep access to the parent route parameters.
+	const router = express.Router({ mergeParams: true })
+
+	for (const middleware of middlewares) {
+		router.use((req, res, next) => {
+			const result: unknown = middleware(req, res, next)
+			// Only native promises, to avoid triggering lazy thenables.
+			if (result instanceof Promise) result.catch(next)
+		})
+	}
+
 	return Use<Req>((req, res, next) => {
 		const ok = condition(req)
 
-		if (isPromise(ok)) ok.then((yes) => apply(yes))
+		if (isPromise(ok)) ok.then((yes) => apply(yes), next)
 		else apply(ok)
 
 		function apply(yes: boolean) {
-			if (yes) for (const middleware of middlewares) middleware(req, res, next)
+			if (yes) router(req, res, next)
 			else next()
 		}
 	})
