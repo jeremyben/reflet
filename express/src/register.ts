@@ -8,7 +8,7 @@ import { DYNAMIC_PATH, extractRouterMeta, RouterMeta } from './router-decorator'
 import { extractRoutes } from './route-decorators'
 import { extractMiddlewares } from './middleware-decorator'
 import { extractErrorHandlers } from './error-handler-decorator'
-import { extractParams, extractParamsMiddlewares } from './param-decorators'
+import { extractParamsMappers, extractParamsMiddlewares } from './param-decorators'
 import { extractSendHandler } from './send-decorator'
 import { ApplicationMeta, extractApplicationClass } from './application-class'
 import { RefletExpressError } from './reflet-error'
@@ -328,8 +328,21 @@ function createHandler(
 		throw new RefletExpressError('INVALID_ROUTE_TYPE', `"${codePath}" should be a function.`)
 	}
 
+	const paramsMappers = extractParamsMappers(routerClass, key)
+
 	return (req, res, next) => {
-		const args = extractParams(routerClass, key, { req, res, next })
+		let args: any[]
+
+		if (paramsMappers) {
+			args = new Array(paramsMappers.length)
+
+			for (let index = 0; index < paramsMappers.length; index++) {
+				args[index] = paramsMappers[index](req, res, next)
+			}
+		} else {
+			args = [req, res, next]
+		}
+
 		const result = fn.apply(routerInstance, args)
 
 		// Handle or bypass sending the method's result according to @Send decorator,
