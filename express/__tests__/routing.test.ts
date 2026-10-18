@@ -409,3 +409,21 @@ describe('children dependencies', () => {
 		expect(sub.sub).toBe(true)
 	})
 })
+
+test('dynamic router keeps other router decorators', async () => {
+	@Router('/sub')
+	class Sub {
+		@Get()
+		get(req: express.Request, res: express.Response) {
+			res.send('sub')
+		}
+	}
+
+	@Router.Dynamic()
+	@Router.Children(() => [Sub])
+	class Dynamic {}
+
+	const res = await supertest(register(express(), [['/dynamic', Dynamic]])).get('/dynamic/sub')
+	expect(res.status).toBe(200)
+	expect(res.text).toBe('sub')
+})
