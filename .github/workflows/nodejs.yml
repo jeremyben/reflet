@@ -9,6 +9,19 @@ on:
       - 'express/**/*.ts'
       - 'express-middlewares/**/*.ts'
       - 'mongoose/**/*.ts'
+      - 'env/**/*.ts'
+      - '**/*.js'
+      - '**/package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/nodejs.yml'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'express/**/*.ts'
+      - 'express-middlewares/**/*.ts'
+      - 'mongoose/**/*.ts'
+      - 'env/**/*.ts'
       - '**/*.js'
       - '**/package.json'
       - 'pnpm-lock.yaml'
@@ -36,9 +49,13 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
 
-      - name: Install and test
-        run: |
-          pnpm install
-          pnpm test
+      - name: Install
+        run: pnpm install
+
+      - name: Type check
+        run: pnpm --recursive --if-present run typecheck
+
+      - name: Test
+        run: pnpm test
         env:
           CI: true
