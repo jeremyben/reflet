@@ -1,5 +1,24 @@
 # Migration guide for `@reflet/express`
 
+## From v2 to v3
+
+* Node.js 20 or later is required.
+
+* Express 5 is supported alongside Express 4.
+  If you upgrade your app to Express 5, see [Express 5](./README.MD#express-5) for the changes on your side (path syntax, `req.body`).
+
+* `Send` decorator sends returned numbers as json, like Express 5 does.
+  With Express 4, a returned number was used as the response status code (a deprecated Express behavior), e.g. `return 204`.
+  Set the status explicitly instead, with `UseStatus` from "@reflet/express-middlewares" or `res.sendStatus`:
+  ```ts
+  @UseStatus(204)
+  @Send()
+  @Delete('/:id')
+  async remove(@Params('id') id: string) {
+    await db.delete(id)
+  }
+  ```
+
 ## From v1 to v2
 
 * `Router` decorator is now mandatory on every router class.

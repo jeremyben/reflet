@@ -6,7 +6,7 @@
 [![branches coverage](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/jeremyben/reflet/master/express/coverage-summary.json&label=branches&query=total.branches.pct&color=brightgreen&suffix=%&logo=jest)](./coverage-summary.json)
 
 > [!IMPORTANT]  
-> Upgrade from **v1** to **v2** : [Migration guide](https://github.com/jeremyben/reflet/blob/master/express/MIGRATION.md)
+> Upgrade from **v2** to **v3** : [Migration guide](https://github.com/jeremyben/reflet/blob/master/express/MIGRATION.md)
 
 The **best** decorators for [Express](https://expressjs.com/). Have a look at [Reflet's philosophy](../README.MD#Philosophy-).
 
