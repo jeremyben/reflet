@@ -148,3 +148,20 @@ test('rejected transform is forwarded to error handlers', async () => {
 	expect(res.status).toBe(500)
 	expect(res.text).toBe('transform')
 })
+
+test("don't intercept redirections", async () => {
+	@Router('/redirect')
+	class Redirect {
+		@UseInterceptor<string, { data: string }>((data) => ({ data }))
+		@Get()
+		get(req: express.Request, res: express.Response) {
+			res.redirect('/elsewhere')
+		}
+	}
+
+	const res = await supertest(register(express(), [Redirect]))
+		.get('/redirect')
+		.redirects(0)
+	expect(res.status).toBe(302)
+	expect(res.header.location).toBe('/elsewhere')
+})
