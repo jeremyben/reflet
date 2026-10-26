@@ -12,6 +12,9 @@ import { ResponseReadonly } from './interfaces'
  * @remarks
  * Exceptions will be caught and logged to `stderr` instead of crashing the server.
  *
+ * The callback is not called if the client closes the connection before the response is complete,
+ * as Node.js doesn't emit the `finish` event in that case.
+ *
  * Works by patching `res.send`, `res.json`, `res.jsonp`, `res.write` and `res.end` methods.
  *
  * @example
