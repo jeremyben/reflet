@@ -6,13 +6,13 @@ on:
       - master
       - develop
     paths:
-      - "express/**/*.ts"
-      - "express-middlewares/**/*.ts"
-      - "mongoose/**/*.ts"
-      - "**/*.js"
-      - "**/package.json"
-      - "pnpm-lock.yaml"
-      - ".github/workflows/nodejs.yml"
+      - 'express/**/*.ts'
+      - 'express-middlewares/**/*.ts'
+      - 'mongoose/**/*.ts'
+      - '**/*.js'
+      - '**/package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/nodejs.yml'
   workflow_dispatch:
 
 jobs:
@@ -34,7 +34,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-          cache: "pnpm"
+          cache: 'pnpm'
 
       - name: Install and test
         run: |

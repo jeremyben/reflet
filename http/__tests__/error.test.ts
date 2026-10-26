@@ -56,13 +56,10 @@ test('custom params', () => {
 test('enumerability', () => {
 	const err = HttpError.BadRequest({ message: { foo: 'bar' } })
 
-	const props = Object.getOwnPropertyNames(err).reduce(
-		(acc, prop) => {
-			;(acc as any)[prop] = Object.getOwnPropertyDescriptor(err, prop)
-			return acc
-		},
-		<Record<keyof HttpError<400>, PropertyDescriptor>>{}
-	)
+	const props = Object.getOwnPropertyNames(err).reduce((acc, prop) => {
+		;(acc as any)[prop] = Object.getOwnPropertyDescriptor(err, prop)
+		return acc
+	}, <Record<keyof HttpError<400>, PropertyDescriptor>>{})
 
 	expect(props.name.enumerable).toBe(false)
 	expect(props.message.enumerable).toBe(false)

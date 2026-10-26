@@ -30,7 +30,7 @@ const InformationStatus = {
 	EarlyHints: <const>103,
 }
 
-type InformationStatus = typeof InformationStatus[keyof typeof InformationStatus]
+type InformationStatus = (typeof InformationStatus)[keyof typeof InformationStatus]
 
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -116,7 +116,7 @@ const SuccessStatus = {
 	ImUsed: <const>226,
 }
 
-type SuccessStatus = typeof SuccessStatus[keyof typeof SuccessStatus]
+type SuccessStatus = (typeof SuccessStatus)[keyof typeof SuccessStatus]
 
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -187,7 +187,7 @@ const RedirectionStatus = {
 	PermanentRedirect: <const>308,
 }
 
-type RedirectionStatus = typeof RedirectionStatus[keyof typeof RedirectionStatus]
+type RedirectionStatus = (typeof RedirectionStatus)[keyof typeof RedirectionStatus]
 
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -418,7 +418,7 @@ const ClientErrorStatus = {
 	UnavailableForLegalReasons: <const>451,
 }
 
-type ClientErrorStatus = typeof ClientErrorStatus[keyof typeof ClientErrorStatus]
+type ClientErrorStatus = (typeof ClientErrorStatus)[keyof typeof ClientErrorStatus]
 
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -506,7 +506,7 @@ const ServerErrorStatus = {
 	NetworkAuthenticationRequired: <const>511,
 }
 
-type ServerErrorStatus = typeof ServerErrorStatus[keyof typeof ServerErrorStatus]
+type ServerErrorStatus = (typeof ServerErrorStatus)[keyof typeof ServerErrorStatus]
 
 // ────────────────────────────────────────────────────────────────────────────
 

@@ -502,7 +502,7 @@ export const RequestHeader = {
 }
 
 export type RequestHeader =
-	| typeof RequestHeader[keyof typeof RequestHeader]
+	| (typeof RequestHeader)[keyof typeof RequestHeader]
 	| RefletHttp.RequestHeader[keyof RefletHttp.RequestHeader]
 
 export namespace RequestHeader {
@@ -1190,7 +1190,7 @@ export const ResponseHeader = {
 }
 
 export type ResponseHeader =
-	| typeof ResponseHeader[keyof typeof ResponseHeader]
+	| (typeof ResponseHeader)[keyof typeof ResponseHeader]
 	| RefletHttp.ResponseHeader[keyof RefletHttp.ResponseHeader]
 
 export namespace ResponseHeader {

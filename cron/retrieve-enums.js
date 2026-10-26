@@ -18,7 +18,7 @@ get(url, (res) => {
 
 		const jsdoc = `/**\n * @public\n */\n`
 
-		const zoneContent = `${jsdoc}export type Zone = \n\t| ${zones.map(z => `'${z}'`).join('\n\t| ')}\n`
+		const zoneContent = `${jsdoc}export type Zone = \n\t| ${zones.map((z) => `'${z}'`).join('\n\t| ')}\n`
 
 		const zonePath = join(__dirname, 'zone.ignore.ts')
 		writeFileSync(zonePath, zoneContent, 'utf8')

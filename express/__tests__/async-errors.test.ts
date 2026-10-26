@@ -82,7 +82,9 @@ describe('promises returned by plain functions are caught', () => {
 
 		const namedApp = express()
 		register(namedApp, [Named])
-		const routerLayer = namedApp._router.stack.find((layer: { name: string; handle: unknown }) => layer.name === 'router')!
+		const routerLayer = namedApp._router.stack.find(
+			(layer: { name: string; handle: unknown }) => layer.name === 'router'
+		)!
 		const routerStack = (routerLayer.handle as any).stack as { name: string }[]
 		expect(routerStack.map((layer) => layer.name)).toContain('namedMware')
 	})
@@ -265,7 +267,10 @@ describe('review regressions', () => {
 		const error = await supertest(app)
 			.get('/partial')
 			.timeout(2000)
-			.then(() => null, (err) => err)
+			.then(
+				() => null,
+				(err) => err
+			)
 
 		// Connection closed by the server rather than a client timeout.
 		expect(error).not.toBeNull()
