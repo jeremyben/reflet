@@ -208,7 +208,8 @@ test('non-integer response status is ignored', async () => {
 	class App extends Application {
 		@Get('/float-response')
 		float(req: express.Request, res: express.Response) {
-			res.status(404.5)
+			// Set directly, as express 5 `res.status` throws on non-integer codes.
+			res.statusCode = 404.5
 			throw Error('float response')
 		}
 	}
