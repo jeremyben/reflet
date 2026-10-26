@@ -4,6 +4,7 @@
 	"author": "Jeremy Bensimon",
 	"license": "MIT",
 	"private": true,
+	"packageManager": "pnpm@10.28.0",
 	"repository": "github:jeremyben/reflet",
 	"engines": {
 		"node": ">=14"
