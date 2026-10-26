@@ -13,6 +13,11 @@ const secretsDirs = new WeakMap<object, readonly string[]>()
  * Redefining a parent property in a subclass is fine.
  */
 function define(target: object, propertyKey: string | symbol, spec: Spec<any>): void {
+	// Standard decorators (without the TypeScript option) receive a context object instead.
+	if (target === undefined || (typeof propertyKey === 'object' && propertyKey !== null)) {
+		throw new Error('@reflet/env decorators require the "experimentalDecorators" TypeScript option.')
+	}
+
 	const fail = (reason: string) => {
 		const className = typeof target === 'function' ? target.name : target.constructor.name
 		throw new Error(`"${className}.${String(propertyKey)}" ${reason}.`)
@@ -31,7 +36,17 @@ function define(target: object, propertyKey: string | symbol, spec: Spec<any>): 
 	own.set(propertyKey, spec)
 }
 
-type AnyOptions = SpecOptions<any> & Partial<ConditionalOptions<any>>
+type AnyOptions = SpecOptions<any> &
+	Partial<ConditionalOptions<any>> &
+	Var.AllowEmpty & {
+		pattern?: RegExp
+		minLength?: number
+		maxLength?: number
+		min?: number
+		max?: number
+		int?: boolean
+		parseDefault?: boolean
+	}
 
 function register(type: string, parser: Parser<any>, options: AnyOptions = {}): Var.Decorator<any> {
 	return (target: object, propertyKey: string | symbol) => define(target, propertyKey, { type, parser, ...options })
@@ -74,25 +89,25 @@ export namespace Var {
 
 	/** A string env variable. @public */
 	export function Str<T extends string, C = any>(
-		options: SpecOptions<T> & WithChoices<T> & ConditionalOptions<C>
+		options: StrOptions<T> & WithChoices<T> & ConditionalOptions<C>
 	): Decorator<T | undefined, C>
-	export function Str<C = any>(options: SpecOptions<string> & ConditionalOptions<C>): Decorator<string | undefined, C>
-	export function Str<T extends string>(options: SpecOptions<T> & WithChoices<T>): Decorator<T>
-	export function Str(options?: SpecOptions<string>): Decorator<string>
-	export function Str(options?: AnyOptions): Decorator<any> {
-		return register('str', parseStr, options)
+	export function Str<C = any>(options: StrOptions<string> & ConditionalOptions<C>): Decorator<string | undefined, C>
+	export function Str<T extends string>(options: StrOptions<T> & WithChoices<T>): Decorator<T>
+	export function Str(options?: StrOptions<string>): Decorator<string>
+	export function Str(options: AnyOptions = {}): Decorator<any> {
+		return register('str', lengthed(matching(parseStr, options), options), options)
 	}
 	Str.parse = parseStr
 
 	/** A number env variable. @public */
 	export function Num<T extends number, C = any>(
-		options: SpecOptions<T> & WithChoices<T> & ConditionalOptions<C>
+		options: NumOptions<T> & WithChoices<T> & ConditionalOptions<C>
 	): Decorator<T | undefined, C>
-	export function Num<C = any>(options: SpecOptions<number> & ConditionalOptions<C>): Decorator<number | undefined, C>
-	export function Num<T extends number>(options: SpecOptions<T> & WithChoices<T>): Decorator<T>
-	export function Num(options?: SpecOptions<number>): Decorator<number>
-	export function Num(options?: AnyOptions): Decorator<any> {
-		return register('num', parseNum, options)
+	export function Num<C = any>(options: NumOptions<number> & ConditionalOptions<C>): Decorator<number | undefined, C>
+	export function Num<T extends number>(options: NumOptions<T> & WithChoices<T>): Decorator<T>
+	export function Num(options?: NumOptions<number>): Decorator<number>
+	export function Num(options: AnyOptions = {}): Decorator<any> {
+		return register('num', bounded(parseNum, options), options)
 	}
 	Num.parse = parseNum
 
@@ -101,15 +116,13 @@ export namespace Var {
 
 	/** An integer port number (1-65535). @public */
 	export function Port<T extends number, C = any>(
-		options: SpecOptions<T> & WithChoices<T> & ConditionalOptions<C>
+		options: NumOptions<T> & WithChoices<T> & ConditionalOptions<C>
 	): Decorator<T | undefined, C>
-	export function Port<C = any>(
-		options: SpecOptions<number> & ConditionalOptions<C>
-	): Decorator<number | undefined, C>
-	export function Port<T extends number>(options: SpecOptions<T> & WithChoices<T>): Decorator<T>
-	export function Port(options?: SpecOptions<number>): Decorator<number>
-	export function Port(options?: AnyOptions): Decorator<any> {
-		return register('port', parsePort, options)
+	export function Port<C = any>(options: NumOptions<number> & ConditionalOptions<C>): Decorator<number | undefined, C>
+	export function Port<T extends number>(options: NumOptions<T> & WithChoices<T>): Decorator<T>
+	export function Port(options?: NumOptions<number>): Decorator<number>
+	export function Port(options: AnyOptions = {}): Decorator<any> {
+		return register('port', bounded(parsePort, options), options)
 	}
 	Port.parse = parsePort
 
@@ -136,9 +149,9 @@ export namespace Var {
 	 */
 	export function Custom<T, C = any>(
 		parser: Parser<T>,
-		options: SpecOptions<T> & ConditionalOptions<C>
+		options: CustomOptions<T> & ConditionalOptions<C>
 	): Decorator<T | undefined, C>
-	export function Custom<T>(parser: Parser<T>, options?: SpecOptions<T>): Decorator<T>
+	export function Custom<T>(parser: Parser<T>, options?: CustomOptions<T>): Decorator<T>
 	export function Custom(parser: Parser<any>, options?: AnyOptions): Decorator<any> {
 		return register('custom', parser, options)
 	}
@@ -183,9 +196,55 @@ export namespace Var {
 	 * Options of a list variable.
 	 * @public
 	 */
-	export interface ListOptions<T> extends Omit<SpecOptions<T[]>, 'choices'> {
+	export interface ListOptions<T> extends Omit<SpecOptions<T[]>, 'choices'>, AllowEmpty {
 		/** Defaults to `,`. */
 		separator?: string
+	}
+
+	/**
+	 * @public
+	 */
+	export interface AllowEmpty {
+		/** An empty value (`VAR=`) is a value, not a missing variable. */
+		allowEmpty?: boolean
+	}
+
+	/**
+	 * Options of a string variable.
+	 * @public
+	 */
+	export interface StrOptions<T> extends SpecOptions<T>, AllowEmpty {
+		/** The value must match this pattern. */
+		pattern?: RegExp
+		/** Minimum length, in characters. */
+		minLength?: number
+		/** Maximum length, in characters. */
+		maxLength?: number
+	}
+
+	/**
+	 * Options of a number variable.
+	 * @public
+	 */
+	export interface NumOptions<T> extends SpecOptions<T> {
+		/** Minimum value, included. */
+		min?: number
+		/** Maximum value, included. */
+		max?: number
+		/** The value must be an integer. */
+		int?: boolean
+	}
+
+	/**
+	 * Options of a custom variable.
+	 * @public
+	 */
+	export interface CustomOptions<T> extends SpecOptions<T>, AllowEmpty {
+		/**
+		 * A string default value (property initializer) is parsed like an environment value,
+		 * e.g. a relative path resolved and checked by the parser.
+		 */
+		parseDefault?: boolean
 	}
 
 	/**
@@ -239,6 +298,51 @@ export namespace Var {
 	export interface Factory<T> extends Parsable<T> {
 		<C>(options: SpecOptions<T> & ConditionalOptions<C>): Decorator<T | undefined, C>
 		(options?: SpecOptions<T>): Decorator<T>
+	}
+}
+
+/**
+ * Checks the pattern option of a string variable.
+ */
+function matching(parser: Parser<string>, { pattern }: AnyOptions): Parser<string> {
+	if (!pattern) return parser
+	return (raw, name) => {
+		const value = parser(raw, name)
+		// A global or sticky pattern is stateful.
+		pattern.lastIndex = 0
+		if (!pattern.test(value)) throw new Error(`"${name}" must match ${pattern}`)
+		return value
+	}
+}
+
+/**
+ * Checks the length options of a string variable.
+ */
+function lengthed(parser: Parser<string>, { minLength, maxLength }: AnyOptions): Parser<string> {
+	if (minLength === undefined && maxLength === undefined) return parser
+	return (raw, name) => {
+		const value = parser(raw, name)
+		if (minLength !== undefined && value.length < minLength) {
+			throw new Error(`"${name}" must be at least ${minLength} characters`)
+		}
+		if (maxLength !== undefined && value.length > maxLength) {
+			throw new Error(`"${name}" must be at most ${maxLength} characters`)
+		}
+		return value
+	}
+}
+
+/**
+ * Checks the bounds options of a number variable.
+ */
+function bounded(parser: Parser<number>, { min, max, int }: AnyOptions): Parser<number> {
+	if (min === undefined && max === undefined && !int) return parser
+	return (raw, name) => {
+		const value = parser(raw, name)
+		if (int && !Number.isInteger(value)) throw new Error(`"${name}" must be an integer`)
+		if (min !== undefined && value < min) throw new Error(`"${name}" must be at least ${min}`)
+		if (max !== undefined && value > max) throw new Error(`"${name}" must be at most ${max}`)
+		return value
 	}
 }
 

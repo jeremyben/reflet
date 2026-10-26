@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { inspect } from 'util'
@@ -920,6 +920,13 @@ describe('Environment.load', () => {
 			expect(NotEnv).toBeDefined()
 		})
 
+		test('empty secret files are values with allowEmpty', () => {
+			class E extends Environment {
+				@Var.Str({ allowEmpty: true }) EMPTY = 'default'
+			}
+			expect(withSecrets(E, credentials, secrets).load({}).EMPTY).toBe('')
+		})
+
 		test('unreadable secret files are reported', () => {
 			class E extends Environment {
 				@Var.Str() DIRECTORY!: string
@@ -990,5 +997,162 @@ describe('Environment.load', () => {
 			@Var.Num({ requiredWhen: (env: E) => env.F }) N?: number = 5
 		}
 		expect(E.load({}).N).toBe(5)
+	})
+
+	test('allowEmpty: an empty value is a value, not a missing variable', () => {
+		class E extends Environment {
+			@Var.Str({ allowEmpty: true }) PREFIX = 'app'
+			@Var.List(Var.Url, { allowEmpty: true }) ORIGINS = ['https://a.com']
+			@Var.Custom((raw) => raw.length, { allowEmpty: true }) LENGTH = -1
+			@Var.Str({ allowEmpty: true, name: ['NEW', 'OLD'] }) RENAMED = 'default'
+		}
+
+		expect(E.load({})).toEqual({ PREFIX: 'app', ORIGINS: ['https://a.com'], LENGTH: -1, RENAMED: 'default' })
+		expect(E.load({ PREFIX: '', ORIGINS: '', LENGTH: '', NEW: '', OLD: 'old' })).toEqual({
+			PREFIX: '',
+			ORIGINS: [],
+			LENGTH: 0,
+			RENAMED: '',
+		})
+		expect(E.load({ PREFIX: ' ', ORIGINS: ' , ' })).toMatchObject({ PREFIX: ' ', ORIGINS: [] })
+
+		class Required extends Environment {
+			@Var.Str({ allowEmpty: true }) PREFIX!: string
+		}
+		expect(Required.load({ PREFIX: '' }).PREFIX).toBe('')
+		expect(() => Required.load({})).toThrow(/PREFIX \(missing\)/)
+
+		class Invalid {
+			// @ts-expect-error an empty number is never valid
+			@Var.Num({ allowEmpty: true }) N!: number
+			// @ts-expect-error an empty URL is never valid
+			@Var.Url({ allowEmpty: true }) U!: string
+		}
+		expect(Invalid).toBeDefined()
+	})
+
+	test('pattern of string variables', () => {
+		class E extends Environment {
+			@Var.Str({ pattern: /^sk_live_/ }) API_KEY!: string
+			@Var.Str({ pattern: /^sk_/, sensitive: true }) SECRET!: string
+			@Var.Str({ pattern: /a/g }) GLOBAL = 'a'
+		}
+
+		expect(E.load({ API_KEY: 'sk_live_123', SECRET: 'sk_1' }).API_KEY).toBe('sk_live_123')
+		try {
+			E.load({ API_KEY: 'sk_test_123', SECRET: 's3cr3t' })
+			fail('should throw')
+		} catch (err: any) {
+			expect(err.errors.map((e: any) => e.message)).toEqual([
+				'"API_KEY" must match /^sk_live_/ (got "sk_test_123")',
+				'"SECRET" must match /^sk_/',
+			])
+		}
+
+		// Stateful global pattern gives the same result on each load.
+		for (let i = 0; i < 3; i++)
+			expect(E.load({ API_KEY: 'sk_live_1', SECRET: 'sk_1', GLOBAL: 'aa' }).GLOBAL).toBe('aa')
+
+		class Default extends Environment {
+			@Var.Str({ pattern: /^sk_/ }) API_KEY = 'nope'
+		}
+		expect(() => Default.load({})).toThrow('API_KEY (invalid): invalid default value: "API_KEY" must match /^sk_/')
+
+		class Invalid {
+			// @ts-expect-error pattern is for strings
+			@Var.Email({ pattern: /a/ }) A!: string
+		}
+		expect(Invalid).toBeDefined()
+	})
+
+	test('min, max and int of number variables', () => {
+		class E extends Environment {
+			@Var.Num({ min: 1, max: 64, int: true }) WORKERS = 4
+			@Var.Num({ min: 0, max: 1 }) RATIO = 0.5
+			@Var.Port({ min: 1024 }) PORT = 3000
+		}
+
+		expect(E.load({ WORKERS: '64', RATIO: '0', PORT: '1024' })).toEqual({ WORKERS: 64, RATIO: 0, PORT: 1024 })
+		try {
+			E.load({ WORKERS: '1.5', RATIO: '2', PORT: '80' })
+			fail('should throw')
+		} catch (err: any) {
+			expect(err.errors.map((e: any) => e.message)).toEqual([
+				'"WORKERS" must be an integer (got "1.5")',
+				'"RATIO" must be at most 1 (got "2")',
+				'"PORT" must be at least 1024 (got "80")',
+			])
+		}
+		expect(() => E.load({ WORKERS: '0' })).toThrow('"WORKERS" must be at least 1')
+
+		class Default extends Environment {
+			@Var.Num({ max: 10 }) N = 11
+		}
+		expect(() => Default.load({})).toThrow('N (invalid): invalid default value: "N" must be at most 10 (got 11)')
+
+		class Invalid {
+			// @ts-expect-error bounds are for numbers
+			@Var.Str({ min: 1 }) A!: string
+		}
+		expect(Invalid).toBeDefined()
+	})
+
+	test('standard decorators are reported', () => {
+		// Arguments of a standard field decorator, when "experimentalDecorators" is not enabled.
+		const standard = Var.Str() as unknown as (value: undefined, context: object) => void
+		expect(() => standard(undefined, { kind: 'field', name: 'A' })).toThrow(
+			'@reflet/env decorators require the "experimentalDecorators" TypeScript option.'
+		)
+	})
+
+	test('minLength and maxLength of string variables', () => {
+		class E extends Environment {
+			@Var.Str({ minLength: 32, sensitive: true }) COOKIE_SECRET!: string
+			@Var.Str({ maxLength: 3 }) CODE = 'abc'
+		}
+
+		expect(E.load({ COOKIE_SECRET: 'c'.repeat(32) }).COOKIE_SECRET).toHaveLength(32)
+		try {
+			E.load({ COOKIE_SECRET: 's3cr3t', CODE: 'abcd' })
+			fail('should throw')
+		} catch (err: any) {
+			expect(err.errors.map((e: any) => e.message)).toEqual([
+				'"COOKIE_SECRET" must be at least 32 characters',
+				'"CODE" must be at most 3 characters (got "abcd")',
+			])
+		}
+
+		class Default extends Environment {
+			@Var.Str({ maxLength: 3 }) CODE = 'abcd'
+		}
+		expect(() => Default.load({})).toThrow('invalid default value: "CODE" must be at most 3 characters')
+	})
+
+	test('parseDefault of custom variables', () => {
+		const root = mkdtempSync(join(tmpdir(), 'reflet-env-root-'))
+		try {
+			mkdirSync(join(root, 'temp'))
+			const folder = (raw: string, name: string) => {
+				const path = join(root, raw)
+				if (!existsSync(path)) throw new Error(`"${name}" folder "${path}" does not exist`)
+				return path
+			}
+
+			class E extends Environment {
+				@Var.Custom(folder, { parseDefault: true }) SHARED_DIR = 'temp'
+				@Var.Custom(folder) RAW_DIR = 'not-parsed'
+			}
+			expect(E.load({})).toEqual({ SHARED_DIR: join(root, 'temp'), RAW_DIR: 'not-parsed' })
+			expect(E.load({ SHARED_DIR: '.' }).SHARED_DIR).toBe(join(root, '.'))
+
+			class Missing extends Environment {
+				@Var.Custom(folder, { parseDefault: true }) SHARED_DIR = 'nope'
+			}
+			expect(() => Missing.load({})).toThrow(
+				/SHARED_DIR \(invalid\): invalid default value: "SHARED_DIR" folder ".*nope" does not exist/
+			)
+		} finally {
+			rmSync(root, { recursive: true, force: true })
+		}
 	})
 })

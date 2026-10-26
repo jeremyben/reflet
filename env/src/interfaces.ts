@@ -81,4 +81,6 @@ export interface Spec<T> extends SpecOptions<T>, Partial<ConditionalOptions<any>
 	type: string
 	/** Spec of list items. */
 	item?: { type: string; parser: Parser<any> }
+	allowEmpty?: boolean
+	parseDefault?: boolean
 }

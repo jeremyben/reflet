@@ -18,6 +18,7 @@ Well-defined and well-typed environment variables decorators. Have a look at [Re
 * [Secrets](#secrets)
 * [Derived values](#derived-values)
 * [NODE_ENV flags](#node_env-flags)
+* [Checking an environment](#checking-an-environment)
 * [Errors](#errors)
 * [Inheritance](#inheritance)
 
@@ -177,6 +178,28 @@ class Env extends Environment {
 ⚠️ Decorated properties must be public instance properties: static properties, methods and accessors are rejected.<br>
 A symbol property needs a [`name`](#name) option.
 
+### Constraints
+
+> 🔦 `pattern`, `minLength`, `maxLength`, `min`, `max`, `int`
+
+```ts
+class Env extends Environment {
+  @Var.Str({ pattern: /^sk_live_/ })
+  API_KEY!: string // e.g. rejects a test key in production.
+
+  @Var.Str({ minLength: 32, sensitive: true })
+  COOKIE_SECRET!: string
+
+  @Var.Num({ min: 1, max: 64, int: true })
+  WORKERS = 4
+
+  @Var.Port({ min: 1024 })
+  PORT = 3000
+}
+```
+
+`pattern`, `minLength` and `maxLength` (in characters) are available on `Str`, and `min`, `max` (both included) and `int` on `Num` and `Port`. Defaults are checked as well.
+
 ### Lists
 
 > 🔦 `@Var.List(item?, options?)`
@@ -216,6 +239,21 @@ class Env extends Environment {
 ```
 
 💡 Built-in parsers can be reused, e.g. `Var.Port.parse(raw, name)`.
+
+Defaults of custom variables are not parsed, since they usually are parsed values already. With `parseDefault`, a string default is parsed like an environment value, e.g. to resolve and check a path:
+
+```ts
+const writableFolder: Parser<string> = (raw, name) => {
+  const folder = path.resolve(__dirname, '..', raw)
+  fs.accessSync(folder, fs.constants.R_OK | fs.constants.W_OK)
+  return folder
+}
+
+class Env extends Environment {
+  @Var.Custom(writableFolder, { parseDefault: true })
+  SHARED_DIR = 'temp' // resolved and checked, like SHARED_DIR=temp
+}
+```
 
 ## Defaults
 
@@ -289,6 +327,24 @@ class Env extends Environment {
   DATABASE_URL!: string
 }
 ```
+
+### Empty values
+
+> 🔦 `allowEmpty`
+
+An empty value (`VAR=`) is considered missing by default. With `allowEmpty`, it is a value, e.g. an empty prefix or an empty list:
+
+```ts
+class Env extends Environment {
+  @Var.Str({ allowEmpty: true })
+  PREFIX = 'app' // PREFIX= gives '', a missing PREFIX gives 'app'.
+
+  @Var.List(Var.Url, { allowEmpty: true })
+  ALLOWED_ORIGINS = ['https://example.com'] // ALLOWED_ORIGINS= gives [].
+}
+```
+
+`allowEmpty` is available on `Str`, `List` and `Custom`, since an empty value is never valid for the other types. An empty value then stops the lookup of [other names](#name) and [secret files](#secrets).
 
 ### Documentation
 
@@ -464,6 +520,35 @@ if (env.isProduction) {
 ```
 
 Conditional variables are validated last, so these getters can be used in [`requiredWhen`](#conditional-requirement) predicates.
+
+## Checking an environment
+
+Since `Env.load()` runs when your env module is imported, importing it is enough to check an environment (e.g. a `.env` file during a deployment) without starting your application. It exits with code `1` and the list of errors when the environment is invalid:
+
+```sh
+# TypeScript sources, with tsx
+npx tsx --env-file=.env src/env.ts
+
+# Compiled code
+node --env-file=.env -e "require('./dist/env')"
+```
+
+Keep your env module free of imports from the rest of your application, so the check stays fast and side-effect free. To print the environment as well, sensitive values masked:
+
+```sh
+npx tsx --env-file=.env -e "import { env } from './src/env'; console.log(env)"
+```
+
+With systemd, check the environment with the actual credentials before starting the service:
+
+```ini
+[Service]
+LoadCredential=DATABASE_URL:/etc/myapp/database-url
+ExecStartPre=/usr/bin/npx tsx /opt/myapp/src/env.ts
+ExecStart=/usr/bin/npx tsx /opt/myapp/src/main.ts
+```
+
+⚠️ Decorators require the `"experimentalDecorators": true` TypeScript option, which tsx reads from your `tsconfig.json`. Node.js can't run TypeScript files with decorators by itself, even with type stripping.
 
 ## Errors
 

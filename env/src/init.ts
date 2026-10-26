@@ -121,8 +121,9 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 			}
 
 			try {
-				// Defaults of built-in scalar types are checked and normalized (e.g. trimmed) by their own parser.
-				if (CHECKED_DEFAULT_TYPES.includes(spec.type)) value = spec.parser(String(value), name)
+				// Defaults of built-in scalar types (or custom ones with `parseDefault`) are checked and normalized.
+				const parseDefault = spec.parseDefault && typeof value === 'string'
+				if (CHECKED_DEFAULT_TYPES.includes(spec.type) || parseDefault) value = spec.parser(String(value), name)
 				// JSON and list defaults are copied, so the frozen value is not the caller's object.
 				if (spec.type === 'json') value = JSON.parse(JSON.stringify(value))
 				if (spec.type === 'list') {
@@ -166,7 +167,7 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 	return Object.freeze(instance)
 }
 
-const CHECKED_DEFAULT_TYPES = ['num', 'port', 'url', 'email', 'host']
+const CHECKED_DEFAULT_TYPES = ['str', 'num', 'port', 'url', 'email', 'host']
 
 const UNTRIMMED_TYPES = ['str', 'custom']
 
@@ -176,6 +177,7 @@ const FROZEN_TYPES = ['json', 'list']
  * Whitespace-only values are missing as well, for types that trim them.
  */
 function isMissing(spec: Spec<any>, raw: string | undefined): raw is undefined {
+	if (spec.allowEmpty) return raw === undefined
 	return raw === undefined || (UNTRIMMED_TYPES.includes(spec.type) ? raw === '' : raw.trim() === '')
 }
 

@@ -1,28 +1,28 @@
 {
 	"total": {
 		"lines": {
-			"total": 219,
-			"covered": 219,
+			"total": 244,
+			"covered": 244,
 			"skipped": 0,
 			"pct": 100
 		},
 		"statements": {
-			"total": 268,
-			"covered": 267,
+			"total": 301,
+			"covered": 300,
 			"skipped": 0,
-			"pct": 99.62
+			"pct": 99.66
 		},
 		"functions": {
-			"total": 57,
-			"covered": 57,
+			"total": 63,
+			"covered": 63,
 			"skipped": 0,
 			"pct": 100
 		},
 		"branches": {
-			"total": 137,
-			"covered": 134,
+			"total": 173,
+			"covered": 169,
 			"skipped": 0,
-			"pct": 97.81
+			"pct": 97.68
 		},
 		"branchesTrue": {
 			"total": 0,
@@ -59,8 +59,8 @@
 	},
 	"src/init.ts": {
 		"lines": {
-			"total": 109,
-			"covered": 109,
+			"total": 111,
+			"covered": 111,
 			"skipped": 0,
 			"pct": 100
 		},
@@ -71,16 +71,16 @@
 			"pct": 100
 		},
 		"statements": {
-			"total": 127,
-			"covered": 126,
+			"total": 130,
+			"covered": 129,
 			"skipped": 0,
-			"pct": 99.21
+			"pct": 99.23
 		},
 		"branches": {
-			"total": 74,
-			"covered": 71,
+			"total": 79,
+			"covered": 76,
 			"skipped": 0,
-			"pct": 95.94
+			"pct": 96.2
 		}
 	},
 	"src/parsers.ts": {
@@ -111,28 +111,28 @@
 	},
 	"src/var-decorators.ts": {
 		"lines": {
-			"total": 65,
-			"covered": 65,
+			"total": 88,
+			"covered": 88,
 			"skipped": 0,
 			"pct": 100
 		},
 		"functions": {
-			"total": 23,
-			"covered": 23,
+			"total": 29,
+			"covered": 29,
 			"skipped": 0,
 			"pct": 100
 		},
 		"statements": {
-			"total": 77,
-			"covered": 77,
+			"total": 107,
+			"covered": 107,
 			"skipped": 0,
 			"pct": 100
 		},
 		"branches": {
-			"total": 34,
-			"covered": 34,
+			"total": 65,
+			"covered": 64,
 			"skipped": 0,
-			"pct": 100
+			"pct": 98.46
 		}
 	}
 }
