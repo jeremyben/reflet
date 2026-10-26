@@ -1,0 +1,11 @@
+# Generated
+dist
+coverage
+*-dist
+pnpm-lock.yaml
+CHANGELOG.md
+coverage-summary.json
+
+# Markdown lists are formatted by the editor (table of contents)
+*.md
+*.MD
