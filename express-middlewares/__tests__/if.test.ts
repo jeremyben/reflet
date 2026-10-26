@@ -110,12 +110,15 @@ describe('middlewares chaining', () => {
 
 		@Router('/params')
 		class ParamsRouter {
-			@UseIf(() => true, [
-				(req, res, next) => {
-					seen = { params: req.params, url: req.url, baseUrl: req.baseUrl }
-					next()
-				},
-			])
+			@UseIf(
+				() => true,
+				[
+					(req, res, next) => {
+						seen = { params: req.params, url: req.url, baseUrl: req.baseUrl }
+						next()
+					},
+				]
+			)
 			@Post('/:id')
 			post(req: express.Request, res: express.Response) {
 				res.send(req.params.id)

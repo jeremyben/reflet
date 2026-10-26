@@ -71,8 +71,8 @@ class HttpError<S extends _HttpError.Status> extends Error {
 	readonly name: S extends keyof OriginalErrors
 		? OriginalErrors[S]
 		: S extends keyof RefletHttp.CustomErrors
-			? RefletHttp.CustomErrors[S]
-			: 'HttpError'
+		? RefletHttp.CustomErrors[S]
+		: 'HttpError'
 
 	constructor(
 		// Only way to make an argument either required or optional without overloading (which does not work properly without `new` keyword)
@@ -121,8 +121,8 @@ class HttpError<S extends _HttpError.Status> extends Error {
 			(<any>args)[2] === Caller.Direct
 				? HttpError[<'BadRequest'>this.name] || HttpError
 				: (<any>args)[2] === Caller.Proxy
-					? proxyHandler.apply
-					: HttpError
+				? proxyHandler.apply
+				: HttpError
 
 		// Handle custom stackTraceLimit for HttpError
 		if (HttpError.stackTraceLimit !== Error.stackTraceLimit) {
@@ -613,10 +613,11 @@ type CustomStatus<V extends RefletHttp.CustomErrors[keyof RefletHttp.CustomError
 /**
  * @public
  */
-interface HttpErrorConstructor extends Pick<
-	typeof HttpError & StaticCustomErrors,
-	_HttpError.Name | keyof typeof Error | 'isInstance' | 'getStatus'
-> {
+interface HttpErrorConstructor
+	extends Pick<
+		typeof HttpError & StaticCustomErrors,
+		_HttpError.Name | keyof typeof Error | 'isInstance' | 'getStatus'
+	> {
 	new <S extends _HttpError.Status>(
 		...args: S extends keyof RefletHttp.ErrorParams
 			? [status: S, data: RefletHttp.ErrorParams[S]]
