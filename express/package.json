@@ -22,7 +22,7 @@
 		"access": "public"
 	},
 	"engines": {
-		"node": ">=12"
+		"node": ">=20"
 	},
 	"engineStrict": true,
 	"peerDependencies": {
