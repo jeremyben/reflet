@@ -65,7 +65,15 @@ export function UseInterceptor<In, Out = In>(
 				return send0.call(res, body)
 			}
 
-			const result = transform(body, { req, res })
+			let result: Out | Promise<Out>
+
+			// Forward synchronous errors as well, as the response might be sent outside the handler (e.g. in a callback).
+			try {
+				result = transform(body, { req, res })
+			} catch (error) {
+				forwardError(req, next)(error)
+				return res
+			}
 
 			// Response has been sent from the interceptor (bad bad programmer).
 			if (res.writableEnded) {
@@ -91,7 +99,15 @@ export function UseInterceptor<In, Out = In>(
 				return json0.call(res, body)
 			}
 
-			const result = transform(body, { req, res })
+			let result: Out | Promise<Out>
+
+			// Forward synchronous errors as well, as the response might be sent outside the handler (e.g. in a callback).
+			try {
+				result = transform(body, { req, res })
+			} catch (error) {
+				forwardError(req, next)(error)
+				return res
+			}
 
 			// Response has been sent from the interceptor (bad bad programmer).
 			if (res.writableEnded) {
@@ -117,7 +133,15 @@ export function UseInterceptor<In, Out = In>(
 				return jsonp0.call(res, body)
 			}
 
-			const result = transform(body, { req, res })
+			let result: Out | Promise<Out>
+
+			// Forward synchronous errors as well, as the response might be sent outside the handler (e.g. in a callback).
+			try {
+				result = transform(body, { req, res })
+			} catch (error) {
+				forwardError(req, next)(error)
+				return res
+			}
 
 			// Response has been sent from the interceptor (bad bad programmer).
 			if (res.writableEnded) {
@@ -154,7 +178,13 @@ export function UseInterceptor<In, Out = In>(
 			}
 
 			// Directly modify the data parameter.
-			arguments[0] = transform(dataOrCallback as any, { req, res })
+			// Forward synchronous errors as well, as the response might be sent outside the handler (e.g. in a callback).
+			try {
+				arguments[0] = transform(dataOrCallback as any, { req, res })
+			} catch (error) {
+				forwardError(req, next)(error)
+				return res
+			}
 
 			// Response has been sent from the interceptor (bad bad programmer).
 			/* istanbul ignore if - covered in res.send */

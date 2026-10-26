@@ -165,3 +165,52 @@ test("don't intercept redirections", async () => {
 	expect(res.status).toBe(302)
 	expect(res.header.location).toBe('/elsewhere')
 })
+
+describe('transform throwing synchronously', () => {
+	const throwing = UseInterceptor<string>(() => {
+		throw Error('transform failed')
+	})
+
+	@Router('/throwing')
+	class Throwing {
+		@throwing
+		@Get('/direct')
+		direct(req: express.Request, res: express.Response) {
+			res.send('data')
+		}
+
+		@throwing
+		@Get('/callback')
+		callback(req: express.Request, res: express.Response) {
+			setTimeout(() => res.send('data'), 5)
+		}
+
+		@throwing
+		@Get('/end-callback')
+		endCallback(req: express.Request, res: express.Response) {
+			setTimeout(() => res.end('data'), 5)
+		}
+	}
+
+	const app = register(express(), [Throwing])
+	app.use(((err, req, res, next) => res.status(500).send(err.message)) as express.ErrorRequestHandler)
+	const rqq = supertest(app)
+
+	test('is forwarded when the response is sent in the handler', async () => {
+		const res = await rqq.get('/throwing/direct')
+		expect(res.status).toBe(500)
+		expect(res.text).toBe('transform failed')
+	})
+
+	test('is forwarded when the response is sent in a callback', async () => {
+		const res = await rqq.get('/throwing/callback').timeout(1000)
+		expect(res.status).toBe(500)
+		expect(res.text).toBe('transform failed')
+	})
+
+	test('is forwarded when the response is ended in a callback', async () => {
+		const res = await rqq.get('/throwing/end-callback').timeout(1000)
+		expect(res.status).toBe(500)
+		expect(res.text).toBe('transform failed')
+	})
+})
