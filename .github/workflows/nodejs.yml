@@ -9,6 +9,11 @@ on:
       - "express/**/*.ts"
       - "express-middlewares/**/*.ts"
       - "mongoose/**/*.ts"
+      - "**/*.js"
+      - "**/package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/nodejs.yml"
+  workflow_dispatch:
 
 jobs:
   test:
