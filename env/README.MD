@@ -15,6 +15,7 @@ Well-defined and well-typed environment variables decorators. Have a look at [Re
 * [Defaults](#defaults)
 * [Common options](#common-options)
 * [Conditional requirement](#conditional-requirement)
+* [Secrets](#secrets)
 * [Derived values](#derived-values)
 * [NODE_ENV flags](#node_env-flags)
 * [Errors](#errors)
@@ -363,6 +364,59 @@ class Env extends Environment {
 * An error thrown by the predicate is reported in the [`EnvValidationError`](#errors).
 
 The property must be optional, since it can be `undefined` at runtime: this is enforced by types, as well as the class of the predicate parameter.
+
+## Secrets
+
+> 🔦 `@Var.Secrets(...directories)`
+
+Secrets are better passed as files than environment variables, which are inherited by child processes and easily leaked. Variables can be read from **secret files named like them**, in the directories given to the `@Var.Secrets` class decorator.
+
+### systemd credentials
+
+[systemd credentials](https://systemd.io/CREDENTIALS/) are files in the `$CREDENTIALS_DIRECTORY` of the service. Name the credential IDs like your variables:
+
+```ini
+# myapp.service
+[Service]
+LoadCredential=DB_PASSWORD:/etc/myapp/db-password
+LoadCredentialEncrypted=API_TOKEN:/etc/credstore.encrypted/api-token
+ExecStart=/usr/bin/node /opt/myapp/main.js
+```
+
+```ts
+@Var.Secrets(process.env.CREDENTIALS_DIRECTORY) // undefined, hence ignored, outside of systemd.
+class Env extends Environment {
+  @Var.Str({ sensitive: true })
+  DB_PASSWORD!: string
+
+  @Var.Str({ sensitive: true })
+  API_TOKEN!: string
+}
+
+const env = Env.load()
+```
+
+### Docker, Kubernetes and others
+
+Give the directories of secret files, e.g. `/run/secrets` for Docker and Compose secrets, or a mounted Kubernetes secret volume. With several directories, the first non-empty file found is used:
+
+```ts
+@Var.Secrets(process.env.CREDENTIALS_DIRECTORY, '/run/secrets')
+class Env extends Environment {
+  @Var.Str({ sensitive: true })
+  DB_PASSWORD!: string
+}
+```
+
+### Rules
+
+* Secret files are only read from the given directories: `$CREDENTIALS_DIRECTORY` is not looked up implicitly, since it is also inherited by child processes.
+* Environment variables take precedence over secret files.
+* Subclasses inherit the directories, unless they define their own, e.g. none in tests with `@Var.Secrets()`.
+* With [several names](#name), each one is looked up as a file name, e.g. `name: ['DB_PASSWORD', 'db-password']`.
+* A single trailing newline is removed from file contents (e.g. written by `echo`), which are then parsed as usual.
+* Empty files are skipped for the next directory or name, and an unreadable file is reported in the [`EnvValidationError`](#errors).
+* Values read from files are never included in error messages. Mark them as [`sensitive`](#sensitive) to mask them in logs as well.
 
 ## Derived values
 

@@ -1,5 +1,7 @@
+import { readFileSync } from 'fs'
+import { basename, join } from 'path'
 import { inspect, InspectOptions } from 'util'
-import { extractSpecs } from './var-decorators'
+import { extractSecretsDirs, extractSpecs } from './var-decorators'
 import type { ClassType, EnvErrorEntry, EnvSource, Spec } from './interfaces'
 
 /**
@@ -63,16 +65,24 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 		}
 	}
 
+	// Defined by `Var.Secrets` on the class or its closest ancestor.
+	const secretsDirs = extractSecretsDirs(target)
+
 	const processKey = (key: string | symbol) => {
 		const spec = specs.get(key)!
 		const names = envNames(key)
 		const read = (envName: string) =>
 			Object.prototype.hasOwnProperty.call(source, envName) ? source[envName] : undefined
-		// With several names, the first one set is used.
-		const name = names.find((envName) => !isMissing(spec, read(envName))) ?? names[0]
-		const raw = read(name)
+
+		// With several names, the first one set is used. Environment variables take precedence over secret files.
+		let name = names.find((envName) => !isMissing(spec, read(envName))) ?? names[0]
+		let raw = read(name)
+		const secret = isMissing(spec, raw)
+			? readSecret(names, secretsDirs, (value) => isMissing(spec, value))
+			: undefined
+
 		const got = (value: unknown) => {
-			if (spec.sensitive) return ''
+			if (spec.sensitive || secret) return ''
 			try {
 				return ` (got ${JSON.stringify(value)})`
 			} catch {
@@ -81,6 +91,14 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 		}
 		const fail = (kind: EnvErrorEntry['kind'], message: string) => {
 			errors.push({ name, kind, message, desc: spec.desc, example: spec.example, docs: spec.docs })
+		}
+
+		if (secret) {
+			name = secret.name
+			if ('error' in secret) {
+				return fail('invalid', `cannot read secret file "${secret.path}": ${errorMessage(secret.error)}`)
+			}
+			raw = secret.value
 		}
 
 		let value: unknown
@@ -95,8 +113,11 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 				} catch (err) {
 					return fail('invalid', `requiredWhen predicate failed: ${errorMessage(err)}`)
 				}
-				const looked = names.length > 1 ? ` (${names.join(', ')})` : ''
-				return fail('missing', `missing required value${looked}`)
+				const looked = [
+					names.length > 1 ? names.join(', ') : '',
+					secretsDirs.length ? `secret files in ${secretsDirs.join(', ')}` : '',
+				].filter(Boolean)
+				return fail('missing', `missing required value${looked.length ? ` (${looked.join(', ')})` : ''}`)
 			}
 
 			try {
@@ -159,6 +180,32 @@ function isMissing(spec: Spec<any>, raw: string | undefined): raw is undefined {
 }
 
 /**
+ * Reads the first non-empty secret file named like one of the variable names, a single trailing newline removed.
+ */
+function readSecret(
+	names: readonly string[],
+	dirs: readonly string[],
+	isEmpty: (value: string) => boolean
+): { name: string; path: string; value: string } | { name: string; path: string; error: unknown } | undefined {
+	for (const name of names) {
+		// Not a file name.
+		if (basename(name) !== name) continue
+
+		for (const dir of dirs) {
+			const path = join(dir, name)
+			try {
+				const value = readFileSync(path, 'utf8').replace(/\r?\n$/, '')
+				if (!isEmpty(value)) return { name, path, value }
+			} catch (error: any) {
+				if (error && (error.code === 'ENOENT' || error.code === 'ENOTDIR')) continue
+				return { name, path, error }
+			}
+		}
+	}
+	return undefined
+}
+
+/**
  * Own properties of an env instance, with sensitive variables masked.
  */
 function masked(env: object): Record<string, unknown> {
@@ -178,7 +225,8 @@ function deepFreeze<T>(value: T): T {
 	return value
 }
 
-const errorMessage = (err: unknown) => (err instanceof Error ? err.message : String(err))
+// Not `instanceof Error`, which fails for errors from another realm (e.g. Node.js internals in a VM context).
+const errorMessage = (err: any) => (err && typeof err.message === 'string' ? (err.message as string) : String(err))
 
 /**
  * Base class of an environment, whose decorated properties are validated and typed by `load`.
@@ -213,8 +261,9 @@ export abstract class Environment {
 	 * @throws EnvValidationError - when variables are missing or invalid.
 	 */
 	static load<T extends Environment>(this: { prototype: T }, source?: EnvSource): T {
-		if ((this as unknown) === Environment)
+		if ((this as unknown) === Environment) {
 			throw new Error('`load` must be called on a class extending `Environment`.')
+		}
 		return initEnv(this as unknown as ClassType<T>, source)
 	}
 

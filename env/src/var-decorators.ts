@@ -1,8 +1,12 @@
 import { parseBool, parseEmail, parseHost, parseJson, parseNum, parsePort, parseStr, parseUrl } from './parsers'
+import type { Environment } from './init'
 import type { ClassType, ConditionalOptions, Parser, Spec, SpecOptions } from './interfaces'
 
 /** Own specs of each class, in declaration order. */
 const definitions = new WeakMap<object, Map<string | symbol, Spec<any>>>()
+
+/** Secret directories of each class, defined by `Var.Secrets`. */
+const secretsDirs = new WeakMap<object, readonly string[]>()
 
 /**
  * Fails on definitions that would otherwise be silently ignored or overridden.
@@ -185,6 +189,33 @@ export namespace Var {
 	}
 
 	/**
+	 * Reads variables from secret files named like them, in the given directories,
+	 * e.g. `process.env.CREDENTIALS_DIRECTORY` with systemd, or `/run/secrets` with Docker.
+	 *
+	 * - Undefined directories are ignored, and environment variables take precedence over secret files.
+	 * - Subclasses inherit the directories, unless they define their own (none with `＠Var.Secrets()`).
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Var.Secrets(process.env.CREDENTIALS_DIRECTORY)
+	 * class Env extends Environment {
+	 *   ＠Var.Str({ sensitive: true }) DB_PASSWORD!: string
+	 * }
+	 * ```
+	 * ---
+	 * @public
+	 */
+	export function Secrets(...dirs: (string | undefined)[]): (target: Function & { prototype: Environment }) => void {
+		return (target) => {
+			if (secretsDirs.has(target)) throw new Error(`"${target.name}" cannot have several secrets decorators.`)
+			secretsDirs.set(
+				target,
+				dirs.filter((dir): dir is string => typeof dir === 'string' && dir !== '')
+			)
+		}
+	}
+
+	/**
 	 * Restricts the value to one of the given choices, which narrows the type.
 	 * @public
 	 */
@@ -226,6 +257,18 @@ const PARSER_TYPES = new Map<Parser<any>, string>([
 function factory<T>(type: string, parser: Parser<T>): Var.Factory<T> {
 	const decorate = (options?: AnyOptions) => register(type, parser, options)
 	return Object.assign(decorate, { parse: parser }) as Var.Factory<T>
+}
+
+/**
+ * Secret directories of the closest class defining them.
+ * @internal
+ */
+export function extractSecretsDirs(target: ClassType): readonly string[] {
+	for (let cls = target; cls && cls !== Function.prototype; cls = Object.getPrototypeOf(cls)) {
+		const dirs = secretsDirs.get(cls)
+		if (dirs) return dirs
+	}
+	return []
 }
 
 /**
