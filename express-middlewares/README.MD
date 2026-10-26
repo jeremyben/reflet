@@ -96,6 +96,19 @@ class ThingRouter {
 }
 ```
 
+#### About order
+
+Successive interceptors wrap each other, so they transform the body in the reverse order they are written: the closest to the method transforms it first.
+
+```ts
+@UseInterceptor<string>((data) => `${data}, then first`)
+@UseInterceptor<string>((data) => `${data}, then second`)
+@Get('/things')
+list(@Res res: Response) {
+  res.send('body') // expect "body, then second, then first"
+}
+```
+
 #### About errors
 
 `UseInterceptor` won't intercept errors, whether:
@@ -111,6 +124,8 @@ If you need to intercept errors as well, you should simply add a `@Catch` decora
 ```
 
 🗣️ Don't forget to set a proper error status in your error handler, or else the error body will actually be intercepted.
+
+If the mapping function throws or rejects, the error is passed to the error handlers.
 
 #### About redirections
 
