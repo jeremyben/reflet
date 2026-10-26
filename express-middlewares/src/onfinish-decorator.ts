@@ -155,12 +155,23 @@ export function UseOnFinish<ResBody = any>(
  * @internal
  */
 function concatChunks(
-	chunk: string | Buffer,
+	chunk: string | Uint8Array,
 	body: string | Buffer | undefined,
 	encodingOrCallback: BufferEncoding | Function | undefined,
 	bodyMaxLength = 65536
 ) {
-	// Assuming body is the same type as chunk (decided by the first chunk).
+	// Body type is decided by the first chunk, and switched to buffer if chunks are mixed
+	// (e.g. a string written before a piped stream).
+	if (typeof chunk !== 'string' && !Buffer.isBuffer(chunk)) {
+		chunk = Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength)
+	}
+
+	if (body !== undefined && (typeof body === 'string') !== (typeof chunk === 'string')) {
+		const encoding = typeof encodingOrCallback === 'string' ? encodingOrCallback : undefined
+		chunk = typeof chunk === 'string' ? Buffer.from(chunk, encoding) : chunk
+		body = typeof body === 'string' ? Buffer.from(body) : body
+	}
+
 	if (Buffer.isBuffer(chunk)) {
 		if (!body) return chunk
 
@@ -174,23 +185,26 @@ function concatChunks(
 		const encoding = typeof encodingOrCallback === 'string' ? encodingOrCallback : undefined
 
 		// Retrieve the encoded response if different than utf8
-		if (!body) return encoding ? Buffer.from(chunk, encoding).toString() : chunk
+		// Chunks are strings in this branch.
+		const chunkString = chunk as string
+
+		if (!body) return encoding ? Buffer.from(chunkString, encoding).toString() : chunkString
 
 		// To limit at the right length, truncate the string buffer (not the string directly),
 		// this might cut the last character (if multi-bytes) and not render it properly.
 		// Certainly overkill...
-		const bodyLength = Buffer.byteLength(body, encoding)
+		const bodyLength = Buffer.byteLength(body as string, encoding)
 		if (bodyLength >= bodyMaxLength) return body
 
 		const chunkMaxLength = bodyMaxLength - bodyLength
-		const chunkBuffer = Buffer.from(chunk, encoding)
+		const chunkBuffer = Buffer.from(chunkString, encoding)
 		const goodChunk =
 			chunkBuffer.length > chunkMaxLength
 				? chunkBuffer.toString(undefined, 0, chunkMaxLength)
 				: encoding
 				? /* istanbul ignore next - same thing and too difficult to cover */
 				  chunkBuffer.toString()
-				: chunk
+				: chunkString
 
 		return (body as string) + goodChunk
 	}

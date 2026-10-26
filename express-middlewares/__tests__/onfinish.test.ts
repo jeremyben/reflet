@@ -1,6 +1,7 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
 import { createReadStream } from 'fs'
+import { Readable } from 'stream'
 import { register, Get, Post, Put, Patch, Delete, Router } from '@reflet/express'
 import { UseOnFinish, UseInterceptor } from '../src'
 import { createDummyFile, log } from '../../testing/tools'
@@ -246,5 +247,51 @@ describe('retrieve streamed body', () => {
 		expect(res.body.length).toBe(4e5)
 		expect(consoleSpy).toBeCalledWith(expect.any(Buffer))
 		expect(consoleSpy).toBeCalledWith(65536)
+	})
+})
+
+describe('retrieve body with mixed chunk types', () => {
+	@Router('/mixed')
+	class Mixed {
+		@UseOnFinish((req, res) => console.info('mixed', String(res.body)), true)
+		@Get('/end')
+		end(req: express.Request, res: express.Response) {
+			res.write('head;')
+			res.end(Buffer.from('tail'))
+		}
+
+		@UseOnFinish((req, res) => console.info('mixed', String(res.body)), true)
+		@Get('/stream')
+		stream(req: express.Request, res: express.Response) {
+			res.write('prefix;')
+			Readable.from([Buffer.from('chunk1;'), Buffer.from('chunk2')]).pipe(res)
+		}
+
+		@UseOnFinish((req, res) => console.info('mixed', String(res.body)), true)
+		@Get('/uint8array')
+		uint8array(req: express.Request, res: express.Response) {
+			res.write('head;')
+			res.end(new TextEncoder().encode('tail'))
+		}
+	}
+
+	const rq = supertest(register(express(), [Mixed]))
+
+	test('string then buffer', async () => {
+		const res = await rq.get('/mixed/end')
+		expect(res.text).toBe('head;tail')
+		expect(consoleSpy).toBeCalledWith('mixed', 'head;tail')
+	})
+
+	test('string then piped stream', async () => {
+		const res = await rq.get('/mixed/stream')
+		expect(res.text).toBe('prefix;chunk1;chunk2')
+		expect(consoleSpy).toBeCalledWith('mixed', 'prefix;chunk1;chunk2')
+	})
+
+	test('string then uint8array', async () => {
+		const res = await rq.get('/mixed/uint8array')
+		expect(res.text).toBe('head;tail')
+		expect(consoleSpy).toBeCalledWith('mixed', 'head;tail')
 	})
 })
