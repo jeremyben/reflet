@@ -1,0 +1,236 @@
+import { inspect, InspectOptions } from 'util'
+import { extractSpecs } from './var-decorators'
+import type { ClassType, EnvErrorEntry, EnvSource, Spec } from './interfaces'
+
+/**
+ * Aggregated validation error thrown by `Environment.load` when one or more env
+ * variables are missing or invalid.
+ * @public
+ */
+export class EnvValidationError extends Error {
+	readonly errors: EnvErrorEntry[]
+
+	constructor(errors: EnvErrorEntry[]) {
+		const lines: string[] = []
+		for (const e of errors) {
+			lines.push(` - ${e.name} (${e.kind}): ${e.message}`)
+			if (e.desc) lines.push(`     desc:    ${e.desc}`)
+			if (e.example) lines.push(`     example: ${e.example}`)
+			if (e.docs) lines.push(`     docs:    ${e.docs}`)
+		}
+		super(`Invalid environment variables:\n${lines.join('\n')}`)
+		this.name = 'EnvValidationError'
+		this.errors = errors
+	}
+
+	/** Entries with `kind === 'missing'`. */
+	get missing(): EnvErrorEntry[] {
+		return this.errors.filter((e) => e.kind === 'missing')
+	}
+
+	/** Entries with `kind === 'invalid'`. */
+	get invalid(): EnvErrorEntry[] {
+		return this.errors.filter((e) => e.kind === 'invalid')
+	}
+}
+
+/**
+ * Validates the given source against a decorated class, and returns a frozen instance
+ * of that class with the parsed values assigned to its properties.
+ * @internal
+ */
+export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env): T {
+	const instance: any = new target()
+	const specs = extractSpecs(target)
+	const errors: EnvErrorEntry[] = []
+
+	// Property initializers (e.g. `PORT = 3000`) are default values.
+	const initializers = new Map<string | symbol, unknown>()
+
+	const envNames = (key: string | symbol): readonly string[] => {
+		const name = specs.get(key)!.name ?? String(key)
+		return typeof name === 'string' ? [name] : name
+	}
+
+	for (const key of specs.keys()) {
+		// Bare declarations are also defined as `undefined` with `useDefineForClassFields` (ES2022+ targets).
+		// `null` is not a default either.
+		if (instance[key] != null) {
+			initializers.set(key, instance[key])
+			// Until processed, a variable reads as `undefined` (from a predicate), not as its unvalidated default.
+			// Not deleted, to keep the property position.
+			instance[key] = undefined
+		}
+	}
+
+	const processKey = (key: string | symbol) => {
+		const spec = specs.get(key)!
+		const names = envNames(key)
+		const read = (envName: string) =>
+			Object.prototype.hasOwnProperty.call(source, envName) ? source[envName] : undefined
+		// With several names, the first one set is used.
+		const name = names.find((envName) => !isMissing(spec, read(envName))) ?? names[0]
+		const raw = read(name)
+		const got = (value: unknown) => {
+			if (spec.sensitive) return ''
+			try {
+				return ` (got ${JSON.stringify(value)})`
+			} catch {
+				return '' // e.g. BigInt or circular JSON default.
+			}
+		}
+		const fail = (kind: EnvErrorEntry['kind'], message: string) => {
+			errors.push({ name, kind, message, desc: spec.desc, example: spec.example, docs: spec.docs })
+		}
+
+		let value: unknown
+
+		if (isMissing(spec, raw)) {
+			value = initializers.get(key)
+
+			if (value === undefined) {
+				// Conditional requirement: skip silently if predicate says it's not required.
+				try {
+					if (spec.requiredWhen && !spec.requiredWhen(instance)) return
+				} catch (err) {
+					return fail('invalid', `requiredWhen predicate failed: ${errorMessage(err)}`)
+				}
+				const looked = names.length > 1 ? ` (${names.join(', ')})` : ''
+				return fail('missing', `missing required value${looked}`)
+			}
+
+			try {
+				// Defaults of built-in scalar types are checked and normalized (e.g. trimmed) by their own parser.
+				if (CHECKED_DEFAULT_TYPES.includes(spec.type)) value = spec.parser(String(value), name)
+				// JSON and list defaults are copied, so the frozen value is not the caller's object.
+				if (spec.type === 'json') value = JSON.parse(JSON.stringify(value))
+				if (spec.type === 'list') {
+					value = Array.from(value as unknown[], (item, index) => {
+						// Items of built-in scalar types are checked and normalized as well.
+						const { type, parser } = spec.item!
+						return CHECKED_DEFAULT_TYPES.includes(type) ? parser(String(item), `${name}[${index}]`) : item
+					})
+				}
+			} catch (err) {
+				return fail('invalid', `invalid default value: ${errorMessage(err)}${got(value)}`)
+			}
+		} else {
+			try {
+				value = spec.parser(raw, name)
+			} catch (err) {
+				return fail('invalid', errorMessage(err) + got(raw))
+			}
+		}
+
+		if (spec.choices && !spec.choices.includes(value)) {
+			return fail('invalid', `must be one of [${spec.choices.join(', ')}]${got(value)}`)
+		}
+
+		// JSON and lists are frozen as well, as the env instance.
+		instance[key] = FROZEN_TYPES.includes(spec.type) ? deepFreeze(value) : value
+	}
+
+	const keys = [...specs.keys()]
+
+	// Conditional properties are deferred so that their predicate sees a fully-populated env.
+	for (const key of keys) {
+		if (!specs.get(key)!.requiredWhen) processKey(key)
+	}
+	for (const key of keys) {
+		if (specs.get(key)!.requiredWhen) processKey(key)
+	}
+
+	if (errors.length) throw new EnvValidationError(errors)
+
+	return Object.freeze(instance)
+}
+
+const CHECKED_DEFAULT_TYPES = ['num', 'port', 'url', 'email', 'host']
+
+const UNTRIMMED_TYPES = ['str', 'custom']
+
+const FROZEN_TYPES = ['json', 'list']
+
+/**
+ * Whitespace-only values are missing as well, for types that trim them.
+ */
+function isMissing(spec: Spec<any>, raw: string | undefined): raw is undefined {
+	return raw === undefined || (UNTRIMMED_TYPES.includes(spec.type) ? raw === '' : raw.trim() === '')
+}
+
+/**
+ * Own properties of an env instance, with sensitive variables masked.
+ */
+function masked(env: object): Record<string, unknown> {
+	const specs = extractSpecs(env.constructor as ClassType)
+	const result: Record<string, unknown> = {}
+	for (const key of Object.keys(env)) {
+		result[key] = specs.get(key)?.sensitive ? '***' : (env as any)[key]
+	}
+	return result
+}
+
+function deepFreeze<T>(value: T): T {
+	if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+		Object.freeze(value)
+		for (const child of Object.values(value)) deepFreeze(child)
+	}
+	return value
+}
+
+const errorMessage = (err: unknown) => (err instanceof Error ? err.message : String(err))
+
+/**
+ * Base class of an environment, whose decorated properties are validated and typed by `load`.
+ *
+ * The constructor is protected, so an environment cannot be created without validation.
+ *
+ * @example
+ * ```ts
+ * class Env extends Environment {
+ *   ＠Var.Str({ choices: ['development', 'production', 'test'] })
+ *   NODE_ENV!: 'development' | 'production' | 'test'
+ *
+ *   ＠Var.Port()
+ *   PORT = 3000
+ *
+ *   get isProduction() {
+ *     return this.NODE_ENV === 'production'
+ *   }
+ * }
+ *
+ * export const env = Env.load()
+ * env.PORT // number
+ * ```
+ * ---
+ * @public
+ */
+export abstract class Environment {
+	/**
+	 * Validates all the variables of the source, and returns a frozen instance of the environment class.
+	 *
+	 * @param source - defaults to `process.env`.
+	 * @throws EnvValidationError - when variables are missing or invalid.
+	 */
+	static load<T extends Environment>(this: { prototype: T }, source?: EnvSource): T {
+		if ((this as unknown) === Environment)
+			throw new Error('`load` must be called on a class extending `Environment`.')
+		return initEnv(this as unknown as ClassType<T>, source)
+	}
+
+	protected constructor() {}
+
+	/**
+	 * Used by `JSON.stringify`: sensitive variables are masked.
+	 */
+	toJSON(): Record<string, unknown> {
+		return masked(this)
+	}
+
+	/**
+	 * Used by `console.log` and `util.inspect`: sensitive variables are masked.
+	 */
+	[inspect.custom](depth: number, options: InspectOptions): string {
+		return `${this.constructor.name} ${inspect(masked(this), options)}`
+	}
+}
