@@ -27,7 +27,6 @@
 	"engines": {
 		"node": ">=14"
 	},
-	"engineStrict": true,
 	"peerDependencies": {
 		"mongoose": ">=7"
 	},

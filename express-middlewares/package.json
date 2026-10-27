@@ -25,7 +25,6 @@
 	"engines": {
 		"node": ">=20"
 	},
-	"engineStrict": true,
 	"peerDependencies": {
 		"@reflet/express": "workspace:^",
 		"@reflet/http": "workspace:^",

@@ -21,7 +21,6 @@
 	"engines": {
 		"node": ">=8.10"
 	},
-	"engineStrict": true,
 	"peerDependencies": {
 		"cron": "^3.1.0"
 	},
