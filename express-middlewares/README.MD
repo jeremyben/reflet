@@ -96,6 +96,22 @@ class ThingRouter {
 }
 ```
 
+#### With `@Send`
+
+If your route returns its response value with `@Send` (from `@reflet/express`), prefer transforming it with a custom send handler: it receives the value returned by the method (typed and awaited), and doesn't patch any response method.
+
+```ts
+@Send<Thing>((thing, { res }) => {
+  res.json({ data: thing })
+})
+@Get('/things/:id')
+get(@Params('id') id: string) {
+  return db.collection('things').findOne({ id })
+}
+```
+
+`UseInterceptor` remains useful for handlers sending the response themselves with `res.send` or `res.json`.
+
 #### About order
 
 Successive interceptors wrap each other, so they transform the body in the reverse order they are written: the closest to the method transforms it first.
