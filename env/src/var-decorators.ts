@@ -1,4 +1,4 @@
-import { bool, bytes, email, host, json, list, num, parser, port, refine, str, url } from './parsers'
+import { bool, bytes, email, host, json, list, num, parser, path, port, refine, str, url } from './parsers'
 import type { Steps } from './parsers'
 import type { ClassType, ConditionalOptions, Parser, Spec, SpecOptions, Validator } from './interfaces'
 
@@ -179,6 +179,56 @@ export namespace Var {
 		minLength?: number
 		/** Maximum length, in bytes. */
 		maxLength?: number
+	}
+
+	/**
+	 * Path of an existing file, resolved to an absolute path.
+	 * Relative paths are resolved from `base` (the current directory by default), absolute paths are kept as is.
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Var.File({ readable: true }) TLS_CERT_PATH!: string
+	 * ```
+	 * ---
+	 * @public
+	 */
+	export function File<C = any>(options: PathOptions & ConditionalOptions<C>): Decorator<string | undefined, C>
+	export function File(options?: PathOptions): Decorator<string>
+	export function File(options: PathOptions & AnyOptions = {}): Decorator<any> {
+		return register('file', path('file', options), options)
+	}
+	File.parse = parsable(path('file', {}))
+
+	/**
+	 * Path of an existing directory, resolved to an absolute path.
+	 * Relative paths are resolved from `base` (the current directory by default), absolute paths are kept as is.
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Var.Dir({ base: __dirname, writable: true }) UPLOADS_DIR = 'uploads'
+	 * ```
+	 * ---
+	 * @public
+	 */
+	export function Dir<C = any>(options: PathOptions & ConditionalOptions<C>): Decorator<string | undefined, C>
+	export function Dir(options?: PathOptions): Decorator<string>
+	export function Dir(options: PathOptions & AnyOptions = {}): Decorator<any> {
+		return register('dir', path('directory', options), options)
+	}
+	Dir.parse = parsable(path('directory', {}))
+
+	/**
+	 * Options of a file or directory variable.
+	 * Checked when the environment is loaded only.
+	 * @public
+	 */
+	export interface PathOptions extends Omit<SpecOptions<string>, 'choices'> {
+		/** Directory of relative paths, the current directory by default. */
+		base?: string
+		/** The file or directory must be readable. */
+		readable?: boolean
+		/** The file or directory must be writable. */
+		writable?: boolean
 	}
 
 	/**

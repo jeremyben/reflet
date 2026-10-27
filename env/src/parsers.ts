@@ -1,4 +1,6 @@
+import { accessSync, constants, statSync } from 'fs'
 import { isIP, isIPv6 } from 'net'
+import { resolve } from 'path'
 import type { Parser, Validator } from './interfaces'
 
 /**
@@ -163,6 +165,45 @@ export function bytes(options: {
 				throw new Error(`"${name}" must be at most ${maxLength} bytes`)
 			}
 			return value
+		},
+	}
+}
+
+/**
+ * Existing file or directory, resolved to an absolute path.
+ */
+export function path(
+	kind: 'file' | 'directory',
+	options: { base?: string; readable?: boolean; writable?: boolean }
+): Steps<string> {
+	const { base, readable, writable } = options
+	const access = [readable && 'readable', writable && 'writable'].filter(Boolean).join(' and ')
+	return {
+		coerce: trimmed,
+		validate: (value, name) => {
+			string(value, name)
+			// Not expanded by Node.js, unlike shells.
+			if (value.startsWith('~')) throw new Error(`"${name}" must be an absolute or relative path, without ~`)
+
+			// Relative to the base (the current directory by default), absolute paths are kept as is.
+			const absolute = resolve(base ?? process.cwd(), value)
+			let stats
+			try {
+				stats = statSync(absolute)
+			} catch {
+				throw new Error(`"${name}" must be an existing ${kind} (${absolute})`)
+			}
+			if (kind === 'file' ? !stats.isFile() : !stats.isDirectory()) {
+				throw new Error(`"${name}" must be a ${kind} (${absolute})`)
+			}
+			if (access) {
+				try {
+					accessSync(absolute, (readable ? constants.R_OK : 0) | (writable ? constants.W_OK : 0))
+				} catch {
+					throw new Error(`"${name}" must be a ${access} ${kind} (${absolute})`)
+				}
+			}
+			return absolute
 		},
 	}
 }

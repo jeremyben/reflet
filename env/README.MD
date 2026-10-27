@@ -150,6 +150,8 @@ const env = new Env() // ❌ Type error: use Env.load()
 | `@Var.Host()` | `string` | Hostnames (underscores allowed, e.g. container names), IPv4, and IPv6 addresses (bracketed or not). |
 | `@Var.Json<T>()` | `T` | Valid JSON. |
 | `@Var.Bytes(options?)` | `Buffer` | Bytes of the value, in `utf8`, `hex`, `base64` or `base64url` encoding. |
+| `@Var.File(options?)` | `string` | Path of an existing file, resolved to an absolute path. |
+| `@Var.Dir(options?)` | `string` | Path of an existing directory, resolved to an absolute path. |
 | `@Var.List(item?, options?)` | `T[]` | Values separated by commas (or another `separator`), each parsed by the `item` type (strings by default). |
 
 Surrounding whitespace is trimmed for all types except `Str` and `Custom`.
@@ -242,6 +244,26 @@ class Env extends Environment {
 ```
 
 💡 The type parameter narrows the buffer type without check, e.g. to a branded type: `@Var.Bytes<MyKey>()`.
+
+### Files and directories
+
+> 🔦 `@Var.File({ base?, readable?, writable? })`, `@Var.Dir({ base?, readable?, writable? })`
+
+Paths are resolved to absolute paths, and checked to exist, as a file or a directory, readable or writable if required:
+
+```ts
+class Env extends Environment {
+  @Var.Dir({ base: join(__dirname, '..'), writable: true })
+  UPLOADS_DIR = 'uploads' // e.g. /app/uploads
+
+  @Var.File({ readable: true })
+  TLS_CERT_PATH!: string
+}
+```
+
+* Relative paths are resolved from `base`, the current directory by default, which depends on where the app is started. Absolute paths are kept as is.
+* `~` is not expanded, unlike in shells.
+* Defaults are checked as well, when the environment is loaded only: later permission changes are not detected, and the root user bypasses permissions.
 
 ### Custom parser
 

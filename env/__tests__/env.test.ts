@@ -1,4 +1,5 @@
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs'
+import * as fs from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { inspect } from 'util'
@@ -1346,6 +1347,67 @@ describe('Environment.load', () => {
 			@Var.Bytes() A!: string
 		}
 		expect(Invalid).toBeDefined()
+	})
+
+	test('Var.File and Var.Dir', () => {
+		const root = mkdtempSync(join(tmpdir(), 'reflet-env-paths-'))
+		try {
+			mkdirSync(join(root, 'temp'))
+			writeFileSync(join(root, 'cert.pem'), 'cert')
+
+			class E extends Environment {
+				@Var.Dir({ base: root, writable: true }) SHARED_DIR = 'temp'
+				@Var.File({ base: root, readable: true }) CERT!: string
+				@Var.Dir() CWD = '.'
+			}
+			expect({ ...E.load({ CERT: ' cert.pem ' }) }).toEqual({
+				SHARED_DIR: join(root, 'temp'),
+				CERT: join(root, 'cert.pem'),
+				CWD: process.cwd(),
+			})
+			// Absolute paths are kept as is.
+			expect(E.load({ CERT: join(root, 'cert.pem'), SHARED_DIR: root }).SHARED_DIR).toBe(root)
+
+			const errors = (source: Record<string, string>) => {
+				try {
+					E.load(source)
+				} catch (err: any) {
+					return err.errors.map((e: any) => e.message)
+				}
+				return []
+			}
+			expect(errors({ CERT: 'temp', SHARED_DIR: 'cert.pem', CWD: '~/data' })).toEqual([
+				`"SHARED_DIR" must be a directory (${join(root, 'cert.pem')}) (got "cert.pem")`,
+				`"CERT" must be a file (${join(root, 'temp')}) (got "temp")`,
+				'"CWD" must be an absolute or relative path, without ~ (got "~/data")',
+			])
+			expect(errors({ CERT: 'nope' })).toEqual([
+				`"CERT" must be an existing file (${join(root, 'nope')}) (got "nope")`,
+			])
+
+			// Defaults are validated as well.
+			class Missing extends Environment {
+				@Var.Dir({ base: root }) DIR = 'nope'
+			}
+			expect(() => Missing.load({})).toThrow(
+				`invalid default value: "DIR" must be an existing directory (${join(root, 'nope')}) (got "nope")`
+			)
+
+			// Mocked, since root bypasses permissions.
+			const denied = jest.spyOn(fs, 'accessSync').mockImplementation(() => {
+				throw new Error('EACCES')
+			})
+			expect(errors({ CERT: 'cert.pem' })).toEqual([
+				`invalid default value: "SHARED_DIR" must be a writable directory (${join(root, 'temp')}) (got "temp")`,
+				`"CERT" must be a readable file (${join(root, 'cert.pem')}) (got "cert.pem")`,
+			])
+			denied.mockRestore()
+
+			expect(Var.Dir.parse(root, 'D')).toBe(root)
+			expect(() => Var.File.parse(root, 'F')).toThrow(`"F" must be a file (${root})`)
+		} finally {
+			rmSync(root, { recursive: true, force: true })
+		}
 	})
 
 	test('Var.Type', () => {
