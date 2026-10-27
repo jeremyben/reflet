@@ -631,7 +631,7 @@ class ThingController {
 
 ### Request headers
 
-> 🔦 `@Headers(header?)`<br>
+> 🔦 `@ReqHeaders(header?)`<br>
 > 💫 Related Node.js object: [`req.headers`](https://nodejs.org/api/http.html#http_message_headers)
 
 ```ts
@@ -639,15 +639,15 @@ class ThingController {
 class ThingController {
   // Whole headers object
   @Get()
-  list(@Headers headers: Headers) {}
+  list(@ReqHeaders headers: ReqHeaders) {}
   
   // Specific header
   @Get()
-  list(@Headers('user-agent') userAgent: string) {}
+  list(@ReqHeaders('user-agent') userAgent: string) {}
 }
 ```
 
-`Header` input type is narrowed to a union of known **request headers** (instead of just `string`), so typos are prevented and you have that sweet auto-completion.
+`ReqHeaders` input type is narrowed to a union of known **request headers** (instead of just `string`), so typos are prevented and you have that sweet auto-completion.
 
 Augment the union with the help of the global namespace `RefletHttp`:
 
@@ -663,11 +663,13 @@ declare global {
 @Controller('/things')
 class ThingController {
   @Get()
-  list(@Headers('x-custom') custom: string) {}
+  list(@ReqHeaders('x-custom') custom: string) {}
 }
 ```
 
 Use **[`RequestHeader` enum](../http/README.md#header-)** from `@reflet/http` for better discoverability and documentation.
+
+🗣️ Formerly named `@Headers`, which conflicts with the global `Headers` class of Node.js (Fetch API). `Headers` is still available as a deprecated alias, and will be removed in the next major version.
 
 ### Create your own parameter decorator 🔧
 

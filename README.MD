@@ -91,7 +91,7 @@ Instead, Reflet hopes to provide a well-defined and well-typed module for each l
 
 Reflet takes full advantage of TypeScript by **narrowing** its type signatures, to prevent as much mistakes as possible. 🎯
 
-_e.g. [`Headers` decorator](./express/README.MD#request-headers) narrows its input to a union of request headers instead of just `string`, <br>[`UseStatus` decorator](./express-middlewares/README.MD#response-status) narrows its input to a union of status codes instead of just `number`._
+_e.g. [`ReqHeaders` decorator](./express/README.MD#request-headers) narrows its input to a union of request headers instead of just `string`, <br>[`UseStatus` decorator](./express-middlewares/README.MD#response-status) narrows its input to a union of status codes instead of just `number`._
 
 #### With documentation at hand
 

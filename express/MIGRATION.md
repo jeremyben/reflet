@@ -40,6 +40,13 @@
   }
   ```
 
+* The `Headers` parameter decorator is renamed `ReqHeaders`, to avoid the conflict with the global `Headers` class of Node.js (Fetch API).
+  The old name still works but is deprecated as well, and will be removed in the next major version:
+  ```ts
+  @Get()
+  list(@ReqHeaders('user-agent') userAgent: string, @ReqHeaders headers: ReqHeaders) {}
+  ```
+
 ## From v1 to v2
 
 * `Router` decorator is now mandatory on every router class.

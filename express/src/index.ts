@@ -8,7 +8,7 @@ export { Use } from './middleware-decorator'
 
 export { Catch } from './error-handler-decorator'
 
-export { Req, Res, Next, Body, Params, Query, Headers, createParamDecorator } from './param-decorators'
+export { Req, Res, Next, Body, Params, Query, ReqHeaders, Headers, createParamDecorator } from './param-decorators'
 
 export { Send } from './send-decorator'
 

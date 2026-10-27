@@ -11,6 +11,7 @@ import {
 	Res,
 	Body,
 	Params,
+	ReqHeaders,
 	Headers,
 	Query,
 	createParamDecorator,
@@ -29,7 +30,7 @@ describe('basic decorators', () => {
 	@Controller('')
 	class FooRouter {
 		@Get()
-		async get(@Headers headers: any, @Headers('via') via: string, @Res res: Res) {
+		async get(@ReqHeaders headers: any, @ReqHeaders('via') via: string, @Res res: Res) {
 			res.send({ via, shared: headers.shared })
 		}
 
@@ -53,9 +54,26 @@ describe('basic decorators', () => {
 
 	const rq = supertest(register(express(), [FooRouter]))
 
-	test('@Headers', async () => {
+	test('@ReqHeaders', async () => {
 		const res = await rq.get('')
 		expect(res.body).toEqual({ via: 'via', shared: 'shared' })
+	})
+
+	test('deprecated @Headers is an alias of @ReqHeaders', async () => {
+		expect(Headers).toBe(ReqHeaders)
+
+		@Controller('/legacy-headers')
+		class Legacy {
+			@Get()
+			get(@Headers headers: Headers, @Headers('via') via: string, @Res res: Res) {
+				res.send({ via: headers.via })
+			}
+		}
+
+		const res = await supertest(register(express(), [Legacy]))
+			.get('/legacy-headers')
+			.set('via', 'legacy')
+		expect(res.body).toEqual({ via: 'legacy' })
 	})
 
 	test('@Body with auto body-parser', async () => {

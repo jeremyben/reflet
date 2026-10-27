@@ -284,24 +284,24 @@ export namespace Query {
  * ```ts
  * // Request headers object without invokation:
  * ＠Get('/some')
- * get(＠Headers headers: Headers) {}
+ * get(＠ReqHeaders headers: ReqHeaders) {}
  *
  * // Request headers object with invokation:
  * ＠Get('/some')
- * get(＠Headers() headers: Headers) {}
+ * get(＠ReqHeaders() headers: ReqHeaders) {}
  *
  * // Single request header:
  * ＠Get('/some')
- * get(＠Headers('user-agent') userAgent: string) {}
+ * get(＠ReqHeaders('user-agent') userAgent: string) {}
  * ```
  * ------
  * @public
  */
-export function Headers(headerName?: RequestHeader): Headers.Decorator
+export function ReqHeaders(headerName?: RequestHeader): ReqHeaders.Decorator
 
-export function Headers(...args: Parameters<Headers.Decorator>): void
+export function ReqHeaders(...args: Parameters<ReqHeaders.Decorator>): void
 
-export function Headers(nameOrTarget?: string | object, propertyKey?: string | symbol, parameterIndex?: number) {
+export function ReqHeaders(nameOrTarget?: string | object, propertyKey?: string | symbol, parameterIndex?: number) {
 	if (arguments.length === 3 && typeof nameOrTarget === 'object') {
 		const target = nameOrTarget
 		return createParamDecorator((req) => req.headers)(target, propertyKey!, parameterIndex!)
@@ -311,14 +311,40 @@ export function Headers(nameOrTarget?: string | object, propertyKey?: string | s
 	}
 }
 
-export type Headers = RequestHeader.Record
+export type ReqHeaders = RequestHeader.Record
 
-export namespace Headers {
+export namespace ReqHeaders {
 	/**
 	 * Equivalent to `ParameterDecorator`.
 	 * @public
 	 */
 	export type Decorator = ParameterDecorator & { __expressHeaders?: never; __expressHandlerParameter?: never }
+}
+
+/**
+ * Formerly named `Headers`, which conflicts with the global `Headers` class of Node.js (Fetch API).
+ *
+ * @deprecated Renamed `ReqHeaders`. Will be removed in the next major version.
+ * @public
+ */
+export const Headers: typeof ReqHeaders = ReqHeaders
+
+/**
+ * @deprecated Renamed `ReqHeaders`. Will be removed in the next major version.
+ * @public
+ */
+export type Headers = ReqHeaders
+
+/**
+ * @deprecated Renamed `ReqHeaders`. Will be removed in the next major version.
+ * @public
+ */
+export namespace Headers {
+	/**
+	 * @deprecated Renamed `ReqHeaders.Decorator`.
+	 * @public
+	 */
+	export type Decorator = ReqHeaders.Decorator
 }
 
 /**
