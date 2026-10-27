@@ -1,12 +1,12 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
-import { register, Get, Post, Put, Use, Catch, Router, Body, ScopedMiddlewares } from '../src'
+import { register, Get, Post, Put, Use, Catch, Controller, Body, ScopedMiddlewares } from '../src'
 import { log } from '../../testing/tools'
 
 describe('middlewares', () => {
 	@Catch(async (err, req, res, next) => res.status(418).send({ err }))
 	@Use(express.json())
-	@Router('/foo')
+	@Controller('/foo')
 	class Foo {
 		@Use(
 			(req: express.Request & { user?: any }, res, next) => {
@@ -43,7 +43,7 @@ describe('middlewares', () => {
 	}
 
 	@Use(express.json())
-	@Router('/bar')
+	@Controller('/bar')
 	class Bar {
 		@Post('/post')
 		post(req: express.Request, res: express.Response) {
@@ -84,7 +84,7 @@ test('router scoped middlewares', async () => {
 
 	@Use(express.json())
 	@UseSome
-	@Router('/foo')
+	@Controller('/foo')
 	@ScopedMiddlewares()
 	class Foo1 {
 		@Post('/1')
@@ -94,7 +94,7 @@ test('router scoped middlewares', async () => {
 	}
 
 	@Use(express.json())
-	@Router('/foo')
+	@Controller('/foo')
 	class Foo2 {
 		@Post('/2')
 		getTwo(req: express.Request, res: express.Response) {
@@ -115,7 +115,7 @@ test('router scoped middlewares', async () => {
 
 test('error handlers of a child router do not leak into its parent', async () => {
 	@Catch((err, req, res, next) => res.status(500).send('parent'))
-	@Router('/parent')
+	@Controller('/parent')
 	class Parent {
 		@Get()
 		get(req: express.Request, res: express.Response) {
@@ -124,7 +124,7 @@ test('error handlers of a child router do not leak into its parent', async () =>
 	}
 
 	@Catch((err, req, res, next) => res.status(500).send('child'))
-	@Router('/child')
+	@Controller('/child')
 	class Child extends Parent {}
 
 	const res = await supertest(register(express(), [Parent])).get('/parent')
@@ -138,14 +138,14 @@ test('error handlers are not inherited from parent router, like middlewares', as
 		called.push('parent')
 		res.status(500).send('parent')
 	})
-	@Router('/parent-catch')
+	@Controller('/parent-catch')
 	class Parent {}
 
 	@Catch((err, req, res, next) => {
 		called.push('child')
 		next(err)
 	})
-	@Router('/child-catch')
+	@Controller('/child-catch')
 	class Child extends Parent {
 		@Get()
 		get(req: express.Request, res: express.Response) {

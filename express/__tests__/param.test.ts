@@ -2,7 +2,7 @@ import * as supertest from 'supertest'
 import * as express from 'express'
 import {
 	register,
-	Router,
+	Controller,
 	Get,
 	Post,
 	Put,
@@ -26,7 +26,7 @@ describe('basic decorators', () => {
 		req.headers.shared = 'shared'
 		next()
 	})
-	@Router('')
+	@Controller('')
 	class FooRouter {
 		@Get()
 		async get(@Headers headers: any, @Headers('via') via: string, @Res res: Res) {
@@ -85,7 +85,7 @@ describe('custom decorators', () => {
 		req.user = { id: 1, name: 'jeremy' }
 		next()
 	})
-	@Router('')
+	@Controller('')
 	class FooRouter {
 		@Get()
 		get(@CurrentUser user: object, @SendResponse send: Res['send']) {
@@ -197,7 +197,7 @@ test('only one decorator', () => {
 })
 
 test('every parameter decorated', () => {
-	@Router('/foo')
+	@Controller('/foo')
 	class Foo {
 		@Get()
 		get(req: express.Request, @Res res: Res) {}
@@ -209,7 +209,7 @@ test('every parameter decorated', () => {
 })
 
 test('body property without body', async () => {
-	@Router('/no-body')
+	@Controller('/no-body')
 	class NoBody {
 		@Post()
 		post(@Body<{ name: string }>('name') name: string | undefined, @Res res: Res) {

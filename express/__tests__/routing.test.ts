@@ -1,6 +1,6 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
-import { register, Router, Get, Post, Patch, Route, Res, Req, Use, Params, Body } from '../src'
+import { register, Controller, Get, Post, Patch, Route, Res, Req, Use, Params, Body } from '../src'
 import { type RefletExpressError } from '../src/reflet-error'
 import { isExpress4 } from '../src/type-guards'
 import { log } from '../../testing/tools'
@@ -19,7 +19,7 @@ describe('basic routing', () => {
 		}
 	}
 
-	@Router('/user', { caseSensitive: true })
+	@Controller('/user', { caseSensitive: true })
 	class UserRouter {
 		constructor(private userService: UserService) {}
 
@@ -41,7 +41,7 @@ describe('basic routing', () => {
 		}
 	}
 
-	@Router('/message')
+	@Controller('/message')
 	class MessageRouter {
 		prop = 1
 
@@ -98,11 +98,11 @@ describe('children routers', () => {
 			res.status(201)
 			next()
 		})
-		@Router('/module')
-		@Router.Children(() => [FooRouter])
+		@Controller('/module')
+		@Controller.Children(() => [FooRouter])
 		class Module {}
 
-		@Router('/foo')
+		@Controller('/foo')
 		class FooRouter {
 			@Get()
 			get(@Res res: Res) {
@@ -126,15 +126,15 @@ describe('children routers', () => {
 		}
 
 		@Use(express.json({ strict: false }))
-		@Router.Children<typeof AppModule>((service) => [new UserRouter(service)])
-		@Router('/module')
+		@Controller.Children<typeof AppModule>((service) => [new UserRouter(service)])
+		@Controller('/module')
 		class AppModule {
 			constructor(private service: UserService) {}
 		}
 
 		// Optional parameter syntax changed with express 5 (path-to-regexp v8).
-		@Router(isExpress5 ? '/user{/:userId}' : '/user/:userId?', { mergeParams: true })
-		@Router.Children<typeof UserRouter>((service) => [['/item/:itemId', new UserItemRouter(service)]])
+		@Controller(isExpress5 ? '/user{/:userId}' : '/user/:userId?', { mergeParams: true })
+		@Controller.Children<typeof UserRouter>((service) => [['/item/:itemId', new UserItemRouter(service)]])
 		class UserRouter {
 			constructor(private service: UserService) {}
 
@@ -144,7 +144,7 @@ describe('children routers', () => {
 			}
 		}
 
-		@Router('/item/:itemId', { mergeParams: true })
+		@Controller('/item/:itemId', { mergeParams: true })
 		class UserItemRouter {
 			constructor(private service: UserService) {}
 
@@ -173,7 +173,7 @@ describe('children routers', () => {
 	})
 
 	test('prevent registering on non-router', async () => {
-		@Router('/bar')
+		@Controller('/bar')
 		class Bar {
 			@Get()
 			get(@Res res: Res) {
@@ -181,7 +181,7 @@ describe('children routers', () => {
 			}
 		}
 
-		@Router.Children(() => [Bar])
+		@Controller.Children(() => [Bar])
 		class Foo {
 			@Get('/foo')
 			get(@Res res: Res) {
@@ -200,14 +200,14 @@ describe('children routers', () => {
 // tslint:disable: no-empty
 describe('constrain with path-router tuples', () => {
 	test('happy path', () => {
-		@Router('/foo')
-		@Router.Children(() => [['/bar', Bar]])
+		@Controller('/foo')
+		@Controller.Children(() => [['/bar', Bar]])
 		class Foo {
 			@Get()
 			get() {}
 		}
 
-		@Router('/bar')
+		@Controller('/bar')
 		class Bar {
 			@Get()
 			get() {}
@@ -217,7 +217,7 @@ describe('constrain with path-router tuples', () => {
 	})
 
 	test('wrong string', () => {
-		@Router('f')
+		@Controller('f')
 		class Foo {
 			@Get()
 			get() {}
@@ -227,7 +227,7 @@ describe('constrain with path-router tuples', () => {
 	})
 
 	test('wrong regex', () => {
-		@Router(/f/)
+		@Controller(/f/)
 		class Foo {
 			@Get()
 			get() {}
@@ -237,7 +237,7 @@ describe('constrain with path-router tuples', () => {
 	})
 
 	test('wrong type', () => {
-		@Router(/bar/)
+		@Controller(/bar/)
 		class Bar {
 			@Get()
 			get() {}
@@ -245,7 +245,7 @@ describe('constrain with path-router tuples', () => {
 
 		expect(() => register(express(), [['bar', Bar]])).toThrow(/expects string/)
 
-		@Router('/baz')
+		@Controller('/baz')
 		class Baz {
 			@Get()
 			get() {}
@@ -255,7 +255,7 @@ describe('constrain with path-router tuples', () => {
 	})
 
 	test('wrong type', () => {
-		@Router(/bar/)
+		@Controller(/bar/)
 		class Bar {
 			@Get()
 			get() {}
@@ -263,7 +263,7 @@ describe('constrain with path-router tuples', () => {
 
 		expect(() => register(express(), [['bar', Bar]])).toThrow(/expects string/)
 
-		@Router('/baz')
+		@Controller('/baz')
 		class Baz {
 			@Get()
 			get() {}
@@ -281,8 +281,8 @@ describe('constrain with path-router tuples', () => {
 			res.status(201)
 			next()
 		})
-		@Router('/foo')
-		@Router.Children(() => [
+		@Controller('/foo')
+		@Controller.Children(() => [
 			['/child1', plainRouter],
 			['/child2', plainRouter],
 		])
@@ -301,19 +301,19 @@ describe('constrain with path-router tuples', () => {
 	})
 
 	test('dynamic router', async () => {
-		@Router('/foo')
-		@Router.Children(() => [['/items', Items]])
+		@Controller('/foo')
+		@Controller.Children(() => [['/items', Items]])
 		class Foo {}
 
 		@Use((req, res, next) => {
 			res.status(201)
 			next()
 		})
-		@Router('/bar')
-		@Router.Children(() => [['/elements', Items]])
+		@Controller('/bar')
+		@Controller.Children(() => [['/elements', Items]])
 		class Bar {}
 
-		@Router.Dynamic()
+		@Controller.Dynamic()
 		class Items {
 			@Get()
 			get(req: express.Request, res: express.Response) {
@@ -333,7 +333,7 @@ describe('constrain with path-router tuples', () => {
 	})
 
 	test('dynamic router path not declared', async () => {
-		@Router.Dynamic()
+		@Controller.Dynamic()
 		class Items {
 			@Get()
 			get(req: express.Request, res: express.Response) {
@@ -341,8 +341,8 @@ describe('constrain with path-router tuples', () => {
 			}
 		}
 
-		@Router('/foo')
-		@Router.Children(() => [Items])
+		@Controller('/foo')
+		@Controller.Children(() => [Items])
 		class Foo {}
 
 		expect(() => register(express(), [Foo])).toThrow(
@@ -353,7 +353,7 @@ describe('constrain with path-router tuples', () => {
 // tslint:enable: no-empty
 
 test('route function constraint', async () => {
-	@Router('/foo')
+	@Controller('/foo')
 	class Foo {
 		@Get()
 		prop = 'foo'
@@ -365,7 +365,7 @@ test('route function constraint', async () => {
 })
 
 describe('children dependencies', () => {
-	@Router('/item')
+	@Controller('/item')
 	class Item {
 		constructor(private name: string) {}
 
@@ -375,8 +375,8 @@ describe('children dependencies', () => {
 		}
 	}
 
-	@Router.Children<typeof Parent>((name) => [new Item(name)])
-	@Router('/parent')
+	@Controller.Children<typeof Parent>((name) => [new Item(name)])
+	@Controller('/parent')
 	class Parent {
 		constructor(public name: string) {}
 	}
@@ -393,8 +393,8 @@ describe('children dependencies', () => {
 	})
 
 	test('are retrieved with default constructor parameters', async () => {
-		@Router.Children<typeof DefaultParent>((name) => [new Item(name!)])
-		@Router('/default-parent')
+		@Controller.Children<typeof DefaultParent>((name) => [new Item(name!)])
+		@Controller('/default-parent')
 		class DefaultParent {
 			constructor(public name = 'default') {}
 		}
@@ -415,7 +415,7 @@ describe('children dependencies', () => {
 })
 
 test('dynamic router keeps other router decorators', async () => {
-	@Router('/sub')
+	@Controller('/sub')
 	class Sub {
 		@Get()
 		get(req: express.Request, res: express.Response) {
@@ -423,8 +423,8 @@ test('dynamic router keeps other router decorators', async () => {
 		}
 	}
 
-	@Router.Dynamic()
-	@Router.Children(() => [Sub])
+	@Controller.Dynamic()
+	@Controller.Children(() => [Sub])
 	class Dynamic {}
 
 	const res = await supertest(register(express(), [['/dynamic', Dynamic]])).get('/dynamic/sub')

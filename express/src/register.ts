@@ -87,7 +87,7 @@ function registerRouter(
 	if (!routerMeta || routerMeta.path == null) {
 		throw new RefletExpressError(
 			'ROUTER_DECORATOR_MISSING',
-			`"${routerClass.name}" must be decorated with @Router.`
+			`"${routerClass.name}" must be decorated with @Controller.`
 		)
 	}
 
@@ -161,7 +161,7 @@ function registerRouter(
 }
 
 /**
- * Retrieves and attaches global middlewares and routes from an inherited `Application` class.
+ * Retrieves and attaches global middlewares and routes from an inherited `ExpressApplication` class.
  * Only executed once, if the user calls `register` multiple times on the same app.
  * @internal
  */
@@ -203,7 +203,7 @@ function registerRootHandlers(app: express.Application, appMeta?: ApplicationMet
 }
 
 /**
- * Retrieves and attaches global error handlers from an inherited `Application` class.
+ * Retrieves and attaches global error handlers from an inherited `ExpressApplication` class.
  * @internal
  */
 function registerRootErrorHandlers(app: express.Application, appMeta?: ApplicationMeta) {
@@ -332,7 +332,7 @@ function checkPathConstraint(constrainedPath: string | RegExp | null, router: Ro
  * @internal
  */
 function createHandler(
-	routerClass: ClassType, // different from `routerInstance.constructor` in case of decorated Application class.
+	routerClass: ClassType, // different from `routerInstance.constructor` in case of decorated ExpressApplication class.
 	routerInstance: any,
 	key: string | symbol,
 	appClass?: ClassType

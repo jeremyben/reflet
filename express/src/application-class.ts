@@ -14,7 +14,7 @@ export type ApplicationMeta = {
 
 const METAKEY_APPLICATION = Symbol('application')
 
-export interface Application extends express.Application {}
+export interface ExpressApplication extends express.Application {}
 
 /**
  * Express application class to extend, to apply the decorators with a global behavior.
@@ -25,15 +25,15 @@ export interface Application extends express.Application {}
  * ```ts
  * ＠Send({ json: true })
  * ＠Use(express.json())
- * class App extends Application {
+ * class App extends ExpressApplication {
  *   ＠Get('/healthcheck')
  *   healthcheck() {
  *     return { success: true }
  *   }
  * }
  *
- * ＠Router('/foo')
- * class FooRouter {
+ * ＠Controller('/foo')
+ * class FooController {
  *   ＠Get()
  *   list() {
  *     return db.collection('foo').find({})
@@ -41,13 +41,13 @@ export interface Application extends express.Application {}
  * }
  *
  * const app = new App()
- * app.register([FooRouter])
+ * app.register([FooController])
  * app.listen(3000)
  * ```
  * ------
  * @public
  */
-export class Application {
+export class ExpressApplication {
 	constructor() {
 		const app = express()
 		mixinApplication(app, this.constructor)
@@ -69,6 +69,20 @@ export class Application {
 		return this
 	}
 }
+
+/**
+ * Formerly named `Application`, which conflicts with the express `Application` interface.
+ *
+ * @deprecated Renamed `ExpressApplication`. Will be removed in the next major version.
+ * @public
+ */
+export const Application = ExpressApplication
+
+/**
+ * @deprecated Renamed `ExpressApplication`. Will be removed in the next major version.
+ * @public
+ */
+export type Application = ExpressApplication
 
 /**
  * @internal

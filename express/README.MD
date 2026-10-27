@@ -16,7 +16,7 @@ The **best** decorators for [Express](https://expressjs.com/). Have a look at [R
 * [Request properties injection](#request-properties-injection)
 * [Sending return value](#sending-return-value)
 * [Error handling](#error-handling)
-* [Application class](#application-class)
+* [Express Application class](#express-application-class)
 * [Pure dependency injection](#pure-dependency-injection)
 
 ## Getting started
@@ -36,14 +36,14 @@ The **best** decorators for [Express](https://expressjs.com/). Have a look at [R
 
     _Both Express 4 and Express 5 are supported. See [Express 5](#express-5) for the changes on your side._
 
-3. Create your decorated routing routers.
+3. Create your decorated controllers.
 
     ```ts
-    // thing.router.ts
-    import { Get, Post, Res, Params, Body, Router } from '@reflet/express'
+    // thing.controller.ts
+    import { Get, Post, Res, Params, Body, Controller } from '@reflet/express'
 
-    @Router('/things')
-    export class ThingRouter {
+    @Controller('/things')
+    export class ThingController {
       @Get()
       async list(@Res res: Response) {
         const things = await db.collection('things').find({})
@@ -70,29 +70,29 @@ The **best** decorators for [Express](https://expressjs.com/). Have a look at [R
     // server.ts
     import express from 'express'
     import { register } from '@reflet/express'
-    import { ThingRouter } from './thing.router.ts'
+    import { ThingController } from './thing.controller.ts'
 
     const app = express()
     app.use(someGlobalMiddleware)
 
-    register(app, [ThingRouter, /*...*/])
+    register(app, [ThingController, /*...*/])
 
     app.listen(3000)
     ```
 
 ### The Express way
 
-> 🔦 `register(app, [routers])`
+> 🔦 `register(app, [controllers])`
 
 As you can see, the main method `register` simply accepts an Express app and an array of your classes.
 
 You still apply your global middlewares and start your server in the Express way you already know. This means you can progressively add Reflet to your existing app. 😉
 
-If you have a more complex bootstraping, reflet allows you to inherit the express original application with [Application class](#application-class).
+If you have a more complex bootstraping, reflet allows you to inherit the express original application with [ExpressApplication class](#express-application-class).
 
 ## Routing
 
-To handle requests with a class, let's call it a router (or a controller if you prefer), you simply have to decorate its methods with route decorators.
+To handle requests with a class (the controller/router), you simply have to decorate its methods with route decorators.
 
 ### Common route decorators
 
@@ -248,8 +248,8 @@ As a convenience, `Route` is also a namespace that gives access to all route dec
 ```ts
 const Options = (path?: string | RegExp) => Route('options', path)
 
-@Router('/')
-class ThingRouter {
+@Controller('/')
+class ThingController {
   @Options('/things')
   opts(req: Request, res: Response, next: NextFunction) {}
 
@@ -268,22 +268,22 @@ You can share the same handler with multiple HTTP verbs, by passing an array to 
 ```ts
 const Patch_Put = (path: string | RegExp) => Route(['patch', 'put'], path)
 
-class ThingRouter {
+class ThingController {
   @Patch_Put('/things/:id')
   update(req: Request, res: Response, next: NextFunction) {}
 }
 ```
 
-### Router
+### Controller
 
-> 🔦 `@Router(path, options?)`<br>
+> 🔦 `@Controller(path, options?)`<br>
 > 💫 Related Express method: [`express.Router`](https://expressjs.com/en/4x/api.html#express.router)
 
 You then attach routes to an Express [Router](https://expressjs.com/en/4x/api.html#router), so they can share a root path, just like with plain Express.
 
 ```ts
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   @Get()
   list(req: Request, res: Response, next: NextFunction) {}
 
@@ -298,32 +298,30 @@ class ThingRouter {
 Express [Router options](https://expressjs.com/en/4x/api.html#express.router) can be defined as a second argument:
 
 ```ts
-@Router('/things', { strict: true, caseSensitive: true })
+@Controller('/things', { strict: true, caseSensitive: true })
 ```
 
-🗣️ Beware of VSCode auto-import, it will first try to import `Router` from Express instead of Reflet.
+#### Nested controllers
 
-#### Nested routers
+> 🔦 `@Controller.Children(register)`
 
-> 🔦 `@Router.Children(register)`
-
-You can register child routers with the dedicated decorator `Router.Children`:
+You can register child controllers with the dedicated decorator `Controller.Children`:
 
 ```ts
-@Router('/album')
-@Router.Children(() => [TrackRouter])
-class AlbumRouter {}
+@Controller('/album')
+@Controller.Children(() => [TrackController])
+class AlbumController {}
 
-@Router('/:albumId/track', { mergeParams: true })
-class TrackRouter {}
+@Controller('/:albumId/track', { mergeParams: true })
+class TrackController {}
 ```
 
 #### Paths centralization and constraint
 
-You might want the root paths of your routers to be centralized as well, so you can have a glance at all of them. 👀<br>You can register your routers as a tuple with a path constraint (Reflet will enforce those paths):
+You might want the root paths of your controllers to be centralized as well, so you can have a glance at all of them. 👀<br>You can register your controllers as a tuple with a path constraint (Reflet will enforce those paths):
 
 ```ts
-@Router('/foo')
+@Controller('/foo')
 class Foo {
   @Get()
   list(req: Request, res: Response, next: NextFunction) {}
@@ -332,14 +330,14 @@ class Foo {
 register(app, [['/foo', Foo]])
 ```
 
-_Also possible with child routers._
+_Also possible with child controllers._
 
 ##### Plain express routers
 
 To be able to progressively switch to Reflet, you can still register your plain express routers, with the help of the previous path tuple:
 
 ```ts
-@Router('/decorated')
+@Controller('/decorated')
 class Decorated {
   @Get()
   list(req: Request, res: Response, next: NextFunction) {}
@@ -353,30 +351,30 @@ register(app, [
 ])
 ```
 
-_Also possible with child routers._
+_Also possible with child controllers._
 
-#### Dynamic nested routers
+#### Dynamic nested controllers
 
-> 🔦 `Router.Dynamic(options?)`
+> 🔦 `Controller.Dynamic(options?)`
 
-A dynamic router is a router without a predefined path. Its path is then defined at registration.
+A dynamic controller is a controller without a predefined path. Its path is then defined at registration.
 
-Useful if you need to share a child router with multiple parents, and attach it on different paths.
+Useful if you need to share a child controller with multiple parents, and attach it on different paths.
 
 ```ts
-@Router.Dynamic()
-class ItemRouter {
+@Controller.Dynamic()
+class ItemController {
   @Get()
   list(req: Request, res: Response, next: NextFunction) {}
 }
 
-@Router('/foo')
-@Router.Children(() => [['/items', ItemRouter]])
-class FooRouter {}
+@Controller('/foo')
+@Controller.Children(() => [['/items', ItemController]])
+class FooController {}
 
-@Router('/bar')
-@Router.Children(() => [['/elements', ItemRouter]])
-class BarRouter {}
+@Controller('/bar')
+@Controller.Children(() => [['/elements', ItemController]])
+class BarController {}
 ```
 
 ### Handler parameters injection
@@ -387,8 +385,8 @@ class BarRouter {}
 You can inject the handler parameters in any order by applying dedicated parameter decorators:
 
 ```ts
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   @Get()
   list(@Res res: Res, @Next next: Next) {
     res.send('done')
@@ -409,7 +407,7 @@ Looking for other decorators like `@Body` ? [Request properties injection](#requ
 
 ### Express 5
 
-Reflet supports Express 4 and 5 with the same API. When upgrading your app to Express 5, follow the [official migration guide](https://expressjs.com/en/guide/migrating-5.html), especially for these changes that affect decorated routers:
+Reflet supports Express 4 and 5 with the same API. When upgrading your app to Express 5, follow the [official migration guide](https://expressjs.com/en/guide/migrating-5.html), especially for these changes that affect decorated controllers:
 
 * **Path syntax** (path-to-regexp v8): optional parameters are written `'/user{/:id}'` instead of `'/user/:id?'`, wildcards must be named (`'/*splat'` instead of `'/*'`), and regular expressions are no longer allowed in strings (use a `RegExp` instead).
 * **`req.body`** is `undefined` if the request has no body (instead of an empty object with Express 4), so `@Body()` injects `undefined` as well. `@Body('key')` safely injects `undefined` in that case.
@@ -421,7 +419,7 @@ Reflet supports Express 4 and 5 with the same API. When upgrading your app to Ex
 Async functions (routes and middlewares) are properly wrapped to pass errors on to `next` and to the express error handling system.
 
 ```ts
-class ThingRouter {
+class ThingController {
   @Get('/thing')
   async get() {
     await Promise.reject('oops') // properly handled by next callback: next('oops')
@@ -434,13 +432,13 @@ class ThingRouter {
 > 🔦 `@Use(...middlewares)`<br>
 > 💫 Related Express method: [`app.use`](https://expressjs.com/en/4x/api.html#app.use)
 
-Apply middlewares on specific routes or whole routers:
+Apply middlewares on specific routes or whole controllers:
 
 ```ts
 @Use(express.json(), express.urlencoded())
 @Use(cors())
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   @Use((req, res, next) => next())
   @Get()
   list() {}
@@ -465,7 +463,7 @@ Reflet respects Express flow and will apply class-scoped middlewares to the newl
 ```ts
 @Use(A)
 @Use(B, C)
-@Router('/foo')
+@Controller('/foo')
 class Foo {
   @Use(D)
   @Get()
@@ -492,16 +490,16 @@ app.use('/foo', router)
 
 Successive `Use` will be applied in the order they are written, even though decorator functions in JS are executed in a bottom-up way (due to their _wrapping_ nature).
 
-### Scoped router middlewares
+### Scoped controller middlewares
 
 > 🔦 `@ScopedMiddlewares`
 
-Express does not isolate middlewares of routers that share the same path ([related issue](https://github.com/expressjs/express/issues/2760)).
+Express does not isolate middlewares of routers/controllers that share the same path ([related issue](https://github.com/expressjs/express/issues/2760)).
 
-If you wish to circumvent this default behavior, add `ScopedMiddlewares` decorator to a router, to scope its middlewares (and its error handlers) to its routes only.
+If you wish to circumvent this default behavior, add `ScopedMiddlewares` decorator to a controller, to scope its middlewares (and its error handlers) to its routes only.
 
 ```ts
-@Router('/foo')
+@Controller('/foo')
 @ScopedMiddlewares
 @Use(authenticate)
 class Foo1 {
@@ -509,7 +507,7 @@ class Foo1 {
   getSecret(req: Request, res: Response, next: NextFunction) {}
 }
 
-@Router('/foo')
+@Controller('/foo')
 class Foo2 {
   @Get('/public')
   getPublic(req: Request, res: Response, next: NextFunction) {}
@@ -528,8 +526,8 @@ function UseStatus(statusCode: number) {
   })
 }
 
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   @UseStatus(201)
   @Post()
   create(req: Request, res: Response, next: NextFunction) {}
@@ -564,7 +562,7 @@ Directly inject Request properties (and even their sub-properties) in handler pa
 > 💫 Related Express object: [`req.params`](https://expressjs.com/en/4x/api.html#req.params)
 
 ```ts
-class UserRouter {
+class UserController {
   // Whole params object
   @Get('/users/:userId/things/:thingId')
   get(@Params params: Params<'userId' | 'thingId'>) {}
@@ -583,8 +581,8 @@ class UserRouter {
 Given the request: `GET http://host/things?size=large&color=green`
 
 ```ts
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   // Whole query object
   @Get()
   list(@Query query: Query) {}
@@ -601,8 +599,8 @@ class ThingRouter {
 > 💫 Related Express object: [`req.body`](https://expressjs.com/en/4x/api.html#req.body)
 
 ```ts
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   // Whole body
   @Patch('/:id')
   update(@Body body: Partial<Thing>) {}
@@ -622,8 +620,8 @@ You can `Use` the same body parsers (or apply them globally on your app) with di
 
 ```ts
 @Use(express.json({ limit: '500kb' }))
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   @Post()
   create(@Body body: Thing) {} // default jsonParser won't be applied again here.
 }
@@ -635,8 +633,8 @@ class ThingRouter {
 > 💫 Related Node.js object: [`req.headers`](https://nodejs.org/api/http.html#http_message_headers)
 
 ```ts
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   // Whole headers object
   @Get()
   list(@Headers headers: Headers) {}
@@ -660,8 +658,8 @@ declare global {
   }
 }
 
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   @Get()
   list(@Headers('x-custom') custom: string) {}
 }
@@ -678,8 +676,8 @@ Inject and manipulate whatever you need from the Request object:
 ```ts
 const CurrentUser = createParamDecorator((req) => req.user)
 
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   @Get()
   list(@CurrentUser user: User) {}
 }
@@ -702,8 +700,8 @@ Now what if this implicit middleware is already applied explicitely before ? You
 
 ```ts
 @Use(isAuthenticated)
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   @Get()
   list(@CurrentUser user: User) {}
 }
@@ -718,7 +716,7 @@ const CurrentUser = createParamDecorator(
 )
 ```
 
-With these options, on registering, Reflet won't add the implicit middlewares if they're already applied locally (on a route or router) or globally (on the app). 
+With these options, on registering, Reflet won't add the implicit middlewares if they're already applied locally (on a route or controller) or globally (on the app). 
 
 Comparison to deduplicate is done:
 * by function reference with `dedupe: 'by-reference'`
@@ -727,7 +725,7 @@ Comparison to deduplicate is done:
 
 That's basically how the `Body` decorator works with its body parsers.
 
-This mecanism is really powerful 🦾 and allows your custom decorator to be decoupled yet still integrate nicely within any router.
+This mecanism is really powerful 🦾 and allows your custom decorator to be decoupled yet still integrate nicely within any controller.
 
 #### Example with input
 
@@ -743,8 +741,8 @@ const BodyTrimmed = (key: string) => createParamDecorator(
   ]
 )
 
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   @Post()
   create(@BodyTrimmed('name') name: string) {}
 }
@@ -863,7 +861,7 @@ Decorate a class with `Send` to apply its behavior to all its methods. You overr
 
 ```ts
 @Send({ json: true })
-class PeopleRouter {
+class PeopleController {
   @Send({ json: false }) // override class send options
   @Get('/me')
   get() {
@@ -880,8 +878,8 @@ You need to take full control back in one of your methods ? Apply `Send.Dont` to
 
 ```ts
 @Send()
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   @Get()
   list() {
     return db.collection('things').find({})
@@ -910,8 +908,8 @@ It's not that Reflet dislikes magic. But magic should be explicit and have its o
 > 💫 Related Express method: [`app.use`](https://expressjs.com/en/4x/api.html#app.use)
 
 ```ts
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   @Catch((err, req, res, next) => {
     res.status(400)
     next(err)
@@ -923,7 +921,7 @@ class ThingRouter {
 }
 ```
 
-If Router decorator is used, Reflet will apply class-scoped error handlers to the newly created Express Router.
+If Controller decorator is used, Reflet will apply class-scoped error handlers to the newly created Express Router.
 
 <table>
 <thead>
@@ -938,7 +936,7 @@ If Router decorator is used, Reflet will apply class-scoped error handlers to th
 
 ```ts
 @Catch(A)
-@Router('/foo')
+@Controller('/foo')
 class Foo {
   @Catch(B)
   @Catch(C)
@@ -979,7 +977,7 @@ Throw some **[`HTTPError`](../http/README.md#error-)** from `@reflet/http` for a
 ```ts
 const app = express()
 
-register(app, [ThingRouter])
+register(app, [ThingController])
 
 app.use(finalHandler({
   json: 'from-response-type',
@@ -1078,21 +1076,21 @@ Like the error handler, Express default route handler always sends a `text/html`
 * `notFoundHandler: <number>` defines the same default handler, with a custom status code.
 * `notFoundHandler: (req, res, next) => {}` lets you define your own.
 
-## Application class
+## Express Application class
 
-> 🔦 `Application`
+> 🔦 `ExpressApplication`
 
 Have you ever tried to turn `express()` into a proper class ? Reflet did. 😁
 
 ```ts
 import * as express from 'express'
-import { Application } from '@reflet/express'
-import { UserRouter } from './user.router'
+import { ExpressApplication } from '@reflet/express'
+import { UserController } from './user.controller'
 
-const app = new Application()
+const app = new ExpressApplication()
 
 app.use(express.json(), express.urlencoded())
-app.register([UserRouter]) // register is now a method !
+app.register([UserController]) // register is now a method !
 
 app.listen(3000)
 ```
@@ -1102,8 +1100,8 @@ Routes will be attached at the root, and middlewares, error handlers, `Send` opt
 
 ```ts
 import * as express from 'express'
-import { Application, Registration, Use, Catch, Send, Router } from '@reflet/express'
-import { UserRouter } from './user.router'
+import { ExpressApplication, Registration, Use, Catch, Send, Controller } from '@reflet/express'
+import { UserController } from './user.controller'
 
 @Send({ json: true })
 @Use(express.json(), express.urlencoded())
@@ -1113,10 +1111,10 @@ import { UserRouter } from './user.router'
   log: true,
   notFoundHandler: true,
 }))
-class MyApp extends Application {
-  constructor(routers: Registration[]) {
+class MyApp extends ExpressApplication {
+  constructor(controllers: Registration[]) {
     super()
-    this.register(routers)
+    this.register(controllers)
   }
 
   @Get('/healthcheck')
@@ -1125,7 +1123,7 @@ class MyApp extends Application {
   }
 }
 
-const app = new MyApp([UserRouter])
+const app = new MyApp([UserController])
 
 app.listen(3000)
 ```
@@ -1134,7 +1132,7 @@ _If you call `register` multiple times, Reflet will make sure global middlewares
 
 ## Pure dependency injection
 
-If you want to go full OOP and your routers have constructor dependencies, Reflet will enforce passing them as instances (along with their dependencies) instead of classes, to the `register` function which then acts as a _[Composition Root](https://blog.ploeh.dk/2011/07/28/CompositionRoot/)_.
+If you want to go full OOP and your controllers have constructor dependencies, Reflet will enforce passing them as instances (along with their dependencies) instead of classes, to the `register` function which then acts as a _[Composition Root](https://blog.ploeh.dk/2011/07/28/CompositionRoot/)_.
 
 ```ts
 interface IUserService {
@@ -1147,7 +1145,7 @@ class UserService implements IUserService {
   }
 }
 
-class UserRouter {
+class UserController {
   constructor(private userService: IUserService) {}
 
   @Get('/user')
@@ -1158,20 +1156,20 @@ class UserRouter {
 }
 
 register(app, [
-  new UserRouter(new UserService())
+  new UserController(new UserService())
 ])
 ```
 
 No DI Container magic, no cumbersome `@Inject` decorator 😵... Only _**[pure DI](https://blog.ploeh.dk/2014/06/10/pure-di/)**_, which is the simplest and the most strongly typed DI.
 
-You can even pass dependencies down your nested routers:
+You can even pass dependencies down your nested controllers:
 
 ```ts
-@Router('/parent')
-@Router.Children<typeof ParentRouter>((service) => [new NestedRouter(service)])
-class ParentRouter {
+@Controller('/parent')
+@Controller.Children<typeof ParentController>((service) => [new NestedController(service)])
+class ParentController {
   constructor(private service: Service) {}
 }
 
-register(app, [new ParentRouter(new Service())])
+register(app, [new ParentController(new Service())])
 ```

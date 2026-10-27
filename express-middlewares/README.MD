@@ -38,8 +38,8 @@ Convenient middleware decorators to use with [Reflet/express](../express).
 A guard is a filter function that takes the Request object as parameter and should return a boolean (asynchronously or not) to authorize the request or not.
 
 ```ts
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   @UseGuards(
     (req) => req.user != null,
     (req) => req.user.admin === true,
@@ -72,8 +72,8 @@ you can **return** (not throw) an `Error` instance instead of just `false`.
 Intercept and manipulate the response body before it is sent, with a mapping function (asynchronous or not).
 
 ```ts
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   @UseInterceptor<{ foo: number }>((data) => ({ foo: data.foo * 5 }))
   @Get('/things')
   list(@Res res: Response) {
@@ -165,8 +165,8 @@ In fact, it won't intercept any response sent by chunks with the `res.write` nat
 You need to trigger side-effects ? Log details, send an email, etc.<br>`UseOnFinish` helps you define a callback on each response, on the [`finish` event](https://nodejs.org/api/http.html#http_event_finish) to be exact (or [`close`](https://nodejs.org/api/http.html#event-close_2) if the connection is closed before).
 
 ```ts
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   @UseOnFinish((req, res) => {
     console.log('Request:', req.method, req.originalUrl, req.body)
     console.log('Response:', res.statusCode)
@@ -191,8 +191,8 @@ The callback is also called if the client closes the connection before the respo
 You can expose the response body on the Response object by switching the last parameter on. Streaming responses will have their body truncated to the first 64kb, to avoid eating up memory.
 
 ```ts
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   @UseOnFinish((req, res) => {
     console.log('Request:', req.method, req.originalUrl)
     console.log('Response:', res.statusCode, res.body)
@@ -210,8 +210,8 @@ class ThingRouter {
 Set the response status code with a dedicated decorator.
 
 ```ts
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   @UseStatus(201)
   @Post('/things')
   create() {}
@@ -233,8 +233,8 @@ Set any response header with a dedicated decorator.
 
 ```ts
 @UseResponseHeader({ 'x-powered-by': 'brainfuck' })
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   @UseResponseHeader('allow', 'GET')
   @Post('/things')
   create(@Res res: Response) {
@@ -256,8 +256,8 @@ declare global {
   }
 }
 
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   @Get()
   list() {}
 }
@@ -285,8 +285,8 @@ Set the response `Content-Type` with a dedicated decorator.
 
 ```ts
 @Send()
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   @UseType('docx')
   @Get('/document')
   download() {
@@ -309,6 +309,6 @@ In some case, you might want to separate a middleware logic from its applying co
 
 ```ts
 UseIf((req) => req.method === 'POST', [express.json()])
-@Router('/things')
-class ThingRouter {}
+@Controller('/things')
+class ThingController {}
 ```

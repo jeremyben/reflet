@@ -19,6 +19,19 @@
   }
   ```
 
+* The `Router` decorator is renamed `Controller`, to avoid the confusion (and the editor auto-imports) with the express `Router`.
+  The `Application` class is renamed `ExpressApplication`, for the same reason with the express `Application` interface.
+  The old names still work but are deprecated, and will be removed in the next major version:
+  ```ts
+  import { Controller, ExpressApplication } from '@reflet/express'
+
+  @Controller('/things')
+  @Controller.Children(() => [ItemController])
+  class ThingController {}
+
+  class App extends ExpressApplication {}
+  ```
+
 ## From v1 to v2
 
 * `Router` decorator is now mandatory on every router class.

@@ -21,7 +21,7 @@ export type RouterMeta = {
 const ROUTERS_DEPS = new WeakMap<object, any[]>()
 
 /**
- * Token to use in place of `Router` path parameter, signaling that the path is defined at registration.
+ * Token to use in place of `Controller` path parameter, signaling that the path is defined at registration.
  * @internal
  */
 export const DYNAMIC_PATH = Symbol('dynamic-path')
@@ -37,7 +37,7 @@ export const DYNAMIC_PATH = Symbol('dynamic-path')
  * @see https://expressjs.com/en/4x/api.html#router
  * @example
  * ```ts
- * ＠Router('/things')
+ * ＠Controller('/things')
  * class Foo {
  *   ＠Get()
  *   list(req: Request, res: Response, next: NextFunction) {}
@@ -50,7 +50,7 @@ export const DYNAMIC_PATH = Symbol('dynamic-path')
  *
  * @public
  */
-export function Router(path: string | RegExp, options?: express.RouterOptions): Router.Decorator {
+export function Controller(path: string | RegExp, options?: express.RouterOptions): Controller.Decorator {
 	return (target) => {
 		const existingRouterMeta = extractRouterMeta(target)
 
@@ -64,7 +64,7 @@ export function Router(path: string | RegExp, options?: express.RouterOptions): 
 	}
 }
 
-export namespace Router {
+export namespace Controller {
 	/**
 	 * Attaches children routers to a parent router, to have nested routers.
 	 *
@@ -72,19 +72,19 @@ export namespace Router {
 	 *
 	 * @example
 	 * ```ts
-	 * ＠Router('/foo')
-	 * ＠Router.Children(() => [NestedRouter])
-	 * class ParentRouter {}
+	 * ＠Controller('/foo')
+	 * ＠Controller.Children(() => [NestedController])
+	 * class ParentController {}
 	 *
-	 * ＠Router('/bar')
-	 * class NestedRouter {}
+	 * ＠Controller('/bar')
+	 * class NestedController {}
 	 * ```
 	 * ------
 	 * @public
 	 */
 	export function Children<T extends ClassType = any>(
 		register: (...deps: IsAny<T> extends true ? unknown[] : ConstructorParameters<T>) => Registration[]
-	): Router.Children.Decorator {
+	): Controller.Children.Decorator {
 		return (target) => {
 			const existingRouterMeta = extractRouterMeta(target)
 
@@ -135,20 +135,20 @@ export namespace Router {
 	 *
 	 * @example
 	 * ```ts
-	 * ＠Router.Dynamic()
+	 * ＠Controller.Dynamic()
 	 * class Items {
 	 *   ＠Get()
 	 *   list(req: Request, res: Response, next: NextFunction) {}
 	 * }
 	 *
-	 * ＠Router('/foo')
+	 * ＠Controller('/foo')
 	 * class Foo {
 	 *   constructor() {
 	 *     register(this, [['/items', Items]])
 	 *   }
 	 * }
 	 *
-	 * ＠Router('/bar')
+	 * ＠Controller('/bar')
 	 * class Bar {
 	 *   constructor() {
 	 *     register(this, [['/elements', Items]])
@@ -158,7 +158,7 @@ export namespace Router {
 	 * ------
 	 * @public
 	 */
-	export function Dynamic(options?: express.RouterOptions): Router.Decorator {
+	export function Dynamic(options?: express.RouterOptions): Controller.Decorator {
 		return (target) => {
 			const existingRouterMeta = extractRouterMeta(target)
 
@@ -180,6 +180,34 @@ export namespace Router {
 }
 
 /**
+ * Formerly named `Router`, which conflicts with the express `Router` (e.g. with editor auto-imports).
+ *
+ * @deprecated Renamed `Controller`. Will be removed in the next major version.
+ * @public
+ */
+export const Router: typeof Controller = Controller
+
+/**
+ * @deprecated Renamed `Controller`. Will be removed in the next major version.
+ * @public
+ */
+export namespace Router {
+	/**
+	 * @deprecated Renamed `Controller.Decorator`.
+	 * @public
+	 */
+	export type Decorator = Controller.Decorator
+
+	export namespace Children {
+		/**
+		 * @deprecated Renamed `Controller.Children.Decorator`.
+		 * @public
+		 */
+		export type Decorator = Controller.Children.Decorator
+	}
+}
+
+/**
  * Middlewares applied to the router will be scoped to its own routes, independently of its path.
  *
  * @remarks
@@ -188,7 +216,7 @@ export namespace Router {
  *
  * @example
  * ```ts
- * ＠Router('/foo')
+ * ＠Controller('/foo')
  * ＠ScopedMiddlewares
  * ＠Use(authenticate)
  * class FooSecret {
@@ -196,7 +224,7 @@ export namespace Router {
  *   getSecret(req: Request, res: Response, next: NextFunction) {}
  * }
  *
- * ＠Router('/foo')
+ * ＠Controller('/foo')
  * class FooPublic {
  *   ＠Get()
  *   getPublic(req: Request, res: Response, next: NextFunction) {}

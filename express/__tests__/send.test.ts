@@ -1,11 +1,11 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
 import { createReadStream, readFileSync } from 'fs'
-import { register, Router, Get, Put, Post, Patch, Delete, Res, Params, Send, Route } from '../src'
+import { register, Controller, Get, Put, Post, Patch, Delete, Res, Params, Send, Route } from '../src'
 import { log } from '../../testing/tools'
 
 describe('handle return value', () => {
-	@Router('/')
+	@Controller('/')
 	class FooRouter {
 		@Send()
 		@Get('/:type')
@@ -111,7 +111,7 @@ describe('handle return value', () => {
 })
 
 describe('streams', () => {
-	@Router('/')
+	@Controller('/')
 	class FooRouter {
 		@Send()
 		@Get()
@@ -159,7 +159,7 @@ describe('streams', () => {
 })
 
 describe('buffers', () => {
-	@Router('/')
+	@Controller('/')
 	class FooRouter {
 		@Send()
 		@Get()
@@ -206,9 +206,9 @@ describe('buffers', () => {
 })
 
 describe('class decorator', () => {
-	const JsonRouter = (path: string | RegExp): Router.Decorator & Send.Decorator => {
+	const JsonRouter = (path: string | RegExp): Controller.Decorator & Send.Decorator => {
 		return (target) => {
-			Router(path)(target as Function)
+			Controller(path)(target as Function)
 			Send({ json: true })(target)
 		}
 	}
@@ -256,7 +256,7 @@ describe('class decorator', () => {
 
 test('number is sent as json', async () => {
 	@Send()
-	@Router('/number')
+	@Controller('/number')
 	class NumberRouter {
 		@Get()
 		get() {

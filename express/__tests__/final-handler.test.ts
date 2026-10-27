@@ -1,7 +1,7 @@
 import * as express from 'express'
 import * as supertest from 'supertest'
 import { HttpError } from '@reflet/http'
-import { Use, Catch, Application, Get, Router, finalHandler } from '../src'
+import { Use, Catch, ExpressApplication, Get, Controller, finalHandler } from '../src'
 import { getRouterStack } from '../src/register'
 import { log } from '../../testing/tools'
 
@@ -29,7 +29,7 @@ describe('final handler', () => {
 			notFoundHandler: 499,
 		})
 	)
-	class App extends Application {
+	class App extends ExpressApplication {
 		@Use((req, res, next) => {
 			res.type('json')
 			next()
@@ -96,7 +96,7 @@ describe('final handler', () => {
 
 describe('default logger', () => {
 	@Catch(finalHandler({ json: true, expose: false, log: '5xx' }))
-	class App extends Application {
+	class App extends ExpressApplication {
 		@Get('/server-error')
 		serverError() {
 			throw Error('server')
@@ -145,7 +145,7 @@ test('warns when exposing everything in production', () => {
 })
 
 describe('global final handler with not found handler and multiple register calls', () => {
-	@Router('/foo')
+	@Controller('/foo')
 	class Foo {
 		@Get()
 		get() {
@@ -153,7 +153,7 @@ describe('global final handler with not found handler and multiple register call
 		}
 	}
 
-	@Router('/bar')
+	@Controller('/bar')
 	class Bar {
 		@Get()
 		get() {
@@ -162,7 +162,7 @@ describe('global final handler with not found handler and multiple register call
 	}
 
 	@Catch(finalHandler({ json: true, expose: ['message'], notFoundHandler: true }))
-	class App extends Application {}
+	class App extends ExpressApplication {}
 
 	const app = new App().register([Foo]).register([Bar])
 	const rq = supertest(app)
@@ -191,7 +191,7 @@ describe('global final handler with not found handler and multiple register call
 
 test('non-integer error status is ignored', async () => {
 	@Catch(finalHandler({ json: true, expose: ['message'] }))
-	class App extends Application {
+	class App extends ExpressApplication {
 		@Get('/float')
 		float() {
 			throw Object.assign(Error('float'), { status: 404.5 })
@@ -205,7 +205,7 @@ test('non-integer error status is ignored', async () => {
 
 test('non-integer response status is ignored', async () => {
 	@Catch(finalHandler({ json: true, expose: ['message'] }))
-	class App extends Application {
+	class App extends ExpressApplication {
 		@Get('/float-response')
 		float(req: express.Request, res: express.Response) {
 			// Set directly, as express 5 `res.status` throws on non-integer codes.

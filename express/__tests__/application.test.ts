@@ -1,12 +1,24 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
-import { Application, Catch, Get, Post, Router, ScopedMiddlewares, Send, Use } from '../src'
+import {
+	ExpressApplication,
+	Catch,
+	Get,
+	Post,
+	Controller,
+	ScopedMiddlewares,
+	Send,
+	Use,
+	register,
+	Router,
+	Application,
+} from '../src'
 import { getGlobalMiddlewares, getRouterStack } from '../src/register'
 import { log } from '../../testing/tools'
 
 test('simple app', async () => {
 	@Send()
-	@Router('/')
+	@Controller('/')
 	class Simple {
 		@Get('/simple')
 		getOne() {
@@ -14,7 +26,7 @@ test('simple app', async () => {
 		}
 	}
 
-	const app = new Application().register([Simple])
+	const app = new ExpressApplication().register([Simple])
 	const rq = supertest(app)
 
 	const res = await rq.get('/simple')
@@ -28,7 +40,7 @@ describe('inherit application class', () => {
 		next(err)
 	})
 	@Send.Dont()
-	@Router('/')
+	@Controller('/')
 	class Foo {
 		@Get('/foo')
 		getOne(req: express.Request, res: express.Response) {
@@ -36,7 +48,7 @@ describe('inherit application class', () => {
 		}
 	}
 
-	@Router('/bar')
+	@Controller('/bar')
 	class Bar {
 		@Get('/')
 		getBar() {
@@ -62,7 +74,7 @@ describe('inherit application class', () => {
 		next()
 	})
 	@Send()
-	class App extends Application {
+	class App extends ExpressApplication {
 		constructor(public service: Service) {
 			super()
 			this.disable('x-powered-by')
@@ -146,7 +158,7 @@ test('router scope middlewares', async () => {
 		next()
 	})
 
-	@Router('/')
+	@Controller('/')
 	@UseSome
 	class One {
 		@Post('/1')
@@ -155,7 +167,7 @@ test('router scope middlewares', async () => {
 		}
 	}
 
-	@Router('/')
+	@Controller('/')
 	@ScopedMiddlewares.Dont
 	@UseOther
 	class Two {
@@ -165,7 +177,7 @@ test('router scope middlewares', async () => {
 		}
 	}
 
-	@Router('/')
+	@Controller('/')
 	class Three {
 		@Post('/3')
 		getTwo(req: express.Request, res: express.Response) {
@@ -176,7 +188,7 @@ test('router scope middlewares', async () => {
 	@Send({ json: true })
 	@Use(express.json())
 	@ScopedMiddlewares
-	class App extends Application {}
+	class App extends ExpressApplication {}
 
 	const app = new App().register([One, Two, Three])
 	const rq = supertest(app)
@@ -196,7 +208,7 @@ test('router scope middlewares', async () => {
 
 describe('application class inheritance', () => {
 	test('subclass can override a method of its parent', () => {
-		class Base extends Application {
+		class Base extends ExpressApplication {
 			helper() {
 				return 'base'
 			}
@@ -213,7 +225,7 @@ describe('application class inheritance', () => {
 	})
 
 	test('express properties stay protected', () => {
-		class App extends Application {
+		class App extends ExpressApplication {
 			// @ts-expect-error - overriding express method
 			listen() {}
 		}
@@ -229,7 +241,7 @@ test('scoped middlewares setting of an application does not leak to another', as
 		calls++
 		next()
 	})
-	@Router('/shared')
+	@Controller('/shared')
 	class Shared {
 		@Get()
 		get(req: express.Request, res: express.Response) {
@@ -237,7 +249,7 @@ test('scoped middlewares setting of an application does not leak to another', as
 		}
 	}
 
-	@Router('/shared')
+	@Controller('/shared')
 	class SamePath {
 		@Get('/other')
 		get(req: express.Request, res: express.Response) {
@@ -246,8 +258,8 @@ test('scoped middlewares setting of an application does not leak to another', as
 	}
 
 	@ScopedMiddlewares
-	class ScopedApp extends Application {}
-	class UnscopedApp extends Application {}
+	class ScopedApp extends ExpressApplication {}
+	class UnscopedApp extends ExpressApplication {}
 
 	new ScopedApp().register([Shared])
 	const unscoped = new UnscopedApp().register([Shared, SamePath])
@@ -255,4 +267,32 @@ test('scoped middlewares setting of an application does not leak to another', as
 	// Without scoped middlewares, the middleware is applied to the whole router path.
 	await supertest(unscoped).get('/shared/other')
 	expect(calls).toBe(1)
+})
+
+describe('deprecated names', () => {
+	test('Router is an alias of Controller', async () => {
+		expect(Router).toBe(Controller)
+		expect(Router.Children).toBe(Controller.Children)
+		expect(Router.Dynamic).toBe(Controller.Dynamic)
+
+		@Send()
+		@Router('/legacy')
+		class Legacy {
+			@Get()
+			get() {
+				return 'legacy'
+			}
+		}
+
+		const res = await supertest(register(express(), [Legacy])).get('/legacy')
+		expect(res.text).toBe('legacy')
+	})
+
+	test('Application is an alias of ExpressApplication', async () => {
+		expect(Application).toBe(ExpressApplication)
+
+		class LegacyApp extends Application {}
+		const app: Application = new LegacyApp().register()
+		expect(typeof app.listen).toBe('function')
+	})
 })

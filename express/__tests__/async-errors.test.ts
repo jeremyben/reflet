@@ -3,7 +3,7 @@ import * as express from 'express'
 import * as http from 'http'
 import { AddressInfo } from 'net'
 import { Readable } from 'stream'
-import { Application, Body, Catch, Get, Post, register, Router, Send, Use } from '../src'
+import { ExpressApplication, Body, Catch, Get, Post, register, Controller, Send, Use } from '../src'
 import { getGlobalMiddlewares, getRouterStack } from '../src/register'
 import { isExpress4 } from '../src/type-guards'
 
@@ -12,7 +12,7 @@ const errorHandler: express.ErrorRequestHandler = (err, req, res, next) => {
 }
 
 describe('promises returned by plain functions are caught', () => {
-	@Router('/')
+	@Controller('/')
 	class Foo {
 		@Get('/no-send')
 		noSend(req: express.Request, res: express.Response) {
@@ -73,7 +73,7 @@ describe('promises returned by plain functions are caught', () => {
 		}
 
 		@Use(namedMware)
-		@Router('/named')
+		@Controller('/named')
 		class Named {
 			@Get()
 			get(req: express.Request, res: express.Response) {
@@ -95,7 +95,7 @@ describe('streams sent with @Send', () => {
 	let destroyed = false
 
 	@Send()
-	@Router('/stream')
+	@Controller('/stream')
 	class Streams {
 		@Get('/error')
 		error() {
@@ -154,7 +154,7 @@ describe('async global handlers with multiple register calls', () => {
 		next()
 	}
 
-	@Router('/foo')
+	@Controller('/foo')
 	class Foo {
 		@Get()
 		get(req: express.Request, res: express.Response) {
@@ -162,7 +162,7 @@ describe('async global handlers with multiple register calls', () => {
 		}
 	}
 
-	@Router('/bar')
+	@Controller('/bar')
 	class Bar {
 		@Get()
 		get(req: express.Request, res: express.Response) {
@@ -174,7 +174,7 @@ describe('async global handlers with multiple register calls', () => {
 	@Catch(async function asyncGlobalErr(err, req, res, next) {
 		res.status(500).send(`global ${err.message}`)
 	})
-	class App extends Application {}
+	class App extends ExpressApplication {}
 
 	const app = new App().register([Foo]).register([Bar])
 	const rq = supertest(app)
@@ -202,7 +202,7 @@ describe('review regressions', () => {
 		subApp.get('/sub', (req, res) => res.send(String(subApp.mountpath)))
 
 		@Use(subApp)
-		class App extends Application {}
+		class App extends ExpressApplication {}
 
 		const app = new App().register()
 		expect(mountedOn).toBe(app)
@@ -223,7 +223,7 @@ describe('review regressions', () => {
 			},
 		}
 
-		@Router('/lazy')
+		@Controller('/lazy')
 		class Lazy {
 			@Use((req, res, next) => {
 				next()
@@ -246,7 +246,7 @@ describe('review regressions', () => {
 
 	test('response is closed on stream error after headers are sent', async () => {
 		@Send()
-		@Router('/partial')
+		@Controller('/partial')
 		class Partial {
 			@Get()
 			get() {
@@ -289,7 +289,7 @@ describe('rejections, thenables and arrays of handlers', () => {
 	}
 
 	test('falsy rejection is treated as an error', async () => {
-		@Router('/falsy')
+		@Controller('/falsy')
 		class Falsy {
 			@Get()
 			get(req: express.Request, res: express.Response) {
@@ -298,7 +298,7 @@ describe('rejections, thenables and arrays of handlers', () => {
 		}
 
 		// Same path, registered after: must not be reached.
-		@Router('/falsy')
+		@Controller('/falsy')
 		class Fallthrough {
 			@Get()
 			get(req: express.Request, res: express.Response) {
@@ -318,7 +318,7 @@ describe('rejections, thenables and arrays of handlers', () => {
 		let errorHandled = false
 
 		@Send()
-		@Router('/thenable')
+		@Controller('/thenable')
 		class Thenable {
 			@Get()
 			get() {
@@ -351,7 +351,7 @@ describe('rejections, thenables and arrays of handlers', () => {
 			},
 		}
 
-		@Router('/array')
+		@Controller('/array')
 		class ArrayMwares {
 			@Use([
 				((req, res, next) => {
@@ -378,7 +378,7 @@ describe('rejections, thenables and arrays of handlers', () => {
 
 	test('whole body follows each express version without body', async () => {
 		@Send({ json: true })
-		@Router('/whole-body')
+		@Controller('/whole-body')
 		class WholeBody {
 			@Post()
 			post(@Body() body: object | undefined) {
@@ -410,7 +410,7 @@ describe('rejections, thenables and arrays of handlers', () => {
 	})
 
 	test('decorated class looking like an express router is still registered', async () => {
-		@Router('/look-alike')
+		@Controller('/look-alike')
 		class LookAlike {
 			static stack = []
 			static handle() {}
