@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { inspect } from 'util'
-import { Var, Environment, EnvValidationError, Sensitive, Secrets, UnsetSensitive } from '../src'
+import { Var, Environment, EnvValidationError, Sensitive, Secrets, UnsetSensitive, Default } from '../src'
 
 describe('Environment.load', () => {
 	test('parses basic types', () => {
@@ -1401,5 +1401,78 @@ describe('Environment.load', () => {
 
 		expect(() => Sensitive({ reveal: 0 })).toThrow('@Sensitive "reveal" option must be a positive integer.')
 		expect(() => Sensitive({ reveal: 1.5 })).toThrow('@Sensitive "reveal" option must be a positive integer.')
+	})
+})
+
+describe('Default', () => {
+	const nodeEnv = process.env.NODE_ENV
+	afterEach(() => {
+		process.env.NODE_ENV = nodeEnv
+	})
+
+	class E extends Environment {
+		@Var.Url() APP_ORIGIN = Default.byNodeEnv({
+			development: 'http://localhost:4000',
+			test: 'http://localhost:4000',
+		})
+		@Var.Bool() TLS = Default.byNodeEnv({ production: true, default: false })
+		@Var.Str({ choices: ['json', 'pretty'] }) LOG: 'json' | 'pretty' = Default.byNodeEnv({
+			production: 'json',
+			default: 'pretty',
+		})
+		@Var.Str() KEY = Default.byNodeEnv({ production: undefined, default: 'fake' })
+	}
+
+	test('picks defaults by NODE_ENV, read when loaded', () => {
+		process.env.NODE_ENV = 'development'
+		expect({ ...E.load({}) }).toEqual({
+			APP_ORIGIN: 'http://localhost:4000',
+			TLS: false,
+			LOG: 'pretty',
+			KEY: 'fake',
+		})
+
+		process.env.NODE_ENV = 'production'
+		expect({ ...E.load({ APP_ORIGIN: 'https://example.com', KEY: 'k' }) }).toEqual({
+			APP_ORIGIN: 'https://example.com',
+			TLS: true,
+			LOG: 'json',
+			KEY: 'k',
+		})
+		// A production value, even undefined, takes precedence over `default`.
+		expect(() => E.load({})).toThrow(/APP_ORIGIN \(missing\)[^]*KEY \(missing\)/)
+
+		// Unknown or unset NODE_ENV: `default`, or required.
+		for (const value of ['staging', 'toString', undefined]) {
+			if (value === undefined) delete process.env.NODE_ENV
+			else process.env.NODE_ENV = value
+			expect(() => E.load({})).toThrow(/APP_ORIGIN \(missing\)/)
+			expect(E.load({ APP_ORIGIN: 'https://example.com' })).toMatchObject({
+				TLS: false,
+				KEY: 'fake',
+			})
+		}
+	})
+
+	test('picks defaults by another environment name', () => {
+		const byAppEnv = Default.by<'local' | 'staging' | 'production'>('staging')
+		class A extends Environment {
+			@Var.Host() MAIL_DOMAIN = byAppEnv({ production: 'example.com', default: 'staging.example.com' })
+			@Var.Str() TOKEN = byAppEnv({ local: 'fake' })
+		}
+		expect(() => A.load({})).toThrow(/TOKEN \(missing\)/)
+		expect(A.load({ TOKEN: 't' }).MAIL_DOMAIN).toBe('staging.example.com')
+		expect(Default.by(undefined)({ production: 1, default: 2 })).toBe(2)
+	})
+
+	test('types', () => {
+		const tls: boolean = Default.byNodeEnv({ production: true, default: false })
+		// @ts-expect-error unknown environment
+		Default.byNodeEnv({ prod: true })
+		// @ts-expect-error unknown environment
+		Default.by<'local' | 'production'>('local')({ test: 1 })
+		// @ts-expect-error inferred type
+		const port: string = Default.byNodeEnv({ default: 3000 })
+		expect([tls, port]).toBeDefined()
 	})
 })

@@ -310,7 +310,42 @@ class Env extends Environment {
 
 ### Environment-specific defaults
 
-There are no development or test specific defaults: the values of an environment belong to the environment itself.
+> 🔦 `Default.byNodeEnv(values)`, `Default.by(name)`
+
+`Default` computes a default by environment, in the initializer. An `undefined` value is not a default, so the variable is **required** in this environment:
+
+```ts
+import { Var, Environment, Sensitive, Default } from '@reflet/env'
+
+class Env extends Environment {
+  @Sensitive()
+  @Var.Str()
+  STRIPE_KEY = Default.byNodeEnv({ development: 'fake', test: 'fake' }) // required in production
+
+  @Var.Bool()
+  MONGO_TLS = Default.byNodeEnv({ production: true, default: false })
+
+  @Var.Url()
+  APP_ORIGIN = Default.byNodeEnv({ development: 'http://localhost:4000', test: 'http://localhost:4000' }) // required in production
+}
+```
+
+* `Default.byNodeEnv` picks the value of the current `NODE_ENV`, or else `default`. A value given for an environment takes precedence over `default`, even `undefined`.
+* Environment names (`development`, `production` and `test`) are checked by types, as well as the value types.
+* `NODE_ENV` is read when the environment is loaded, and defaults picked are validated as usual.
+
+Deployment stages (e.g. staging) are better in another variable than `NODE_ENV`, which is expected to be `production` by libraries wherever traffic is served. `Default.by` creates a picker by another name, listed by the type parameter (or by other `NODE_ENV` values):
+
+```ts
+const byAppEnv = Default.by<'local' | 'staging' | 'production'>(process.env.APP_ENV)
+
+class Env extends Environment {
+  @Var.Host()
+  MAIL_DOMAIN = byAppEnv({ production: 'example.com', default: 'staging.example.com' })
+}
+```
+
+Environments can also be given their own values, without defaults in the code:
 
 * Load a `.env` file per environment before calling `load`, with [dotenv](https://github.com/motdotla/dotenv), or with your framework (e.g. `.env.development`, `.env.test` with Next.js or Vite).
 * In tests, pass an explicit source, or override defaults in a subclass:
