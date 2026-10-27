@@ -31,6 +31,14 @@
 
   class App extends ExpressApplication {}
   ```
+  `Application` being now a type alias, augment `ExpressApplication` instead if you augmented `Application` from "@reflet/express":
+  ```ts
+  declare module '@reflet/express' {
+    interface ExpressApplication {
+      foo: string
+    }
+  }
+  ```
 
 ## From v1 to v2
 

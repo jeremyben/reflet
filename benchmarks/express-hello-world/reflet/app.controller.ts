@@ -1,8 +1,8 @@
-import { Get, Router, Send } from '@reflet/express'
+import { Controller, Get, Send } from '@reflet/express'
 import { Request, Response } from 'express'
 
 @Send()
-@Router('')
+@Controller('')
 export class AppController {
 	@Get('/')
 	get(req: Request, res: Response) {

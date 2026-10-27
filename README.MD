@@ -10,8 +10,8 @@ Organize your [Express](https://expressjs.com/) application.<br>**[Documentation
 
 ```ts
 @Use(isAuthenticated)
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
 
   @Get('/:id')
   async get(@Params('id') id: string, @Res res: Response) {
@@ -57,8 +57,8 @@ await user.save()
 Typed HTTP primitives to use within any framework.<br>**[Documentation](./http/README.md)**.
 
 ```ts
-@Router('/things')
-class ThingRouter {
+@Controller('/things')
+class ThingController {
   @UseStatus(Status.Created)
   @Post()
   async create(@Headers(RequestHeader.Authorization) auth: string) {
@@ -77,7 +77,7 @@ Why another decorator framework ? Simply <sub>(and biasedly)</sub> put, a better
 
 Reflet modules aim to stay close to the technology's underlying abstractions they decorate, <br>so you **don't have to learn** a whole new terminology to be productive. 🏌️‍
 
-_e.g. [Reflet/express](./express) has decorators like `Use` for `app.use` method, `Router` for `express.Router`, `Send` for `res.send`.<br>If you're familiar with Express, you're gonna love its Reflet decorators._
+_e.g. [Reflet/express](./express) has decorators like `Use` for `app.use` method, `Controller` for `express.Router`, `Send` for `res.send`.<br>If you're familiar with Express, you're gonna love its Reflet decorators._
 
 As such, Reflet modules don't try to be agnostic or compatible with multiple technologies at once (_e.g. decorators for both Express, Koa, Fastify_), because that would mean :
 

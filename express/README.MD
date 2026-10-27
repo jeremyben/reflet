@@ -301,6 +301,8 @@ Express [Router options](https://expressjs.com/en/4x/api.html#express.router) ca
 @Controller('/things', { strict: true, caseSensitive: true })
 ```
 
+🗣️ Formerly named `@Router` (renamed to avoid the confusion with the express `Router`, e.g. with editor auto-imports). `Router` is still available as a deprecated alias, and will be removed in the next major version. Same for the `Application` class, renamed `ExpressApplication`.
+
 #### Nested controllers
 
 > 🔦 `@Controller.Children(register)`
