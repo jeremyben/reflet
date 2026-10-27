@@ -1,4 +1,10 @@
 {
 	"extends": "../tsconfig.json",
-	"exclude": ["dist", "temp"]
+	"exclude": ["dist", "temp"],
+	"compilerOptions": {
+		"target": "es2022",
+		"lib": ["es2022"],
+		// Keep assigning class fields in constructors, as with the previous target.
+		"useDefineForClassFields": false
+	}
 }
