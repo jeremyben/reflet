@@ -1,12 +1,18 @@
-import { parseBool, parseEmail, parseHost, parseJson, parseNum, parsePort, parseStr, parseUrl } from './parsers'
-import type { Environment } from './init'
+import {
+	parseBool,
+	parseBytes,
+	parseEmail,
+	parseHost,
+	parseJson,
+	parseNum,
+	parsePort,
+	parseStr,
+	parseUrl,
+} from './parsers'
 import type { ClassType, ConditionalOptions, Parser, Spec, SpecOptions } from './interfaces'
 
 /** Own specs of each class, in declaration order. */
 const definitions = new WeakMap<object, Map<string | symbol, Spec<any>>>()
-
-/** Secret directories of each class, defined by `Var.Secrets`. */
-const secretsDirs = new WeakMap<object, readonly string[]>()
 
 /**
  * Fails on definitions that would otherwise be silently ignored or overridden.
@@ -144,6 +150,62 @@ export namespace Var {
 	Json.parse = parseJson
 
 	/**
+	 * Bytes of a string, as a `Buffer`, e.g. a cryptographic key or secret.
+	 * Lengths are in bytes, and the encoding (`utf8` by default) is checked strictly.
+	 *
+	 * The type parameter narrows the buffer type without check, e.g. to a branded type.
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Var.Bytes({ encoding: 'hex', length: 32 }) CIPHER_KEY!: Buffer // CIPHER_KEY=$(openssl rand -hex 32)
+	 * ```
+	 * ---
+	 * @public
+	 */
+	export function Bytes<T extends Buffer = Buffer, C = any>(
+		options: BytesOptions & ConditionalOptions<C>
+	): Decorator<T | undefined, C>
+	export function Bytes<T extends Buffer = Buffer>(options?: BytesOptions): Decorator<T>
+	export function Bytes(options: BytesOptions & AnyOptions = {}): Decorator<any> {
+		return register('bytes', parseBytes(options), options)
+	}
+	Bytes.parse = parseBytes({})
+
+	/**
+	 * Options of a bytes variable.
+	 * @public
+	 */
+	export interface BytesOptions extends Omit<SpecOptions<Buffer>, 'choices'> {
+		/** Encoding of the value, `utf8` by default. */
+		encoding?: 'utf8' | 'hex' | 'base64' | 'base64url'
+		/** Exact length, in bytes. */
+		length?: number
+		/** Minimum length, in bytes. */
+		minLength?: number
+		/** Maximum length, in bytes. */
+		maxLength?: number
+	}
+
+	/**
+	 * Turns a parser into a reusable variable type, e.g. shared by several classes or used for list items.
+	 *
+	 * @example
+	 * ```ts
+	 * const WritableFolder = Var.Type(writableFolder)
+	 *
+	 * class Env extends Environment {
+	 *   ＠WritableFolder({ parseDefault: true }) SHARED_DIR = 'temp'
+	 *   ＠Var.List(WritableFolder) EXTRA_DIRS: string[] = []
+	 * }
+	 * ```
+	 * ---
+	 * @public
+	 */
+	export function Type<T>(parser: Parser<T>): Factory<T, CustomOptions<T>> {
+		return factory('custom', parser)
+	}
+
+	/**
 	 * Custom env variable with a user-supplied parser.
 	 * @public
 	 */
@@ -248,33 +310,6 @@ export namespace Var {
 	}
 
 	/**
-	 * Reads variables from secret files named like them, in the given directories,
-	 * e.g. `process.env.CREDENTIALS_DIRECTORY` with systemd, or `/run/secrets` with Docker.
-	 *
-	 * - Undefined directories are ignored, and environment variables take precedence over secret files.
-	 * - Subclasses inherit the directories, unless they define their own (none with `＠Var.Secrets()`).
-	 *
-	 * @example
-	 * ```ts
-	 * ＠Var.Secrets(process.env.CREDENTIALS_DIRECTORY)
-	 * class Env extends Environment {
-	 *   ＠Var.Str({ sensitive: true }) DB_PASSWORD!: string
-	 * }
-	 * ```
-	 * ---
-	 * @public
-	 */
-	export function Secrets(...dirs: (string | undefined)[]): (target: Function & { prototype: Environment }) => void {
-		return (target) => {
-			if (secretsDirs.has(target)) throw new Error(`"${target.name}" cannot have several secrets decorators.`)
-			secretsDirs.set(
-				target,
-				dirs.filter((dir): dir is string => typeof dir === 'string' && dir !== '')
-			)
-		}
-	}
-
-	/**
 	 * Restricts the value to one of the given choices, which narrows the type.
 	 * @public
 	 */
@@ -295,9 +330,9 @@ export namespace Var {
 	 * With `requiredWhen`, the decorated property must be optional.
 	 * @public
 	 */
-	export interface Factory<T> extends Parsable<T> {
-		<C>(options: SpecOptions<T> & ConditionalOptions<C>): Decorator<T | undefined, C>
-		(options?: SpecOptions<T>): Decorator<T>
+	export interface Factory<T, O = SpecOptions<T>> extends Parsable<T> {
+		<C>(options: O & ConditionalOptions<C>): Decorator<T | undefined, C>
+		(options?: O): Decorator<T>
 	}
 }
 
@@ -358,21 +393,9 @@ const PARSER_TYPES = new Map<Parser<any>, string>([
 	[parseJson, 'json'],
 ])
 
-function factory<T>(type: string, parser: Parser<T>): Var.Factory<T> {
+function factory<T, O = SpecOptions<T>>(type: string, parser: Parser<T>): Var.Factory<T, O> {
 	const decorate = (options?: AnyOptions) => register(type, parser, options)
-	return Object.assign(decorate, { parse: parser }) as Var.Factory<T>
-}
-
-/**
- * Secret directories of the closest class defining them.
- * @internal
- */
-export function extractSecretsDirs(target: ClassType): readonly string[] {
-	for (let cls = target; cls && cls !== Function.prototype; cls = Object.getPrototypeOf(cls)) {
-		const dirs = secretsDirs.get(cls)
-		if (dirs) return dirs
-	}
-	return []
+	return Object.assign(decorate, { parse: parser }) as Var.Factory<T, O>
 }
 
 /**

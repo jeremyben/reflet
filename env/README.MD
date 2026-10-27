@@ -40,7 +40,7 @@ Well-defined and well-typed environment variables decorators. Have a look at [Re
 
     ```ts
     // env.ts
-    import { Var, Environment } from '@reflet/env'
+    import { Var, Environment, Sensitive } from '@reflet/env'
 
     export class Env extends Environment {
       @Var.Str({ choices: ['development', 'production', 'test'] })
@@ -49,7 +49,8 @@ Well-defined and well-typed environment variables decorators. Have a look at [Re
       @Var.Port()
       PORT = 3000
 
-      @Var.Url({ desc: 'Main database', sensitive: true })
+      @Sensitive()
+      @Var.Url({ desc: 'Main database' })
       DATABASE_URL!: string
     }
 
@@ -148,6 +149,7 @@ const env = new Env() // ❌ Type error: use Env.load()
 | `@Var.Email()` | `string` | Email addresses. |
 | `@Var.Host()` | `string` | Hostnames (underscores allowed, e.g. container names), IPv4, and IPv6 addresses (bracketed or not). |
 | `@Var.Json<T>()` | `T` | Valid JSON. |
+| `@Var.Bytes(options?)` | `Buffer` | Bytes of the value, in `utf8`, `hex`, `base64` or `base64url` encoding. |
 | `@Var.List(item?, options?)` | `T[]` | Values separated by commas (or another `separator`), each parsed by the `item` type (strings by default). |
 
 Surrounding whitespace is trimmed for all types except `Str` and `Custom`.
@@ -187,7 +189,7 @@ class Env extends Environment {
   @Var.Str({ pattern: /^sk_live_/ })
   API_KEY!: string // e.g. rejects a test key in production.
 
-  @Var.Str({ minLength: 32, sensitive: true })
+  @Var.Str({ minLength: 32 })
   COOKIE_SECRET!: string
 
   @Var.Num({ min: 1, max: 64, int: true })
@@ -221,6 +223,26 @@ class Env extends Environment {
 
 An invalid item is reported with its index, e.g. `"PORTS[1]" must be a valid port number (1-65535)`.
 
+### Bytes
+
+> 🔦 `@Var.Bytes({ encoding?, length?, minLength?, maxLength? })`
+
+Bytes of a string as a `Buffer`, e.g. a cryptographic key. Lengths are in bytes, and the encoding (`utf8` by default) is checked strictly:
+
+```ts
+class Env extends Environment {
+  @Sensitive()
+  @Var.Bytes({ encoding: 'hex', length: 32 })
+  CIPHER_KEY!: Buffer // CIPHER_KEY=$(openssl rand -hex 32)
+
+  @Sensitive()
+  @Var.Bytes({ minLength: 32 })
+  HMAC_SECRET!: Buffer
+}
+```
+
+💡 The type parameter narrows the buffer type without check, e.g. to a branded type: `@Var.Bytes<MyKey>()`.
+
 ### Custom parser
 
 > 🔦 `@Var.Custom(parser, options)`
@@ -239,6 +261,20 @@ class Env extends Environment {
 ```
 
 💡 Built-in parsers can be reused, e.g. `Var.Port.parse(raw, name)`.
+
+To reuse a parser in several places, turn it into a variable type with `Var.Type`. It is typed like the built-in ones, and can be used for list items:
+
+```ts
+export const WritableFolder = Var.Type(writableFolder)
+
+class Env extends Environment {
+  @WritableFolder({ parseDefault: true })
+  SHARED_DIR = 'temp'
+
+  @Var.List(WritableFolder)
+  EXTRA_DIRS: string[] = []
+}
+```
 
 Defaults of custom variables are not parsed, since they usually are parsed values already. With `parseDefault`, a string default is parsed like an environment value, e.g. to resolve and check a path:
 
@@ -365,17 +401,20 @@ class Env extends Environment {
 
 ### Sensitive
 
-> 🔦 `sensitive`
+> 🔦 `@Sensitive({ reveal? })`, `@UnsetSensitive()`
 
 By default, error messages show the invalid value (e.g. `"PORT" must be a valid port number (1-65535) (got "99999")`).<br>
-Mark secrets as `sensitive` to keep them out of your logs: they are left out of error messages, and masked when logging or serializing the environment.
+Mark secrets with `@Sensitive` to keep them out of your logs: they are left out of error messages, and masked when logging or serializing the environment.
 
 ```ts
+import { Var, Environment, Sensitive } from '@reflet/env'
+
 class Env extends Environment {
   @Var.Port()
   PORT = 3000
 
-  @Var.Url({ sensitive: true })
+  @Sensitive()
+  @Var.Url()
   DATABASE_URL!: string // may contain credentials.
 }
 
@@ -386,7 +425,41 @@ console.log(env) // Env { PORT: 3000, DATABASE_URL: '***' }
 JSON.stringify(env) // {"PORT":3000,"DATABASE_URL":"***"}
 ```
 
+Applied to the class, `@Sensitive()` marks every variable as sensitive.
+
+To check that the right value was given, `reveal` shows its last characters, in logs and error messages:
+
+```ts
+class Env extends Environment {
+  @Sensitive({ reveal: 4 })
+  @Var.Str({ pattern: /^sk_live_/ })
+  STRIPE_PRIVATE_KEY!: string
+}
+
+console.log(Env.load()) // Env { STRIPE_PRIVATE_KEY: '***4242' }
+// - STRIPE_PRIVATE_KEY (invalid): "STRIPE_PRIVATE_KEY" must match /^sk_live_/ (got "***4242")
+```
+
+* Only reveal long random values, like API keys: never passwords, nor URLs with credentials.
+* Values shorter than 4 times the revealed characters are fully masked, as well as values other than strings and bytes (shown in hexadecimal).
+
 ⚠️ Custom parsers are responsible for not leaking the raw value in their own error messages, and values read from the environment (e.g. `{ ...env }`, or a getter returning a secret) are not masked.
+
+With `@UnsetSensitive()`, sensitive variables are removed from `process.env` once the environment is loaded from it, so they are not inherited by child processes, nor dumped by other code. An explicit source (e.g. in tests) is left untouched:
+
+```ts
+@UnsetSensitive()
+class Env extends Environment {
+  @Sensitive()
+  @Var.Str()
+  STRIPE_PRIVATE_KEY!: string
+}
+
+const env = Env.load()
+process.env.STRIPE_PRIVATE_KEY // undefined
+```
+
+💡 Better yet, pass secrets as [files](#secrets): they never go through the environment.
 
 ## Conditional requirement
 
@@ -423,9 +496,9 @@ The property must be optional, since it can be `undefined` at runtime: this is e
 
 ## Secrets
 
-> 🔦 `@Var.Secrets(...directories)`
+> 🔦 `@Secrets(directory | directories)`
 
-Secrets are better passed as files than environment variables, which are inherited by child processes and easily leaked. Variables can be read from **secret files named like them**, in the directories given to the `@Var.Secrets` class decorator.
+Secrets are better passed as files than environment variables, which are inherited by child processes and easily leaked. Variables can be read from **secret files named like them**, in the directory or directories given to the `@Secrets` decorator.
 
 ### systemd credentials
 
@@ -440,12 +513,15 @@ ExecStart=/usr/bin/node /opt/myapp/main.js
 ```
 
 ```ts
-@Var.Secrets(process.env.CREDENTIALS_DIRECTORY) // undefined, hence ignored, outside of systemd.
+import { Var, Environment, Secrets, Sensitive } from '@reflet/env'
+
+@Secrets(process.env.CREDENTIALS_DIRECTORY) // undefined, hence ignored, outside of systemd.
+@Sensitive()
 class Env extends Environment {
-  @Var.Str({ sensitive: true })
+  @Var.Str()
   DB_PASSWORD!: string
 
-  @Var.Str({ sensitive: true })
+  @Var.Str()
   API_TOKEN!: string
 }
 
@@ -454,12 +530,13 @@ const env = Env.load()
 
 ### Docker, Kubernetes and others
 
-Give the directories of secret files, e.g. `/run/secrets` for Docker and Compose secrets, or a mounted Kubernetes secret volume. With several directories, the first non-empty file found is used:
+Give the directory of secret files, e.g. `/run/secrets` for Docker and Compose secrets, or a mounted Kubernetes secret volume. With an array of directories, the first non-empty file found is used:
 
 ```ts
-@Var.Secrets(process.env.CREDENTIALS_DIRECTORY, '/run/secrets')
+@Secrets([process.env.CREDENTIALS_DIRECTORY, '/run/secrets'])
 class Env extends Environment {
-  @Var.Str({ sensitive: true })
+  @Sensitive()
+  @Var.Str()
   DB_PASSWORD!: string
 }
 ```
@@ -468,11 +545,12 @@ class Env extends Environment {
 
 * Secret files are only read from the given directories: `$CREDENTIALS_DIRECTORY` is not looked up implicitly, since it is also inherited by child processes.
 * Environment variables take precedence over secret files.
-* Subclasses inherit the directories, unless they define their own, e.g. none in tests with `@Var.Secrets()`.
+* Applied to a property, `@Secrets` overrides the directories of the class for this variable, e.g. none with `@Secrets([])`.
+* Subclasses inherit the directories, unless they define their own, e.g. none in tests with `@Secrets([])`.
 * With [several names](#name), each one is looked up as a file name, e.g. `name: ['DB_PASSWORD', 'db-password']`.
 * A single trailing newline is removed from file contents (e.g. written by `echo`), which are then parsed as usual.
 * Empty files are skipped for the next directory or name, and an unreadable file is reported in the [`EnvValidationError`](#errors).
-* Values read from files are never included in error messages. Mark them as [`sensitive`](#sensitive) to mask them in logs as well.
+* Values read from files are never included in error messages. Mark them as [`@Sensitive`](#sensitive) to mask them in logs as well.
 
 ## Derived values
 

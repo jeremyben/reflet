@@ -32,13 +32,6 @@ export interface SpecOptions<T> {
 	docs?: string
 
 	/**
-	 * Never include the raw value in error messages (secrets, credentials, tokens...),
-	 * and mask it in `console.log`, `util.inspect` and `JSON.stringify` outputs.
-	 * Note that custom parsers are responsible for not leaking the value in their own errors.
-	 */
-	sensitive?: boolean
-
-	/**
 	 * Override the env variable name (defaults to the property key).
 	 * With several names, the first one set is used, e.g. to rename a variable without breaking deployments.
 	 */

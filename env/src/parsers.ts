@@ -73,3 +73,36 @@ export const parseJson: Parser<unknown> = (raw, name) => {
 		throw new Error(`"${name}" must be valid JSON`)
 	}
 }
+
+/**
+ * Bytes encodings, checked strictly since `Buffer.from` silently drops invalid characters.
+ */
+const BYTES_ENCODINGS: Record<string, RegExp> = {
+	hex: /^(?:[0-9a-fA-F]{2})*$/,
+	base64: /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/,
+	base64url: /^[A-Za-z0-9_-]*$/,
+}
+
+export function parseBytes(options: {
+	encoding?: 'utf8' | 'hex' | 'base64' | 'base64url'
+	length?: number
+	minLength?: number
+	maxLength?: number
+}): Parser<Buffer> {
+	const { encoding = 'utf8', length, minLength, maxLength } = options
+	return (raw, name) => {
+		const value = raw.trim()
+		const pattern = BYTES_ENCODINGS[encoding]
+		if (pattern && !pattern.test(value)) throw new Error(`"${name}" must be valid ${encoding}`)
+
+		const bytes = Buffer.from(value, encoding)
+		if (length !== undefined && bytes.byteLength !== length) throw new Error(`"${name}" must be ${length} bytes`)
+		if (minLength !== undefined && bytes.byteLength < minLength) {
+			throw new Error(`"${name}" must be at least ${minLength} bytes`)
+		}
+		if (maxLength !== undefined && bytes.byteLength > maxLength) {
+			throw new Error(`"${name}" must be at most ${maxLength} bytes`)
+		}
+		return bytes
+	}
+}

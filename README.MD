@@ -81,7 +81,8 @@ class Env extends Environment {
   @Var.Port()
   PORT = 3000
 
-  @Var.Url({ sensitive: true })
+  @Sensitive()
+  @Var.Url()
   DATABASE_URL!: string
 }
 

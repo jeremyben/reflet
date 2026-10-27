@@ -1,7 +1,9 @@
 import { readFileSync } from 'fs'
 import { basename, join } from 'path'
 import { inspect, InspectOptions } from 'util'
-import { extractSecretsDirs, extractSpecs } from './var-decorators'
+import { extractModifiedKeys, extractSecretsDirs, extractSensitive, extractUnsetSensitive } from './env-decorators'
+import type { SensitiveOptions } from './env-decorators'
+import { extractSpecs } from './var-decorators'
 import type { ClassType, EnvErrorEntry, EnvSource, Spec } from './interfaces'
 
 /**
@@ -46,6 +48,17 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 	const specs = extractSpecs(target)
 	const errors: EnvErrorEntry[] = []
 
+	for (const key of extractModifiedKeys(target)) {
+		if (!specs.has(key)) {
+			throw new Error(`"${target.name}.${String(key)}" has @Sensitive or @Secrets, but no variable decorator.`)
+		}
+	}
+	const sensitive = new Map<string | symbol, SensitiveOptions>()
+	for (const key of specs.keys()) {
+		const options = extractSensitive(target, key)
+		if (options) sensitive.set(key, options)
+	}
+
 	// Property initializers (e.g. `PORT = 3000`) are default values.
 	const initializers = new Map<string | symbol, unknown>()
 
@@ -65,11 +78,10 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 		}
 	}
 
-	// Defined by `Var.Secrets` on the class or its closest ancestor.
-	const secretsDirs = extractSecretsDirs(target)
-
 	const processKey = (key: string | symbol) => {
 		const spec = specs.get(key)!
+		// Defined by `Secrets` on the property, or on the class or its closest ancestor.
+		const secretsDirs = extractSecretsDirs(target, key)
 		const names = envNames(key)
 		const read = (envName: string) =>
 			Object.prototype.hasOwnProperty.call(source, envName) ? source[envName] : undefined
@@ -82,7 +94,9 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 			: undefined
 
 		const got = (value: unknown) => {
-			if (spec.sensitive || secret) return ''
+			const sensitiveOptions = sensitive.get(key)
+			if (sensitiveOptions?.reveal) return ` (got "${mask(value, sensitiveOptions.reveal)}")`
+			if (sensitiveOptions || secret) return ''
 			try {
 				return ` (got ${JSON.stringify(value)})`
 			} catch {
@@ -164,6 +178,13 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 
 	if (errors.length) throw new EnvValidationError(errors)
 
+	// Only from process.env: an explicit source, e.g. in tests, is left untouched.
+	if (source === process.env && extractUnsetSensitive(target)) {
+		for (const key of sensitive.keys()) {
+			for (const name of envNames(key)) delete process.env[name]
+		}
+	}
+
 	return Object.freeze(instance)
 }
 
@@ -211,16 +232,28 @@ function readSecret(
  * Own properties of an env instance, with sensitive variables masked.
  */
 function masked(env: object): Record<string, unknown> {
-	const specs = extractSpecs(env.constructor as ClassType)
+	const target = env.constructor as ClassType
+	const specs = extractSpecs(target)
 	const result: Record<string, unknown> = {}
 	for (const key of Object.keys(env)) {
-		result[key] = specs.get(key)?.sensitive ? '***' : (env as any)[key]
+		const sensitive = specs.has(key) ? extractSensitive(target, key) : undefined
+		result[key] = sensitive ? mask((env as any)[key], sensitive.reveal) : (env as any)[key]
 	}
 	return result
 }
 
+/**
+ * Masks a sensitive value, with its last characters revealed if long enough (strings and bytes only).
+ */
+function mask(value: unknown, reveal?: number): string {
+	const shown = typeof value === 'string' ? value : Buffer.isBuffer(value) ? value.toString('hex') : undefined
+	if (!reveal || shown === undefined || shown.length < reveal * 4) return '***'
+	return `***${shown.slice(-reveal)}`
+}
+
 function deepFreeze<T>(value: T): T {
-	if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+	// Buffers and other typed arrays can't be frozen.
+	if (value && typeof value === 'object' && !Object.isFrozen(value) && !ArrayBuffer.isView(value)) {
 		Object.freeze(value)
 		for (const child of Object.values(value)) deepFreeze(child)
 	}

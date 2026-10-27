@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { inspect } from 'util'
-import { Var, Environment, EnvValidationError } from '../src'
+import { Var, Environment, EnvValidationError, Sensitive, Secrets, UnsetSensitive } from '../src'
 
 describe('Environment.load', () => {
 	test('parses basic types', () => {
@@ -229,9 +229,9 @@ describe('Environment.load', () => {
 
 	test('sensitive values are not included in error messages', () => {
 		class E extends Environment {
-			@Var.Url({ sensitive: true }) DB!: string
-			@Var.Json({ sensitive: true }) CREDS!: unknown
-			@Var.Str({ sensitive: true, choices: ['a'] }) KEY!: 'a'
+			@Sensitive() @Var.Url() DB!: string
+			@Sensitive() @Var.Json() CREDS!: unknown
+			@Sensitive() @Var.Str({ choices: ['a'] }) KEY!: 'a'
 			@Var.Url() PUBLIC!: string
 		}
 		try {
@@ -277,7 +277,7 @@ describe('Environment.load', () => {
 	test('defaults of built-in scalar types are validated', () => {
 		class E extends Environment {
 			@Var.Port() P: number = 99999
-			@Var.Url({ sensitive: true }) U: string = 'nope'
+			@Sensitive() @Var.Url() U: string = 'nope'
 			@Var.Num() N: number = NaN
 			@Var.Email() M: string = 'a@b.co'
 			@Var.Str() S: string = ''
@@ -722,8 +722,8 @@ describe('Environment.load', () => {
 	test('sensitive values are masked in logs and serialization', () => {
 		class E extends Environment {
 			@Var.Port() PORT = 3000
-			@Var.Url({ sensitive: true }) DATABASE_URL!: string
-			@Var.Json({ sensitive: true }) CREDS!: { key: string }
+			@Sensitive() @Var.Url() DATABASE_URL!: string
+			@Sensitive() @Var.Json() CREDS!: { key: string }
 
 			get isLocal() {
 				return this.DATABASE_URL.includes('localhost')
@@ -793,7 +793,7 @@ describe('Environment.load', () => {
 			...dirs: (string | undefined)[]
 		) => {
 			const Sub = class extends (cls as any) {}
-			Var.Secrets(...dirs)(Sub as any)
+			Secrets(dirs)(Sub as any)
 			return Sub as unknown as T
 		}
 
@@ -818,12 +818,12 @@ describe('Environment.load', () => {
 
 		test('systemd credentials are read explicitly from $CREDENTIALS_DIRECTORY', () => {
 			class E extends Environment {
-				@Var.Str({ sensitive: true }) DB_PASSWORD!: string
+				@Sensitive() @Var.Str() DB_PASSWORD!: string
 				@Var.Port() PORT!: number
 			}
 			const source = { CREDENTIALS_DIRECTORY: credentials }
 
-			@Var.Secrets(source.CREDENTIALS_DIRECTORY)
+			@Secrets(source.CREDENTIALS_DIRECTORY)
 			class Decorated extends E {}
 			expect(Decorated.load(source)).toEqual({ DB_PASSWORD: 's3cr3t', PORT: 8080 })
 
@@ -846,6 +846,22 @@ describe('Environment.load', () => {
 			}
 			expect(withSecrets(E, secrets).load({}).API_TOKEN).toBe('tok3n')
 			expect(withSecrets(E, undefined, credentials, secrets).load({}).API_TOKEN).toBe('tok3n')
+
+			// A single directory, or an array of directories.
+			@Secrets(secrets)
+			class Single extends E {}
+			expect(Single.load({}).API_TOKEN).toBe('tok3n')
+			@Secrets([undefined, credentials, secrets])
+			class Several extends E {}
+			expect(Several.load({}).API_TOKEN).toBe('tok3n')
+			@Secrets(undefined)
+			class Undefined extends E {}
+			expect(() => Undefined.load({})).toThrow(/API_TOKEN \(missing\)/)
+
+			// @ts-expect-error directories as an array, to leave room for options
+			expect(() => Secrets(credentials, secrets)).toBeDefined()
+			// @ts-expect-error a directory is required, or an empty array
+			expect(() => Secrets()).toBeDefined()
 			expect(() => withSecrets(E, join(secrets, 'missing')).load({})).toThrow(/API_TOKEN \(missing\)/)
 		})
 
@@ -903,19 +919,19 @@ describe('Environment.load', () => {
 			class Child extends Parent {}
 			expect(Child.load({}).DB_PASSWORD).toBe('s3cr3t')
 
-			@Var.Secrets()
+			@Secrets([])
 			class TestEnv extends Parent {}
 			expect(() => TestEnv.load({})).toThrow(/DB_PASSWORD \(missing\)/)
 
 			expect(() => {
-				@Var.Secrets('/a')
-				@Var.Secrets('/b')
+				@Secrets('/a')
+				@Secrets('/b')
 				class Twice extends Environment {}
 				return Twice
-			}).toThrow('"Twice" cannot have several secrets decorators.')
+			}).toThrow('"Twice" cannot have several @Secrets decorators.')
 
 			// @ts-expect-error not an environment
-			@Var.Secrets('/a')
+			@Secrets('/a')
 			class NotEnv {}
 			expect(NotEnv).toBeDefined()
 		})
@@ -925,6 +941,30 @@ describe('Environment.load', () => {
 				@Var.Str({ allowEmpty: true }) EMPTY = 'default'
 			}
 			expect(withSecrets(E, credentials, secrets).load({}).EMPTY).toBe('')
+		})
+
+		test('property secret directories override the class ones', () => {
+			class E extends Environment {
+				@Var.Str() DB_PASSWORD!: string
+				@Var.Str({ name: ['API_TOKEN', 'api-token'] }) API_TOKEN!: string
+			}
+			const WithBoth = withSecrets(E, credentials)
+			class Child extends WithBoth {
+				@Secrets(secrets) @Var.Str({ name: ['API_TOKEN', 'api-token'] }) API_TOKEN!: string
+				@Secrets([]) @Var.Str() DB_PASSWORD!: string
+			}
+			expect(WithBoth.load({ API_TOKEN: 'env' }).DB_PASSWORD).toBe('s3cr3t')
+			expect(() => Child.load({})).toThrow(/DB_PASSWORD \(missing\)/)
+			expect(Child.load({ DB_PASSWORD: 'env' }).API_TOKEN).toBe('tok3n')
+		})
+
+		test('revealed characters of secret files in error messages', () => {
+			class E extends Environment {
+				@Sensitive({ reveal: 2 }) @Var.Port({ name: 'BAD_PORT' }) REVEALED!: number
+			}
+			expect(() => withSecrets(E, credentials).load({})).toThrow(
+				'"BAD_PORT" must be a finite decimal number (got "***rt")'
+			)
 		})
 
 		test('unreadable secret files are reported', () => {
@@ -1034,7 +1074,7 @@ describe('Environment.load', () => {
 	test('pattern of string variables', () => {
 		class E extends Environment {
 			@Var.Str({ pattern: /^sk_live_/ }) API_KEY!: string
-			@Var.Str({ pattern: /^sk_/, sensitive: true }) SECRET!: string
+			@Sensitive() @Var.Str({ pattern: /^sk_/ }) SECRET!: string
 			@Var.Str({ pattern: /a/g }) GLOBAL = 'a'
 		}
 
@@ -1103,11 +1143,13 @@ describe('Environment.load', () => {
 		expect(() => standard(undefined, { kind: 'field', name: 'A' })).toThrow(
 			'@reflet/env decorators require the "experimentalDecorators" TypeScript option.'
 		)
+		const sensitive = Sensitive() as unknown as (value: undefined, context: object) => void
+		expect(() => sensitive(undefined, { kind: 'field', name: 'A' })).toThrow('"experimentalDecorators"')
 	})
 
 	test('minLength and maxLength of string variables', () => {
 		class E extends Environment {
-			@Var.Str({ minLength: 32, sensitive: true }) COOKIE_SECRET!: string
+			@Sensitive() @Var.Str({ minLength: 32 }) COOKIE_SECRET!: string
 			@Var.Str({ maxLength: 3 }) CODE = 'abc'
 		}
 
@@ -1154,5 +1196,210 @@ describe('Environment.load', () => {
 		} finally {
 			rmSync(root, { recursive: true, force: true })
 		}
+	})
+
+	test('Sensitive decorator', () => {
+		class E extends Environment {
+			@Var.Str() @Sensitive() BELOW!: string
+			@Sensitive() @Var.Str() ABOVE!: string
+			@Var.Str() PUBLIC!: string
+		}
+		const env = E.load({ BELOW: 'b', ABOVE: 'a', PUBLIC: 'p' })
+		expect(inspect(env)).toBe("E { BELOW: '***', ABOVE: '***', PUBLIC: 'p' }")
+
+		@Sensitive()
+		class All extends Environment {
+			@Var.Port() PORT!: number
+			readonly ROOT = '/app'
+		}
+		expect(JSON.stringify(All.load({ PORT: '80' }))).toBe('{"ROOT":"/app","PORT":"***"}')
+		expect(() => All.load({ PORT: 's3cr3t' })).toThrow(/"PORT" must be a finite decimal number$/)
+
+		class Child extends E {
+			@Var.Str({ minLength: 2 }) BELOW!: string
+		}
+		expect(inspect(Child.load({ BELOW: 'bb', ABOVE: 'a', PUBLIC: 'p' }))).toContain("BELOW: '***'")
+
+		class NotVariable extends Environment {
+			@Sensitive() X!: string
+		}
+		expect(() => NotVariable.load({})).toThrow(
+			'"NotVariable.X" has @Sensitive or @Secrets, but no variable decorator.'
+		)
+
+		expect(() => {
+			class Twice extends Environment {
+				@Sensitive() @Sensitive() @Var.Str() A!: string
+			}
+			return Twice
+		}).toThrow('"Twice.A" cannot have several @Sensitive decorators.')
+
+		expect(() => {
+			class Static extends Environment {
+				@Sensitive() static A: string
+			}
+			return Static
+		}).toThrow('"Static.A" cannot be static.')
+	})
+
+	test('UnsetSensitive decorator', () => {
+		@UnsetSensitive()
+		class E extends Environment {
+			@Sensitive() @Var.Str({ name: ['REFLET_TOKEN', 'REFLET_OLD_TOKEN'] }) TOKEN!: string
+			@Var.Str() REFLET_PUBLIC!: string
+		}
+		class Child extends E {}
+
+		const vars = { REFLET_TOKEN: 't', REFLET_OLD_TOKEN: 'o', REFLET_PUBLIC: 'p' }
+		try {
+			// An explicit source is left untouched.
+			const source = { ...vars }
+			E.load(source)
+			expect(source).toEqual(vars)
+
+			Object.assign(process.env, vars)
+			expect(Child.load().TOKEN).toBe('t')
+			expect(process.env.REFLET_TOKEN).toBeUndefined()
+			expect(process.env.REFLET_OLD_TOKEN).toBeUndefined()
+			expect(process.env.REFLET_PUBLIC).toBe('p')
+
+			// Nothing is removed when loading fails.
+			Object.assign(process.env, vars)
+			delete process.env.REFLET_PUBLIC
+			expect(() => E.load()).toThrow(EnvValidationError)
+			expect(process.env.REFLET_TOKEN).toBe('t')
+		} finally {
+			for (const name of Object.keys(vars)) delete process.env[name]
+		}
+	})
+
+	test('Var.Bytes', () => {
+		type BlindIndexSecret = Buffer & { __brand: 'BlindIndexSecret' }
+		class E extends Environment {
+			@Var.Bytes({ length: 4 }) UTF8!: Buffer
+			@Var.Bytes({ encoding: 'hex', minLength: 2 }) HEX!: Buffer
+			@Var.Bytes({ encoding: 'base64', maxLength: 3 }) B64!: Buffer
+			@Var.Bytes({ encoding: 'base64url' }) B64URL!: Buffer
+			@Var.Bytes<BlindIndexSecret>({ minLength: 1 }) BRANDED!: BlindIndexSecret
+			@Var.List(Var.Bytes) LIST!: Buffer[]
+			@Var.Bytes() DEFAULT = Buffer.from('d')
+		}
+		const env = E.load({ UTF8: 'abcd', HEX: 'abcd', B64: 'YWJj', B64URL: 'YWJj-_', BRANDED: 'x', LIST: 'a,b' })
+		expect(env).toMatchObject({
+			UTF8: Buffer.from('abcd'),
+			HEX: Buffer.from([0xab, 0xcd]),
+			B64: Buffer.from('abc'),
+			B64URL: Buffer.from('YWJj-_', 'base64url'),
+			LIST: [Buffer.from('a'), Buffer.from('b')],
+			DEFAULT: Buffer.from('d'),
+		})
+
+		try {
+			E.load({ UTF8: 'abc', HEX: 'abzz', B64: 'ab!c', B64URL: 'a+b', BRANDED: 'x', LIST: 'a' })
+			fail('should throw')
+		} catch (err: any) {
+			expect(err.errors.map((e: any) => e.message)).toEqual([
+				'"UTF8" must be 4 bytes (got "abc")',
+				'"HEX" must be valid hex (got "abzz")',
+				'"B64" must be valid base64 (got "ab!c")',
+				'"B64URL" must be valid base64url (got "a+b")',
+			])
+		}
+		expect(() => E.load({ UTF8: 'abcd', HEX: 'ab', B64: 'YWJjZA==', B64URL: '', BRANDED: 'x', LIST: 'a' })).toThrow(
+			/HEX \(invalid\): "HEX" must be at least 2 bytes[\s\S]*B64 \(invalid\): "B64" must be at most 3 bytes/
+		)
+
+		class Invalid {
+			// @ts-expect-error bytes are buffers
+			@Var.Bytes() A!: string
+		}
+		expect(Invalid).toBeDefined()
+	})
+
+	test('Var.Type', () => {
+		const parseCsvLine: (raw: string, name: string) => string[] = (raw) => raw.split(';')
+		const Upper = Var.Type((raw) => raw.toUpperCase())
+		const Csv = Var.Type(parseCsvLine)
+
+		class E extends Environment {
+			@Var.Bool() F = false
+			@Upper() A!: string
+			@Upper({ parseDefault: true }) B = 'b'
+			@Upper({ requiredWhen: (env: E) => env.F }) C?: string
+			@Var.List(Upper) D: string[] = []
+			@Csv() E!: string[]
+		}
+		expect(E.load({ A: 'a', D: 'x,y', E: '1;2' })).toEqual({
+			F: false,
+			A: 'A',
+			B: 'B',
+			D: ['X', 'Y'],
+			E: ['1', '2'],
+		})
+		expect(() => E.load({ F: 'true', A: 'a', E: '' })).toThrow(/C \(missing\)/)
+		expect(Upper.parse('x', 'X')).toBe('X')
+
+		class Invalid {
+			// @ts-expect-error parsed string is not a number
+			@Upper() A!: number
+		}
+		expect(Invalid).toBeDefined()
+	})
+
+	test('Sensitive reveal option', () => {
+		@Sensitive({ reveal: 2 })
+		class E extends Environment {
+			@Sensitive({ reveal: 4 }) @Var.Str() STRIPE_KEY!: string
+			@Var.Str() REVEALED_BY_CLASS!: string
+			@Sensitive() @Var.Str() PASSWORD!: string
+			@Sensitive({ reveal: 4 }) @Var.Str() SHORT!: string
+			@Sensitive({ reveal: 4 }) @Var.Bytes({ encoding: 'hex' }) KEY!: Buffer
+			@Sensitive({ reveal: 4 }) @Var.Port() PORT!: number
+		}
+
+		const env = E.load({
+			STRIPE_KEY: 'sk_live_1234567890abcd4242',
+			REVEALED_BY_CLASS: 'abcdefghij',
+			PASSWORD: 'p4ssw0rd-long-enough',
+			SHORT: 'abc4242',
+			KEY: '00112233445566778899aabbccc0ffee',
+			PORT: '80',
+		})
+		expect(JSON.parse(JSON.stringify(env))).toEqual({
+			STRIPE_KEY: '***4242',
+			REVEALED_BY_CLASS: '***ij',
+			PASSWORD: '***',
+			SHORT: '***',
+			KEY: '***ffee',
+			PORT: '***',
+		})
+
+		try {
+			E.load({
+				STRIPE_KEY: 'sk_live_1234567890abcd4242',
+				REVEALED_BY_CLASS: 'x',
+				PASSWORD: 'p',
+				SHORT: 's',
+				KEY: 'zz',
+				PORT: 'nope-nope-nope-nope',
+			})
+			fail('should throw')
+		} catch (err: any) {
+			expect(err.errors.map((e: any) => e.message)).toEqual([
+				'"KEY" must be valid hex (got "***")',
+				'"PORT" must be a finite decimal number (got "***nope")',
+			])
+		}
+
+		class Choices extends Environment {
+			@Sensitive({ reveal: 3 }) @Var.Str({ choices: ['sk_live_abcdef123'] }) KEY!: string
+			@Sensitive() @Var.Str({ choices: ['a'] }) HIDDEN!: string
+		}
+		expect(() => Choices.load({ KEY: 'sk_test_abcdef999', HIDDEN: 'b' })).toThrow(
+			/must be one of \[sk_live_abcdef123\] \(got "\*\*\*999"\)\n - HIDDEN \(invalid\): must be one of \[a\]$/
+		)
+
+		expect(() => Sensitive({ reveal: 0 })).toThrow('@Sensitive "reveal" option must be a positive integer.')
+		expect(() => Sensitive({ reveal: 1.5 })).toThrow('@Sensitive "reveal" option must be a positive integer.')
 	})
 })
