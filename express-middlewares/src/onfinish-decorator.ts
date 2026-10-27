@@ -3,17 +3,18 @@ import * as express from 'express'
 import { ResponseReadonly } from './interfaces'
 
 /**
- * Triggers a side-effect on the `finish` event of the response.
+ * Triggers a side-effect when the response is complete (`finish` event),
+ * or when the connection is closed before (`close` event, e.g. the client aborted the request).
  *
  * @param effect - callback that should not return anything. _Gives access to Request and Response objects._
  * @param exposeBody - exposes the response body as `body` property on the Response object _(streaming responses will have their body truncated to the first 64kb, to avoid eating up memory)_.
  * @see https://nodejs.org/api/http.html#http_event_finish
+ * @see https://nodejs.org/api/http.html#event-close_2
  *
  * @remarks
  * Exceptions will be caught and logged to `stderr` instead of crashing the server.
  *
- * The callback is not called if the client closes the connection before the response is complete,
- * as Node.js doesn't emit the `finish` event in that case.
+ * The callback is called once in both cases: check `res.writableFinished` to know whether the response was complete.
  *
  * Works by patching `res.send`, `res.json`, `res.jsonp`, `res.write` and `res.end` methods.
  *
@@ -139,14 +140,23 @@ export function UseOnFinish<ResBody = any>(
 			}
 		}
 
-		// Log errors instead of letting them crash the server.
-		res.on('finish', async () => {
+		// `close` is also emitted after `finish`, so we make sure to call the effect only once.
+		let called = false
+
+		const onEnd = async () => {
+			if (called) return
+			called = true
+
+			// Log errors instead of letting them crash the server.
 			try {
 				await effect(req, res as ResponseReadonly & { body: ResBody })
 			} catch (error) {
 				console.error(error)
 			}
-		})
+		}
+
+		res.once('finish', onEnd)
+		res.once('close', onEnd)
 
 		next()
 	})

@@ -160,9 +160,9 @@ In fact, it won't intercept any response sent by chunks with the `res.write` nat
 ## Response side-effect
 
 > 🔦 `@UseOnFinish(sideEffect, exposeResponseBody?)`<br>
-> 💫 Related Node.js event: [`finish`](https://nodejs.org/api/http.html#http_event_finish)
+> 💫 Related Node.js events: [`finish`](https://nodejs.org/api/http.html#http_event_finish), [`close`](https://nodejs.org/api/http.html#event-close_2)
 
-You need to trigger side-effects ? Log details, send an email, etc.<br>`UseOnFinish` helps you define a callback on each response, on the [`finish` event](https://nodejs.org/api/http.html#http_event_finish) to be exact.
+You need to trigger side-effects ? Log details, send an email, etc.<br>`UseOnFinish` helps you define a callback on each response, on the [`finish` event](https://nodejs.org/api/http.html#http_event_finish) to be exact (or [`close`](https://nodejs.org/api/http.html#event-close_2) if the connection is closed before).
 
 ```ts
 @Router('/things')
@@ -178,7 +178,13 @@ class ThingRouter {
 
 As a safety net, any exception happening in your callback will be caught and logged to `stderr` instead of crashing the server. You don't want the latter for a side-effect. _This does not exempt you to properly handle your errors, though._
 
-🗣️ The callback is not called if the client closes the connection before the response is complete, as Node.js doesn't emit the `finish` event in that case.
+The callback is also called if the client closes the connection before the response is complete (on the [`close` event](https://nodejs.org/api/http.html#event-close_2)), so aborted requests are not missed. It is called only once either way: check `res.writableFinished` to know whether the response was complete.
+
+```ts
+@UseOnFinish((req, res) => {
+  if (!res.writableFinished) console.log('Aborted:', req.method, req.originalUrl)
+})
+```
 
 #### Retrieve the response body
 

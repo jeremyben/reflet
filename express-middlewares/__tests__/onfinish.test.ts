@@ -2,6 +2,8 @@ import * as supertest from 'supertest'
 import * as express from 'express'
 import { createReadStream } from 'fs'
 import { Readable } from 'stream'
+import * as http from 'http'
+import { AddressInfo } from 'net'
 import { register, Get, Post, Put, Patch, Delete, Router } from '@reflet/express'
 import { UseOnFinish, UseInterceptor } from '../src'
 import { createDummyFile, log } from '../../testing/tools'
@@ -293,5 +295,64 @@ describe('retrieve body with mixed chunk types', () => {
 		const res = await rq.get('/mixed/uint8array')
 		expect(res.text).toBe('head;tail')
 		expect(consoleSpy).toBeCalledWith('mixed', 'head;tail')
+	})
+})
+
+describe('connection closed before the response is complete', () => {
+	const calls: boolean[] = []
+
+	@Router('/close')
+	class Close {
+		@UseOnFinish((req, res) => {
+			calls.push(res.writableFinished)
+		})
+		@Get('/aborted')
+		aborted(req: express.Request, res: express.Response) {
+			res.write('partial')
+			setTimeout(() => res.end(), 100)
+		}
+
+		@UseOnFinish((req, res) => {
+			calls.push(res.writableFinished)
+		})
+		@Get('/complete')
+		complete(req: express.Request, res: express.Response) {
+			res.send('complete')
+		}
+	}
+
+	const app = register(express(), [Close])
+	let server: http.Server
+	let port: number
+
+	beforeAll(() => {
+		server = app.listen(0)
+		port = (server.address() as AddressInfo).port
+	})
+
+	afterAll(() => new Promise((resolve) => server.close(resolve)))
+
+	beforeEach(() => {
+		calls.length = 0
+	})
+
+	test('effect is called once when the client aborts', async () => {
+		await new Promise<void>((resolve) => {
+			const req = http.get({ port, path: '/close/aborted', agent: false }, (res) => {
+				res.once('data', () => req.destroy())
+				res.on('close', () => resolve())
+			})
+			req.on('error', () => resolve())
+		})
+
+		await new Promise((resolve) => setTimeout(resolve, 200))
+		expect(calls).toEqual([false])
+	})
+
+	test('effect is called once when the response is complete', async () => {
+		const res = await supertest(app).get('/close/complete')
+		await new Promise((resolve) => setTimeout(resolve, 50))
+		expect(res.text).toBe('complete')
+		expect(calls).toEqual([true])
 	})
 })
