@@ -16,6 +16,13 @@ export type EnvSource = Record<string, string | undefined>
 export type Parser<T> = (raw: string, name: string) => T
 
 /**
+ * Function that validates a typed value, e.g. a default value, and returns it (possibly normalized).
+ * Throw to signal an invalid value.
+ * @public
+ */
+export type Validator<T> = (value: T, name: string) => T
+
+/**
  * @public
  */
 export interface SpecOptions<T> {
@@ -70,10 +77,10 @@ export interface EnvErrorEntry {
  * @public
  */
 export interface Spec<T> extends SpecOptions<T>, Partial<ConditionalOptions<any>> {
-	parser: Parser<T>
+	/** Coerces the raw string to the type. */
+	coerce: Parser<T>
+	/** Validates a typed value: a coerced value, or a default value. */
+	validate: Validator<T>
 	type: string
-	/** Spec of list items. */
-	item?: { type: string; parser: Parser<any> }
 	allowEmpty?: boolean
-	parseDefault?: boolean
 }

@@ -247,7 +247,7 @@ class Env extends Environment {
 
 > 🔦 `@Var.Custom(parser, options)`
 
-Provide your own parser to transform the raw string. Throw to signal an invalid value.
+Provide your own parser to coerce the raw string. Throw to signal an invalid value.
 
 ```ts
 class Env extends Environment {
@@ -262,32 +262,41 @@ class Env extends Environment {
 
 💡 Built-in parsers can be reused, e.g. `Var.Port.parse(raw, name)`.
 
+Parsing has two steps: `coerce` turns the raw string into the type, and `validate` checks the typed value (and may normalize it). Environment values go through both, [defaults](#defaults) only through `validate`. To validate defaults of a custom variable as well, give both steps, or only `validate` for a string:
+
+```ts
+class Env extends Environment {
+  @Var.Custom({
+    coerce: (raw) => new Date(raw),
+    validate: (date, name) => {
+      if (Number.isNaN(date.getTime())) throw new Error(`"${name}" must be a date`)
+      return date
+    },
+  })
+  LAUNCH_DATE = new Date('2030-01-01') // validated as well
+
+  @Var.Custom({ validate: writableFolder })
+  SHARED_DIR = 'temp' // resolved and checked, like SHARED_DIR=temp
+}
+
+function writableFolder(folder: string, name: string): string {
+  const path = resolve(__dirname, '..', folder)
+  accessSync(path, constants.R_OK | constants.W_OK)
+  return path
+}
+```
+
 To reuse a parser in several places, turn it into a variable type with `Var.Type`. It is typed like the built-in ones, and can be used for list items:
 
 ```ts
-export const WritableFolder = Var.Type(writableFolder)
+export const WritableFolder = Var.Type({ validate: writableFolder })
 
 class Env extends Environment {
-  @WritableFolder({ parseDefault: true })
+  @WritableFolder()
   SHARED_DIR = 'temp'
 
   @Var.List(WritableFolder)
   EXTRA_DIRS: string[] = []
-}
-```
-
-Defaults of custom variables are not parsed, since they usually are parsed values already. With `parseDefault`, a string default is parsed like an environment value, e.g. to resolve and check a path:
-
-```ts
-const writableFolder: Parser<string> = (raw, name) => {
-  const folder = path.resolve(__dirname, '..', raw)
-  fs.accessSync(folder, fs.constants.R_OK | fs.constants.W_OK)
-  return folder
-}
-
-class Env extends Environment {
-  @Var.Custom(writableFolder, { parseDefault: true })
-  SHARED_DIR = 'temp' // resolved and checked, like SHARED_DIR=temp
 }
 ```
 
@@ -304,7 +313,8 @@ class Env extends Environment {
 }
 ```
 
-* Defaults of `Num`, `Port`, `Url`, `Email` and `Host` variables (and lists of them) are validated as well, so a typo in your code is caught early.
+* Defaults are validated like environment values (e.g. `PORT = 99999` is invalid), but not coerced, since they are already typed: a default `' localhost '` is not trimmed, and `PORT = '3000'` is not a number.
+* Defaults of [custom variables](#custom-parser) are only validated with a `validate` step.
 * A `null` or `undefined` initializer is not a default.
 * A subclass can override an inherited default with its own initializer.
 

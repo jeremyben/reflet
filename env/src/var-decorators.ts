@@ -1,18 +1,12 @@
-import {
-	parseBool,
-	parseBytes,
-	parseEmail,
-	parseHost,
-	parseJson,
-	parseNum,
-	parsePort,
-	parseStr,
-	parseUrl,
-} from './parsers'
-import type { ClassType, ConditionalOptions, Parser, Spec, SpecOptions } from './interfaces'
+import { bool, bytes, email, host, json, list, num, parser, port, refine, str, url } from './parsers'
+import type { Steps } from './parsers'
+import type { ClassType, ConditionalOptions, Parser, Spec, SpecOptions, Validator } from './interfaces'
 
 /** Own specs of each class, in declaration order. */
 const definitions = new WeakMap<object, Map<string | symbol, Spec<any>>>()
+
+/** Steps of the parsers exposed by variable types, e.g. to validate the defaults of list items. */
+const STEPS = new WeakMap<Parser<any>, Steps<any>>()
 
 /**
  * Fails on definitions that would otherwise be silently ignored or overridden.
@@ -51,11 +45,12 @@ type AnyOptions = SpecOptions<any> &
 		min?: number
 		max?: number
 		int?: boolean
-		parseDefault?: boolean
 	}
 
-function register(type: string, parser: Parser<any>, options: AnyOptions = {}): Var.Decorator<any> {
-	return (target: object, propertyKey: string | symbol) => define(target, propertyKey, { type, parser, ...options })
+function register(type: string, steps: Steps<any>, options: AnyOptions = {}): Var.Decorator<any> {
+	const { coerce, validate } = steps
+	return (target: object, propertyKey: string | symbol) =>
+		define(target, propertyKey, { type, coerce, validate, ...options })
 }
 
 /**
@@ -101,9 +96,9 @@ export namespace Var {
 	export function Str<T extends string>(options: StrOptions<T> & WithChoices<T>): Decorator<T>
 	export function Str(options?: StrOptions<string>): Decorator<string>
 	export function Str(options: AnyOptions = {}): Decorator<any> {
-		return register('str', lengthed(matching(parseStr, options), options), options)
+		return register('str', lengthed(matching(str, options), options), options)
 	}
-	Str.parse = parseStr
+	Str.parse = parsable(str)
 
 	/** A number env variable. @public */
 	export function Num<T extends number, C = any>(
@@ -113,12 +108,12 @@ export namespace Var {
 	export function Num<T extends number>(options: NumOptions<T> & WithChoices<T>): Decorator<T>
 	export function Num(options?: NumOptions<number>): Decorator<number>
 	export function Num(options: AnyOptions = {}): Decorator<any> {
-		return register('num', bounded(parseNum, options), options)
+		return register('num', bounded(num, options), options)
 	}
-	Num.parse = parseNum
+	Num.parse = parsable(num)
 
 	/** A boolean env variable. Accepts `true|false|1|0|yes|no|on|off`. @public */
-	export const Bool = factory('bool', parseBool)
+	export const Bool = factory('bool', bool)
 
 	/** An integer port number (1-65535). @public */
 	export function Port<T extends number, C = any>(
@@ -128,26 +123,26 @@ export namespace Var {
 	export function Port<T extends number>(options: NumOptions<T> & WithChoices<T>): Decorator<T>
 	export function Port(options?: NumOptions<number>): Decorator<number>
 	export function Port(options: AnyOptions = {}): Decorator<any> {
-		return register('port', bounded(parsePort, options), options)
+		return register('port', bounded(port, options), options)
 	}
-	Port.parse = parsePort
+	Port.parse = parsable(port)
 
 	/** An absolute URL with a scheme (e.g. `https://`). @public */
-	export const Url = factory('url', parseUrl)
+	export const Url = factory('url', url)
 
 	/** An email address. @public */
-	export const Email = factory('email', parseEmail)
+	export const Email = factory('email', email)
 
 	/** A hostname or IP address. @public */
-	export const Host = factory('host', parseHost)
+	export const Host = factory('host', host)
 
 	/** A JSON-encoded value, untyped unless a type parameter is given. @public */
 	export function Json<T = any, C = any>(options: SpecOptions<T> & ConditionalOptions<C>): Decorator<T | undefined, C>
 	export function Json<T = any>(options?: SpecOptions<T>): Decorator<T>
 	export function Json(options?: AnyOptions): Decorator<any> {
-		return register('json', parseJson, options)
+		return register('json', json, options)
 	}
-	Json.parse = parseJson
+	Json.parse = parsable(json)
 
 	/**
 	 * Bytes of a string, as a `Buffer`, e.g. a cryptographic key or secret.
@@ -167,9 +162,9 @@ export namespace Var {
 	): Decorator<T | undefined, C>
 	export function Bytes<T extends Buffer = Buffer>(options?: BytesOptions): Decorator<T>
 	export function Bytes(options: BytesOptions & AnyOptions = {}): Decorator<any> {
-		return register('bytes', parseBytes(options), options)
+		return register('bytes', bytes(options), options)
 	}
-	Bytes.parse = parseBytes({})
+	Bytes.parse = parsable(bytes({}))
 
 	/**
 	 * Options of a bytes variable.
@@ -191,31 +186,61 @@ export namespace Var {
 	 *
 	 * @example
 	 * ```ts
-	 * const WritableFolder = Var.Type(writableFolder)
+	 * const WritableFolder = Var.Type({ validate: writableFolder })
 	 *
 	 * class Env extends Environment {
-	 *   ＠WritableFolder({ parseDefault: true }) SHARED_DIR = 'temp'
+	 *   ＠WritableFolder() SHARED_DIR = 'temp' // validated as well
 	 *   ＠Var.List(WritableFolder) EXTRA_DIRS: string[] = []
 	 * }
 	 * ```
 	 * ---
 	 * @public
 	 */
-	export function Type<T>(parser: Parser<T>): Factory<T, CustomOptions<T>> {
-		return factory('custom', parser)
+	export function Type(parser: ValidateStep<string>): Factory<string, CustomOptions<string>>
+	export function Type<T>(parser: CustomParser<T>): Factory<T, CustomOptions<T>>
+	export function Type(parser: CustomParser<any> | ValidateStep<any>): Factory<any, CustomOptions<any>> {
+		return factory('custom', customSteps(parser))
 	}
 
 	/**
 	 * Custom env variable with a user-supplied parser.
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Var.Custom((raw) => new Date(raw)) LAUNCH_DATE!: Date
+	 * ```
+	 * ---
 	 * @public
 	 */
+	export function Custom<C = any>(
+		parser: ValidateStep<string>,
+		options: CustomOptions<string> & ConditionalOptions<C>
+	): Decorator<string | undefined, C>
+	export function Custom(parser: ValidateStep<string>, options?: CustomOptions<string>): Decorator<string>
 	export function Custom<T, C = any>(
-		parser: Parser<T>,
+		parser: CustomParser<T>,
 		options: CustomOptions<T> & ConditionalOptions<C>
 	): Decorator<T | undefined, C>
-	export function Custom<T>(parser: Parser<T>, options?: CustomOptions<T>): Decorator<T>
-	export function Custom(parser: Parser<any>, options?: AnyOptions): Decorator<any> {
-		return register('custom', parser, options)
+	export function Custom<T>(parser: CustomParser<T>, options?: CustomOptions<T>): Decorator<T>
+	export function Custom(parser: CustomParser<any> | ValidateStep<any>, options?: AnyOptions): Decorator<any> {
+		return register('custom', customSteps(parser), options)
+	}
+
+	/**
+	 * Parser of a custom variable:
+	 * - a function coercing the raw string, so default values are not validated,
+	 * - or `coerce` and `validate` steps, so default values are validated as well.
+	 * @public
+	 */
+	export type CustomParser<T> = Parser<T> | { coerce: Parser<T>; validate?: Validator<T> }
+
+	/**
+	 * Validation step of a custom string variable, which validates default values as well.
+	 * @public
+	 */
+	export interface ValidateStep<T> {
+		coerce?: undefined
+		validate: Validator<T>
 	}
 
 	/**
@@ -241,17 +266,9 @@ export namespace Var {
 	export function List<T>(item: Parsable<T>, options?: ListOptions<T>): Decorator<T[]>
 	export function List(item?: undefined, options?: ListOptions<string>): Decorator<string[]>
 	export function List(item: Parsable<any> = Str, options: ListOptions<any> & AnyOptions = {}): Decorator<any> {
-		const separator = options.separator ?? ','
-		const parseList: Parser<any[]> = (raw, name) =>
-			raw
-				.split(separator)
-				.map((value) => value.trim())
-				.filter((value) => value !== '')
-				.map((value, index) => item.parse(value, `${name}[${index}]`))
-		return (target: object, propertyKey: string | symbol) => {
-			const itemSpec = { type: PARSER_TYPES.get(item.parse) || 'custom', parser: item.parse }
-			define(target, propertyKey, { type: 'list', parser: parseList, item: itemSpec, ...options })
-		}
+		// Items of other parsable objects are only coerced by their parser.
+		const itemSteps = STEPS.get(item.parse) || { coerce: item.parse, validate: (value) => value }
+		return register('list', list(itemSteps, options.separator ?? ','), options)
 	}
 
 	/**
@@ -301,13 +318,7 @@ export namespace Var {
 	 * Options of a custom variable.
 	 * @public
 	 */
-	export interface CustomOptions<T> extends SpecOptions<T>, AllowEmpty {
-		/**
-		 * A string default value (property initializer) is parsed like an environment value,
-		 * e.g. a relative path resolved and checked by the parser.
-		 */
-		parseDefault?: boolean
-	}
+	export interface CustomOptions<T> extends SpecOptions<T>, AllowEmpty {}
 
 	/**
 	 * Restricts the value to one of the given choices, which narrows the type.
@@ -339,24 +350,22 @@ export namespace Var {
 /**
  * Checks the pattern option of a string variable.
  */
-function matching(parser: Parser<string>, { pattern }: AnyOptions): Parser<string> {
-	if (!pattern) return parser
-	return (raw, name) => {
-		const value = parser(raw, name)
+function matching(steps: Steps<string>, { pattern }: AnyOptions): Steps<string> {
+	if (!pattern) return steps
+	return refine(steps, (value, name) => {
 		// A global or sticky pattern is stateful.
 		pattern.lastIndex = 0
 		if (!pattern.test(value)) throw new Error(`"${name}" must match ${pattern}`)
 		return value
-	}
+	})
 }
 
 /**
  * Checks the length options of a string variable.
  */
-function lengthed(parser: Parser<string>, { minLength, maxLength }: AnyOptions): Parser<string> {
-	if (minLength === undefined && maxLength === undefined) return parser
-	return (raw, name) => {
-		const value = parser(raw, name)
+function lengthed(steps: Steps<string>, { minLength, maxLength }: AnyOptions): Steps<string> {
+	if (minLength === undefined && maxLength === undefined) return steps
+	return refine(steps, (value, name) => {
 		if (minLength !== undefined && value.length < minLength) {
 			throw new Error(`"${name}" must be at least ${minLength} characters`)
 		}
@@ -364,38 +373,36 @@ function lengthed(parser: Parser<string>, { minLength, maxLength }: AnyOptions):
 			throw new Error(`"${name}" must be at most ${maxLength} characters`)
 		}
 		return value
-	}
+	})
 }
 
 /**
  * Checks the bounds options of a number variable.
  */
-function bounded(parser: Parser<number>, { min, max, int }: AnyOptions): Parser<number> {
-	if (min === undefined && max === undefined && !int) return parser
-	return (raw, name) => {
-		const value = parser(raw, name)
+function bounded(steps: Steps<number>, { min, max, int }: AnyOptions): Steps<number> {
+	if (min === undefined && max === undefined && !int) return steps
+	return refine(steps, (value, name) => {
 		if (int && !Number.isInteger(value)) throw new Error(`"${name}" must be an integer`)
 		if (min !== undefined && value < min) throw new Error(`"${name}" must be at least ${min}`)
 		if (max !== undefined && value > max) throw new Error(`"${name}" must be at most ${max}`)
 		return value
-	}
+	})
 }
 
-/** Types of built-in parsers, e.g. to check the defaults of list items. */
-const PARSER_TYPES = new Map<Parser<any>, string>([
-	[parseStr, 'str'],
-	[parseNum, 'num'],
-	[parseBool, 'bool'],
-	[parsePort, 'port'],
-	[parseUrl, 'url'],
-	[parseEmail, 'email'],
-	[parseHost, 'host'],
-	[parseJson, 'json'],
-])
+function parsable<T>(steps: Steps<T>): Parser<T> {
+	const parse = parser(steps)
+	STEPS.set(parse, steps)
+	return parse
+}
 
-function factory<T, O = SpecOptions<T>>(type: string, parser: Parser<T>): Var.Factory<T, O> {
-	const decorate = (options?: AnyOptions) => register(type, parser, options)
-	return Object.assign(decorate, { parse: parser }) as Var.Factory<T, O>
+function customSteps(custom: Var.CustomParser<any> | Var.ValidateStep<any>): Steps<any> {
+	if (typeof custom === 'function') return { coerce: custom, validate: (value) => value }
+	return { coerce: custom.coerce || ((raw) => raw), validate: custom.validate || ((value) => value) }
+}
+
+function factory<T, O = SpecOptions<T>>(type: string, steps: Steps<T>): Var.Factory<T, O> {
+	const decorate = (options?: AnyOptions) => register(type, steps, options)
+	return Object.assign(decorate, { parse: parsable(steps) }) as Var.Factory<T, O>
 }
 
 /**

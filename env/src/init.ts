@@ -135,24 +135,16 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 			}
 
 			try {
-				// Defaults of built-in scalar types (or custom ones with `parseDefault`) are checked and normalized.
-				const parseDefault = spec.parseDefault && typeof value === 'string'
-				if (CHECKED_DEFAULT_TYPES.includes(spec.type) || parseDefault) value = spec.parser(String(value), name)
-				// JSON and list defaults are copied, so the frozen value is not the caller's object.
+				// Defaults are already typed: validated, not coerced.
+				// JSON defaults are copied (as validated lists), so the frozen value is not the caller's object.
 				if (spec.type === 'json') value = JSON.parse(JSON.stringify(value))
-				if (spec.type === 'list') {
-					value = Array.from(value as unknown[], (item, index) => {
-						// Items of built-in scalar types are checked and normalized as well.
-						const { type, parser } = spec.item!
-						return CHECKED_DEFAULT_TYPES.includes(type) ? parser(String(item), `${name}[${index}]`) : item
-					})
-				}
+				value = spec.validate(value, name)
 			} catch (err) {
 				return fail('invalid', `invalid default value: ${errorMessage(err)}${got(value)}`)
 			}
 		} else {
 			try {
-				value = spec.parser(raw, name)
+				value = spec.validate(spec.coerce(raw, name), name)
 			} catch (err) {
 				return fail('invalid', errorMessage(err) + got(raw))
 			}
@@ -187,8 +179,6 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 
 	return Object.freeze(instance)
 }
-
-const CHECKED_DEFAULT_TYPES = ['str', 'num', 'port', 'url', 'email', 'host']
 
 const UNTRIMMED_TYPES = ['str', 'custom']
 

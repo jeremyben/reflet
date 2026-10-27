@@ -621,15 +621,35 @@ describe('Environment.load', () => {
 		expect(() => E.load({})).toThrow(/toString \(missing\)/)
 	})
 
-	test('defaults are normalized and JSON defaults are copied before freezing', () => {
+	test('defaults are validated, not coerced, and JSON defaults are copied before freezing', () => {
 		const def = { a: 1 }
 		class E extends Environment {
-			@Var.Host() H: string = ' localhost '
+			@Var.Host() H = 'localhost'
 			@Var.Json() J: { a: number } = def
 		}
 		const env = E.load({})
 		expect(env.H).toBe('localhost')
 		expect(env.J).toEqual({ a: 1 })
+
+		// Not trimmed, as environment values.
+		class Padded extends Environment {
+			@Var.Host() H = ' localhost '
+		}
+		expect(() => Padded.load({})).toThrow('invalid default value: "H" must be a valid hostname or IP')
+		expect(Padded.load({ H: ' localhost ' }).H).toBe('localhost')
+
+		// Typed defaults, not strings to coerce.
+		class Untyped extends Environment {
+			@Var.Num() N = '5' as unknown as number
+			@Var.Bytes({ length: 2 }) B = Buffer.from('abc')
+			@Var.Str() S = 1 as unknown as string
+			@Var.Bool() BOOL = 'true' as unknown as boolean
+			@Var.Bytes() HEX = 'ab' as unknown as Buffer
+			@Var.List() L = 'a,b' as unknown as string[]
+			// Coercion only: defaults are taken as is.
+			@Var.Custom({ coerce: Number }) C = 'not validated' as unknown as number
+		}
+		expect(() => Untyped.load({})).toThrow(/"N" must be a finite decimal number \(got "5"\)[^]*"B" must be 2 bytes/)
 		expect(Object.isFrozen(env.J)).toBe(true)
 		expect(Object.isFrozen(def)).toBe(false)
 	})
@@ -1025,10 +1045,11 @@ describe('Environment.load', () => {
 		}
 
 		class F extends Environment {
-			@Var.List(Var.Host) HOSTS = [' localhost ']
-			@Var.List({ parse: (raw) => Number(raw) }) N = [1]
+			@Var.List(Var.Host) HOSTS = ['localhost']
+			// Items of other parsable objects are not validated.
+			@Var.List({ parse: (raw) => Number(raw) }) N = [-1]
 		}
-		expect(F.load({})).toEqual({ HOSTS: ['localhost'], N: [1] })
+		expect(F.load({})).toEqual({ HOSTS: ['localhost'], N: [-1] })
 	})
 
 	test('a default value makes a conditional variable never missing', () => {
@@ -1170,29 +1191,40 @@ describe('Environment.load', () => {
 		expect(() => Default.load({})).toThrow('invalid default value: "CODE" must be at most 3 characters')
 	})
 
-	test('parseDefault of custom variables', () => {
+	test('coerce and validate steps of custom variables', () => {
 		const root = mkdtempSync(join(tmpdir(), 'reflet-env-root-'))
 		try {
 			mkdirSync(join(root, 'temp'))
-			const folder = (raw: string, name: string) => {
-				const path = join(root, raw)
+			const folder = (value: string, name: string) => {
+				const path = join(root, value)
 				if (!existsSync(path)) throw new Error(`"${name}" folder "${path}" does not exist`)
 				return path
 			}
 
 			class E extends Environment {
-				@Var.Custom(folder, { parseDefault: true }) SHARED_DIR = 'temp'
-				@Var.Custom(folder) RAW_DIR = 'not-parsed'
+				// Validated defaults, as environment values.
+				@Var.Custom({ validate: folder }) SHARED_DIR = 'temp'
+				// A function only coerces environment values, so defaults are not validated.
+				@Var.Custom(folder) RAW_DIR = 'not-validated'
+				@Var.Custom({ coerce: (raw) => Number(raw), validate: (n, name) => (n > 0 ? n : fail(name)) }) N = 1
 			}
-			expect(E.load({})).toEqual({ SHARED_DIR: join(root, 'temp'), RAW_DIR: 'not-parsed' })
-			expect(E.load({ SHARED_DIR: '.' }).SHARED_DIR).toBe(join(root, '.'))
+			const fail = (name: string): never => {
+				throw new Error(`"${name}" must be positive`)
+			}
+			expect({ ...E.load({}) }).toEqual({ SHARED_DIR: join(root, 'temp'), RAW_DIR: 'not-validated', N: 1 })
+			expect(E.load({ SHARED_DIR: '.', N: '2' })).toMatchObject({ SHARED_DIR: join(root, '.'), N: 2 })
+			expect(() => E.load({ N: '-1' })).toThrow('"N" must be positive (got "-1")')
 
 			class Missing extends Environment {
-				@Var.Custom(folder, { parseDefault: true }) SHARED_DIR = 'nope'
+				@Var.Custom({ validate: folder }) SHARED_DIR = 'nope'
+				@Var.Custom({ coerce: Number, validate: (n, name) => (n > 0 ? n : fail(name)) }) N = 0
 			}
 			expect(() => Missing.load({})).toThrow(
-				/SHARED_DIR \(invalid\): invalid default value: "SHARED_DIR" folder ".*nope" does not exist/
+				/SHARED_DIR \(invalid\): invalid default value: "SHARED_DIR" folder ".*nope" does not exist[^]*N \(invalid\): invalid default value: "N" must be positive \(got 0\)/
 			)
+
+			// @ts-expect-error without coerce, the value is a string
+			expect(() => Var.Custom({ validate: (n: number) => n })).toBeDefined()
 		} finally {
 			rmSync(root, { recursive: true, force: true })
 		}
@@ -1319,12 +1351,15 @@ describe('Environment.load', () => {
 	test('Var.Type', () => {
 		const parseCsvLine: (raw: string, name: string) => string[] = (raw) => raw.split(';')
 		const Upper = Var.Type((raw) => raw.toUpperCase())
+		const Lower = Var.Type({ validate: (value) => value.toLowerCase() })
 		const Csv = Var.Type(parseCsvLine)
 
 		class E extends Environment {
 			@Var.Bool() F = false
 			@Upper() A!: string
-			@Upper({ parseDefault: true }) B = 'b'
+			@Upper() B = 'b'
+			@Lower() G = 'G'
+			@Var.List(Lower) H = ['X', 'Y']
 			@Upper({ requiredWhen: (env: E) => env.F }) C?: string
 			@Var.List(Upper) D: string[] = []
 			@Csv() E!: string[]
@@ -1332,7 +1367,9 @@ describe('Environment.load', () => {
 		expect(E.load({ A: 'a', D: 'x,y', E: '1;2' })).toEqual({
 			F: false,
 			A: 'A',
-			B: 'B',
+			B: 'b',
+			G: 'g',
+			H: ['x', 'y'],
 			D: ['X', 'Y'],
 			E: ['1', '2'],
 		})
