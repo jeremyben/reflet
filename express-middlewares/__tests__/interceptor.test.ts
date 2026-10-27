@@ -107,25 +107,25 @@ describe("don't intercept", () => {
 	test('Error instance thrown', async () => {
 		const res = await rq.get('/')
 		expect(res.status).toBe(418)
-		expect(consoleSpy).not.toBeCalledWith('intercepted')
+		expect(consoleSpy).not.toHaveBeenCalledWith('intercepted')
 	})
 
 	test('response with status code >= 400', async () => {
 		const res = await rq.post('/')
 		expect(res.status).toBe(422)
-		expect(consoleSpy).not.toBeCalledWith('intercepted')
+		expect(consoleSpy).not.toHaveBeenCalledWith('intercepted')
 	})
 
 	test('write method', async () => {
 		const res = await rq.patch('/')
 		expect(res.text).toBe('nope!')
-		expect(consoleSpy).not.toBeCalledWith('intercepted')
+		expect(consoleSpy).not.toHaveBeenCalledWith('intercepted')
 	})
 
 	test('empty end method', async () => {
 		const res = await rq.delete('/')
 		expect(res.text).toBe('')
-		expect(consoleSpy).not.toBeCalledWith('intercepted')
+		expect(consoleSpy).not.toHaveBeenCalledWith('intercepted')
 	})
 })
 

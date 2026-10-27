@@ -59,7 +59,7 @@ describe('final handler', () => {
 		expect(res.header['x-header']).toBe('test')
 		expect(res.body).toEqual({ name: 'Error', message: 'Impossible' })
 
-		expect(consoleErrorSpy).toBeCalledWith(
+		expect(consoleErrorSpy).toHaveBeenCalledWith(
 			expect.objectContaining({
 				err: expect.objectContaining({ message: 'Impossible' }),
 				status: 400,
@@ -84,7 +84,7 @@ describe('final handler', () => {
 		expect(res.text).toContain('RouteNotFoundError: Cannot GET /bar/baz')
 		// expect(res.body).toEqual({ name: 'RouteNotFoundError', message: 'Cannot GET /bar/baz' })
 
-		expect(consoleErrorSpy).toBeCalledWith(
+		expect(consoleErrorSpy).toHaveBeenCalledWith(
 			expect.objectContaining({
 				err: expect.any(Error),
 				status: 499,
@@ -114,14 +114,17 @@ describe('default logger', () => {
 		await rq.get('/server-error?a=1')
 		await new Promise((resolve) => setImmediate(resolve))
 
-		expect(consoleErrorSpy).toBeCalledWith('GET /server-error 500', expect.objectContaining({ message: 'server' }))
+		expect(consoleErrorSpy).toHaveBeenCalledWith(
+			'GET /server-error 500',
+			expect.objectContaining({ message: 'server' })
+		)
 	})
 
 	test('does not log client errors', async () => {
 		await rq.get('/client-error')
 		await new Promise((resolve) => setImmediate(resolve))
 
-		expect(consoleErrorSpy).not.toBeCalled()
+		expect(consoleErrorSpy).not.toHaveBeenCalled()
 	})
 })
 
@@ -133,11 +136,11 @@ test('warns when exposing everything in production', () => {
 		process.env.NODE_ENV = 'production'
 		finalHandler({ json: true, expose: true })
 		finalHandler({ json: true, expose: ['message'] })
-		expect(consoleWarnSpy).toBeCalledTimes(1)
+		expect(consoleWarnSpy).toHaveBeenCalledTimes(1)
 
 		process.env.NODE_ENV = 'development'
 		finalHandler({ json: true, expose: true })
-		expect(consoleWarnSpy).toBeCalledTimes(1)
+		expect(consoleWarnSpy).toHaveBeenCalledTimes(1)
 	} finally {
 		process.env.NODE_ENV = nodeEnv
 		consoleWarnSpy.mockRestore()

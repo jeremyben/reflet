@@ -193,7 +193,7 @@ test('only one decorator', () => {
 			@Get()
 			get(@QueryBool('ok') @Query('ok') ok: boolean) {}
 		}
-	}).toThrowError()
+	}).toThrow()
 })
 
 test('every parameter decorated', () => {
@@ -203,9 +203,7 @@ test('every parameter decorated', () => {
 		get(req: express.Request, @Res res: Res) {}
 	}
 
-	expect(() => register(express(), [Foo])).toThrowError(
-		expect.objectContaining({ code: 'PARAMETER_DECORATOR_MISSING' })
-	)
+	expect(() => register(express(), [Foo])).toThrow(expect.objectContaining({ code: 'PARAMETER_DECORATOR_MISSING' }))
 })
 
 test('body property without body', async () => {

@@ -76,7 +76,7 @@ describe.skip('redlock', () => {
 		jobsC.stopAll()
 
 		expect(success).toBe(1)
-		expect(consoleWarnSpy).toBeCalledWith(expect.objectContaining({ name: 'ExecutionError' }))
+		expect(consoleWarnSpy).toHaveBeenCalledWith(expect.objectContaining({ name: 'ExecutionError' }))
 	})
 
 	test('redlock with retry', async () => {

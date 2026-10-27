@@ -39,20 +39,20 @@ describe('response properties on finish event', () => {
 	test('headersSent, finished, writableEnded, status', async () => {
 		const res = await rq.get('/')
 		expect(res.status).toBe(201)
-		expect(consoleSpy).toBeCalledWith(true, true, true, 201)
+		expect(consoleSpy).toHaveBeenCalledWith(true, true, true, 201)
 	})
 
 	test('body is not exposed', async () => {
 		const res = await rq.put('/')
 		expect(res.text).toBe('done')
-		expect(consoleSpy).toBeCalledWith(undefined)
+		expect(consoleSpy).toHaveBeenCalledWith(undefined)
 	})
 
 	test('catch errors', async () => {
 		const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementationOnce(() => {})
 		const res = await rq.post('/')
 		expect(res.status).toBe(200)
-		expect(consoleErrorSpy).toBeCalledWith('nope')
+		expect(consoleErrorSpy).toHaveBeenCalledWith('nope')
 	})
 })
 
@@ -96,32 +96,32 @@ describe('retrieve body with express methods', () => {
 	test('string body with send method', async () => {
 		const res = await rq.get('/')
 		expect(res.text).toBe('done')
-		expect(consoleSpy).toBeCalledWith('DONE')
+		expect(consoleSpy).toHaveBeenCalledWith('DONE')
 	})
 
 	test('string body with json method', async () => {
 		const res = await rq.put('/')
 		expect(res.text).toBe('"done"')
-		expect(consoleSpy).toBeCalledWith('DONE')
+		expect(consoleSpy).toHaveBeenCalledWith('DONE')
 	})
 
 	test('object body with jsonp method', async () => {
 		const res = await rq.post('/')
 		expect(res.body).toEqual({ foo: 1 })
-		expect(consoleSpy).toBeCalledWith({ foo: 1 })
+		expect(consoleSpy).toHaveBeenCalledWith({ foo: 1 })
 	})
 
 	test('html error response body', async () => {
 		const res = await rq.patch('/')
 		// status should be inferred by express default error handler
 		expect(res.status).toBe(400)
-		expect(consoleSpy).toBeCalledWith(400, expect.stringContaining('<title>Error</title>'))
+		expect(consoleSpy).toHaveBeenCalledWith(400, expect.stringContaining('<title>Error</title>'))
 	})
 
 	test('with an interceptor', async () => {
 		const res = await rq.delete('/')
 		expect(res.body).toEqual({ foo: 3 })
-		expect(consoleSpy).toBeCalledWith({ foo: 3 })
+		expect(consoleSpy).toHaveBeenCalledWith({ foo: 3 })
 	})
 })
 
@@ -164,25 +164,25 @@ describe('retrieve body with native methods', () => {
 	test('string body with end method', async () => {
 		const res = await rq.get('/')
 		expect(res.text).toBe('done')
-		expect(consoleSpy).toBeCalledWith('done')
+		expect(consoleSpy).toHaveBeenCalledWith('done')
 	})
 
 	test('string body with end method and custom encoding', async () => {
 		const res = await rq.patch('/')
 		expect(res.text).toContain('PNG')
-		expect(consoleSpy).toBeCalledWith(expect.stringContaining('PNG'))
+		expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('PNG'))
 	})
 
 	test('string body with write method', async () => {
 		const res = await rq.post('/')
 		expect(res.text).toBe('<html><body><h1>coucou</h1></body></html>')
-		expect(consoleSpy).toBeCalledWith('<html><body><h1>coucou</h1></body></html>')
+		expect(consoleSpy).toHaveBeenCalledWith('<html><body><h1>coucou</h1></body></html>')
 	})
 
 	test('binary body with write method', async () => {
 		const res = await rq.put('/')
 		expect(res.body).toBeInstanceOf(Buffer)
-		expect(consoleSpy).toBeCalledWith(Buffer.from('done', 'binary'))
+		expect(consoleSpy).toHaveBeenCalledWith(Buffer.from('done', 'binary'))
 	})
 })
 
@@ -227,28 +227,28 @@ describe('retrieve streamed body', () => {
 	test('small string stream', async () => {
 		const res = await rq.get('/')
 		expect(res.status).toBe(200)
-		expect(consoleSpy).toBeCalledWith(res.text.length)
+		expect(consoleSpy).toHaveBeenCalledWith(res.text.length)
 	})
 
 	test('small binary stream', async () => {
 		const res = await rq.patch('/')
 		expect(res.body).toBeInstanceOf(Buffer)
-		expect(consoleSpy).toBeCalledWith(expect.any(Buffer))
-		expect(consoleSpy).toBeCalledWith(res.body.length)
+		expect(consoleSpy).toHaveBeenCalledWith(expect.any(Buffer))
+		expect(consoleSpy).toHaveBeenCalledWith(res.body.length)
 	})
 
 	test('large string stream', async () => {
 		const res = await rq.put('/')
 		expect(res.text.length).toBe(4e5)
-		expect(consoleSpy).toBeCalledWith(65536)
+		expect(consoleSpy).toHaveBeenCalledWith(65536)
 	})
 
 	test('large binary stream', async () => {
 		const res = await rq.post('/')
 		expect(res.body).toBeInstanceOf(Buffer)
 		expect(res.body.length).toBe(4e5)
-		expect(consoleSpy).toBeCalledWith(expect.any(Buffer))
-		expect(consoleSpy).toBeCalledWith(65536)
+		expect(consoleSpy).toHaveBeenCalledWith(expect.any(Buffer))
+		expect(consoleSpy).toHaveBeenCalledWith(65536)
 	})
 })
 
@@ -282,19 +282,19 @@ describe('retrieve body with mixed chunk types', () => {
 	test('string then buffer', async () => {
 		const res = await rq.get('/mixed/end')
 		expect(res.text).toBe('head;tail')
-		expect(consoleSpy).toBeCalledWith('mixed', 'head;tail')
+		expect(consoleSpy).toHaveBeenCalledWith('mixed', 'head;tail')
 	})
 
 	test('string then piped stream', async () => {
 		const res = await rq.get('/mixed/stream')
 		expect(res.text).toBe('prefix;chunk1;chunk2')
-		expect(consoleSpy).toBeCalledWith('mixed', 'prefix;chunk1;chunk2')
+		expect(consoleSpy).toHaveBeenCalledWith('mixed', 'prefix;chunk1;chunk2')
 	})
 
 	test('string then uint8array', async () => {
 		const res = await rq.get('/mixed/uint8array')
 		expect(res.text).toBe('head;tail')
-		expect(consoleSpy).toBeCalledWith('mixed', 'head;tail')
+		expect(consoleSpy).toHaveBeenCalledWith('mixed', 'head;tail')
 	})
 })
 

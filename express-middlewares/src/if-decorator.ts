@@ -40,7 +40,7 @@ export function UseIf<Req extends {}>(
 		else apply(ok)
 
 		function apply(yes: boolean) {
-			if (yes) router(req, res, next)
+			if (yes) router(req as express.Request, res, next)
 			else next()
 		}
 	})

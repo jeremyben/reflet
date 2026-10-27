@@ -40,8 +40,8 @@ test('dynamic jobs can access class context and inherit class decorator behavior
 
 	jobs.stopAll()
 
-	expect(consoleSpy).toBeCalledWith('Jeremy')
-	expect(consoleSpy).toBeCalledWith('baz')
+	expect(consoleSpy).toHaveBeenCalledWith('Jeremy')
+	expect(consoleSpy).toHaveBeenCalledWith('baz')
 })
 
 test('pass current job', async () => {
@@ -68,6 +68,6 @@ test('pass current job', async () => {
 	await new Promise((r) => setTimeout(r, 50))
 	jobs.stopAll()
 
-	expect(consoleSpy).toBeCalledWith('foo')
-	expect(consoleSpy).toBeCalledWith('bar')
+	expect(consoleSpy).toHaveBeenCalledWith('foo')
+	expect(consoleSpy).toHaveBeenCalledWith('bar')
 })

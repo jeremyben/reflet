@@ -404,7 +404,7 @@ describe('rejections, thenables and arrays of handlers', () => {
 			static use() {}
 		}
 
-		expect(() => register(express(), [['/look-alike', LookAlike]])).toThrowError(
+		expect(() => register(express(), [['/look-alike', LookAlike]])).toThrow(
 			expect.objectContaining({ code: 'ROUTER_DECORATOR_MISSING' })
 		)
 	})

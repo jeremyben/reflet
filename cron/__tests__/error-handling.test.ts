@@ -23,9 +23,9 @@ test('stderr or catch', async () => {
 	await new Promise((r) => setTimeout(r, 50))
 	jobs.stopAll()
 
-	expect(consoleErrorSpy).toBeCalledWith('oopsy')
-	expect(consoleErrorSpy).not.toBeCalledWith(expect.any(TypeError))
-	expect(consoleErrorSpy).toBeCalledWith(expect.any(ReferenceError))
+	expect(consoleErrorSpy).toHaveBeenCalledWith('oopsy')
+	expect(consoleErrorSpy).not.toHaveBeenCalledWith(expect.any(TypeError))
+	expect(consoleErrorSpy).toHaveBeenCalledWith(expect.any(ReferenceError))
 })
 
 test('retry once on specific error and succeed', async () => {
@@ -56,8 +56,8 @@ test('retry once on specific error and succeed', async () => {
 	await new Promise((r) => setTimeout(r, 50))
 	jobs.stopAll()
 
-	expect(consoleErrorSpy).toBeCalledWith(expect.any(ReferenceError))
-	expect(consoleErrorSpy).not.toBeCalledWith(expect.any(TypeError))
+	expect(consoleErrorSpy).toHaveBeenCalledWith(expect.any(ReferenceError))
+	expect(consoleErrorSpy).not.toHaveBeenCalledWith(expect.any(TypeError))
 	expect(success).toBe(1)
 })
 
@@ -108,5 +108,5 @@ test('retry with delay cap and fail and catch', async () => {
 	jobs.stopAll()
 
 	expect(success).toBe(0)
-	expect(consoleErrorSpy).toBeCalledWith('oh no')
+	expect(consoleErrorSpy).toHaveBeenCalledWith('oh no')
 })

@@ -230,7 +230,7 @@ describe('application class inheritance', () => {
 			listen() {}
 		}
 
-		expect(() => new App()).toThrowError(expect.objectContaining({ code: 'EXPRESS_PROPERTY_PROTECTED' }))
+		expect(() => new App()).toThrow(expect.objectContaining({ code: 'EXPRESS_PROPERTY_PROTECTED' }))
 	})
 })
 

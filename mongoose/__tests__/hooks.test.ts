@@ -68,17 +68,17 @@ test('init, validate, save, findOne, remove', async () => {
 		await UserHookIVSFR.create({ name: ['jeremy'] as any }) // will error out
 	} catch (error) {} // tslint:disable-line: no-empty
 
-	expect(consoleSpy).toBeCalledWith('pre-init', expect.objectContaining({ name: 'jeremy' }))
-	expect(consoleSpy).toBeCalledWith('post-init', true)
-	expect(consoleSpy).toBeCalledWith('pre-validate', expect.objectContaining({ name: 'jeremy' }))
-	expect(consoleSpy).toBeCalledWith('post-validate', true)
-	expect(consoleSpy).toBeCalledWith('pre-save', expect.objectContaining({ name: 'jeremy' }))
-	expect(consoleSpy).toBeCalledWith('post-save', true)
-	expect(consoleSpy).toBeCalledWith('pre-findOne', 'Query')
-	expect(consoleSpy).toBeCalledWith('post-findOne', expect.objectContaining({ name: 'jeremy' }))
-	expect(consoleSpy).toBeCalledWith('pre-deleteOne', 'Query')
-	expect(consoleSpy).toBeCalledWith('post-deleteOne', 1)
-	expect(consoleSpy).toBeCalledWith('post-validate-error', expect.any(Error), null)
+	expect(consoleSpy).toHaveBeenCalledWith('pre-init', expect.objectContaining({ name: 'jeremy' }))
+	expect(consoleSpy).toHaveBeenCalledWith('post-init', true)
+	expect(consoleSpy).toHaveBeenCalledWith('pre-validate', expect.objectContaining({ name: 'jeremy' }))
+	expect(consoleSpy).toHaveBeenCalledWith('post-validate', true)
+	expect(consoleSpy).toHaveBeenCalledWith('pre-save', expect.objectContaining({ name: 'jeremy' }))
+	expect(consoleSpy).toHaveBeenCalledWith('post-save', true)
+	expect(consoleSpy).toHaveBeenCalledWith('pre-findOne', 'Query')
+	expect(consoleSpy).toHaveBeenCalledWith('post-findOne', expect.objectContaining({ name: 'jeremy' }))
+	expect(consoleSpy).toHaveBeenCalledWith('pre-deleteOne', 'Query')
+	expect(consoleSpy).toHaveBeenCalledWith('post-deleteOne', 1)
+	expect(consoleSpy).toHaveBeenCalledWith('post-validate-error', expect.any(Error), null)
 })
 
 test('updateOne, deleteOne', async () => {
@@ -108,10 +108,10 @@ test('updateOne, deleteOne', async () => {
 	await user.updateOne({ name: 'arthur' })
 	await UserHookUD.deleteOne({ name: 'arthur' })
 
-	expect(consoleSpy).toBeCalledWith('pre-updateOne', expect.objectContaining({ name: 'jeremy' }))
-	expect(consoleSpy).toBeCalledWith('post-updateOne', 'Query', 1)
-	expect(consoleSpy).toBeCalledWith('pre-deleteOne', 'Query')
-	expect(consoleSpy).toBeCalledWith('post-deleteOne', 1)
+	expect(consoleSpy).toHaveBeenCalledWith('pre-updateOne', expect.objectContaining({ name: 'jeremy' }))
+	expect(consoleSpy).toHaveBeenCalledWith('post-updateOne', 'Query', 1)
+	expect(consoleSpy).toHaveBeenCalledWith('pre-deleteOne', 'Query')
+	expect(consoleSpy).toHaveBeenCalledWith('post-deleteOne', 1)
 })
 
 test('insertMany, find, update, updateMany, count, deleteMany', async () => {
@@ -176,15 +176,15 @@ test('insertMany, find, update, updateMany, count, deleteMany', async () => {
 		await UserHookIFUUCD.deleteMany({ name: { $or: ['marc'] } as any }) // will error out
 	} catch (error) {} // tslint:disable-line: no-empty
 
-	expect(consoleSpy).toBeCalledWith('pre-insertMany', UserHookIFUUCD.modelName)
+	expect(consoleSpy).toHaveBeenCalledWith('pre-insertMany', UserHookIFUUCD.modelName)
 	expect(postInsertManyFirstResult).toMatchObject({ name: 'jeremy' })
-	expect(consoleSpy).toBeCalledWith('post-find', 2)
-	expect(consoleSpy).toBeCalledWith('post-update', 1)
-	expect(consoleSpy).toBeCalledWith('post-find-error', expect.any(Error), undefined)
+	expect(consoleSpy).toHaveBeenCalledWith('post-find', 2)
+	expect(consoleSpy).toHaveBeenCalledWith('post-update', 1)
+	expect(consoleSpy).toHaveBeenCalledWith('post-find-error', expect.any(Error), undefined)
 	expect(postUpdateManyResult).toMatchObject({ matchedCount: 2, modifiedCount: 2 })
-	expect(consoleSpy).toBeCalledWith('post-count', 2)
+	expect(consoleSpy).toHaveBeenCalledWith('post-count', 2)
 	expect(postDeleteManyResult).toMatchObject({ deletedCount: 2 })
-	expect(consoleSpy).toBeCalledWith('post-deleteMany-error', expect.any(Error), undefined)
+	expect(consoleSpy).toHaveBeenCalledWith('post-deleteMany-error', expect.any(Error), undefined)
 })
 
 test('aggregate', async () => {
@@ -214,7 +214,7 @@ test('aggregate', async () => {
 		await UserHookA.aggregate([{ $match: { name: { $or: ['jeremy'] } } }]) // will error out
 	} catch (error) {} // tslint:disable-line: no-empty
 
-	expect(consoleSpy).toBeCalledWith('post-aggregate-error', expect.any(Error), null)
+	expect(consoleSpy).toHaveBeenCalledWith('post-aggregate-error', expect.any(Error), null)
 })
 
 test('mixed hooks', async () => {
@@ -232,7 +232,7 @@ test('mixed hooks', async () => {
 	const findRes = await UserHookX.find({ name: 'jeremy' })
 	const aggRes = await UserHookX.aggregate([{ $match: { name: 'jeremy' } }])
 
-	expect(consoleSpy).toBeCalledWith('model')
-	expect(consoleSpy).toBeCalledWith('Query')
-	expect(consoleSpy).toBeCalledWith('Aggregate')
+	expect(consoleSpy).toHaveBeenCalledWith('model')
+	expect(consoleSpy).toHaveBeenCalledWith('Query')
+	expect(consoleSpy).toHaveBeenCalledWith('Aggregate')
 })
