@@ -164,34 +164,46 @@ function hierarchy(target: ClassType): ClassOptions[] {
 }
 
 /**
- * @internal
+ * Option of the closest class defining it, on the property first, then on the class itself.
  */
-export function extractSensitive(target: ClassType, propertyKey: string | symbol): SensitiveOptions | undefined {
-	const all = hierarchy(target)
-	for (const options of all) {
-		const sensitive = options.sensitiveKeys.get(propertyKey)
-		if (sensitive) return sensitive
-	}
-	for (const options of all) {
-		if (options.sensitive) return options.sensitive
+function closest<T>(
+	target: ClassType,
+	propertyKey: string | symbol,
+	property: (options: ClassOptions) => Map<string | symbol, T>,
+	cls: (options: ClassOptions) => T | undefined
+): T | undefined {
+	for (const options of hierarchy(target)) {
+		const value = property(options).get(propertyKey) ?? cls(options)
+		if (value !== undefined) return value
 	}
 	return undefined
 }
 
 /**
- * Secret directories of a property, then of the closest class defining them.
+ * @internal
+ */
+export function extractSensitive(target: ClassType, propertyKey: string | symbol): SensitiveOptions | undefined {
+	return closest(
+		target,
+		propertyKey,
+		(o) => o.sensitiveKeys,
+		(o) => o.sensitive
+	)
+}
+
+/**
+ * Secret directories of the closest class defining them, on the property first, then on the class itself.
  * @internal
  */
 export function extractSecretsDirs(target: ClassType, propertyKey: string | symbol): readonly string[] {
-	const all = hierarchy(target)
-	for (const options of all) {
-		const dirs = options.secretsKeys.get(propertyKey)
-		if (dirs) return dirs
-	}
-	for (const options of all) {
-		if (options.secrets) return options.secrets
-	}
-	return []
+	return (
+		closest(
+			target,
+			propertyKey,
+			(o) => o.secretsKeys,
+			(o) => o.secrets
+		) ?? []
+	)
 }
 
 /**

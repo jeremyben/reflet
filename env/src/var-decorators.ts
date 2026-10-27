@@ -137,12 +137,18 @@ export namespace Var {
 	export const Host = factory('host', host)
 
 	/** A JSON-encoded value, untyped unless a type parameter is given. @public */
-	export function Json<T = any, C = any>(options: SpecOptions<T> & ConditionalOptions<C>): Decorator<T | undefined, C>
-	export function Json<T = any>(options?: SpecOptions<T>): Decorator<T>
+	export function Json<T = any, C = any>(options: JsonOptions<T> & ConditionalOptions<C>): Decorator<T | undefined, C>
+	export function Json<T = any>(options?: JsonOptions<T>): Decorator<T>
 	export function Json(options?: AnyOptions): Decorator<any> {
 		return register('json', json, options)
 	}
 	Json.parse = parsable(json)
+
+	/**
+	 * Options of a JSON variable, whose values can't be compared to choices.
+	 * @public
+	 */
+	export type JsonOptions<T> = Omit<SpecOptions<T>, 'choices'>
 
 	/**
 	 * Bytes of a string, as a `Buffer`, e.g. a cryptographic key or secret.
@@ -318,6 +324,7 @@ export namespace Var {
 	export function List(item: Parsable<any> = Str, options: ListOptions<any> & AnyOptions = {}): Decorator<any> {
 		// Items of other parsable objects are only coerced by their parser.
 		const itemSteps = STEPS.get(item.parse) || { coerce: item.parse, validate: (value) => value }
+		if (options.separator === '') throw new Error('@Var.List separator cannot be empty.')
 		return register('list', list(itemSteps, options.separator ?? ','), options)
 	}
 

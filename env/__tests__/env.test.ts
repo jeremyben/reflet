@@ -315,11 +315,14 @@ describe('Environment.load', () => {
 			E.load({ A: 'a' })
 			fail('should throw')
 		} catch (err: any) {
-			expect(err.errors.map((e: any) => e.message)).toEqual([
-				'nope (got "a")',
-				'requiredWhen predicate failed: 42',
-			])
+			// A failing predicate is likely caused by another invalid variable, already reported.
+			expect(err.errors.map((e: any) => e.message)).toEqual(['nope (got "a")'])
 		}
+
+		class P extends E {
+			@Var.Str() A = 'a'
+		}
+		expect(() => P.load({})).toThrow('requiredWhen predicate failed: 42')
 	})
 
 	test('name option', () => {
@@ -944,6 +947,23 @@ describe('Environment.load', () => {
 			class TestEnv extends Parent {}
 			expect(() => TestEnv.load({})).toThrow(/DB_PASSWORD \(missing\)/)
 
+			// The closest class wins, over property directories of a parent.
+			class PropertyParent extends Environment {
+				@Secrets(credentials) @Var.Str() DB_PASSWORD!: string
+			}
+			@Secrets([])
+			class PropertyTestEnv extends PropertyParent {}
+			expect(PropertyParent.load({}).DB_PASSWORD).toBe('s3cr3t')
+			expect(() => PropertyTestEnv.load({})).toThrow(/DB_PASSWORD \(missing\)/)
+
+			@Sensitive()
+			class Masked extends PropertyParent {}
+			class Revealed extends Masked {
+				@Sensitive({ reveal: 2 }) @Var.Str() DB_PASSWORD!: string
+			}
+			expect(inspect(Masked.load({ DB_PASSWORD: 'abcdefgh' }))).toBe("Masked { DB_PASSWORD: '***' }")
+			expect(inspect(Revealed.load({ DB_PASSWORD: 'abcdefgh' }))).toBe("Revealed { DB_PASSWORD: '***gh' }")
+
 			expect(() => {
 				@Secrets('/a')
 				@Secrets('/b')
@@ -1377,12 +1397,12 @@ describe('Environment.load', () => {
 				return []
 			}
 			expect(errors({ CERT: 'temp', SHARED_DIR: 'cert.pem', CWD: '~/data' })).toEqual([
-				`"SHARED_DIR" must be a directory (${join(root, 'cert.pem')}) (got "cert.pem")`,
-				`"CERT" must be a file (${join(root, 'temp')}) (got "temp")`,
+				`"SHARED_DIR" must be a directory (relative to ${root}) (got "cert.pem")`,
+				`"CERT" must be a file (relative to ${root}) (got "temp")`,
 				'"CWD" must be an absolute or relative path, without ~ (got "~/data")',
 			])
 			expect(errors({ CERT: 'nope' })).toEqual([
-				`"CERT" must be an existing file (${join(root, 'nope')}) (got "nope")`,
+				`"CERT" must be an existing file (relative to ${root}) (got "nope")`,
 			])
 
 			// Defaults are validated as well.
@@ -1390,7 +1410,7 @@ describe('Environment.load', () => {
 				@Var.Dir({ base: root }) DIR = 'nope'
 			}
 			expect(() => Missing.load({})).toThrow(
-				`invalid default value: "DIR" must be an existing directory (${join(root, 'nope')}) (got "nope")`
+				`invalid default value: "DIR" must be an existing directory (relative to ${root}) (got "nope")`
 			)
 
 			// Mocked, since root bypasses permissions.
@@ -1398,16 +1418,77 @@ describe('Environment.load', () => {
 				throw new Error('EACCES')
 			})
 			expect(errors({ CERT: 'cert.pem' })).toEqual([
-				`invalid default value: "SHARED_DIR" must be a writable directory (${join(root, 'temp')}) (got "temp")`,
-				`"CERT" must be a readable file (${join(root, 'cert.pem')}) (got "cert.pem")`,
+				`invalid default value: "SHARED_DIR" must be a writable directory (relative to ${root}) (got "temp")`,
+				`"CERT" must be a readable file (relative to ${root}) (got "cert.pem")`,
 			])
 			denied.mockRestore()
 
 			expect(Var.Dir.parse(root, 'D')).toBe(root)
-			expect(() => Var.File.parse(root, 'F')).toThrow(`"F" must be a file (${root})`)
+			expect(() => Var.File.parse(root, 'F')).toThrow('"F" must be a file')
+
+			// The path holds the value, so it is left out of messages of sensitive variables.
+			class S extends Environment {
+				@Sensitive() @Var.File() TOKEN!: string
+			}
+			expect(() => S.load({ TOKEN: 'super-secret-token' })).toThrow(
+				/^Invalid environment variables:\n - TOKEN \(invalid\): "TOKEN" must be an existing file \(relative to the current directory\)$/
+			)
+
+			// Other errors than missing files.
+			const statDenied = jest.spyOn(fs, 'statSync').mockImplementation(() => {
+				throw Object.assign(new Error('EACCES'), { code: 'EACCES' })
+			})
+			expect(() => Var.Dir.parse(root, 'D')).toThrow('"D" cannot be accessed (EACCES)')
+			statDenied.mockRestore()
 		} finally {
 			rmSync(root, { recursive: true, force: true })
 		}
+	})
+
+	test('review fixes', () => {
+		// Bytes out of the shared pool of small buffers.
+		class B extends Environment {
+			@Var.Bytes() K!: Buffer
+			@Var.Bytes({ encoding: 'base64url' }) U?: Buffer = Buffer.alloc(0)
+		}
+		const { K } = B.load({ K: 'abcd' })
+		expect(K.toString()).toBe('abcd')
+		expect(K.buffer.byteLength).toBe(4)
+		// Strict base64url, padding allowed.
+		expect(() => B.load({ K: 'k', U: 'A' })).toThrow('"U" must be valid base64url')
+		expect(() => B.load({ K: 'k', U: 'AAAAA' })).toThrow('"U" must be valid base64url')
+		expect(B.load({ K: 'k', U: 'AAE=' }).U).toEqual(Buffer.from([0, 1]))
+		expect(B.load({ K: 'k', U: 'AAE' }).U).toEqual(Buffer.from([0, 1]))
+
+		// List defaults of JSON items are copied before freezing.
+		const item = { a: 1 }
+		class L extends Environment {
+			@Var.List(Var.Json) ITEMS: unknown[] = [item]
+			@Var.List(Var.Port) PORTS!: number[]
+			@Var.List(Var.Port, { allowEmpty: true }) EMPTY?: number[]
+		}
+		const env = L.load({ PORTS: '80', EMPTY: ',' })
+		expect(env.ITEMS).toEqual([{ a: 1 }])
+		expect(Object.isFrozen(env.ITEMS[0])).toBe(true)
+		expect(Object.isFrozen(item)).toBe(false)
+		expect(env.EMPTY).toEqual([])
+		// A list of separators only is missing.
+		expect(() => L.load({ PORTS: ' , ,' })).toThrow(/PORTS \(missing\)/)
+		expect(() => Var.List(Var.Str, { separator: '' })).toThrow('@Var.List separator cannot be empty.')
+
+		// Json values can't be compared to choices.
+		// @ts-expect-error no choices
+		expect(() => Var.Json({ choices: [{ a: 1 }] })).toBeDefined()
+
+		// An unset optional sensitive variable does not look set.
+		class O extends Environment {
+			// Defined as undefined, as with `useDefineForClassFields`.
+			@Sensitive() @Var.Str({ requiredWhen: () => false }) TOKEN?: string = undefined
+			@Sensitive() @Var.Str() SET = 'secret'
+		}
+		const optional = O.load({})
+		expect(optional.toJSON()).toEqual({ TOKEN: undefined, SET: '***' })
+		expect(inspect(optional)).toBe("O { TOKEN: undefined, SET: '***' }")
 	})
 
 	test('Var.Type', () => {
@@ -1522,46 +1603,46 @@ describe('Default', () => {
 		@Var.Str() KEY = Default.byNodeEnv({ production: undefined, default: 'fake' })
 	}
 
-	test('picks defaults by NODE_ENV, read when loaded', () => {
-		process.env.NODE_ENV = 'development'
-		expect({ ...E.load({}) }).toEqual({
+	test('picks defaults by NODE_ENV of the source being loaded', () => {
+		expect({ ...E.load({ NODE_ENV: 'development' }) }).toEqual({
 			APP_ORIGIN: 'http://localhost:4000',
 			TLS: false,
 			LOG: 'pretty',
 			KEY: 'fake',
 		})
 
-		process.env.NODE_ENV = 'production'
-		expect({ ...E.load({ APP_ORIGIN: 'https://example.com', KEY: 'k' }) }).toEqual({
+		const production = { NODE_ENV: 'production' }
+		expect({ ...E.load({ ...production, APP_ORIGIN: 'https://example.com', KEY: 'k' }) }).toEqual({
 			APP_ORIGIN: 'https://example.com',
 			TLS: true,
 			LOG: 'json',
 			KEY: 'k',
 		})
 		// A production value, even undefined, takes precedence over `default`.
-		expect(() => E.load({})).toThrow(/APP_ORIGIN \(missing\)[^]*KEY \(missing\)/)
+		expect(() => E.load(production)).toThrow(/APP_ORIGIN \(missing\)[^]*KEY \(missing\)/)
 
 		// Unknown or unset NODE_ENV: `default`, or required.
-		for (const value of ['staging', 'toString', undefined]) {
-			if (value === undefined) delete process.env.NODE_ENV
-			else process.env.NODE_ENV = value
-			expect(() => E.load({})).toThrow(/APP_ORIGIN \(missing\)/)
-			expect(E.load({ APP_ORIGIN: 'https://example.com' })).toMatchObject({
-				TLS: false,
-				KEY: 'fake',
-			})
+		for (const source of [{ NODE_ENV: 'staging' }, { NODE_ENV: 'toString' }, {}]) {
+			expect(() => E.load(source)).toThrow(/APP_ORIGIN \(missing\)/)
+			expect(E.load({ ...source, APP_ORIGIN: 'https://example.com' })).toMatchObject({ TLS: false, KEY: 'fake' })
 		}
+
+		// `process.env` by default, and outside of `load`.
+		process.env.NODE_ENV = 'production'
+		expect(Default.byNodeEnv({ production: 1, default: 2 })).toBe(1)
+		expect(() => E.load()).toThrow(/APP_ORIGIN \(missing\)/)
 	})
 
-	test('picks defaults by another environment name', () => {
-		const byAppEnv = Default.by<'local' | 'staging' | 'production'>('staging')
+	test('picks defaults by another variable', () => {
+		const byAppEnv = Default.by<'local' | 'staging' | 'production'>('APP_ENV')
 		class A extends Environment {
 			@Var.Host() MAIL_DOMAIN = byAppEnv({ production: 'example.com', default: 'staging.example.com' })
 			@Var.Str() TOKEN = byAppEnv({ local: 'fake' })
 		}
-		expect(() => A.load({})).toThrow(/TOKEN \(missing\)/)
-		expect(A.load({ TOKEN: 't' }).MAIL_DOMAIN).toBe('staging.example.com')
-		expect(Default.by(undefined)({ production: 1, default: 2 })).toBe(2)
+		expect(() => A.load({ APP_ENV: 'staging' })).toThrow(/TOKEN \(missing\)/)
+		expect(A.load({ APP_ENV: 'staging', TOKEN: 't' }).MAIL_DOMAIN).toBe('staging.example.com')
+		expect(A.load({ APP_ENV: 'local' })).toMatchObject({ MAIL_DOMAIN: 'staging.example.com', TOKEN: 'fake' })
+		expect(A.load({ APP_ENV: 'production', TOKEN: 't' }).MAIL_DOMAIN).toBe('example.com')
 	})
 
 	test('types', () => {

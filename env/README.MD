@@ -152,7 +152,7 @@ const env = new Env() // ❌ Type error: use Env.load()
 | `@Var.Bytes(options?)` | `Buffer` | Bytes of the value, in `utf8`, `hex`, `base64` or `base64url` encoding. |
 | `@Var.File(options?)` | `string` | Path of an existing file, resolved to an absolute path. |
 | `@Var.Dir(options?)` | `string` | Path of an existing directory, resolved to an absolute path. |
-| `@Var.List(item?, options?)` | `T[]` | Values separated by commas (or another `separator`), each parsed by the `item` type (strings by default). |
+| `@Var.List(item?, options?)` | `T[]` | Values separated by commas (or another `separator`), each parsed by the `item` type (strings by default). Separators only are a missing value. |
 
 Surrounding whitespace is trimmed for all types except `Str` and `Custom`.
 
@@ -263,6 +263,8 @@ class Env extends Environment {
 
 * Relative paths are resolved from `base`, the current directory by default, which depends on where the app is started. Absolute paths are kept as is.
 * `~` is not expanded, unlike in shells.
+* Directories must be searchable as well, to be readable or writable.
+* Error messages leave the path out, since it holds the value, which could be [sensitive](#sensitive).
 * Defaults are checked as well, when the environment is loaded only: later permission changes are not detected, and the root user bypasses permissions.
 
 ### Custom parser
@@ -342,7 +344,7 @@ class Env extends Environment {
 
 ### Environment-specific defaults
 
-> 🔦 `Default.byNodeEnv(values)`, `Default.by(name)`
+> 🔦 `Default.byNodeEnv(values)`, `Default.by(variable)`
 
 `Default` computes a default by environment, in the initializer. An `undefined` value is not a default, so the variable is **required** in this environment:
 
@@ -364,12 +366,12 @@ class Env extends Environment {
 
 * `Default.byNodeEnv` picks the value of the current `NODE_ENV`, or else `default`. A value given for an environment takes precedence over `default`, even `undefined`.
 * Environment names (`development`, `production` and `test`) are checked by types, as well as the value types.
-* `NODE_ENV` is read when the environment is loaded, and defaults picked are validated as usual.
+* `NODE_ENV` is read from the source being loaded, `process.env` by default, and defaults picked are validated as usual.
 
-Deployment stages (e.g. staging) are better in another variable than `NODE_ENV`, which is expected to be `production` by libraries wherever traffic is served. `Default.by` creates a picker by another name, listed by the type parameter (or by other `NODE_ENV` values):
+Deployment stages (e.g. staging) are better in another variable than `NODE_ENV`, which is expected to be `production` by libraries wherever traffic is served. `Default.by` creates a picker by another variable, whose values are listed by the type parameter (it also allows other `NODE_ENV` values):
 
 ```ts
-const byAppEnv = Default.by<'local' | 'staging' | 'production'>(process.env.APP_ENV)
+const byAppEnv = Default.by<'local' | 'staging' | 'production'>('APP_ENV')
 
 class Env extends Environment {
   @Var.Host()
@@ -616,8 +618,9 @@ class Env extends Environment {
 * Subclasses inherit the directories, unless they define their own, e.g. none in tests with `@Secrets([])`.
 * With [several names](#name), each one is looked up as a file name, e.g. `name: ['DB_PASSWORD', 'db-password']`.
 * A single trailing newline is removed from file contents (e.g. written by `echo`), which are then parsed as usual.
-* Empty files are skipped for the next directory or name, and an unreadable file is reported in the [`EnvValidationError`](#errors).
-* Values read from files are never included in error messages. Mark them as [`@Sensitive`](#sensitive) to mask them in logs as well.
+* Empty files are skipped for the next directory or name (unless [`allowEmpty`](#empty-values)), and an unreadable file is reported in the [`EnvValidationError`](#errors).
+* Values read from files are left out of error messages (unless [revealed](#sensitive)). Mark them as [`@Sensitive`](#sensitive) to mask them in logs as well.
+* The closest class defining directories wins, on the property first, then on the class itself: `@Secrets([])` on a subclass overrides the directories of its parents.
 
 ## Derived values
 

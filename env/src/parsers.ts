@@ -1,6 +1,6 @@
 import { accessSync, constants, statSync } from 'fs'
 import { isIP, isIPv6 } from 'net'
-import { resolve } from 'path'
+import { isAbsolute, resolve } from 'path'
 import type { Parser, Validator } from './interfaces'
 
 /**
@@ -128,7 +128,14 @@ export const json: Steps<unknown> = {
 			throw new Error(`"${name}" must be valid JSON`)
 		}
 	},
-	validate: (value) => value,
+	// A copy, so a frozen default is not the caller's object.
+	validate: (value, name) => {
+		try {
+			return JSON.parse(JSON.stringify(value))
+		} catch (err: any) {
+			throw new Error(`"${name}" must be serializable to JSON (${err && err.message})`)
+		}
+	},
 }
 
 /**
@@ -137,7 +144,7 @@ export const json: Steps<unknown> = {
 const BYTES_ENCODINGS: Record<string, RegExp> = {
 	hex: /^(?:[0-9a-fA-F]{2})*$/,
 	base64: /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/,
-	base64url: /^[A-Za-z0-9_-]*$/,
+	base64url: /^(?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-]{2}(?:==)?|[A-Za-z0-9_-]{3}=?)?$/,
 }
 
 export function bytes(options: {
@@ -152,7 +159,12 @@ export function bytes(options: {
 			const value = raw.trim()
 			const pattern = BYTES_ENCODINGS[encoding]
 			if (pattern && !pattern.test(value)) throw new Error(`"${name}" must be valid ${encoding}`)
-			return Buffer.from(value, encoding)
+			// Out of the pool of small buffers, whose memory is shared with unrelated buffers.
+			const decoded = Buffer.from(value, encoding)
+			const bytes = Buffer.allocUnsafeSlow(decoded.byteLength)
+			decoded.copy(bytes)
+			decoded.fill(0)
+			return bytes
 		},
 		validate: (value, name) => {
 			if (!Buffer.isBuffer(value)) throw new Error(`"${name}" must be a Buffer`)
@@ -186,21 +198,28 @@ export function path(
 			if (value.startsWith('~')) throw new Error(`"${name}" must be an absolute or relative path, without ~`)
 
 			// Relative to the base (the current directory by default), absolute paths are kept as is.
+			// The path is left out of messages, since it holds the value, which could be sensitive.
 			const absolute = resolve(base ?? process.cwd(), value)
+			const from = isAbsolute(value) ? '' : ` (relative to ${base ?? 'the current directory'})`
 			let stats
 			try {
 				stats = statSync(absolute)
-			} catch {
-				throw new Error(`"${name}" must be an existing ${kind} (${absolute})`)
+			} catch (error: any) {
+				if (error && (error.code === 'ENOENT' || error.code === 'ENOTDIR')) {
+					throw new Error(`"${name}" must be an existing ${kind}${from}`)
+				}
+				throw new Error(`"${name}" cannot be accessed${from}${error && error.code ? ` (${error.code})` : ''}`)
 			}
 			if (kind === 'file' ? !stats.isFile() : !stats.isDirectory()) {
-				throw new Error(`"${name}" must be a ${kind} (${absolute})`)
+				throw new Error(`"${name}" must be a ${kind}${from}`)
 			}
 			if (access) {
+				// A directory must be searchable as well, to read or create its files.
+				const search = kind === 'directory' ? constants.X_OK : 0
 				try {
-					accessSync(absolute, (readable ? constants.R_OK : 0) | (writable ? constants.W_OK : 0))
+					accessSync(absolute, (readable ? constants.R_OK : 0) | (writable ? constants.W_OK : 0) | search)
 				} catch {
-					throw new Error(`"${name}" must be a ${access} ${kind} (${absolute})`)
+					throw new Error(`"${name}" must be a ${access} ${kind}${from}`)
 				}
 			}
 			return absolute

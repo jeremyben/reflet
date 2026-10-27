@@ -4,6 +4,7 @@ import { inspect, InspectOptions } from 'util'
 import { extractModifiedKeys, extractSecretsDirs, extractSensitive, extractUnsetSensitive } from './env-decorators'
 import type { SensitiveOptions } from './env-decorators'
 import { extractSpecs } from './var-decorators'
+import { initializing } from './default'
 import type { ClassType, EnvErrorEntry, EnvSource, Spec } from './interfaces'
 
 /**
@@ -44,7 +45,7 @@ export class EnvValidationError extends Error {
  * @internal
  */
 export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env): T {
-	const instance: any = new target()
+	const instance: any = initializing(source, () => new target())
 	const specs = extractSpecs(target)
 	const errors: EnvErrorEntry[] = []
 
@@ -125,6 +126,8 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 				try {
 					if (spec.requiredWhen && !spec.requiredWhen(instance)) return
 				} catch (err) {
+					// Likely caused by another invalid variable, already reported.
+					if (errors.length) return
 					return fail('invalid', `requiredWhen predicate failed: ${errorMessage(err)}`)
 				}
 				const looked = [
@@ -136,8 +139,7 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 
 			try {
 				// Defaults are already typed: validated, not coerced.
-				// JSON defaults are copied (as validated lists), so the frozen value is not the caller's object.
-				if (spec.type === 'json') value = JSON.parse(JSON.stringify(value))
+				// JSON and list defaults are copied by validation, so the frozen value is not the caller's object.
 				value = spec.validate(value, name)
 			} catch (err) {
 				return fail('invalid', `invalid default value: ${errorMessage(err)}${got(value)}`)
@@ -188,8 +190,11 @@ const FROZEN_TYPES = ['json', 'list']
  * Whitespace-only values are missing as well, for types that trim them.
  */
 function isMissing(spec: Spec<any>, raw: string | undefined): raw is undefined {
-	if (spec.allowEmpty) return raw === undefined
-	return raw === undefined || (UNTRIMMED_TYPES.includes(spec.type) ? raw === '' : raw.trim() === '')
+	if (raw === undefined) return true
+	if (spec.allowEmpty) return false
+	// A list of separators only has no items.
+	if (spec.type === 'list') return raw.split(spec.separator ?? ',').every((item) => item.trim() === '')
+	return UNTRIMMED_TYPES.includes(spec.type) ? raw === '' : raw.trim() === ''
 }
 
 /**
@@ -235,7 +240,9 @@ function masked(env: object): Record<string, unknown> {
 /**
  * Masks a sensitive value, with its last characters revealed if long enough (strings and bytes only).
  */
-function mask(value: unknown, reveal?: number): string {
+function mask(value: unknown, reveal?: number): unknown {
+	// An unset optional variable is not masked, so it does not look set.
+	if (value == null) return value
 	const shown = typeof value === 'string' ? value : Buffer.isBuffer(value) ? value.toString('hex') : undefined
 	if (!reveal || shown === undefined || shown.length < reveal * 4) return '***'
 	return `***${shown.slice(-reveal)}`

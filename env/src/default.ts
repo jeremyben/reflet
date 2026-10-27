@@ -1,3 +1,5 @@
+import type { EnvSource } from './interfaces'
+
 /**
  * Default values computed in property initializers, depending on the environment.
  *
@@ -10,7 +12,7 @@ export namespace Default {
 	 * Picks a default value by `NODE_ENV`: the value of the current `NODE_ENV`, or else `default`.
 	 * An `undefined` value (or none at all) is not a default: the variable is required in this environment.
 	 *
-	 * `NODE_ENV` is read when the environment is loaded.
+	 * `NODE_ENV` is read from the source being loaded (`process.env` by default, or outside of `load`).
 	 *
 	 * @example
 	 * ```ts
@@ -26,17 +28,19 @@ export namespace Default {
 	 * @public
 	 */
 	export function byNodeEnv<T>(values: PickValues<'development' | 'production' | 'test', T>): T {
-		return pick(process.env.NODE_ENV, values)
+		return pick(read('NODE_ENV'), values)
 	}
 
 	/**
-	 * Creates a picker of default values by another environment name than `NODE_ENV`, e.g. `APP_ENV`,
+	 * Creates a picker of default values by another variable than `NODE_ENV`, e.g. `APP_ENV`,
 	 * or by other `NODE_ENV` values than `development`, `production` and `test`.
 	 * The type parameter lists the environment names, so they are checked.
 	 *
+	 * The variable is read from the source being loaded (`process.env` by default, or outside of `load`).
+	 *
 	 * @example
 	 * ```ts
-	 * const byAppEnv = Default.by<'local' | 'staging' | 'production'>(process.env.APP_ENV)
+	 * const byAppEnv = Default.by<'local' | 'staging' | 'production'>('APP_ENV')
 	 *
 	 * class Env extends Environment {
 	 *   ＠Var.Host()
@@ -46,8 +50,8 @@ export namespace Default {
 	 * ---
 	 * @public
 	 */
-	export function by<K extends string = string>(name: string | undefined): Picker<K> {
-		return (values) => pick(name, values)
+	export function by<K extends string = string>(variable: string): Picker<K> {
+		return (values) => pick(read(variable), values)
 	}
 
 	/**
@@ -65,4 +69,26 @@ export namespace Default {
 
 function pick(name: string | undefined, values: Record<string, any>) {
 	return name !== undefined && Object.prototype.hasOwnProperty.call(values, name) ? values[name] : values.default
+}
+
+/** Source being loaded, while property initializers run. */
+let loading: EnvSource | undefined
+
+/**
+ * Runs the property initializers of an environment, with defaults picked from the source being loaded.
+ * @internal
+ */
+export function initializing<T>(source: EnvSource, construct: () => T): T {
+	const previous = loading
+	loading = source
+	try {
+		return construct()
+	} finally {
+		loading = previous
+	}
+}
+
+function read(variable: string): string | undefined {
+	const source = loading ?? process.env
+	return Object.prototype.hasOwnProperty.call(source, variable) ? source[variable] : undefined
 }

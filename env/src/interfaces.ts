@@ -83,4 +83,6 @@ export interface Spec<T> extends SpecOptions<T>, Partial<ConditionalOptions<any>
 	validate: Validator<T>
 	type: string
 	allowEmpty?: boolean
+	/** Separator of list items. */
+	separator?: string
 }
