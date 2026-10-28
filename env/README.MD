@@ -145,7 +145,7 @@ const env = new Env() // ❌ Type error: use Env.load()
 | `@Var.Num()` | `number` | Decimal numbers, e.g. `42`, `-1.5`, `.5`, `1e3`. Hexadecimal, `Infinity`, overflowing values (`1e400`) and the like are rejected. |
 | `@Var.Bool()` | `boolean` | `true`, `false`, `1`, `0`, `yes`, `no`, `on`, `off` (case insensitive). |
 | `@Var.Port()` | `number` | Integers from `1` to `65535`. |
-| `@Var.Url()` | `string` | Absolute URLs with a `scheme://`, e.g. `https://example.com`, `postgres://user@db:5432/app`.<br>`localhost:3000` is rejected. |
+| `@Var.Url(options?)` | `string` | Absolute URLs with a `scheme://`, e.g. `https://example.com`, `postgres://user@db:5432/app`.<br>`localhost:3000` is rejected. Restricted to some protocols with `protocols`, e.g. `['https']` or `['mongodb', 'mongodb+srv']`. |
 | `@Var.Email()` | `string` | Email addresses. |
 | `@Var.Host()` | `string` | Hostnames (underscores allowed, e.g. container names), IPv4, and IPv6 addresses (bracketed or not). |
 | `@Var.Json<T>()` | `T` | Valid JSON. |

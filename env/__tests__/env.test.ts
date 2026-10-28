@@ -1491,6 +1491,31 @@ describe('Environment.load', () => {
 		expect(inspect(optional)).toBe("O { TOKEN: undefined, SET: '***' }")
 	})
 
+	test('Var.Url protocols', () => {
+		class E extends Environment {
+			@Var.Url({ protocols: ['mongodb', 'mongodb+srv'] }) MONGO_URL!: string
+			@Var.Url({ protocols: ['HTTPS:'] }) API = 'https://example.com'
+		}
+		expect(E.load({ MONGO_URL: 'mongodb+srv://user:pass@cluster/app' }).MONGO_URL).toBe(
+			'mongodb+srv://user:pass@cluster/app'
+		)
+		// Credentials of sensitive URLs are left out of messages.
+		@Sensitive()
+		class S extends E {}
+		expect(() => S.load({ MONGO_URL: 'redis://user:pass@cache' })).toThrow(
+			/^Invalid environment variables:\n - MONGO_URL \(invalid\): "MONGO_URL" must be a URL with protocol mongodb or mongodb\+srv$/
+		)
+		expect(() => E.load({ MONGO_URL: 'mongodb://db', API: 'http://example.com' })).toThrow(
+			'"API" must be a URL with protocol https (got "http://example.com")'
+		)
+
+		class D extends Environment {
+			@Var.Url({ protocols: ['https'] }) API = 'http://example.com'
+		}
+		expect(() => D.load({})).toThrow('invalid default value: "API" must be a URL with protocol https')
+		expect(Var.Url.parse(' ftp://x ', 'U')).toBe('ftp://x')
+	})
+
 	test('Var.Type', () => {
 		const parseCsvLine: (raw: string, name: string) => string[] = (raw) => raw.split(';')
 		const Upper = Var.Type((raw) => raw.toUpperCase())

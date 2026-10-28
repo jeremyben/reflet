@@ -1,4 +1,4 @@
-import { bool, bytes, email, host, json, list, num, parser, path, port, refine, str, url } from './parsers'
+import { bool, bytes, email, host, json, list, num, parser, path, port, refine, str, url, urlWith } from './parsers'
 import type { Steps } from './parsers'
 import type { ClassType, ConditionalOptions, Parser, Spec, SpecOptions, Validator } from './interfaces'
 
@@ -127,8 +127,31 @@ export namespace Var {
 	}
 	Port.parse = parsable(port)
 
-	/** An absolute URL with a scheme (e.g. `https://`). @public */
-	export const Url = factory('url', url)
+	/**
+	 * An absolute URL with a scheme (e.g. `https://`), restricted to some protocols with `protocols`.
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Var.Url({ protocols: ['mongodb', 'mongodb+srv'] }) MONGO_URL!: string
+	 * ```
+	 * ---
+	 * @public
+	 */
+	export function Url<C = any>(options: UrlOptions & ConditionalOptions<C>): Decorator<string | undefined, C>
+	export function Url(options?: UrlOptions): Decorator<string>
+	export function Url(options: UrlOptions & AnyOptions = {}): Decorator<any> {
+		return register('url', urlWith(options.protocols), options)
+	}
+	Url.parse = parsable(url)
+
+	/**
+	 * Options of a URL variable.
+	 * @public
+	 */
+	export interface UrlOptions extends SpecOptions<string> {
+		/** Allowed protocols, without `:`, e.g. `['https']` or `['postgres', 'postgresql']`. */
+		protocols?: readonly string[]
+	}
 
 	/** An email address. @public */
 	export const Email = factory('email', email)

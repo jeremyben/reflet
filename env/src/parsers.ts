@@ -91,6 +91,21 @@ export const url: Steps<string> = {
 	},
 }
 
+/**
+ * URL with one of the given protocols, e.g. `https` or `postgres`.
+ */
+export function urlWith(protocols: readonly string[] | undefined): Steps<string> {
+	if (!protocols) return url
+	const allowed = protocols.map((protocol) => protocol.replace(/:$/, '').toLowerCase())
+	return refine(url, (value, name) => {
+		// The value is left out of the message, since a URL may hold credentials.
+		const protocol = new URL(value).protocol.slice(0, -1)
+		if (!allowed.includes(protocol))
+			throw new Error(`"${name}" must be a URL with protocol ${allowed.join(' or ')}`)
+		return value
+	})
+}
+
 // Underscores are not valid in public DNS names, but are common in container service names.
 const LABEL = '[a-zA-Z0-9_](?:[a-zA-Z0-9_-]{0,61}[a-zA-Z0-9_])?'
 const HOSTNAME_RE = new RegExp(`^${LABEL}(?:\\.${LABEL})*\\.?$`)
