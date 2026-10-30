@@ -433,3 +433,28 @@ test('array of global error handlers with duplicates survives multiple register 
 	expect((await rq.get('/dup-bar')).text).toBe('bar')
 	expect(app._router.stack.slice(-3).map((layer: any) => layer.name)).toEqual(['logErr', 'errorHandler', 'logErr'])
 })
+
+test('middlewares with a handle property are still wrapped', async () => {
+	const mware = Object.assign(
+		(async () => {
+			throw Error('handle property')
+		}) as express.RequestHandler,
+		{ handle() {} }
+	)
+
+	@Router('/handle-property')
+	class HandleProperty {
+		@Use(mware)
+		@Get()
+		get(req: express.Request, res: express.Response) {
+			res.send('ok')
+		}
+	}
+
+	const app = register(express(), [HandleProperty])
+	app.use(errorHandler)
+
+	const res = await supertest(app).get('/handle-property')
+	expect(res.status).toBe(500)
+	expect(res.text).toBe('handle property')
+})

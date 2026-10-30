@@ -1,4 +1,5 @@
 import * as express from 'express'
+import { isExpressApp, isExpressRouter } from './type-guards'
 
 const ORIGINAL = Symbol('original')
 
@@ -18,7 +19,7 @@ export function wrapAsync<T extends express.RequestHandler | express.ErrorReques
 
 	// Express applications and routers are left as is,
 	// as they must be recognized by `app.use` (e.g. to mount sub-applications).
-	if (typeof handler !== 'function' || isWrapped(handler) || typeof (handler as any).handle === 'function') {
+	if (typeof handler !== 'function' || isWrapped(handler) || isExpressApp(handler) || isExpressRouter(handler)) {
 		return handler
 	}
 
