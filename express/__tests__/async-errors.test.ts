@@ -371,3 +371,33 @@ describe('rejections, thenables and arrays of handlers', () => {
 		expect(executed).toBe(false)
 	})
 })
+
+describe('handlers passed to @Catch keep their arity', () => {
+	@Router('/arity')
+	class Arity {
+		@Get()
+		get(req: express.Request, res: express.Response) {
+			throw Error('arity')
+		}
+	}
+
+	@Catch(function notFound(req: express.Request, res: express.Response, next: express.NextFunction) {
+		res.status(404).send('custom not found')
+	} as any)
+	@Catch(errorHandler)
+	class App extends Application {}
+
+	const rq = supertest(new App().register([Arity]))
+
+	test('request handler is called for unmatched routes', async () => {
+		const res = await rq.get('/nope')
+		expect(res.status).toBe(404)
+		expect(res.text).toBe('custom not found')
+	})
+
+	test('errors skip the request handler', async () => {
+		const res = await rq.get('/arity')
+		expect(res.status).toBe(500)
+		expect(res.text).toBe('arity')
+	})
+})

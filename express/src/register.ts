@@ -1,5 +1,5 @@
 import * as express from 'express'
-import { wrapAsync, wrapAsyncError, unwrap, forwardRejection, nextOnRejection } from './async-wrapper'
+import { wrapAsync, unwrap, forwardRejection, nextOnRejection } from './async-wrapper'
 import { ClassType, Registration } from './interfaces'
 import { isPromise, isClass, isExpressApp, isExpressRouter } from './type-guards'
 
@@ -128,8 +128,8 @@ function registerRouter(
 			routeMwares.map(wrapAsync),
 			paramsMwares.map(wrapAsync),
 			handler,
-			routeErrHandlers.map(wrapAsyncError),
-			routerMeta.scopedMiddlewares ? sharedErrHandlers.map(wrapAsyncError) : []
+			routeErrHandlers.map(wrapAsync),
+			routerMeta.scopedMiddlewares ? sharedErrHandlers.map(wrapAsync) : []
 		)
 	}
 
@@ -150,7 +150,7 @@ function registerRouter(
 
 	if (!routerMeta.scopedMiddlewares) {
 		for (const errHandler of sharedErrHandlers) {
-			appInstance.use(wrapAsyncError(errHandler))
+			appInstance.use(wrapAsync(errHandler))
 		}
 	}
 
@@ -197,7 +197,7 @@ function registerRootHandlers(app: express.Application, appMeta?: ApplicationMet
 			routeMwares.map(wrapAsync),
 			paramsMwares.map(wrapAsync),
 			handler,
-			routeErrHandlers.map(wrapAsyncError)
+			routeErrHandlers.map(wrapAsync)
 		)
 	}
 }
@@ -240,11 +240,11 @@ function registerRootErrorHandlers(app: express.Application, appMeta?: Applicati
 				stack.splice(layerIndex, 1)
 			}
 
-			app.use(wrapAsyncError(errHandler))
+			app.use(wrapAsync(errHandler))
 		}
 	} else {
 		for (const errHandler of globalErrorHandlers) {
-			app.use(wrapAsyncError(errHandler))
+			app.use(wrapAsync(errHandler))
 		}
 	}
 }
