@@ -52,10 +52,13 @@ export function UseInterceptor<In, Out = In>(
 		const jsonp0 = res.jsonp
 		const end0 = res.end
 
-		// Forwards transform errors to the `next` function of the current layer (the one sending the response, e.g. the route handler),
-		// as the interceptor middleware has already called its own `next`.
+		// Express gives route middlewares the `next` of the route, and router middlewares the `next` of the router (also exposed as `req.next`).
+		// Applied on a route, the interceptor forwards transform errors to its own `next`, to reach the route error handlers.
+		// Otherwise, it forwards them to the `next` of the router sending the response, as it has already called its own `next`.
+		const appliedOnRoute = next !== req.next
+
 		function forwardError(error: unknown) {
-			nextOnRejection(req.next || next)(error)
+			nextOnRejection(appliedOnRoute ? next : req.next || next)(error)
 		}
 
 		// object bodies go through: res.send -> res.json (to stringify itself) -> res.send -> res.end,

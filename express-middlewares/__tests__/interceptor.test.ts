@@ -214,3 +214,68 @@ describe('transform throwing synchronously', () => {
 		expect(res.text).toBe('transform failed')
 	})
 })
+
+describe('transform errors reach the closest error handlers', () => {
+	const throwing = UseInterceptor<string>(() => {
+		throw Error('transform failed')
+	})
+
+	const rejecting = UseInterceptor<string>(async () => {
+		throw Error('transform rejected')
+	})
+
+	const routeCatch = Catch(((err, req, res, next) => {
+		res.status(418).send(`route ${err.message}`)
+	}) as express.ErrorRequestHandler)
+
+	@Router('/closest')
+	class Closest {
+		@routeCatch
+		@throwing
+		@Get('/throwing')
+		throwing(req: express.Request, res: express.Response) {
+			res.send('data')
+		}
+
+		@routeCatch
+		@rejecting
+		@Get('/rejecting')
+		rejecting(req: express.Request, res: express.Response) {
+			setTimeout(() => res.send('data'), 5)
+		}
+	}
+
+	@throwing
+	@Catch(((err, req, res, next) => {
+		res.status(418).send(`router ${err.message}`)
+	}) as express.ErrorRequestHandler)
+	@Router('/router-level')
+	class RouterLevel {
+		@Get()
+		get(req: express.Request, res: express.Response) {
+			res.send('data')
+		}
+	}
+
+	const app = register(express(), [Closest, RouterLevel])
+	app.use(((err, req, res, next) => res.status(500).send(`app ${err.message}`)) as express.ErrorRequestHandler)
+	const rqq = supertest(app)
+
+	test('method interceptor goes to method error handlers', async () => {
+		const res = await rqq.get('/closest/throwing')
+		expect(res.status).toBe(418)
+		expect(res.text).toBe('route transform failed')
+	})
+
+	test('method interceptor rejection goes to method error handlers', async () => {
+		const res = await rqq.get('/closest/rejecting')
+		expect(res.status).toBe(418)
+		expect(res.text).toBe('route transform rejected')
+	})
+
+	test('router interceptor goes to router error handlers', async () => {
+		const res = await rqq.get('/router-level')
+		expect(res.status).toBe(418)
+		expect(res.text).toBe('router transform failed')
+	})
+})
