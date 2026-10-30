@@ -224,7 +224,7 @@ function registerRootErrorHandlers(app: express.Application, appMeta?: Applicati
 
 		for (const errHandler of globalErrorHandlers) {
 			// Arrays of handlers (e.g. `finalHandler` with `notFoundHandler`) are flattened by express in multiple layers.
-			const handlers: Function[] = Array.isArray(errHandler) ? flattenHandlers(errHandler) : [errHandler]
+			const handlers: Function[] = Array.isArray(errHandler) ? errHandler.flat(Infinity) : [errHandler]
 
 			const layerIndexes = handlers
 				.map((handler) => stack.findIndex((layer) => unwrap(layer.handle) === handler))
@@ -247,16 +247,6 @@ function registerRootErrorHandlers(app: express.Application, appMeta?: Applicati
 			app.use(wrapAsync(errHandler))
 		}
 	}
-}
-
-/**
- * @internal
- */
-function flattenHandlers(handlers: any[]): Function[] {
-	return handlers.reduce<Function[]>(
-		(flat, handler) => flat.concat(Array.isArray(handler) ? flattenHandlers(handler) : handler),
-		[]
-	)
 }
 
 /**

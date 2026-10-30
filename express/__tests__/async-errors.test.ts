@@ -401,3 +401,35 @@ describe('handlers passed to @Catch keep their arity', () => {
 		expect(res.text).toBe('arity')
 	})
 })
+
+test('array of global error handlers with duplicates survives multiple register calls', async () => {
+	function logErr(err: any, req: express.Request, res: express.Response, next: express.NextFunction) {
+		next(err)
+	}
+
+	@Router('/dup-foo')
+	class Foo {
+		@Get()
+		get() {
+			throw Error('foo')
+		}
+	}
+
+	@Router('/dup-bar')
+	class Bar {
+		@Get()
+		get() {
+			throw Error('bar')
+		}
+	}
+
+	@Catch([logErr, errorHandler, logErr] as any)
+	class App extends Application {}
+
+	const app = new App().register([Foo]).register([Bar])
+	const rq = supertest(app)
+
+	expect((await rq.get('/dup-foo')).text).toBe('foo')
+	expect((await rq.get('/dup-bar')).text).toBe('bar')
+	expect(app._router.stack.slice(-3).map((layer: any) => layer.name)).toEqual(['logErr', 'errorHandler', 'logErr'])
+})
