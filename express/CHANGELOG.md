@@ -1,5 +1,31 @@
 # Change Log
 
+# [2.1.0](https://github.com/jeremyben/reflet/compare/@reflet/express@2.0.0...@reflet/express@2.1.0) (2026-10-30)
+
+
+### Bug Fixes
+
+* **express:** allow overriding methods in application class inheritance ([2d23e60](https://github.com/jeremyben/reflet/commit/2d23e604f310325f123e8c3fe22feb390c1f9e68))
+* **express:** avoid leaking application scoped middlewares setting to routers ([24464f9](https://github.com/jeremyben/reflet/commit/24464f90f2c1deec925d19da7e47baf5ddf820fd))
+* **express:** catch errors of promises and streams returned by handlers ([b16e643](https://github.com/jeremyben/reflet/commit/b16e6434eee9eefcc951fdb9ed48bab59ac9c36b))
+* **express:** do not inherit error handlers from parent class ([e94c0ac](https://github.com/jeremyben/reflet/commit/e94c0ac06cc62cecb9a0b8c5fbf18350b349f03d))
+* **express:** handle falsy rejections, thenables without catch and arrays of handlers ([a8f6ec8](https://github.com/jeremyben/reflet/commit/a8f6ec8e5496fb480eb59bf10f71bbcc6d205c71))
+* **express:** ignore non-integer error status in final handler ([65f18fb](https://github.com/jeremyben/reflet/commit/65f18fbee737410c885a5fad09491f64d7b321b7))
+* **express:** keep global arrays of error handlers last on multiple register calls ([ec91c44](https://github.com/jeremyben/reflet/commit/ec91c440f33081fd80a2feb4f4819f0c2d36177a))
+* **express:** keep other router decorators with Router.Dynamic ([bd873a4](https://github.com/jeremyben/reflet/commit/bd873a4f6f815eb39ddef49a7fff9dab50647a6b))
+* **express:** keep the arity of request handlers passed to Catch ([554b4ff](https://github.com/jeremyben/reflet/commit/554b4fffb5b6ae9d6da6ba982e2e53841760d1f3))
+* **express:** log request context and warn about exposing everything in production ([204224e](https://github.com/jeremyben/reflet/commit/204224ee7365fa6bb248602950e5469f3a910ab1))
+* **express:** lower node minimum to 12 ([7e77293](https://github.com/jeremyben/reflet/commit/7e77293548dd4e10a433ef5e5312444341cd0348))
+* **express:** only leave express applications and routers unwrapped ([ad1158f](https://github.com/jeremyben/reflet/commit/ad1158f3fc55449e658928f93f976eff30f7623f))
+* **express:** pass dependencies to children factories with rest or default parameters ([556b488](https://github.com/jeremyben/reflet/commit/556b488a7abe2faac11e3efb0045dc38405f8a49))
+* **express:** remove dependency on express-serve-static-core types ([a9e8050](https://github.com/jeremyben/reflet/commit/a9e8050b1136d153f7c50a585031ada7ae663b31))
+* **express:** require node 14 minimum ([d433b3a](https://github.com/jeremyben/reflet/commit/d433b3ab99c3730a01073828e37cc431fc9e180d))
+* **express:** retrieve children dependencies from each router instance ([7e64972](https://github.com/jeremyben/reflet/commit/7e649726658314611f5d8efb4db84549a01dc222))
+
+
+### Performance Improvements
+
+* **express:** extract param mappers once on route registering ([b877b10](https://github.com/jeremyben/reflet/commit/b877b10b1028bb03d5dd73491c1e94013ed53875))
 
 # [2.0.0](https://github.com/jeremyben/reflet/compare/@reflet/express@1.6.1...@reflet/express@2.0.0) (2023-07-30)
 
