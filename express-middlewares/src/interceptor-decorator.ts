@@ -98,7 +98,11 @@ export function UseInterceptor<In, Out = In>(
 				}
 
 				if (isPromise(result)) {
-					return result.then((value) => original.call(res, value), forwardError) as any
+					// Also forward errors of the original method (e.g. a body that can't be serialized).
+					// Resolved as a native promise, as a thenable might not return one.
+					return Promise.resolve(result)
+						.then((value) => original.call(res, value))
+						.catch(forwardError) as any
 				} else {
 					return original.call(res, result)
 				}
@@ -151,10 +155,12 @@ export function UseInterceptor<In, Out = In>(
 			}
 
 			if (isPromise(arguments[0])) {
-				return arguments[0].then((value: any) => {
-					arguments[0] = value
-					return end0.apply(res, arguments as unknown as Parameters<express.Response['end']>)
-				}, forwardEndError)
+				return Promise.resolve(arguments[0])
+					.then((value: any) => {
+						arguments[0] = value
+						return end0.apply(res, arguments as unknown as Parameters<express.Response['end']>)
+					})
+					.catch(forwardEndError)
 			} else {
 				return end0.apply(res, arguments as unknown as Parameters<express.Response['end']>)
 			}

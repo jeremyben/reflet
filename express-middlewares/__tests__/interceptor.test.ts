@@ -303,3 +303,32 @@ test('res.end callback is still called when the transform throws', async () => {
 	expect(res.status).toBe(500)
 	expect(called).toBe(true)
 })
+
+test('errors of the original method after an async transform are forwarded', async () => {
+	@Router('/async-send-error')
+	class AsyncSendError {
+		@UseInterceptor<object>(async (data) => ({ ...data, big: BigInt(1) }))
+		@Get('/send')
+		send(req: express.Request, res: express.Response) {
+			res.send({ foo: 1 })
+		}
+
+		@UseInterceptor<string>(async () => Symbol('not a chunk') as any)
+		@Get('/end')
+		end(req: express.Request, res: express.Response) {
+			res.end('data')
+		}
+	}
+
+	const app = register(express(), [AsyncSendError])
+	app.use(((err, req, res, next) => res.status(500).send(err.constructor.name)) as express.ErrorRequestHandler)
+	const rqq = supertest(app)
+
+	const sendRes = await rqq.get('/async-send-error/send').timeout(1000)
+	expect(sendRes.status).toBe(500)
+	expect(sendRes.text).toBe('TypeError')
+
+	const endRes = await rqq.get('/async-send-error/end').timeout(1000)
+	expect(endRes.status).toBe(500)
+	expect(endRes.text).toBe('TypeError')
+})
