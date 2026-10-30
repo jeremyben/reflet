@@ -279,3 +279,27 @@ describe('transform errors reach the closest error handlers', () => {
 		expect(res.text).toBe('router transform failed')
 	})
 })
+
+test('res.end callback is still called when the transform throws', async () => {
+	let called = false
+
+	@Router('/end-callback')
+	class EndCallback {
+		@UseInterceptor<string>(() => {
+			throw Error('transform failed')
+		})
+		@Get()
+		get(req: express.Request, res: express.Response) {
+			res.end('data', () => {
+				called = true
+			})
+		}
+	}
+
+	const app = register(express(), [EndCallback])
+	app.use(((err, req, res, next) => res.status(500).send(err.message)) as express.ErrorRequestHandler)
+
+	const res = await supertest(app).get('/end-callback')
+	expect(res.status).toBe(500)
+	expect(called).toBe(true)
+})

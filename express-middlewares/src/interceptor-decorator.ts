@@ -128,12 +128,19 @@ export function UseInterceptor<In, Out = In>(
 				return end0.apply(res, arguments as unknown as Parameters<express.Response['end']>)
 			}
 
+			// The response is sent by the error handlers instead, so the callback waits for it to finish.
+			const forwardEndError = (error: unknown) => {
+				const endCallback = typeof encodingOrCallback === 'function' ? encodingOrCallback : callback
+				if (endCallback) res.once('finish', endCallback)
+				forwardError(error)
+			}
+
 			// Directly modify the data parameter.
 			// Forward synchronous errors as well, as the response might be sent outside the handler (e.g. in a callback).
 			try {
 				arguments[0] = transform(dataOrCallback as any, { req, res })
 			} catch (error) {
-				forwardError(error)
+				forwardEndError(error)
 				return res
 			}
 
@@ -147,7 +154,7 @@ export function UseInterceptor<In, Out = In>(
 				return arguments[0].then((value: any) => {
 					arguments[0] = value
 					return end0.apply(res, arguments as unknown as Parameters<express.Response['end']>)
-				}, forwardError)
+				}, forwardEndError)
 			} else {
 				return end0.apply(res, arguments as unknown as Parameters<express.Response['end']>)
 			}
