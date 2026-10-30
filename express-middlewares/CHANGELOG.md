@@ -1,5 +1,22 @@
 # Change Log
 
+# [2.1.0](https://github.com/jeremyben/reflet/compare/@reflet/express-middlewares@2.0.0...@reflet/express-middlewares@2.1.0) (2026-10-30)
+
+
+### Bug Fixes
+
+* **express-middlewares:** apply UseIf middlewares one after the other ([cd8e25e](https://github.com/jeremyben/reflet/commit/cd8e25e0e6101540d734f398cf291c6805f78484))
+* **express-middlewares:** call res.end callback when the transform throws ([b9a8fe8](https://github.com/jeremyben/reflet/commit/b9a8fe89f4becd4570abac1599c77822d6eaedf4))
+* **express-middlewares:** don't intercept redirections ([d901a01](https://github.com/jeremyben/reflet/commit/d901a010106f194a9e1ba7d39a91aa1cb906185e))
+* **express-middlewares:** forward errors of the original method after an async transform ([3652883](https://github.com/jeremyben/reflet/commit/36528838a6a943896a0f8a7ae06fce1fc26dbfa7))
+* **express-middlewares:** forward rejected guards and interceptors to error handlers ([4f875d7](https://github.com/jeremyben/reflet/commit/4f875d77a6e04c29f8d3ed605d919e56010dd326))
+* **express-middlewares:** forward synchronous transform errors in UseInterceptor ([126bea8](https://github.com/jeremyben/reflet/commit/126bea8c5a6814dde26795d197834f802840e4ed))
+* **express-middlewares:** forward transform errors to route error handlers ([60dad4f](https://github.com/jeremyben/reflet/commit/60dad4f1c34112a0863ad44a329c5fa0fa864b22))
+* **express-middlewares:** handle mixed chunk types when exposing body on finish ([1ecc0c1](https://github.com/jeremyben/reflet/commit/1ecc0c19b4a50b940dff617b766b37bf60c72a85))
+* **express-middlewares:** keep express semantics of next in UseIf middlewares ([ccf58c2](https://github.com/jeremyben/reflet/commit/ccf58c2158f41e78e5bfad27782f25e17dadf155))
+* **express-middlewares:** remove dependency on express-serve-static-core types ([99d25b9](https://github.com/jeremyben/reflet/commit/99d25b9b2eae7ee73f4eed68f428b27f47ccdca2))
+* **express-middlewares:** require node 12 minimum ([5e564fb](https://github.com/jeremyben/reflet/commit/5e564fb41b41ac136d4c7fa6a78016f61907c59a))
+* **express-middlewares:** treat falsy rejections as errors ([b2bc29f](https://github.com/jeremyben/reflet/commit/b2bc29f36c61a42b1fcbb0b366c67bb35865f5eb))
 
 # [2.0.0](https://github.com/jeremyben/reflet/compare/@reflet/express-middlewares@1.1.10...@reflet/express-middlewares@2.0.0) (2023-07-30)
 
