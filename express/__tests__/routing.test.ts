@@ -399,6 +399,17 @@ describe('children dependencies', () => {
 		expect(res.text).toBe('custom')
 	})
 
+	test('are retrieved by a factory with rest parameters', async () => {
+		@Router.Children((...deps: unknown[]) => [new Item(deps[0] as string)])
+		@Router('/rest-parent')
+		class RestParent {
+			constructor(public name: string) {}
+		}
+
+		const res = await supertest(register(express(), [new RestParent('rest')])).get('/rest-parent/item')
+		expect(res.text).toBe('rest')
+	})
+
 	test('keep subclasses prototype', () => {
 		class SubParent extends Parent {
 			sub = true

@@ -99,13 +99,9 @@ export namespace Router {
 				defineRouterMeta(newRouterMeta, target)
 			}
 
-			// No need to intercept constructor if children don't expect dependencies.
-			// The constructor length is not checked, as it doesn't count default and rest parameters.
-			if (!register.length) {
-				return
-			}
-
 			// Intercept the constructor to retrieve dependencies and pass them down to children.
+			// Neither the constructor nor the children factory length is checked to skip it,
+			// as they don't count default and rest parameters.
 			// https://stackoverflow.com/questions/34411546/how-to-properly-wrap-constructors-with-decorators-in-typescript
 			return new Proxy(target, {
 				construct(targett, args, newTarget) {
