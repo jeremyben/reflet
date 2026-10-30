@@ -1,4 +1,4 @@
-# Changelog
+# Change Log
 
 
 # [2.0.0](https://github.com/jeremyben/reflet/compare/@reflet/express-middlewares@1.1.10...@reflet/express-middlewares@2.0.0) (2023-07-30)
