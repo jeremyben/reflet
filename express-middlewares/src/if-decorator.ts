@@ -20,19 +20,6 @@ export function UseIf<Req extends {}>(
 	condition: (req: Request<Req>) => boolean | Promise<boolean>,
 	middlewares: express.RequestHandler[]
 ) {
-	// Delegate middlewares sequencing to an express router, to keep the exact express semantics
-	// (a middleware ending the request or passing an error stops the chain).
-	// Merge params to keep access to the parent route parameters.
-	const router = express.Router({ mergeParams: true })
-
-	for (const middleware of middlewares) {
-		router.use((req, res, next) => {
-			const result: unknown = middleware(req, res, next)
-			// Only native promises, to avoid triggering lazy thenables.
-			if (result instanceof Promise) result.catch(nextOnRejection(next))
-		})
-	}
-
 	return Use<Req>((req, res, next) => {
 		const ok = condition(req)
 
@@ -40,8 +27,29 @@ export function UseIf<Req extends {}>(
 		else apply(ok)
 
 		function apply(yes: boolean) {
-			if (yes) router(req, res, next)
+			if (yes) run(0)
 			else next()
+		}
+
+		// Apply middlewares one after the other, and stop as soon as one ends the request or passes anything to `next`
+		// (an error, 'route' or 'router'), which is forwarded as is to keep the express semantics.
+		// Not delegated to an inner express router, which would handle 'route' and 'router' itself and reset `req.params`.
+		function run(index: number): void {
+			const middleware = middlewares[index]
+
+			if (!middleware) {
+				return next()
+			}
+
+			const nextMiddleware = (arg?: any) => (arg ? next(arg) : run(index + 1))
+
+			try {
+				const result: unknown = middleware(req, res, nextMiddleware)
+				// Only native promises, to avoid triggering lazy thenables.
+				if (result instanceof Promise) result.catch(nextOnRejection(nextMiddleware))
+			} catch (error) {
+				nextMiddleware(error)
+			}
 		}
 	})
 }

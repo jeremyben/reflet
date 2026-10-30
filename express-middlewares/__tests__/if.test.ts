@@ -1,6 +1,6 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
-import { register, Post, Put, Router } from '@reflet/express'
+import { register, Get, Post, Put, Router } from '@reflet/express'
 import { UseIf } from '../src'
 import { log } from '../../testing/tools'
 
@@ -173,4 +173,56 @@ test('condition rejected without reason is an error', async () => {
 	const res = await supertest(app).post('/falsy-condition')
 	expect(res.status).toBe(500)
 	expect(res.text).toBe('Rejected promise')
+})
+
+describe('middlewares control flow', () => {
+	@Router('/flow')
+	class Flow {
+		@UseIf(() => true, [(req, res, next) => next('route')])
+		@Get('/route')
+		skipped(req: express.Request, res: express.Response) {
+			res.send('skipped route')
+		}
+
+		@Get('/route')
+		next(req: express.Request, res: express.Response) {
+			res.send('next route')
+		}
+
+		@UseIf(() => true, [(req, res, next) => next('router')])
+		@Get('/router')
+		router(req: express.Request, res: express.Response) {
+			res.send('router')
+		}
+
+		@UseIf(
+			() => true,
+			[
+				(req, res, next) => {
+					req.params.id = req.params.id.toUpperCase()
+					next()
+				},
+			]
+		)
+		@Get('/params/:id')
+		params(req: express.Request, res: express.Response) {
+			res.send(req.params.id)
+		}
+	}
+
+	const app = register(express(), [Flow])
+	app.use((req, res) => res.send('outside router'))
+	const rqq = supertest(app)
+
+	test("next('route') skips to the next route", async () => {
+		expect((await rqq.get('/flow/route')).text).toBe('next route')
+	})
+
+	test("next('router') leaves the router", async () => {
+		expect((await rqq.get('/flow/router')).text).toBe('outside router')
+	})
+
+	test('changes to request params are kept', async () => {
+		expect((await rqq.get('/flow/params/abc')).text).toBe('ABC')
+	})
 })
