@@ -52,112 +52,59 @@ export function UseInterceptor<In, Out = In>(
 		const jsonp0 = res.jsonp
 		const end0 = res.end
 
+		// Forwards transform errors to the `next` function of the current layer (the one sending the response, e.g. the route handler),
+		// as the interceptor middleware has already called its own `next`.
+		function forwardError(error: unknown) {
+			nextOnRejection(req.next || next)(error)
+		}
+
 		// object bodies go through: res.send -> res.json (to stringify itself) -> res.send -> res.end,
 		// so to avoid transforming twice, we patch each method back to the orignal.
 		// https://github.com/expressjs/express/blob/4.x/lib/response.js#L158
 		// That's what express-mung does:
 		// https://github.com/richardschneider/express-mung/blob/v0.5.1/index.js#L72
-
-		res.send = function send(body: In) {
+		function restore() {
 			res.send = send0
 			res.json = json0
 			res.jsonp = jsonp0
 			res.end = end0
+		}
 
-			// Don't intercept errors and redirections.
-			if (body instanceof Error || res.statusCode >= 300) {
-				return send0.call(res, body)
-			}
+		function intercept(original: (body: any) => express.Response) {
+			return function (body: In) {
+				restore()
 
-			let result: Out | Promise<Out>
+				// Don't intercept errors and redirections.
+				if (body instanceof Error || res.statusCode >= 300) {
+					return original.call(res, body)
+				}
 
-			// Forward synchronous errors as well, as the response might be sent outside the handler (e.g. in a callback).
-			try {
-				result = transform(body, { req, res })
-			} catch (error) {
-				forwardError(req, next)(error)
-				return res
-			}
+				let result: Out | Promise<Out>
 
-			// Response has been sent from the interceptor (bad bad programmer).
-			if (res.writableEnded) {
-				return res
-			}
+				// Forward synchronous errors as well, as the response might be sent outside the handler (e.g. in a callback).
+				try {
+					result = transform(body, { req, res })
+				} catch (error) {
+					forwardError(error)
+					return res
+				}
 
-			if (isPromise(result)) {
-				return result.then((value) => send0.call(res, value), forwardError(req, next)) as any
-			} else {
-				return send0.call(res, result)
+				// Response has been sent from the interceptor (bad bad programmer).
+				if (res.writableEnded) {
+					return res
+				}
+
+				if (isPromise(result)) {
+					return result.then((value) => original.call(res, value), forwardError) as any
+				} else {
+					return original.call(res, result)
+				}
 			}
 		}
 
-		/* istanbul ignore next - same as res.send */
-		res.json = function json(body: In) {
-			res.send = send0
-			res.json = json0
-			res.jsonp = jsonp0
-			res.end = end0
-
-			// Don't intercept errors and redirections.
-			if (body instanceof Error || res.statusCode >= 300) {
-				return json0.call(res, body)
-			}
-
-			let result: Out | Promise<Out>
-
-			// Forward synchronous errors as well, as the response might be sent outside the handler (e.g. in a callback).
-			try {
-				result = transform(body, { req, res })
-			} catch (error) {
-				forwardError(req, next)(error)
-				return res
-			}
-
-			// Response has been sent from the interceptor (bad bad programmer).
-			if (res.writableEnded) {
-				return res
-			}
-
-			if (isPromise(result)) {
-				return result.then((value) => json0.call(res, value), forwardError(req, next)) as any
-			} else {
-				return json0.call(res, result)
-			}
-		}
-
-		/* istanbul ignore next - same as res.send */
-		res.jsonp = function jsonp(body: In) {
-			res.send = send0
-			res.json = json0
-			res.jsonp = jsonp0
-			res.end = end0
-
-			// Don't intercept errors and redirections.
-			if (body instanceof Error || res.statusCode >= 300) {
-				return jsonp0.call(res, body)
-			}
-
-			let result: Out | Promise<Out>
-
-			// Forward synchronous errors as well, as the response might be sent outside the handler (e.g. in a callback).
-			try {
-				result = transform(body, { req, res })
-			} catch (error) {
-				forwardError(req, next)(error)
-				return res
-			}
-
-			// Response has been sent from the interceptor (bad bad programmer).
-			if (res.writableEnded) {
-				return res
-			}
-
-			if (isPromise(result)) {
-				return result.then((value) => jsonp0.call(res, value), forwardError(req, next)) as any
-			} else {
-				return jsonp0.call(res, result)
-			}
-		}
+		res.send = intercept(send0)
+		res.json = intercept(json0)
+		res.jsonp = intercept(jsonp0)
 
 		// https://nodejs.org/api/http.html#http_response_end_data_encoding_callback
 		// Typed loosely since it might return a promise if the transform is async.
@@ -166,10 +113,7 @@ export function UseInterceptor<In, Out = In>(
 			encodingOrCallback?: string | (() => void),
 			callback?: () => void
 		) {
-			res.send = send0
-			res.json = json0
-			res.jsonp = jsonp0
-			res.end = end0
+			restore()
 
 			// Don't intercept errors, redirections, responses already partly written,
 			// or data parameter not fitting the right type.
@@ -186,7 +130,7 @@ export function UseInterceptor<In, Out = In>(
 			try {
 				arguments[0] = transform(dataOrCallback as any, { req, res })
 			} catch (error) {
-				forwardError(req, next)(error)
+				forwardError(error)
 				return res
 			}
 
@@ -200,7 +144,7 @@ export function UseInterceptor<In, Out = In>(
 				return arguments[0].then((value: any) => {
 					arguments[0] = value
 					return end0.apply(res, arguments as unknown as Parameters<express.Response['end']>)
-				}, forwardError(req, next))
+				}, forwardError)
 			} else {
 				return end0.apply(res, arguments as unknown as Parameters<express.Response['end']>)
 			}
@@ -208,13 +152,4 @@ export function UseInterceptor<In, Out = In>(
 
 		next()
 	})
-}
-
-/**
- * Forwards transform errors to the `next` function of the current layer (the one sending the response, e.g. the route handler),
- * as the interceptor middleware has already called its own `next`.
- * @internal
- */
-function forwardError(req: express.Request, next: express.NextFunction) {
-	return nextOnRejection(req.next || next)
 }
