@@ -265,11 +265,11 @@ export namespace Var {
 	 *
 	 * @example
 	 * ```ts
-	 * const WritableFolder = Var.Type({ validate: writableFolder })
+	 * const DateType = Var.Type({ coerce: (raw) => new Date(raw), validate: validDate })
 	 *
 	 * class Env extends Environment {
-	 *   ＠WritableFolder() SHARED_DIR = 'temp' // validated as well
-	 *   ＠Var.List(WritableFolder) EXTRA_DIRS: string[] = []
+	 *   ＠DateType() LAUNCH_DATE = new Date('2030-01-01') // validated as well
+	 *   ＠Var.List(DateType) HOLIDAYS: Date[] = []
 	 * }
 	 * ```
 	 * ---

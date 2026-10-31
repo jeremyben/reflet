@@ -5,6 +5,7 @@ export {
 	UnsetSensitive,
 	CrossCheck,
 	CrossCheckFunction,
+	CheckedKey,
 	ClassOrPropertyDecorator,
 	SensitiveOptions,
 } from './env-decorators'

@@ -108,7 +108,10 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 			if (sensitiveOptions?.reveal) return ` (got "${mask(value, sensitiveOptions.reveal)}")`
 			if (sensitiveOptions || secret) return ''
 			try {
-				return ` (got ${JSON.stringify(value)})`
+				// Credentials of URLs are masked, even if not sensitive.
+				const shown = spec.type === 'url' && typeof value === 'string' ? redactUrl(value) : value
+				const text = JSON.stringify(shown)
+				return text === undefined ? '' : ` (got ${text})` // e.g. a function default.
 			} catch {
 				return '' // e.g. BigInt or circular JSON default.
 			}
@@ -187,7 +190,7 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 	Object.freeze(instance)
 	for (const check of extractCrossChecks(target)) {
 		try {
-			check(instance, (key, message) => {
+			const result: unknown = check(instance, (key, message) => {
 				const spec = specs.get(key)
 				const name = usedNames.get(key) ?? (spec ? envNames(key)[0] : String(key))
 				errors.push({
@@ -199,6 +202,11 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 					docs: spec?.docs,
 				})
 			})
+			// An async check would fail too late, after the environment is used.
+			if (result && typeof (result as PromiseLike<unknown>).then === 'function') {
+				Promise.resolve(result).catch(() => undefined)
+				throw new Error('must be synchronous')
+			}
 		} catch (err) {
 			errors.push({ name: target.name, kind: 'invalid', message: `cross check failed: ${errorMessage(err)}` })
 		}
@@ -216,6 +224,13 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 }
 
 const UNTRIMMED_TYPES = ['str', 'custom']
+
+/**
+ * Masks the password of a URL, e.g. `postgres://user:***@db/app`.
+ */
+function redactUrl(value: string): string {
+	return value.replace(/^([a-z][a-z0-9+.-]*:\/\/[^/?#@:]*:)[^/?#@]*@/i, '$1***@')
+}
 
 const FROZEN_TYPES = ['json', 'list']
 

@@ -1579,6 +1579,56 @@ describe('Environment.load', () => {
 		expect(Other).toBeDefined()
 	})
 
+	test('second review fixes', async () => {
+		// Async cross checks are rejected, since they would fail too late.
+		@CrossCheck(async (env: A, fail) => {
+			await null
+			fail('PORT', 'too late')
+		})
+		class A extends Environment {
+			@Var.Port() PORT = 3000
+		}
+		expect(() => A.load({})).toThrow(' - A (invalid): cross check failed: must be synchronous')
+		// Its rejection is not left unhandled.
+		@CrossCheck(async () => {
+			throw new Error('rejected')
+		})
+		class R extends Environment {}
+		expect(() => R.load({})).toThrow('cross check failed: must be synchronous')
+		await new Promise((resolve) => setImmediate(resolve))
+		// @ts-expect-error methods are not variables
+		CrossCheck((env: A, fail) => fail('toJSON', 'x'))
+
+		// URL credentials are masked in messages, even if not sensitive.
+		class U extends Environment {
+			@Var.Url({ protocols: ['https'] }) U!: string
+		}
+		expect(() => U.load({ U: 'http://user:pass@example.com/path' })).toThrow(
+			'"U" must be a URL with protocol https (got "http://user:***@example.com/path")'
+		)
+		expect(() => U.load({ U: 'http://example.com/a:b@c' })).toThrow('(got "http://example.com/a:b@c")')
+		// Protocols must be URL schemes.
+		for (const protocols of [[], ['https://'], ['mailto x']]) {
+			expect(() => Var.Url({ protocols })).toThrow('@Var.Url protocols must be URL schemes')
+		}
+
+		// JSON numbers must be finite, and defaults serializable.
+		class J extends Environment {
+			@Var.Json() J!: unknown
+		}
+		expect(() => J.load({ J: '[1e400]' })).toThrow('"J" must be valid JSON, with finite numbers')
+		class F extends Environment {
+			@Var.Json() J = () => 1
+		}
+		expect(() => F.load({})).toThrow(/invalid default value: "J" must be serializable to JSON$/m)
+
+		// An empty path default is invalid, as an empty environment value.
+		class D extends Environment {
+			@Var.Dir() D = ''
+		}
+		expect(() => D.load({})).toThrow('invalid default value: "D" must be a path, not empty')
+	})
+
 	test('Var.Type', () => {
 		const parseCsvLine: (raw: string, name: string) => string[] = (raw) => raw.split(';')
 		const Upper = Var.Type((raw) => raw.toUpperCase())

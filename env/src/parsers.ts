@@ -96,9 +96,12 @@ export const url: Steps<string> = {
  */
 export function urlWith(protocols: readonly string[] | undefined): Steps<string> {
 	if (!protocols) return url
+	// URLs need "scheme://", so protocols without authority (e.g. mailto) would never match.
+	if (!protocols.length || protocols.some((protocol) => !/^[a-z][a-z0-9+.-]*:?$/i.test(protocol))) {
+		throw new Error(`@Var.Url protocols must be URL schemes, e.g. ['https'], not ${JSON.stringify(protocols)}.`)
+	}
 	const allowed = protocols.map((protocol) => protocol.replace(/:$/, '').toLowerCase())
 	return refine(url, (value, name) => {
-		// The value is left out of the message, since a URL may hold credentials.
 		const protocol = new URL(value).protocol.slice(0, -1)
 		if (!allowed.includes(protocol))
 			throw new Error(`"${name}" must be a URL with protocol ${allowed.join(' or ')}`)
@@ -136,20 +139,31 @@ export const host: Steps<string> = {
 
 export const json: Steps<unknown> = {
 	coerce: (raw, name) => {
+		let finite = true
+		let value: unknown
 		try {
-			return JSON.parse(raw)
+			// Overflowing numbers (e.g. 1e400) would become null once copied.
+			value = JSON.parse(raw, (_key, item) => {
+				if (typeof item === 'number' && !Number.isFinite(item)) finite = false
+				return item
+			})
 		} catch {
 			// Native error messages may quote part of the input, which could be a secret.
 			throw new Error(`"${name}" must be valid JSON`)
 		}
+		if (!finite) throw new Error(`"${name}" must be valid JSON, with finite numbers`)
+		return value
 	},
 	// A copy, so a frozen default is not the caller's object.
 	validate: (value, name) => {
+		let text: string | undefined
 		try {
-			return JSON.parse(JSON.stringify(value))
+			text = JSON.stringify(value)
 		} catch (err: any) {
 			throw new Error(`"${name}" must be serializable to JSON (${err && err.message})`)
 		}
+		if (text === undefined) throw new Error(`"${name}" must be serializable to JSON`)
+		return JSON.parse(text)
 	},
 }
 
@@ -211,9 +225,11 @@ export function path(
 			string(value, name)
 			// Not expanded by Node.js, unlike shells.
 			if (value.startsWith('~')) throw new Error(`"${name}" must be an absolute or relative path, without ~`)
+			// As an empty environment value, which is missing.
+			if (value === '') throw new Error(`"${name}" must be a path, not empty`)
 
 			// Relative to the base (the current directory by default), absolute paths are kept as is.
-			// The path is left out of messages, since it holds the value, which could be sensitive.
+			// The path is not repeated in messages, whose value is shown unless sensitive.
 			const absolute = resolve(base ?? process.cwd(), value)
 			const from = isAbsolute(value) ? '' : ` (relative to ${base ?? 'the current directory'})`
 			let stats
@@ -244,6 +260,7 @@ export function path(
 
 /**
  * Items separated by `separator`, surrounding whitespace and empty items removed.
+ * Indexes in messages count non-empty items.
  */
 export function list<T>(item: Steps<T>, separator: string): Steps<T[]> {
 	return {

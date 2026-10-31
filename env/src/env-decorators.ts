@@ -154,8 +154,8 @@ export function UnsetSensitive(): (target: EnvClass) => void {
 
 /**
  * Checks variables against each other, once they are all valid, e.g. to forbid a development value in production.
- * Errors are reported with the others in the `EnvValidationError`. Several checks can be applied,
- * and subclasses inherit them.
+ * Errors are reported in an `EnvValidationError`. Checks must be synchronous.
+ * Several checks can be applied, and subclasses inherit them.
  *
  * Annotate the parameter with your class, so it is checked against the decorated class.
  *
@@ -189,7 +189,13 @@ export function CrossCheck<C>(
  * Checks the variables of a loaded environment, and reports errors with `fail`.
  * @public
  */
-export type CrossCheckFunction<C> = (env: C, fail: (key: keyof C & (string | symbol), message: string) => void) => void
+export type CrossCheckFunction<C> = (env: C, fail: (key: CheckedKey<C>, message: string) => void) => void
+
+/**
+ * Properties and getters of an environment, not its methods.
+ * @public
+ */
+export type CheckedKey<C> = { [K in keyof C]: C[K] extends Function ? never : K }[keyof C] & (string | symbol)
 
 /**
  * Cross checks of the hierarchy, parents' first.

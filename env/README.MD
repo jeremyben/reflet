@@ -93,7 +93,7 @@ env.DEBUG // boolean
 
 * Variables are required by default.
 * An empty string is considered missing, as well as a whitespace-only one for all types except `Str` and `Custom`.
-* `Json` values are deeply frozen too. Defaults are copied first through JSON, so your own objects are left untouched (and must be JSON-serializable: a `Date` becomes a string).
+* `Json` and `List` values are deeply frozen too. Defaults are copied first, through JSON for `Json` values, so your own objects are left untouched (and must be JSON-serializable: a `Date` becomes a string).
 * Any missing or invalid variable throws an aggregated [`EnvValidationError`](#errors).
 
 💡 You can pass another source than `process.env`, which is useful in tests:
@@ -127,6 +127,8 @@ No need for [dotenv](https://github.com/motdotla/dotenv): Node.js reads `.env` f
 
   export const env = Env.load({ ...parseEnv(readFileSync('.env', 'utf8')), ...process.env })
   ```
+
+  ⚠️ The source is a copy of `process.env`, so [`@UnsetSensitive`](#sensitive) does not remove anything from it.
 
 💡 In production, prefer [secret files](#secrets) for secrets.
 
@@ -224,7 +226,7 @@ class Env extends Environment {
 }
 ```
 
-An invalid item is reported with its index, e.g. `"PORTS[1]" must be a valid port number (1-65535)`.
+An invalid item is reported with its index among non-empty items, e.g. `"PORTS[1]" must be a valid port number (1-65535)`.
 
 ### Bytes
 
@@ -265,7 +267,7 @@ class Env extends Environment {
 * Relative paths are resolved from `base`, the current directory by default, which depends on where the app is started. Absolute paths are kept as is.
 * `~` is not expanded, unlike in shells.
 * Directories must be searchable as well, to be readable or writable.
-* Error messages leave the path out, since it holds the value, which could be [sensitive](#sensitive).
+* Error messages don't repeat the resolved path: the value is shown as for other variables, unless [sensitive](#sensitive).
 * Defaults are checked as well, when the environment is loaded only: later permission changes are not detected, and the root user bypasses permissions.
 
 ### Custom parser
@@ -300,28 +302,33 @@ class Env extends Environment {
   })
   LAUNCH_DATE = new Date('2030-01-01') // validated as well
 
-  @Var.Custom({ validate: writableFolder })
-  SHARED_DIR = 'temp' // resolved and checked, like SHARED_DIR=temp
-}
-
-function writableFolder(folder: string, name: string): string {
-  const path = resolve(__dirname, '..', folder)
-  accessSync(path, constants.R_OK | constants.W_OK)
-  return path
+  @Var.Custom({
+    validate: (code, name) => {
+      if (!/^[A-Z]{2}$/.test(code)) throw new Error(`"${name}" must be a country code`)
+      return code
+    },
+  })
+  COUNTRY = 'FR' // a string, validated as well
 }
 ```
 
 To reuse a parser in several places, turn it into a variable type with `Var.Type`. It is typed like the built-in ones, and can be used for list items:
 
 ```ts
-export const WritableFolder = Var.Type({ validate: writableFolder })
+export const DateType = Var.Type({
+  coerce: (raw) => new Date(raw),
+  validate: (date, name) => {
+    if (Number.isNaN(date.getTime())) throw new Error(`"${name}" must be a date`)
+    return date
+  },
+})
 
 class Env extends Environment {
-  @WritableFolder()
-  SHARED_DIR = 'temp'
+  @DateType()
+  LAUNCH_DATE = new Date('2030-01-01')
 
-  @Var.List(WritableFolder)
-  EXTRA_DIRS: string[] = []
+  @Var.List(DateType)
+  HOLIDAYS: Date[] = []
 }
 ```
 
@@ -368,6 +375,7 @@ class Env extends Environment {
 * `Default.byNodeEnv` picks the value of the current `NODE_ENV`, or else `default`. A value given for an environment takes precedence over `default`, even `undefined`.
 * Environment names (`development`, `production` and `test`) are checked by types, as well as the value types.
 * `NODE_ENV` is read from the source being loaded, `process.env` by default, and defaults picked are validated as usual.
+* Only the variable as given in the source is read, not the property of your class: its default, [other names](#name) and [secret files](#secrets) are ignored. So don't give `NODE_ENV` a default if you pick defaults by it.
 
 Deployment stages (e.g. staging) are better in another variable than `NODE_ENV`, which is expected to be `production` by libraries wherever traffic is served. `Default.by` creates a picker by another variable, whose values are listed by the type parameter (it also allows other `NODE_ENV` values):
 
@@ -382,7 +390,7 @@ class Env extends Environment {
 
 Environments can also be given their own values, without defaults in the code:
 
-* Load a `.env` file per environment before calling `load`, with [dotenv](https://github.com/motdotla/dotenv), or with your framework (e.g. `.env.development`, `.env.test` with Next.js or Vite).
+* Load a `.env` file per environment before calling `load`, [natively](#loading-a-env-file) (e.g. `node --env-file=.env.development`), or with your framework (e.g. `.env.development`, `.env.test` with Next.js or Vite).
 * In tests, pass an explicit source, or override defaults in a subclass:
 
 ```ts
@@ -515,7 +523,7 @@ console.log(Env.load()) // Env { STRIPE_PRIVATE_KEY: '***4242' }
 
 ⚠️ Custom parsers are responsible for not leaking the raw value in their own error messages, and values read from the environment (e.g. `{ ...env }`, or a getter returning a secret) are not masked.
 
-With `@UnsetSensitive()`, sensitive variables are removed from `process.env` once the environment is loaded from it, so they are not inherited by child processes, nor dumped by other code. An explicit source (e.g. in tests) is left untouched:
+With `@UnsetSensitive()`, sensitive variables are removed from `process.env` once the environment is loaded from it, so they are not inherited by child processes, nor dumped by other code. An explicit source (e.g. in tests, or a copy of `process.env` merged with a `.env` file) is left untouched:
 
 ```ts
 @UnsetSensitive()
@@ -560,7 +568,7 @@ class Env extends Environment {
 * Conditional variables are validated **after** all the others, so the predicate can rely on any of them.
 * Between conditional variables, declaration order matters: a predicate only sees the ones declared before.
 * A variable with a default value is never missing, so its predicate is not called.
-* An error thrown by the predicate is reported in the [`EnvValidationError`](#errors).
+* An error thrown by the predicate is reported in the [`EnvValidationError`](#errors), unless another variable is already invalid (the likely cause).
 
 The property must be optional, since it can be `undefined` at runtime: this is enforced by types, as well as the class of the predicate parameter.
 
@@ -568,7 +576,7 @@ The property must be optional, since it can be `undefined` at runtime: this is e
 
 > 🔦 `@CrossCheck((env, fail) => void)`
 
-Check variables against each other, e.g. to forbid a development value in production. Errors are reported with the others in the [`EnvValidationError`](#errors):
+Check variables against each other, e.g. to forbid a development value in production. Errors are reported in an [`EnvValidationError`](#errors):
 
 ```ts
 @CrossCheck((env: Env, fail) => {
@@ -587,7 +595,8 @@ class Env extends Environment {
 // - STRIPE_KEY (invalid): cannot be fake in production
 ```
 
-* Checks run once all variables are valid, on the frozen environment (getters included).
+* Checks run once all variables are valid, on the frozen environment (getters included). They must be synchronous.
+* The environment is frozen shallowly (deeply for `Json` and `List` values): a check could still change the bytes of a `Buffer`, for instance.
 * `fail` takes a property, reported by its variable name, with its `desc`, `example` and `docs`.
 * Several checks can be applied, and subclasses inherit them (parents' first).
 * Annotate the parameter with your class, so it is checked against the decorated class, as well as the properties given to `fail`.
