@@ -3,7 +3,7 @@ import * as fs from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { inspect } from 'util'
-import { Var, Environment, EnvValidationError, Sensitive, Secrets, UnsetSensitive, Default } from '../src'
+import { Var, Environment, EnvValidationError, Sensitive, Secrets, UnsetSensitive, Default, CrossCheck } from '../src'
 
 describe('Environment.load', () => {
 	test('parses basic types', () => {
@@ -1514,6 +1514,69 @@ describe('Environment.load', () => {
 		}
 		expect(() => D.load({})).toThrow('invalid default value: "API" must be a URL with protocol https')
 		expect(Var.Url.parse(' ftp://x ', 'U')).toBe('ftp://x')
+	})
+
+	test('CrossCheck', () => {
+		const calls: string[] = []
+
+		@CrossCheck((env: Base, fail) => {
+			calls.push('base')
+			if (env.isProduction && env.KEY === 'fake') fail('KEY', 'cannot be fake in production')
+		})
+		class Base extends Environment {
+			@Var.Str({ choices: ['development', 'production'] }) NODE_ENV!: 'development' | 'production'
+			@Var.Str({ name: ['STRIPE_KEY', 'OLD_KEY'], desc: 'Stripe key' }) KEY = 'fake'
+
+			get isProduction() {
+				return this.NODE_ENV === 'production'
+			}
+		}
+
+		@CrossCheck((env: Env, fail) => {
+			calls.push('first')
+			if (env.PORT === 1) fail('PORT', 'cannot be 1')
+			if (env.PORT === 2) fail('isProduction', 'not a variable')
+		})
+		@CrossCheck((env: Env) => {
+			calls.push('second')
+			if (env.PORT === 1) (env as any).PORT = 0
+		})
+		class Env extends Base {
+			@Var.Port() PORT = 3000
+		}
+
+		expect(Env.load({ NODE_ENV: 'development' }).KEY).toBe('fake')
+		// Parents' first, then in application order (bottom-up).
+		expect(calls).toEqual(['base', 'second', 'first'])
+
+		try {
+			Env.load({ NODE_ENV: 'production', OLD_KEY: 'fake', PORT: '1' })
+			fail('should throw')
+		} catch (err: any) {
+			expect(err).toBeInstanceOf(EnvValidationError)
+			expect(err.errors).toEqual([
+				{ name: 'OLD_KEY', kind: 'invalid', message: 'cannot be fake in production', desc: 'Stripe key' },
+				// The environment is frozen.
+				{ name: 'Env', kind: 'invalid', message: expect.stringMatching(/^cross check failed: Cannot assign/) },
+				{ name: 'PORT', kind: 'invalid', message: 'cannot be 1' },
+			])
+		}
+
+		expect(() => Env.load({ NODE_ENV: 'development', PORT: '2' })).toThrow(
+			' - isProduction (invalid): not a variable'
+		)
+
+		// Not run until all variables are valid.
+		calls.length = 0
+		expect(() => Env.load({ NODE_ENV: 'staging' })).toThrow(/NODE_ENV \(invalid\)/)
+		expect(calls).toEqual([])
+
+		// @ts-expect-error another class
+		@CrossCheck((env: Base) => env)
+		class Other extends Environment {}
+		// @ts-expect-error unknown key
+		CrossCheck((env: Base, fail) => fail('UNKNOWN', 'x'))
+		expect(Other).toBeDefined()
 	})
 
 	test('Var.Type', () => {

@@ -15,6 +15,7 @@ Well-defined and well-typed environment variables decorators. Have a look at [Re
 * [Defaults](#defaults)
 * [Common options](#common-options)
 * [Conditional requirement](#conditional-requirement)
+* [Cross checks](#cross-checks)
 * [Secrets](#secrets)
 * [Derived values](#derived-values)
 * [NODE_ENV flags](#node_env-flags)
@@ -562,6 +563,34 @@ class Env extends Environment {
 * An error thrown by the predicate is reported in the [`EnvValidationError`](#errors).
 
 The property must be optional, since it can be `undefined` at runtime: this is enforced by types, as well as the class of the predicate parameter.
+
+## Cross checks
+
+> 🔦 `@CrossCheck((env, fail) => void)`
+
+Check variables against each other, e.g. to forbid a development value in production. Errors are reported with the others in the [`EnvValidationError`](#errors):
+
+```ts
+@CrossCheck((env: Env, fail) => {
+  if (env.NODE_ENV === 'production' && env.STRIPE_KEY === 'fake') {
+    fail('STRIPE_KEY', 'cannot be fake in production')
+  }
+})
+class Env extends Environment {
+  @Var.Str({ choices: ['development', 'production', 'test'] })
+  NODE_ENV!: 'development' | 'production' | 'test'
+
+  @Sensitive()
+  @Var.Str()
+  STRIPE_KEY = Default.byNodeEnv({ development: 'fake', test: 'fake' })
+}
+// - STRIPE_KEY (invalid): cannot be fake in production
+```
+
+* Checks run once all variables are valid, on the frozen environment (getters included).
+* `fail` takes a property, reported by its variable name, with its `desc`, `example` and `docs`.
+* Several checks can be applied, and subclasses inherit them (parents' first).
+* Annotate the parameter with your class, so it is checked against the decorated class, as well as the properties given to `fail`.
 
 ## Secrets
 

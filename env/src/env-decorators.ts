@@ -10,6 +10,7 @@ interface ClassOptions {
 	secrets?: readonly string[]
 	secretsKeys: Map<string | symbol, readonly string[]>
 	unsetSensitive?: boolean
+	crossChecks?: CrossCheckFunction<any>[]
 }
 
 const classOptions = new WeakMap<object, ClassOptions>()
@@ -149,6 +150,55 @@ export function UnsetSensitive(): (target: EnvClass) => void {
 		classOrProperty('UnsetSensitive', target, undefined, (options) =>
 			options.unsetSensitive ? false : (options.unsetSensitive = true)
 		)
+}
+
+/**
+ * Checks variables against each other, once they are all valid, e.g. to forbid a development value in production.
+ * Errors are reported with the others in the `EnvValidationError`. Several checks can be applied,
+ * and subclasses inherit them.
+ *
+ * Annotate the parameter with your class, so it is checked against the decorated class.
+ *
+ * @example
+ * ```ts
+ * ＠CrossCheck((env: Env, fail) => {
+ *   if (env.NODE_ENV === 'production' && env.STRIPE_KEY === 'fake') fail('STRIPE_KEY', 'cannot be fake in production')
+ * })
+ * class Env extends Environment {
+ *   ＠Var.Str({ choices: ['development', 'production', 'test'] })
+ *   NODE_ENV!: 'development' | 'production' | 'test'
+ *
+ *   ＠Var.Str()
+ *   STRIPE_KEY = Default.byNodeEnv({ development: 'fake', test: 'fake' })
+ * }
+ * ```
+ * ---
+ * @public
+ */
+export function CrossCheck<C>(
+	check: CrossCheckFunction<C>
+): (target: Function & { prototype: C & Environment }) => void {
+	return (target) =>
+		classOrProperty('CrossCheck', target, undefined, (options) => {
+			options.crossChecks = [...(options.crossChecks || []), check]
+			return true
+		})
+}
+
+/**
+ * Checks the variables of a loaded environment, and reports errors with `fail`.
+ * @public
+ */
+export type CrossCheckFunction<C> = (env: C, fail: (key: keyof C & (string | symbol), message: string) => void) => void
+
+/**
+ * Cross checks of the hierarchy, parents' first.
+ * @internal
+ */
+export function extractCrossChecks(target: ClassType): CrossCheckFunction<any>[] {
+	return hierarchy(target)
+		.reverse()
+		.flatMap((options) => options.crossChecks || [])
 }
 
 /**

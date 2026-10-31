@@ -1,7 +1,13 @@
 import { readFileSync } from 'fs'
 import { basename, join } from 'path'
 import { inspect, InspectOptions } from 'util'
-import { extractModifiedKeys, extractSecretsDirs, extractSensitive, extractUnsetSensitive } from './env-decorators'
+import {
+	extractCrossChecks,
+	extractModifiedKeys,
+	extractSecretsDirs,
+	extractSensitive,
+	extractUnsetSensitive,
+} from './env-decorators'
 import type { SensitiveOptions } from './env-decorators'
 import { extractSpecs } from './var-decorators'
 import { initializing } from './default'
@@ -79,6 +85,9 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 		}
 	}
 
+	// Variable names actually read, among several names or secret files.
+	const usedNames = new Map<string | symbol, string>()
+
 	const processKey = (key: string | symbol) => {
 		const spec = specs.get(key)!
 		// Defined by `Secrets` on the property, or on the class or its closest ancestor.
@@ -104,12 +113,14 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 				return '' // e.g. BigInt or circular JSON default.
 			}
 		}
+		usedNames.set(key, name)
 		const fail = (kind: EnvErrorEntry['kind'], message: string) => {
 			errors.push({ name, kind, message, desc: spec.desc, example: spec.example, docs: spec.docs })
 		}
 
 		if (secret) {
 			name = secret.name
+			usedNames.set(key, name)
 			if ('error' in secret) {
 				return fail('invalid', `cannot read secret file "${secret.path}": ${errorMessage(secret.error)}`)
 			}
@@ -172,6 +183,28 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 
 	if (errors.length) throw new EnvValidationError(errors)
 
+	// Checked once all variables are valid, and frozen so checks can't change them.
+	Object.freeze(instance)
+	for (const check of extractCrossChecks(target)) {
+		try {
+			check(instance, (key, message) => {
+				const spec = specs.get(key)
+				const name = usedNames.get(key) ?? (spec ? envNames(key)[0] : String(key))
+				errors.push({
+					name,
+					kind: 'invalid',
+					message,
+					desc: spec?.desc,
+					example: spec?.example,
+					docs: spec?.docs,
+				})
+			})
+		} catch (err) {
+			errors.push({ name: target.name, kind: 'invalid', message: `cross check failed: ${errorMessage(err)}` })
+		}
+	}
+	if (errors.length) throw new EnvValidationError(errors)
+
 	// Only from process.env: an explicit source, e.g. in tests, is left untouched.
 	if (source === process.env && extractUnsetSensitive(target)) {
 		for (const key of sensitive.keys()) {
@@ -179,7 +212,7 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 		}
 	}
 
-	return Object.freeze(instance)
+	return instance
 }
 
 const UNTRIMMED_TYPES = ['str', 'custom']
