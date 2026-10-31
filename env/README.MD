@@ -14,7 +14,8 @@ Well-defined and well-typed environment variables decorators. Have a look at [Re
 * [Type safety](#type-safety)
 * [Defaults](#defaults)
 * [Common options](#common-options)
-* [Conditional requirement](#conditional-requirement)
+* [Optional variables](#optional-variables)
+* [Groups](#groups)
 * [Cross checks](#cross-checks)
 * [Secrets](#secrets)
 * [Derived values](#derived-values)
@@ -539,38 +540,53 @@ process.env.STRIPE_PRIVATE_KEY // undefined
 
 💡 Better yet, pass secrets as [files](#secrets): they never go through the environment.
 
-## Conditional requirement
+## Optional variables
 
-> 🔦 `requiredWhen`
+> 🔦 `optional: true`
 
-A variable can be required only under some condition. The predicate receives the env instance, with already validated variables and your own getters (like [`NODE_ENV` flags](#node_env-flags)):
+Variables are required by default. An optional one is `undefined` when missing:
 
 ```ts
 class Env extends Environment {
-  @Var.Str({ choices: ['development', 'production', 'test'] })
-  NODE_ENV!: 'development' | 'production' | 'test'
-
-  @Var.Bool()
-  USE_S3 = false
-
-  @Var.Str({ requiredWhen: (env: Env) => env.USE_S3 })
-  S3_BUCKET?: string
-
-  @Var.Url({ requiredWhen: (env: Env) => env.isProduction })
+  @Var.Url({ optional: true })
   SENTRY_DSN?: string
-
-  get isProduction() {
-    return this.NODE_ENV === 'production'
-  }
 }
 ```
 
-* Conditional variables are validated **after** all the others, so the predicate can rely on any of them.
-* Between conditional variables, declaration order matters: a predicate only sees the ones declared before.
-* A variable with a default value is never missing, so its predicate is not called.
-* An error thrown by the predicate is reported in the [`EnvValidationError`](#errors), unless another variable is already invalid (the likely cause).
+The property must be optional (`?`), since it can be `undefined`: this is enforced by types. A variable with a [default value](#defaults) is never missing, so it doesn't need to be optional.
 
-The property must be optional, since it can be `undefined` at runtime: this is enforced by types, as well as the class of the predicate parameter.
+## Groups
+
+> 🔦 `@Group.AllOrNone(...)`, `@Group.OneOf(...)`, `@Group.AnyOf(...)`, `@Group.RequiredWhen(flag, [...])`
+
+Rules on the presence of a group of optional variables:
+
+```ts
+@Group.AllOrNone('S3_ACCESS_KEY', 'S3_SECRET_KEY')  // all set, or none
+@Group.OneOf('MONGO_URL', 'MONGO_HOST')             // exactly one set
+@Group.AnyOf('SMTP_URL', 'MAIL_API_KEY')            // at least one set
+@Group.RequiredWhen('SENTRY_ENABLED', ['SENTRY_DSN']) // required when the boolean flag is true
+class Env extends Environment {
+  @Var.Str({ optional: true }) S3_ACCESS_KEY?: string
+  @Var.Str({ optional: true }) S3_SECRET_KEY?: string
+  @Var.Url({ optional: true }) MONGO_URL?: string
+  @Var.Host({ optional: true }) MONGO_HOST?: string
+  @Var.Url({ optional: true }) SMTP_URL?: string
+  @Var.Str({ optional: true }) MAIL_API_KEY?: string
+  @Var.Bool() SENTRY_ENABLED = false
+  @Var.Url({ optional: true }) SENTRY_DSN?: string
+}
+// - S3_SECRET_KEY (missing): required together with S3_ACCESS_KEY
+// - MONGO_URL (missing): one of MONGO_URL, MONGO_HOST is required
+// - MONGO_HOST (invalid): only one of MONGO_URL, MONGO_HOST can be set
+// - SMTP_URL (missing): at least one of SMTP_URL, MAIL_API_KEY is required
+// - SENTRY_DSN (missing): required when SENTRY_ENABLED
+```
+
+* Property names are checked by types, without annotation.
+* Variables of a group must be optional, or have a default value.
+* Rules are checked in declaration order, unless a variable of the group is invalid. Subclasses inherit them.
+* For other conditions, e.g. on the value of a variable, use [cross checks](#cross-checks).
 
 ## Cross checks
 
@@ -598,7 +614,7 @@ class Env extends Environment {
 * Checks run once all variables are valid, on the frozen environment (getters included). They must be synchronous.
 * The environment is frozen shallowly (deeply for `Json` and `List` values): a check could still change the bytes of a `Buffer`, for instance.
 * `fail` takes a property, reported by its variable name, with its `desc`, `example` and `docs`.
-* Several checks can be applied, and subclasses inherit them (parents' first).
+* Several checks can be applied, run in declaration order, and subclasses inherit them (parents' first).
 * Annotate the parameter with your class, so it is checked against the decorated class, as well as the properties given to `fail`.
 
 ## Secrets
@@ -705,7 +721,7 @@ if (env.isProduction) {
 }
 ```
 
-Conditional variables are validated last, so these getters can be used in [`requiredWhen`](#conditional-requirement) predicates.
+These getters can be used in [cross checks](#cross-checks).
 
 ## Checking an environment
 

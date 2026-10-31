@@ -1,6 +1,6 @@
 import { bool, bytes, email, host, json, list, num, parser, path, port, refine, str, url, urlWith } from './parsers'
 import type { Steps } from './parsers'
-import type { ClassType, ConditionalOptions, Parser, Spec, SpecOptions, Validator } from './interfaces'
+import type { ClassType, Optional, Parser, Spec, SpecOptions, Validator } from './interfaces'
 
 /** Own specs of each class, in declaration order. */
 const definitions = new WeakMap<object, Map<string | symbol, Spec<any>>>()
@@ -36,9 +36,7 @@ function define(target: object, propertyKey: string | symbol, spec: Spec<any>): 
 	own.set(propertyKey, spec)
 }
 
-type AnyOptions = SpecOptions<any> &
-	Partial<ConditionalOptions<any>> &
-	Var.AllowEmpty & {
+type AnyOptions = SpecOptions<any> & { optional?: boolean } & Var.AllowEmpty & {
 		pattern?: RegExp
 		minLength?: number
 		maxLength?: number
@@ -76,12 +74,11 @@ function register(type: string, steps: Steps<any>, options: AnyOptions = {}): Va
  */
 export namespace Var {
 	/**
-	 * Property decorator that checks the decorated property can hold the parsed value of type `T`,
-	 * and that the decorated class matches `C` (the `requiredWhen` predicate parameter).
+	 * Property decorator that checks the decorated property can hold the parsed value of type `T`.
 	 * Decorated properties must be public, and cannot be static, methods or accessors.
 	 * @public
 	 */
-	export type Decorator<T, C = unknown> = <X extends C & object, K extends keyof X & (string | symbol)>(
+	export type Decorator<T> = <X extends object, K extends keyof X & (string | symbol)>(
 		target: X extends Function ? never : X,
 		propertyKey: K &
 			([T] extends [X[K]] ? unknown : { 'Type of the parsed value is not assignable to the property': T }),
@@ -89,10 +86,8 @@ export namespace Var {
 	) => void
 
 	/** A string env variable. @public */
-	export function Str<T extends string, C = any>(
-		options: StrOptions<T> & WithChoices<T> & ConditionalOptions<C>
-	): Decorator<T | undefined, C>
-	export function Str<C = any>(options: StrOptions<string> & ConditionalOptions<C>): Decorator<string | undefined, C>
+	export function Str<T extends string>(options: StrOptions<T> & WithChoices<T> & Optional): Decorator<T | undefined>
+	export function Str(options: StrOptions<string> & Optional): Decorator<string | undefined>
 	export function Str<T extends string>(options: StrOptions<T> & WithChoices<T>): Decorator<T>
 	export function Str(options?: StrOptions<string>): Decorator<string>
 	export function Str(options: AnyOptions = {}): Decorator<any> {
@@ -101,10 +96,8 @@ export namespace Var {
 	Str.parse = parsable(str)
 
 	/** A number env variable. @public */
-	export function Num<T extends number, C = any>(
-		options: NumOptions<T> & WithChoices<T> & ConditionalOptions<C>
-	): Decorator<T | undefined, C>
-	export function Num<C = any>(options: NumOptions<number> & ConditionalOptions<C>): Decorator<number | undefined, C>
+	export function Num<T extends number>(options: NumOptions<T> & WithChoices<T> & Optional): Decorator<T | undefined>
+	export function Num(options: NumOptions<number> & Optional): Decorator<number | undefined>
 	export function Num<T extends number>(options: NumOptions<T> & WithChoices<T>): Decorator<T>
 	export function Num(options?: NumOptions<number>): Decorator<number>
 	export function Num(options: AnyOptions = {}): Decorator<any> {
@@ -116,10 +109,8 @@ export namespace Var {
 	export const Bool = factory('bool', bool)
 
 	/** An integer port number (1-65535). @public */
-	export function Port<T extends number, C = any>(
-		options: NumOptions<T> & WithChoices<T> & ConditionalOptions<C>
-	): Decorator<T | undefined, C>
-	export function Port<C = any>(options: NumOptions<number> & ConditionalOptions<C>): Decorator<number | undefined, C>
+	export function Port<T extends number>(options: NumOptions<T> & WithChoices<T> & Optional): Decorator<T | undefined>
+	export function Port(options: NumOptions<number> & Optional): Decorator<number | undefined>
 	export function Port<T extends number>(options: NumOptions<T> & WithChoices<T>): Decorator<T>
 	export function Port(options?: NumOptions<number>): Decorator<number>
 	export function Port(options: AnyOptions = {}): Decorator<any> {
@@ -137,7 +128,7 @@ export namespace Var {
 	 * ---
 	 * @public
 	 */
-	export function Url<C = any>(options: UrlOptions & ConditionalOptions<C>): Decorator<string | undefined, C>
+	export function Url(options: UrlOptions & Optional): Decorator<string | undefined>
 	export function Url(options?: UrlOptions): Decorator<string>
 	export function Url(options: UrlOptions & AnyOptions = {}): Decorator<any> {
 		return register('url', urlWith(options.protocols), options)
@@ -160,7 +151,7 @@ export namespace Var {
 	export const Host = factory('host', host)
 
 	/** A JSON-encoded value, untyped unless a type parameter is given. @public */
-	export function Json<T = any, C = any>(options: JsonOptions<T> & ConditionalOptions<C>): Decorator<T | undefined, C>
+	export function Json<T = any>(options: JsonOptions<T> & Optional): Decorator<T | undefined>
 	export function Json<T = any>(options?: JsonOptions<T>): Decorator<T>
 	export function Json(options?: AnyOptions): Decorator<any> {
 		return register('json', json, options)
@@ -186,9 +177,7 @@ export namespace Var {
 	 * ---
 	 * @public
 	 */
-	export function Bytes<T extends Buffer = Buffer, C = any>(
-		options: BytesOptions & ConditionalOptions<C>
-	): Decorator<T | undefined, C>
+	export function Bytes<T extends Buffer = Buffer>(options: BytesOptions & Optional): Decorator<T | undefined>
 	export function Bytes<T extends Buffer = Buffer>(options?: BytesOptions): Decorator<T>
 	export function Bytes(options: BytesOptions & AnyOptions = {}): Decorator<any> {
 		return register('bytes', bytes(options), options)
@@ -221,7 +210,7 @@ export namespace Var {
 	 * ---
 	 * @public
 	 */
-	export function File<C = any>(options: PathOptions & ConditionalOptions<C>): Decorator<string | undefined, C>
+	export function File(options: PathOptions & Optional): Decorator<string | undefined>
 	export function File(options?: PathOptions): Decorator<string>
 	export function File(options: PathOptions & AnyOptions = {}): Decorator<any> {
 		return register('file', path('file', options), options)
@@ -239,7 +228,7 @@ export namespace Var {
 	 * ---
 	 * @public
 	 */
-	export function Dir<C = any>(options: PathOptions & ConditionalOptions<C>): Decorator<string | undefined, C>
+	export function Dir(options: PathOptions & Optional): Decorator<string | undefined>
 	export function Dir(options?: PathOptions): Decorator<string>
 	export function Dir(options: PathOptions & AnyOptions = {}): Decorator<any> {
 		return register('dir', path('directory', options), options)
@@ -291,15 +280,12 @@ export namespace Var {
 	 * ---
 	 * @public
 	 */
-	export function Custom<C = any>(
+	export function Custom(
 		parser: ValidateStep<string>,
-		options: CustomOptions<string> & ConditionalOptions<C>
-	): Decorator<string | undefined, C>
+		options: CustomOptions<string> & Optional
+	): Decorator<string | undefined>
 	export function Custom(parser: ValidateStep<string>, options?: CustomOptions<string>): Decorator<string>
-	export function Custom<T, C = any>(
-		parser: CustomParser<T>,
-		options: CustomOptions<T> & ConditionalOptions<C>
-	): Decorator<T | undefined, C>
+	export function Custom<T>(parser: CustomParser<T>, options: CustomOptions<T> & Optional): Decorator<T | undefined>
 	export function Custom<T>(parser: CustomParser<T>, options?: CustomOptions<T>): Decorator<T>
 	export function Custom(parser: CustomParser<any> | ValidateStep<any>, options?: AnyOptions): Decorator<any> {
 		return register('custom', customSteps(parser), options)
@@ -334,14 +320,8 @@ export namespace Var {
 	 * ---
 	 * @public
 	 */
-	export function List<T, C = any>(
-		item: Parsable<T>,
-		options: ListOptions<T> & ConditionalOptions<C>
-	): Decorator<T[] | undefined, C>
-	export function List<C = any>(
-		item: undefined,
-		options: ListOptions<string> & ConditionalOptions<C>
-	): Decorator<string[] | undefined, C>
+	export function List<T>(item: Parsable<T>, options: ListOptions<T> & Optional): Decorator<T[] | undefined>
+	export function List(item: undefined, options: ListOptions<string> & Optional): Decorator<string[] | undefined>
 	export function List<T>(item: Parsable<T>, options?: ListOptions<T>): Decorator<T[]>
 	export function List(item?: undefined, options?: ListOptions<string>): Decorator<string[]>
 	export function List(item: Parsable<any> = Str, options: ListOptions<any> & AnyOptions = {}): Decorator<any> {
@@ -418,11 +398,11 @@ export namespace Var {
 
 	/**
 	 * Decorator factory of a non-generic type.
-	 * With `requiredWhen`, the decorated property must be optional.
+	 * With `optional`, the decorated property must be optional.
 	 * @public
 	 */
 	export interface Factory<T, O = SpecOptions<T>> extends Parsable<T> {
-		<C>(options: O & ConditionalOptions<C>): Decorator<T | undefined, C>
+		(options: O & Optional): Decorator<T | undefined>
 		(options?: O): Decorator<T>
 	}
 }

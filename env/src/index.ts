@@ -4,6 +4,8 @@ export {
 	Secrets,
 	UnsetSensitive,
 	CrossCheck,
+	Group,
+	GroupDecorator,
 	CrossCheckFunction,
 	CheckedKey,
 	ClassOrPropertyDecorator,
@@ -11,4 +13,4 @@ export {
 } from './env-decorators'
 export { Environment, EnvValidationError } from './init'
 export { Default } from './default'
-export { Parser, Validator, SpecOptions, ConditionalOptions, EnvSource, EnvErrorEntry } from './interfaces'
+export { Parser, Validator, SpecOptions, Optional, EnvSource, EnvErrorEntry } from './interfaces'

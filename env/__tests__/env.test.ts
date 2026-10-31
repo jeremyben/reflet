@@ -3,7 +3,17 @@ import * as fs from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { inspect } from 'util'
-import { Var, Environment, EnvValidationError, Sensitive, Secrets, UnsetSensitive, Default, CrossCheck } from '../src'
+import {
+	Var,
+	Environment,
+	EnvValidationError,
+	Sensitive,
+	Secrets,
+	UnsetSensitive,
+	Default,
+	CrossCheck,
+	Group,
+} from '../src'
 
 describe('Environment.load', () => {
 	test('parses basic types', () => {
@@ -118,32 +128,32 @@ describe('Environment.load', () => {
 		expect(() => ((env as any).A = 'y')).toThrow()
 	})
 
-	test('requiredWhen makes a var conditionally required', () => {
+	test('optional variables', () => {
 		class E extends Environment {
-			@Var.Bool() USE_S3: boolean = false
-			@Var.Str({ requiredWhen: (env: E) => env.USE_S3 === true }) S3_BUCKET?: string
+			@Var.Str({ optional: true }) S3_BUCKET?: string
+			@Var.Num({ optional: true }) N?: number = 5
 		}
+		const env = E.load({})
+		expect(env.S3_BUCKET).toBeUndefined()
+		expect(env.N).toBe(5)
+		expect(E.load({ S3_BUCKET: 'b', N: '1' })).toEqual({ S3_BUCKET: 'b', N: 1 })
+		expect(() => E.load({ N: 'x' })).toThrow(/N \(invalid\)/)
 
-		const env = E.load({ USE_S3: 'false' })
-		expect(env.USE_S3).toBe(false)
-		expect((env as any).S3_BUCKET).toBeUndefined()
-
-		expect(() => E.load({ USE_S3: 'true' })).toThrow(EnvValidationError)
-		try {
-			E.load({ USE_S3: 'true' })
-		} catch (err: any) {
-			expect(err.missing).toHaveLength(1)
-			expect(err.missing[0].name).toBe('S3_BUCKET')
+		class Invalid extends Environment {
+			// @ts-expect-error the property must be optional
+			@Var.Bool({ optional: true }) B!: boolean
+			// @ts-expect-error optional must be true
+			@Var.Str({ optional: false }) S!: string
 		}
+		expect(Invalid).toBeDefined()
 	})
 
-	test('NODE_ENV flags can be defined as getters, and used in predicates', () => {
+	test('NODE_ENV flags can be defined as getters', () => {
 		class E extends Environment {
 			@Var.Str({ choices: ['development', 'production', 'test'] }) NODE_ENV!:
 				| 'development'
 				| 'production'
 				| 'test'
-			@Var.Url({ requiredWhen: (env: E) => env.isProduction }) SENTRY_DSN?: string
 
 			get isProduction() {
 				return this.NODE_ENV === 'production'
@@ -151,8 +161,7 @@ describe('Environment.load', () => {
 		}
 
 		expect(E.load({ NODE_ENV: 'development' }).isProduction).toBe(false)
-		expect(() => E.load({ NODE_ENV: 'production' })).toThrow(/SENTRY_DSN \(missing\)/)
-		expect(E.load({ NODE_ENV: 'production', SENTRY_DSN: 'https://sentry.io' }).isProduction).toBe(true)
+		expect(E.load({ NODE_ENV: 'production' }).isProduction).toBe(true)
 		expect(Object.keys(E.load({ NODE_ENV: 'test' }))).toEqual(['NODE_ENV'])
 	})
 
@@ -204,30 +213,6 @@ describe('Environment.load', () => {
 		expect(base).toEqual({ A: 'a', N: 5 })
 	})
 
-	test('requiredWhen keeps defaults when not required', () => {
-		class E extends Environment {
-			@Var.Bool() F: boolean = false
-			@Var.Num({ requiredWhen: (e: E) => e.F }) N?: number = 5
-		}
-		expect(E.load({}).N).toBe(5)
-		expect(E.load({ F: 'true' }).N).toBe(5)
-	})
-
-	test('requiredWhen predicate errors are aggregated', () => {
-		class E extends Environment {
-			@Var.Json() C: any = {}
-			@Var.Num({ requiredWhen: (e: E) => e.C.x.y }) N?: number
-		}
-		try {
-			E.load({})
-			fail('should throw')
-		} catch (err: any) {
-			expect(err).toBeInstanceOf(EnvValidationError)
-			expect(err.invalid[0]).toMatchObject({ name: 'N', kind: 'invalid' })
-			expect(err.invalid[0].message).toContain('requiredWhen')
-		}
-	})
-
 	test('sensitive values are not included in error messages', () => {
 		class E extends Environment {
 			@Sensitive() @Var.Url() DB!: string
@@ -261,20 +246,6 @@ describe('Environment.load', () => {
 		expect(() => P.load({ P: '0x50' })).toThrow(EnvValidationError)
 	})
 
-	test('requiredWhen predicate can use getters', () => {
-		class E extends Environment {
-			@Var.Str() REGION: string = 'eu'
-			@Var.Str({ requiredWhen: (env: E) => env.isEurope }) GDPR_CONTACT?: string
-
-			get isEurope() {
-				return this.REGION === 'eu'
-			}
-		}
-
-		expect(() => E.load({})).toThrow(/GDPR_CONTACT \(missing\)/)
-		expect(E.load({ REGION: 'us' }).GDPR_CONTACT).toBeUndefined()
-	})
-
 	test('defaults of built-in scalar types are validated', () => {
 		class E extends Environment {
 			@Var.Port() P: number = 99999
@@ -302,27 +273,14 @@ describe('Environment.load', () => {
 				throw 'nope'
 			})
 			A!: string
-
-			@Var.Num({
-				requiredWhen: () => {
-					throw 42
-				},
-			})
-			B?: number
 		}
 
 		try {
 			E.load({ A: 'a' })
 			fail('should throw')
 		} catch (err: any) {
-			// A failing predicate is likely caused by another invalid variable, already reported.
 			expect(err.errors.map((e: any) => e.message)).toEqual(['nope (got "a")'])
 		}
-
-		class P extends E {
-			@Var.Str() A = 'a'
-		}
-		expect(() => P.load({})).toThrow('requiredWhen predicate failed: 42')
 	})
 
 	test('name option', () => {
@@ -413,7 +371,7 @@ describe('Environment.load', () => {
 			@Var.Str() B: string = 'production'
 			@Var.Str({ choices: ['a', 'b'] }) C!: 'a' | 'b'
 			@Var.Str({ choices: ['a', 'b'] }) D!: string
-			@Var.Str({ requiredWhen: () => false }) E?: string
+			@Var.Str({ optional: true }) E?: string
 			@Var.Json() F!: { a: number }
 			@Var.Custom((raw) => raw.split(',')) G!: string[];
 			@Var.Num({ name: 'S' }) [s]: number = 1
@@ -444,7 +402,7 @@ describe('Environment.load', () => {
 			@Var.Port() PORT = 3000
 			@Var.Str() OTHER!: string
 			@Var.Bool() F: boolean = false
-			@Var.Num({ requiredWhen: (env: E) => env.F }) N?: number = 1
+			@Var.Num({ optional: true }) N?: number = 1
 		}
 
 		expect(() => E.load({})).toThrow(/OTHER \(missing\)/)
@@ -535,11 +493,14 @@ describe('Environment.load', () => {
 		}).toThrow('"E.A" cannot have several env decorators.')
 	})
 
-	test('getters and methods using #private fields work in predicates', () => {
+	test('getters and methods using #private fields work in cross checks', () => {
+		@CrossCheck((env: E, fail) => {
+			if (env.isEurope && !env.GDPR) fail('GDPR', 'required in Europe')
+		})
 		class E extends Environment {
 			#region = 'eu'
 			@Var.Str() A: string = 'x'
-			@Var.Str({ requiredWhen: (env: E) => env.isEurope }) GDPR?: string
+			@Var.Str({ optional: true }) GDPR?: string
 
 			get isEurope() {
 				return this.#region === 'eu'
@@ -550,7 +511,7 @@ describe('Environment.load', () => {
 			}
 		}
 
-		expect(() => E.load({})).toThrow(/GDPR \(missing\)/)
+		expect(() => E.load({})).toThrow('GDPR (invalid): required in Europe')
 		const env = E.load({ GDPR: 'dpo@a.co' })
 		expect(env.label()).toBe('x-eu')
 		expect(Object.keys(env)).toEqual(['A', 'GDPR'])
@@ -671,35 +632,6 @@ describe('Environment.load', () => {
 		expect(C.load({ X: '2', P: '443' })).toEqual({ X: 2, P: 443 })
 	})
 
-	test('predicates do not see unvalidated initializers of variables processed later', () => {
-		class E extends Environment {
-			@Var.Str({ requiredWhen: (env: E) => env.MODE === 'remote' }) URL?: string
-			@Var.Str({ requiredWhen: () => true }) MODE?: string = 'remote'
-		}
-		expect(E.load({ MODE: 'local' })).toEqual({ MODE: 'local' })
-		expect(E.load({})).toEqual({ MODE: 'remote' })
-	})
-
-	test('requiredWhen is type checked against the class, and requires an optional property', () => {
-		class Other {
-			y!: number
-		}
-		class E extends Environment {
-			// @ts-expect-error wrong class
-			@Var.Str({ requiredWhen: (env: Other) => env.y > 1 }) A?: string
-			// @ts-expect-error property must be optional
-			@Var.Bool({ requiredWhen: () => true }) B!: boolean
-			@Var.Str({ choices: ['a', 'b'], requiredWhen: (env: E) => !!env.A }) C?: 'a' | 'b'
-		}
-		expect(E).toBeDefined()
-
-		class F extends Environment {
-			@Var.Bool() ENABLED = false
-			@Var.Url({ requiredWhen: (env: F) => env.ENABLED }) D?: string
-		}
-		expect(F.load({}).D).toBeUndefined()
-	})
-
 	test('whitespace-only values are missing for trimmed types', () => {
 		class E extends Environment {
 			@Var.Port() PORT: number = 3000
@@ -716,7 +648,7 @@ describe('Environment.load', () => {
 
 	test('null initializers are not defaults', () => {
 		class E extends Environment {
-			@Var.Num({ requiredWhen: () => false }) N?: number | null = null
+			@Var.Num({ optional: true }) N?: number | null = null
 			@Var.Str() S: string | null = null
 		}
 		try {
@@ -789,7 +721,7 @@ describe('Environment.load', () => {
 			@Var.List() HOSTS!: string[]
 			@Var.List(Var.Port) PORTS!: number[]
 			@Var.List(Var.Email, { separator: ';' }) ADMINS: string[] = ['admin@a.co']
-			@Var.List(Var.Bool, { requiredWhen: () => false }) FLAGS?: boolean[]
+			@Var.List(Var.Bool, { optional: true }) FLAGS?: boolean[]
 		}
 
 		const env = E.load({ HOSTS: ' a , b,, c ,', PORTS: '80, 443' })
@@ -1030,12 +962,12 @@ describe('Environment.load', () => {
 		class E extends Environment {
 			@Var.Bool() F = false
 			@Var.Str<'x' | 'y'>({ choices: ['x', 'y'] }) S: 'x' | 'y' = 'x'
-			@Var.Json<{ retries: number }>({ requiredWhen: (env: E) => env.F }) J?: { retries: number }
-			@Var.Custom<Date>((raw) => new Date(raw), { requiredWhen: (env: E) => env.F }) D?: Date
-			@Var.List<number>(Var.Port, { requiredWhen: (env: E) => env.F }) L?: number[]
+			@Var.Json<{ retries: number }>({ optional: true }) J?: { retries: number }
+			@Var.Custom<Date>((raw) => new Date(raw), { optional: true }) D?: Date
+			@Var.List<number>(Var.Port, { optional: true }) L?: number[]
 		}
 		expect(E.load({})).toEqual({ F: false, S: 'x' })
-		expect(() => E.load({ F: 'true' })).toThrow(/J \(missing\)[\s\S]*D \(missing\)[\s\S]*L \(missing\)/)
+		expect(E.load({ J: '{"retries":1}', L: '80' })).toMatchObject({ J: { retries: 1 }, L: [80] })
 
 		class Invalid {
 			// @ts-expect-error narrowing a string requires choices
@@ -1071,14 +1003,6 @@ describe('Environment.load', () => {
 			@Var.List({ parse: (raw) => Number(raw) }) N = [-1]
 		}
 		expect(F.load({})).toEqual({ HOSTS: ['localhost'], N: [-1] })
-	})
-
-	test('a default value makes a conditional variable never missing', () => {
-		class E extends Environment {
-			@Var.Bool() F = true
-			@Var.Num({ requiredWhen: (env: E) => env.F }) N?: number = 5
-		}
-		expect(E.load({}).N).toBe(5)
 	})
 
 	test('allowEmpty: an empty value is a value, not a missing variable', () => {
@@ -1483,7 +1407,7 @@ describe('Environment.load', () => {
 		// An unset optional sensitive variable does not look set.
 		class O extends Environment {
 			// Defined as undefined, as with `useDefineForClassFields`.
-			@Sensitive() @Var.Str({ requiredWhen: () => false }) TOKEN?: string = undefined
+			@Sensitive() @Var.Str({ optional: true }) TOKEN?: string = undefined
 			@Sensitive() @Var.Str() SET = 'secret'
 		}
 		const optional = O.load({})
@@ -1546,8 +1470,8 @@ describe('Environment.load', () => {
 		}
 
 		expect(Env.load({ NODE_ENV: 'development' }).KEY).toBe('fake')
-		// Parents' first, then in application order (bottom-up).
-		expect(calls).toEqual(['base', 'second', 'first'])
+		// Parents' first, then in declaration order.
+		expect(calls).toEqual(['base', 'first', 'second'])
 
 		try {
 			Env.load({ NODE_ENV: 'production', OLD_KEY: 'fake', PORT: '1' })
@@ -1556,9 +1480,9 @@ describe('Environment.load', () => {
 			expect(err).toBeInstanceOf(EnvValidationError)
 			expect(err.errors).toEqual([
 				{ name: 'OLD_KEY', kind: 'invalid', message: 'cannot be fake in production', desc: 'Stripe key' },
+				{ name: 'PORT', kind: 'invalid', message: 'cannot be 1' },
 				// The environment is frozen.
 				{ name: 'Env', kind: 'invalid', message: expect.stringMatching(/^cross check failed: Cannot assign/) },
-				{ name: 'PORT', kind: 'invalid', message: 'cannot be 1' },
 			])
 		}
 
@@ -1629,6 +1553,85 @@ describe('Environment.load', () => {
 		expect(() => D.load({})).toThrow('invalid default value: "D" must be a path, not empty')
 	})
 
+	test('Group', () => {
+		@Group.AllOrNone('S3_ACCESS_KEY', 'S3_SECRET_KEY')
+		@Group.OneOf('MONGO_URL', 'MONGO_HOST')
+		@Group.AnyOf('SMTP_URL', 'MAIL_API_KEY')
+		@Group.RequiredWhen('SENTRY_ENABLED', ['SENTRY_DSN', 'SENTRY_ENV'])
+		class E extends Environment {
+			@Var.Str({ optional: true }) S3_ACCESS_KEY?: string
+			@Var.Str({ optional: true, name: 'S3_SECRET', desc: 'S3 secret' }) S3_SECRET_KEY?: string
+			@Var.Url({ optional: true }) MONGO_URL?: string
+			@Var.Host({ optional: true }) MONGO_HOST?: string
+			@Var.Url({ optional: true }) SMTP_URL?: string
+			@Var.Str({ optional: true }) MAIL_API_KEY?: string
+			@Var.Bool() SENTRY_ENABLED = false
+			@Var.Url({ optional: true }) SENTRY_DSN?: string
+			@Var.Str() SENTRY_ENV = 'production'
+		}
+		const valid = { MONGO_HOST: 'db', MAIL_API_KEY: 'k' }
+		expect({ ...E.load(valid) }).toEqual({ ...valid, SENTRY_ENABLED: false, SENTRY_ENV: 'production' })
+		expect(E.load({ ...valid, S3_ACCESS_KEY: 'a', S3_SECRET: 's', SMTP_URL: 'smtp://x' })).toMatchObject({
+			S3_SECRET_KEY: 's',
+		})
+		expect(E.load({ ...valid, SENTRY_ENABLED: 'true', SENTRY_DSN: 'https://sentry.io' }).SENTRY_DSN).toBe(
+			'https://sentry.io'
+		)
+
+		const errors = (source: Record<string, string>) => {
+			try {
+				E.load(source)
+			} catch (err: any) {
+				return err.errors.map(({ name, kind, message, desc }: any) => ({ name, kind, message, desc }))
+			}
+			return []
+		}
+		expect(errors({ S3_ACCESS_KEY: 'a', SENTRY_ENABLED: 'true' })).toEqual([
+			{ name: 'S3_SECRET', kind: 'missing', message: 'required together with S3_ACCESS_KEY', desc: 'S3 secret' },
+			{ name: 'MONGO_URL', kind: 'missing', message: 'one of MONGO_URL, MONGO_HOST is required' },
+			{ name: 'SMTP_URL', kind: 'missing', message: 'at least one of SMTP_URL, MAIL_API_KEY is required' },
+			{ name: 'SENTRY_DSN', kind: 'missing', message: 'required when SENTRY_ENABLED' },
+		])
+		expect(errors({ ...valid, MONGO_URL: 'mongodb://db' })).toEqual([
+			{ name: 'MONGO_HOST', kind: 'invalid', message: 'only one of MONGO_URL, MONGO_HOST can be set' },
+		])
+		// Not checked with an invalid variable of the group.
+		expect(errors({ MAIL_API_KEY: 'k', MONGO_URL: 'nope' })).toEqual([
+			expect.objectContaining({ name: 'MONGO_URL', message: '"MONGO_URL" must be a valid URL (got "nope")' }),
+		])
+
+		// Inherited.
+		class Sub extends E {}
+		expect(() => Sub.load({})).toThrow(/MONGO_URL \(missing\)/)
+
+		// Variables of groups must be optional, or have a default.
+		@Group.AllOrNone('A', 'B')
+		class Required extends Environment {
+			@Var.Str() A!: string
+			@Var.Str({ optional: true }) B?: string
+		}
+		expect(() => Required.load({})).toThrow(
+			'"Required.A" is in @Group.AllOrNone, so it must be optional or have a default value.'
+		)
+		@Group.OneOf('A', 'B')
+		class Undecorated extends Environment {
+			@Var.Str({ optional: true }) A?: string
+			B?: string
+		}
+		expect(() => Undecorated.load({})).toThrow('"Undecorated.B" is in @Group.OneOf, but has no variable decorator.')
+		expect(() => Group.AnyOf('A')).toThrow('@Group.AnyOf needs at least 2 different properties.')
+		expect(() => Group.OneOf('A', 'A')).toThrow('@Group.OneOf needs at least 2 different properties.')
+		expect(() => Group.RequiredWhen('A', [])).toThrow('@Group.RequiredWhen needs at least 1 different properties.')
+		expect(() => Group.RequiredWhen('A', ['A', 'B'])).toThrow('@Group.RequiredWhen flag cannot be in its group.')
+
+		// @ts-expect-error unknown property
+		@Group.AllOrNone('A', 'TYPO')
+		class Typo extends Environment {
+			@Var.Str({ optional: true }) A?: string
+		}
+		expect(Typo).toBeDefined()
+	})
+
 	test('Var.Type', () => {
 		const parseCsvLine: (raw: string, name: string) => string[] = (raw) => raw.split(';')
 		const Upper = Var.Type((raw) => raw.toUpperCase())
@@ -1641,7 +1644,7 @@ describe('Environment.load', () => {
 			@Upper() B = 'b'
 			@Lower() G = 'G'
 			@Var.List(Lower) H = ['X', 'Y']
-			@Upper({ requiredWhen: (env: E) => env.F }) C?: string
+			@Upper({ optional: true }) C?: string
 			@Var.List(Upper) D: string[] = []
 			@Csv() E!: string[]
 		}
@@ -1654,7 +1657,7 @@ describe('Environment.load', () => {
 			D: ['X', 'Y'],
 			E: ['1', '2'],
 		})
-		expect(() => E.load({ F: 'true', A: 'a', E: '' })).toThrow(/C \(missing\)/)
+		expect(E.load({ A: 'a', C: 'c', E: '1' }).C).toBe('C')
 		expect(Upper.parse('x', 'X')).toBe('X')
 
 		class Invalid {

@@ -3,6 +3,7 @@ import { basename, join } from 'path'
 import { inspect, InspectOptions } from 'util'
 import {
 	extractCrossChecks,
+	extractGroups,
 	extractModifiedKeys,
 	extractSecretsDirs,
 	extractSensitive,
@@ -87,6 +88,23 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 
 	// Variable names actually read, among several names or secret files.
 	const usedNames = new Map<string | symbol, string>()
+	const failed = new Set<string | symbol>()
+
+	// Variables of groups must be optional, or have a default, to be checked by their rules.
+	const groups = extractGroups(target)
+	for (const { rule, keys, flag } of groups) {
+		for (const key of flag ? [flag, ...keys] : keys) {
+			if (!specs.has(key))
+				throw new Error(`"${target.name}.${key}" is in @Group.${rule}, but has no variable decorator.`)
+		}
+		for (const key of keys) {
+			if (!specs.get(key)!.optional && !initializers.has(key)) {
+				throw new Error(
+					`"${target.name}.${key}" is in @Group.${rule}, so it must be optional or have a default value.`
+				)
+			}
+		}
+	}
 
 	const processKey = (key: string | symbol) => {
 		const spec = specs.get(key)!
@@ -118,6 +136,7 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 		}
 		usedNames.set(key, name)
 		const fail = (kind: EnvErrorEntry['kind'], message: string) => {
+			failed.add(key)
 			errors.push({ name, kind, message, desc: spec.desc, example: spec.example, docs: spec.docs })
 		}
 
@@ -136,14 +155,8 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 			value = initializers.get(key)
 
 			if (value === undefined) {
-				// Conditional requirement: skip silently if predicate says it's not required.
-				try {
-					if (spec.requiredWhen && !spec.requiredWhen(instance)) return
-				} catch (err) {
-					// Likely caused by another invalid variable, already reported.
-					if (errors.length) return
-					return fail('invalid', `requiredWhen predicate failed: ${errorMessage(err)}`)
-				}
+				// Left undefined, unless required by a group.
+				if (spec.optional) return
 				const looked = [
 					names.length > 1 ? names.join(', ') : '',
 					secretsDirs.length ? `secret files in ${secretsDirs.join(', ')}` : '',
@@ -174,14 +187,31 @@ export function initEnv<T>(target: ClassType<T>, source: EnvSource = process.env
 		instance[key] = FROZEN_TYPES.includes(spec.type) ? deepFreeze(value) : value
 	}
 
-	const keys = [...specs.keys()]
+	for (const key of specs.keys()) processKey(key)
 
-	// Conditional properties are deferred so that their predicate sees a fully-populated env.
-	for (const key of keys) {
-		if (!specs.get(key)!.requiredWhen) processKey(key)
+	// Presence rules of groups, unless one of their variables is invalid.
+	const nameOf = (key: string) => usedNames.get(key) ?? envNames(key)[0]
+	const isSet = (key: string) => instance[key] !== undefined
+	const report = (key: string, kind: EnvErrorEntry['kind'], message: string) => {
+		const { desc, example, docs } = specs.get(key)!
+		errors.push({ name: nameOf(key), kind, message, desc, example, docs })
 	}
-	for (const key of keys) {
-		if (specs.get(key)!.requiredWhen) processKey(key)
+	for (const { rule, keys, flag } of groups) {
+		if ([...keys, ...(flag ? [flag] : [])].some((key) => failed.has(key))) continue
+		const set = keys.filter(isSet)
+		const names = keys.map(nameOf).join(', ')
+
+		if (rule === 'AllOrNone' && set.length && set.length < keys.length) {
+			for (const key of keys.filter((k) => !isSet(k))) {
+				report(key, 'missing', `required together with ${set.map(nameOf).join(', ')}`)
+			}
+		} else if ((rule === 'OneOf' || rule === 'AnyOf') && !set.length) {
+			report(keys[0], 'missing', `${rule === 'OneOf' ? 'one' : 'at least one'} of ${names} is required`)
+		} else if (rule === 'OneOf' && set.length > 1) {
+			for (const key of set.slice(1)) report(key, 'invalid', `only one of ${names} can be set`)
+		} else if (rule === 'RequiredWhen' && instance[flag!] === true) {
+			for (const key of keys.filter((k) => !isSet(k))) report(key, 'missing', `required when ${nameOf(flag!)}`)
+		}
 	}
 
 	if (errors.length) throw new EnvValidationError(errors)

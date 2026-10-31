@@ -11,6 +11,17 @@ interface ClassOptions {
 	secretsKeys: Map<string | symbol, readonly string[]>
 	unsetSensitive?: boolean
 	crossChecks?: CrossCheckFunction<any>[]
+	groups?: GroupRule[]
+}
+
+/**
+ * Presence rule of a group of variables.
+ * @internal
+ */
+export interface GroupRule {
+	rule: 'AllOrNone' | 'OneOf' | 'AnyOf' | 'RequiredWhen'
+	keys: readonly string[]
+	flag?: string
 }
 
 const classOptions = new WeakMap<object, ClassOptions>()
@@ -180,7 +191,8 @@ export function CrossCheck<C>(
 ): (target: Function & { prototype: C & Environment }) => void {
 	return (target) =>
 		classOrProperty('CrossCheck', target, undefined, (options) => {
-			options.crossChecks = [...(options.crossChecks || []), check]
+			// Decorators apply bottom-up, but checks run in declaration order.
+			options.crossChecks = [check, ...(options.crossChecks || [])]
 			return true
 		})
 }
@@ -196,6 +208,114 @@ export type CrossCheckFunction<C> = (env: C, fail: (key: CheckedKey<C>, message:
  * @public
  */
 export type CheckedKey<C> = { [K in keyof C]: C[K] extends Function ? never : K }[keyof C] & (string | symbol)
+
+/**
+ * Class decorator of a group, whose properties are checked by type.
+ * @public
+ */
+export type GroupDecorator<K extends string> = <T extends Function & { prototype: Environment }>(
+	target: T &
+		([K] extends [keyof T['prototype']] ? unknown : { 'Unknown properties': Exclude<K, keyof T['prototype']> })
+) => void
+
+function group(rule: GroupRule, min: number): GroupDecorator<any> {
+	if (rule.keys.length < min || new Set(rule.keys).size !== rule.keys.length) {
+		throw new Error(`@Group.${rule.rule} needs at least ${min} different properties.`)
+	}
+	return (target: Function) =>
+		classOrProperty(`Group.${rule.rule}`, target, undefined, (options) => {
+			// Decorators apply bottom-up, but rules are checked in declaration order.
+			options.groups = [rule, ...(options.groups || [])]
+			return true
+		})
+}
+
+/**
+ * Rules on the presence of a group of optional variables, checked when the environment is loaded.
+ * Variables of a group must be optional, or have a default value.
+ * ---
+ * @public
+ */
+export namespace Group {
+	/**
+	 * Variables all set, or none.
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Group.AllOrNone('S3_ACCESS_KEY', 'S3_SECRET_KEY')
+	 * class Env extends Environment {
+	 *   ＠Var.Str({ optional: true }) S3_ACCESS_KEY?: string
+	 *   ＠Var.Str({ optional: true }) S3_SECRET_KEY?: string
+	 * }
+	 * ```
+	 * ---
+	 * @public
+	 */
+	export function AllOrNone<K extends string>(...keys: K[]): GroupDecorator<K> {
+		return group({ rule: 'AllOrNone', keys }, 2)
+	}
+
+	/**
+	 * Exactly one of the variables set.
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Group.OneOf('MONGO_URL', 'MONGO_HOST')
+	 * ```
+	 * ---
+	 * @public
+	 */
+	export function OneOf<K extends string>(...keys: K[]): GroupDecorator<K> {
+		return group({ rule: 'OneOf', keys }, 2)
+	}
+
+	/**
+	 * At least one of the variables set.
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Group.AnyOf('SMTP_URL', 'MAIL_API_KEY')
+	 * ```
+	 * ---
+	 * @public
+	 */
+	export function AnyOf<K extends string>(...keys: K[]): GroupDecorator<K> {
+		return group({ rule: 'AnyOf', keys }, 2)
+	}
+
+	/**
+	 * Variables required when a boolean variable (the flag) is `true`.
+	 *
+	 * @example
+	 * ```ts
+	 * ＠Group.RequiredWhen('SENTRY_ENABLED', ['SENTRY_DSN', 'SENTRY_ENV'])
+	 * class Env extends Environment {
+	 *   ＠Var.Bool() SENTRY_ENABLED = false
+	 *   ＠Var.Url({ optional: true }) SENTRY_DSN?: string
+	 *   ＠Var.Str({ optional: true }) SENTRY_ENV?: string
+	 * }
+	 * ```
+	 * ---
+	 * @public
+	 */
+	export function RequiredWhen<F extends string, K extends string>(
+		flag: F,
+		keys: readonly K[]
+	): GroupDecorator<F | K> {
+		if (keys.includes(flag as string as K)) throw new Error('@Group.RequiredWhen flag cannot be in its group.')
+		return group({ rule: 'RequiredWhen', keys, flag }, 1)
+	}
+}
+
+/**
+ * Groups of the hierarchy, parents' first.
+ * @internal
+ */
+export function extractGroups(target: ClassType): GroupRule[] {
+	return hierarchy(target)
+		.reverse()
+		.flatMap((options) => options.groups || [])
+}
 
 /**
  * Cross checks of the hierarchy, parents' first.

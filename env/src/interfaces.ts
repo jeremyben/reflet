@@ -46,19 +46,12 @@ export interface SpecOptions<T> {
 }
 
 /**
- * Options of a conditionally required variable, whose property must be optional.
+ * Option of an optional variable, whose property must be optional: `undefined` when missing.
  * @public
  */
-export interface ConditionalOptions<C> {
-	/**
-	 * The variable is only required when this predicate returns `true`.
-	 * The predicate is called with the env instance (getters included),
-	 * which holds the already-validated non-conditional values, and conditional values declared before.
-	 * A variable with a default value (property initializer) is never missing, so the predicate is not called.
-	 *
-	 * Annotate the parameter with your class, so it is checked against the decorated class.
-	 */
-	requiredWhen: (env: C) => boolean
+export interface Optional {
+	/** The variable is not required: `undefined` when missing. */
+	optional: true
 }
 
 /**
@@ -76,7 +69,8 @@ export interface EnvErrorEntry {
 /**
  * @public
  */
-export interface Spec<T> extends SpecOptions<T>, Partial<ConditionalOptions<any>> {
+export interface Spec<T> extends SpecOptions<T> {
+	optional?: boolean
 	/** Coerces the raw string to the type. */
 	coerce: Parser<T>
 	/** Validates a typed value: a coerced value, or a default value. */
