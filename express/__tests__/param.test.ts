@@ -10,8 +10,9 @@ import {
 	Use,
 	Res,
 	Body,
+	Param,
 	Params,
-	ReqHeaders,
+	Header,
 	Headers,
 	Query,
 	createParamDecorator,
@@ -30,7 +31,7 @@ describe('basic decorators', () => {
 	@Controller('')
 	class FooRouter {
 		@Get()
-		async get(@ReqHeaders headers: any, @ReqHeaders('via') via: string, @Res res: Res) {
+		async get(@Header headers: any, @Header('via') via: string, @Res res: Res) {
 			res.send({ via, shared: headers.shared })
 		}
 
@@ -40,13 +41,13 @@ describe('basic decorators', () => {
 		}
 
 		@Patch('/:id')
-		patch(@Params params: Params<'id'>, @Query queries: Query, @Res res: Res) {
+		patch(@Param params: Param<'id'>, @Query queries: Query, @Res res: Res) {
 			const bar = Number.parseInt(params.id, 10) * 2
 			res.send({ bar, baz: queries.q })
 		}
 
 		@Put('/:id')
-		put(@Params('id') id: string, @Query('q') q: string, @Res res: Res) {
+		put(@Param('id') id: string, @Query('q') q: string, @Res res: Res) {
 			const bar = Number.parseInt(id, 10) * 2
 			res.send({ bar, baz: q })
 		}
@@ -54,13 +55,13 @@ describe('basic decorators', () => {
 
 	const rq = supertest(register(express(), [FooRouter]))
 
-	test('@ReqHeaders', async () => {
+	test('@Header', async () => {
 		const res = await rq.get('')
 		expect(res.body).toEqual({ via: 'via', shared: 'shared' })
 	})
 
-	test('deprecated @Headers is an alias of @ReqHeaders', async () => {
-		expect(Headers).toBe(ReqHeaders)
+	test('deprecated @Headers is an alias of @Header', async () => {
+		expect(Headers).toBe(Header)
 
 		@Controller('/legacy-headers')
 		class Legacy {
@@ -76,17 +77,32 @@ describe('basic decorators', () => {
 		expect(res.body).toEqual({ via: 'legacy' })
 	})
 
+	test('deprecated @Params is an alias of @Param', async () => {
+		expect(Params).toBe(Param)
+
+		@Controller('/legacy-params')
+		class Legacy {
+			@Get('/:id')
+			get(@Params params: Params<'id'>, @Params('id') id: string, @Res res: Res) {
+				res.send({ id, same: params.id === id })
+			}
+		}
+
+		const res = await supertest(register(express(), [Legacy])).get('/legacy-params/7')
+		expect(res.body).toEqual({ id: '7', same: true })
+	})
+
 	test('@Body with auto body-parser', async () => {
 		const res = await rq.post('').send({ foo: 5 })
 		expect(res.body).toEqual({ bar: 25 })
 	})
 
-	test('@Params and @Query objects', async () => {
+	test('@Param and @Query objects', async () => {
 		const res = await rq.patch('/25?q=yes')
 		expect(res.body).toEqual({ bar: 50, baz: 'yes' })
 	})
 
-	test('@Params and @Query subkeys', async () => {
+	test('@Param and @Query subkeys', async () => {
 		const res = await rq.put('/25?q=yes')
 		expect(res.body).toEqual({ bar: 50, baz: 'yes' })
 	})

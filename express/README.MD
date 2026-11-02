@@ -40,7 +40,7 @@ The **best** decorators for [Express](https://expressjs.com/). Have a look at [R
 
     ```ts
     // thing.controller.ts
-    import { Get, Post, Res, Params, Body, Controller } from '@reflet/express'
+    import { Get, Post, Res, Param, Body, Controller } from '@reflet/express'
 
     @Controller('/things')
     export class ThingController {
@@ -51,7 +51,7 @@ The **best** decorators for [Express](https://expressjs.com/). Have a look at [R
       }
 
       @Get('/:id')
-      async get(@Params('id') id: string, @Res res: Response) {
+      async get(@Param('id') id: string, @Res res: Response) {
         const thing = await db.collection('things').find({ id })
         res.send(thing)
       }
@@ -560,20 +560,22 @@ Directly inject Request properties (and even their sub-properties) in handler pa
 
 ### Route params
 
-> 🔦 `@Params(name?)`<br>
+> 🔦 `@Param(name?)`<br>
 > 💫 Related Express object: [`req.params`](https://expressjs.com/en/4x/api.html#req.params)
 
 ```ts
 class UserController {
   // Whole params object
   @Get('/users/:userId/things/:thingId')
-  get(@Params params: Params<'userId' | 'thingId'>) {}
+  get(@Param params: Param<'userId' | 'thingId'>) {}
 
   // Specific name
   @Get('/users/:userId/things/:thingId')
-  get(@Params('userId') userId: string, @Params('thingId') thingId: string) {}
+  get(@Param('userId') userId: string, @Param('thingId') thingId: string) {}
 }
 ```
+
+🗣️ Formerly named `@Params`, renamed to be consistent with the other singular decorators (`Body`, `Query`, `Header`). `Params` is still available as a deprecated alias, and will be removed in the next major version.
 
 ### Query string
 
@@ -631,7 +633,7 @@ class ThingController {
 
 ### Request headers
 
-> 🔦 `@ReqHeaders(header?)`<br>
+> 🔦 `@Header(header?)`<br>
 > 💫 Related Node.js object: [`req.headers`](https://nodejs.org/api/http.html#http_message_headers)
 
 ```ts
@@ -639,15 +641,15 @@ class ThingController {
 class ThingController {
   // Whole headers object
   @Get()
-  list(@ReqHeaders headers: ReqHeaders) {}
+  list(@Header headers: Header) {}
   
   // Specific header
   @Get()
-  list(@ReqHeaders('user-agent') userAgent: string) {}
+  list(@Header('user-agent') userAgent: string) {}
 }
 ```
 
-`ReqHeaders` input type is narrowed to a union of known **request headers** (instead of just `string`), so typos are prevented and you have that sweet auto-completion.
+`Header` input type is narrowed to a union of known **request headers** (instead of just `string`), so typos are prevented and you have that sweet auto-completion.
 
 Augment the union with the help of the global namespace `RefletHttp`:
 
@@ -663,7 +665,7 @@ declare global {
 @Controller('/things')
 class ThingController {
   @Get()
-  list(@ReqHeaders('x-custom') custom: string) {}
+  list(@Header('x-custom') custom: string) {}
 }
 ```
 

@@ -1,7 +1,7 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
 import { createReadStream, readFileSync } from 'fs'
-import { register, Controller, Get, Put, Post, Patch, Delete, Res, Params, Send, Route } from '../src'
+import { register, Controller, Get, Put, Post, Patch, Delete, Res, Param, Send, Route } from '../src'
 import { log } from '../../testing/tools'
 
 describe('handle return value', () => {
@@ -9,7 +9,7 @@ describe('handle return value', () => {
 	class FooRouter {
 		@Send()
 		@Get('/:type')
-		get(@Params('type') type: 'string' | 'object') {
+		get(@Param('type') type: 'string' | 'object') {
 			if (type === 'string') return 'foo'
 			else if (type === 'object') return { foo: 1 }
 			else return
@@ -17,7 +17,7 @@ describe('handle return value', () => {
 
 		@Send({ json: true })
 		@Post('/:type')
-		async post(@Params('type') type: 'string' | 'object') {
+		async post(@Param('type') type: 'string' | 'object') {
 			await new Promise((resolve) => setTimeout(resolve, 20))
 			if (type === 'string') return 'foo'
 			else if (type === 'object') return { foo: 2 }

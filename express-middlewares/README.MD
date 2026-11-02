@@ -105,7 +105,7 @@ If your route returns its response value with `@Send` (from `@reflet/express`), 
   res.json({ data: thing })
 })
 @Get('/things/:id')
-get(@Params('id') id: string) {
+get(@Param('id') id: string) {
   return db.collection('things').findOne({ id })
 }
 ```

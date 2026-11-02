@@ -14,7 +14,7 @@
   @UseStatus(204)
   @Send()
   @Delete('/:id')
-  async remove(@Params('id') id: string) {
+  async remove(@Param('id') id: string) {
     await db.delete(id)
   }
   ```
@@ -40,11 +40,12 @@
   }
   ```
 
-* The `Headers` parameter decorator is renamed `ReqHeaders`, to avoid the conflict with the global `Headers` class of Node.js (Fetch API).
-  The old name still works but is deprecated as well, and will be removed in the next major version:
+* The `Headers` parameter decorator is renamed `Header`, to avoid the conflict with the global `Headers` class of Node.js (Fetch API).
+  The `Params` parameter decorator is renamed `Param`, to be consistent with the other singular decorators (`Body`, `Query`, `Header`).
+  The old names still work but are deprecated as well, and will be removed in the next major version:
   ```ts
-  @Get()
-  list(@ReqHeaders('user-agent') userAgent: string, @ReqHeaders headers: ReqHeaders) {}
+  @Get('/:id')
+  get(@Param('id') id: string, @Param params: Param<'id'>, @Header('user-agent') userAgent: string, @Header headers: Header) {}
   ```
 
 ## From v1 to v2

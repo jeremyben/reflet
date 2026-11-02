@@ -1,6 +1,6 @@
 import * as supertest from 'supertest'
 import * as express from 'express'
-import { register, Controller, Get, Post, Patch, Route, Res, Req, Use, Params, Body } from '../src'
+import { register, Controller, Get, Post, Patch, Route, Res, Req, Use, Param, Body } from '../src'
 import { type RefletExpressError } from '../src/reflet-error'
 import { isExpress4 } from '../src/type-guards'
 import { log } from '../../testing/tools'
@@ -149,7 +149,7 @@ describe('children routers', () => {
 			constructor(private service: UserService) {}
 
 			@Get()
-			get(@Res res: Res, @Params { userId, itemId }: Params<'userId' | 'itemId'>) {
+			get(@Res res: Res, @Param { userId, itemId }: Param<'userId' | 'itemId'>) {
 				const userIndex = Number.parseInt(userId, 10)
 				const itemIndex = Number.parseInt(itemId, 10)
 				res.json(this.service.users[userIndex].items[itemIndex])

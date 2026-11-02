@@ -194,24 +194,24 @@ export namespace Body {
  * ```ts
  * // Route parameters object without invokation:
  * ＠Get('/:col/:id')
- * get(＠Params params: Params<'col' | 'id'>) {}
+ * get(＠Param params: Param<'col' | 'id'>) {}
  *
  * // Route parameters object with invokation:
  * ＠Get('/:col/:id')
- * get(＠Params() params: Params<'col' | 'id'>) {}
+ * get(＠Param() params: Param<'col' | 'id'>) {}
  *
  * // Single route parameter:
  * ＠Get('/:col/:id')
- * get(＠Params('col') col: string, ＠Params('id') id: string) {}
+ * get(＠Param('col') col: string, ＠Param('id') id: string) {}
  * ```
  * ------
  * @public
  */
-export function Params(name?: string): Params.Decorator
+export function Param(name?: string): Param.Decorator
 
-export function Params(...args: Parameters<Params.Decorator>): void
+export function Param(...args: Parameters<Param.Decorator>): void
 
-export function Params(nameOrTarget?: string | object, propertyKey?: string | symbol, parameterIndex?: number) {
+export function Param(nameOrTarget?: string | object, propertyKey?: string | symbol, parameterIndex?: number) {
 	if (arguments.length === 3 && typeof nameOrTarget === 'object') {
 		const target = nameOrTarget
 		return createParamDecorator((req) => req.params)(target, propertyKey!, parameterIndex!)
@@ -221,14 +221,38 @@ export function Params(nameOrTarget?: string | object, propertyKey?: string | sy
 	}
 }
 
-export type Params<P extends string = string> = Record<P, string>
+export type Param<P extends string = string> = Record<P, string>
 
-export namespace Params {
+export namespace Param {
 	/**
 	 * Equivalent to `ParameterDecorator`.
 	 * @public
 	 */
 	export type Decorator = ParameterDecorator & { __expressParams?: never; __expressHandlerParameter?: never }
+}
+
+/**
+ * @deprecated Renamed `Param`. Will be removed in the next major version.
+ * @public
+ */
+export const Params: typeof Param = Param
+
+/**
+ * @deprecated Renamed `Param`. Will be removed in the next major version.
+ * @public
+ */
+export type Params<P extends string = string> = Param<P>
+
+/**
+ * @deprecated Renamed `Param`. Will be removed in the next major version.
+ * @public
+ */
+export namespace Params {
+	/**
+	 * @deprecated Renamed `Param.Decorator`.
+	 * @public
+	 */
+	export type Decorator = Param.Decorator
 }
 
 /**
@@ -284,24 +308,24 @@ export namespace Query {
  * ```ts
  * // Request headers object without invokation:
  * ＠Get('/some')
- * get(＠ReqHeaders headers: ReqHeaders) {}
+ * get(＠Header headers: Header) {}
  *
  * // Request headers object with invokation:
  * ＠Get('/some')
- * get(＠ReqHeaders() headers: ReqHeaders) {}
+ * get(＠Header() headers: Header) {}
  *
  * // Single request header:
  * ＠Get('/some')
- * get(＠ReqHeaders('user-agent') userAgent: string) {}
+ * get(＠Header('user-agent') userAgent: string) {}
  * ```
  * ------
  * @public
  */
-export function ReqHeaders(headerName?: RequestHeader): ReqHeaders.Decorator
+export function Header(headerName?: RequestHeader): Header.Decorator
 
-export function ReqHeaders(...args: Parameters<ReqHeaders.Decorator>): void
+export function Header(...args: Parameters<Header.Decorator>): void
 
-export function ReqHeaders(nameOrTarget?: string | object, propertyKey?: string | symbol, parameterIndex?: number) {
+export function Header(nameOrTarget?: string | object, propertyKey?: string | symbol, parameterIndex?: number) {
 	if (arguments.length === 3 && typeof nameOrTarget === 'object') {
 		const target = nameOrTarget
 		return createParamDecorator((req) => req.headers)(target, propertyKey!, parameterIndex!)
@@ -311,9 +335,9 @@ export function ReqHeaders(nameOrTarget?: string | object, propertyKey?: string 
 	}
 }
 
-export type ReqHeaders = RequestHeader.Record
+export type Header = RequestHeader.Record
 
-export namespace ReqHeaders {
+export namespace Header {
 	/**
 	 * Equivalent to `ParameterDecorator`.
 	 * @public
@@ -324,27 +348,27 @@ export namespace ReqHeaders {
 /**
  * Formerly named `Headers`, which conflicts with the global `Headers` class of Node.js (Fetch API).
  *
- * @deprecated Renamed `ReqHeaders`. Will be removed in the next major version.
+ * @deprecated Renamed `Header`. Will be removed in the next major version.
  * @public
  */
-export const Headers: typeof ReqHeaders = ReqHeaders
+export const Headers: typeof Header = Header
 
 /**
- * @deprecated Renamed `ReqHeaders`. Will be removed in the next major version.
+ * @deprecated Renamed `Header`. Will be removed in the next major version.
  * @public
  */
-export type Headers = ReqHeaders
+export type Headers = Header
 
 /**
- * @deprecated Renamed `ReqHeaders`. Will be removed in the next major version.
+ * @deprecated Renamed `Header`. Will be removed in the next major version.
  * @public
  */
 export namespace Headers {
 	/**
-	 * @deprecated Renamed `ReqHeaders.Decorator`.
+	 * @deprecated Renamed `Header.Decorator`.
 	 * @public
 	 */
-	export type Decorator = ReqHeaders.Decorator
+	export type Decorator = Header.Decorator
 }
 
 /**
