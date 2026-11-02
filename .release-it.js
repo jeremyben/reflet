@@ -14,7 +14,8 @@ const config = {
 		publishArgs: ['--no-git-checks'],
 	},
 	hooks: {
-		'before:bump': 'pnpm test --coverage && ts-node -T ../testing/summary.ts && git add coverage-summary.json',
+		'before:bump':
+			'pnpm run --if-present typecheck && pnpm test --coverage && ts-node -T ../testing/summary.ts && git add coverage-summary.json',
 		'after:bump': 'pnpm run build',
 	},
 	plugins: {

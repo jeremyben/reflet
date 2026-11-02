@@ -9,6 +9,19 @@ on:
       - 'express/**/*.ts'
       - 'express-middlewares/**/*.ts'
       - 'mongoose/**/*.ts'
+      - 'env/**/*.ts'
+      - '**/*.js'
+      - '**/package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/nodejs.yml'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'express/**/*.ts'
+      - 'express-middlewares/**/*.ts'
+      - 'mongoose/**/*.ts'
+      - 'env/**/*.ts'
       - '**/*.js'
       - '**/package.json'
       - 'pnpm-lock.yaml'
@@ -21,7 +34,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [18.x, 20.x, 22.x, 24.x]
 
     steps:
       - name: Git checkout
@@ -36,9 +49,14 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
 
-      - name: Install and test
-        run: |
-          pnpm install
-          pnpm test
+      - name: Install
+        run: pnpm install
+
+      # @reflet/env requires Node.js 20 or later.
+      - name: Type check
+        run: pnpm --recursive --if-present ${{ matrix.node-version == '18.x' && '--filter !@reflet/env' || '' }} run typecheck
+
+      - name: Test
+        run: pnpm --recursive --parallel ${{ matrix.node-version == '18.x' && '--filter !@reflet/env' || '' }} run test
         env:
           CI: true
