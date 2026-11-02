@@ -5,3 +5,4 @@ packages:
   - mongoose
   - http
   - cron
+  - env

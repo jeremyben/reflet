@@ -1,0 +1,8 @@
+{
+	"extends": "../tsconfig.json",
+	"compilerOptions": {
+		// Node.js 20 or later.
+		"lib": ["es2017", "es2020.bigint"]
+	},
+	"exclude": ["dist"]
+}
