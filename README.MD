@@ -69,6 +69,27 @@ class ThingRouter {
 }
 ```
 
+## [Reflet/env](./env)
+
+Validate and type your environment variables in one place.<br>**[Documentation](./env/README.MD)**.
+
+```ts
+class Env extends Environment {
+  @Var.Str({ choices: ['development', 'production', 'test'] })
+  NODE_ENV!: 'development' | 'production' | 'test'
+
+  @Var.Port()
+  PORT = 3000
+
+  @Sensitive()
+  @Var.Url()
+  DATABASE_URL!: string
+}
+
+const env = Env.load()
+app.listen(env.PORT)
+```
+
 ## Philosophy 📣
 
 Why another decorator framework ? Simply <sub>(and biasedly)</sub> put, a better developer experience.
